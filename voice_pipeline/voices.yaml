@@ -1,0 +1,13 @@
+speakers:
+  emmanuel_theodore:
+    kokoro_voice: am_adam
+    lang_code: a
+    speed: 1.0
+  ai_1:
+    kokoro_voice: af_heart
+    lang_code: a
+    speed: 1.0
+  ai_2:
+    kokoro_voice: af_sky
+    lang_code: a
+    speed: 1.0

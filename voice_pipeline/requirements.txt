@@ -1,0 +1,7 @@
+mlx-audio
+misaki[en]
+numpy
+scipy
+soundfile
+pyloudnorm
+pyyaml
