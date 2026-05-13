@@ -8,6 +8,7 @@ from typing import Any
 import numpy
 
 from voice_pipeline.models import VoiceConfig
+from voice_pipeline.post_processor import _trim_edge_silence
 
 
 class TTSEngine(ABC):
@@ -76,7 +77,10 @@ class MLXKokoroEngine(TTSEngine):
             array = numpy.asarray(audio)
             if array.ndim > 1:
                 array = numpy.squeeze(array)
-            arrays.append(array)
+            trimmed_array = _trim_edge_silence(array, self.sample_rate)
+            if trimmed_array.size == 0:
+                continue
+            arrays.append(trimmed_array)
 
         if not arrays:
             return numpy.array([], dtype=numpy.float32)

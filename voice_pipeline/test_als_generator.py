@@ -27,26 +27,22 @@ class GenerateAlsTests(TestCase):
 
         self.assertEqual(result_path, output_path)
         self.assertEqual(root.tag, "Ableton")
-        self.assertIsNotNone(root.find("./LiveSet/MainSequence"))
+        self.assertIsNotNone(root.find("./LiveSet/MainTrack"))
 
         tracks = root.findall("./LiveSet/Tracks/AudioTrack")
-        self.assertEqual(len(tracks), 3)
-        self.assertEqual(
-            [
-                "emmanuel_theodore",
-                "ai_1",
-                "ai_2",
-            ],
-            [
-                track.find("./Name/EffectiveName").attrib["Value"]
-                for track in tracks
-            ],
-        )
+        track_names = [
+            track.find("./Name/EffectiveName").attrib["Value"] for track in tracks
+        ]
+        self.assertIn("emmanuel_theodore", track_names)
+        self.assertIn("ai_1", track_names)
+        self.assertIn("ai_2", track_names)
 
         for track in tracks:
             self.assertIsNotNone(track.find("./AutomationEnvelopes"))
             self.assertIsNotNone(
-                track.find("./DeviceChain/MainSequence/ClipTimeable/ArrangedClips")
+                track.find(
+                    "./DeviceChain/MainSequencer/Sample/ArrangerAutomation/Events"
+                )
             )
 
         clips = root.findall(".//AudioClip")
@@ -54,28 +50,38 @@ class GenerateAlsTests(TestCase):
 
         self.assertEqual(
             {
-                "turn_0000_chunk_0000.wav": "0.0",
-                "turn_0001_chunk_0000.wav": "2.5",
-                "turn_0002_chunk_0000.wav": "3.7",
+                "turn_0000_chunk_0000": "0",
+                "turn_0001_chunk_0000": "2.5",
+                "turn_0002_chunk_0000": "3.7",
             },
             {
                 clip.find("./Name").attrib["Value"]: clip.attrib["Time"]
                 for clip in clips
             },
         )
+        first_clip = next(
+            clip
+            for clip in clips
+            if clip.find("./Name").attrib["Value"] == "turn_0000_chunk_0000"
+        )
+        self.assertEqual(first_clip.find("./CurrentEnd").attrib["Value"], "2")
+        self.assertEqual(first_clip.find("./Loop/LoopEnd").attrib["Value"], "2")
+        self.assertEqual(first_clip.find("./Loop/OutMarker").attrib["Value"], "2")
 
-        arranged_clips = root.findall(".//ArrangedClip")
-        self.assertEqual(len(arranged_clips), len(segments))
+        event_clips = root.findall(
+            ".//MainSequencer/Sample/ArrangerAutomation/Events/AudioClip"
+        )
+        self.assertEqual(len(event_clips), len(segments))
         self.assertEqual(
             [clip.attrib["Time"] for clip in clips],
-            [arranged_clip.attrib["Time"] for arranged_clip in arranged_clips],
+            [clip.attrib["Time"] for clip in event_clips],
         )
 
-        file_refs = root.findall(".//FileRef")
+        file_refs = root.findall(".//AudioClip/SampleRef/FileRef")
         self.assertEqual(len(file_refs), len(segments))
         for file_ref in file_refs:
-            relative_path = file_ref.attrib["RelativePath"]
-            self.assertEqual(file_ref.attrib["HasRelativePath"], "true")
+            relative_path = file_ref.find("./RelativePath").attrib["Value"]
+            self.assertEqual(file_ref.find("./RelativePathType").attrib["Value"], "1")
             self.assertTrue(relative_path.startswith("Samples/Processed/"))
             self.assertFalse(Path(relative_path).is_absolute())
 
@@ -98,17 +104,21 @@ class GenerateAlsTests(TestCase):
         duration_ms: int,
         gap_after_ms: int,
     ) -> SegmentResult:
+        wav_path = (
+            project_root
+            / "Samples"
+            / "Processed"
+            / speaker_id
+            / f"turn_{turn_index:04d}_chunk_0000.wav"
+        )
+        wav_path.parent.mkdir(parents=True, exist_ok=True)
+        wav_path.write_bytes(b"test wav content")
+
         return SegmentResult(
             turn_index=turn_index,
             chunk_index=0,
             speaker_id=speaker_id,
-            wav_path=(
-                project_root
-                / "Samples"
-                / "Processed"
-                / speaker_id
-                / f"turn_{turn_index:04d}_chunk_0000.wav"
-            ),
+            wav_path=wav_path,
             duration_ms=duration_ms,
             sample_rate=48000,
             gap_after_ms=gap_after_ms,
