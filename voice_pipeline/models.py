@@ -9,18 +9,26 @@ from pathlib import Path
 @dataclass
 class VoiceConfig:
     speaker_id: str
-    kokoro_voice: str
-    lang_code: str
-    speed: float
+    kokoro_voice: str | None = None
+    lang_code: str | None = None
+    speed: float = 1.0
+    engine: str = "kokoro"
+    name: str | None = None
+    elevenlabs_voice_id: str | None = None
+    reference_audio: str | None = None
+    character_profile: str = ""
+    exaggeration: float = 0.0
 
 
 @dataclass
 class SegmentResult:
     turn_index: int
+    turn_id: str
     chunk_index: int
     speaker_id: str
     wav_path: Path
     duration_ms: int
+    speech_duration_ms: int
     sample_rate: int
     gap_after_ms: int
     checksum: str
@@ -37,6 +45,7 @@ class MarkupChunk:
 @dataclass
 class Turn:
     turn_index: int
+    turn_id: str
     speaker_id: str
     display_name: str
     timestamp_mmss: str
@@ -52,6 +61,7 @@ class SegmentEntry:
     chunk_index: int
     segment_wav: str
     duration_ms: int
+    speech_duration_ms: int
     start_ms: int
     end_ms: int
     gap_after_ms: int
@@ -61,6 +71,7 @@ class SegmentEntry:
 @dataclass
 class TurnEntry:
     turn_index: int
+    turn_id: str
     speaker_id: str
     source_timestamp: str
     segments: list[SegmentEntry] = field(default_factory=list)
@@ -74,6 +85,8 @@ class SpeakerEntry:
     display_name: str
     voice: str
     turn_count: int
+    engine: str = "kokoro"
+    character_profile: str = ""
 
 
 @dataclass

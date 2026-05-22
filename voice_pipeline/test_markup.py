@@ -5,6 +5,7 @@ from voice_pipeline.models import Turn
 def _make_turn(clean_text: str, turn_index: int = 0) -> Turn:
     return Turn(
         turn_index=turn_index,
+        turn_id=f"id{turn_index}",
         speaker_id="ai_1",
         display_name="AI 1",
         timestamp_mmss="00:00",

@@ -44,6 +44,13 @@ def _normalize_source_file(source_file: str) -> str:
         return Path(os.path.relpath(resolved_source, cwd)).as_posix()
 
 
+def _voice_identifier(voice_config: VoiceConfig) -> str:
+    """Return the voice identifier for a speaker based on engine type."""
+    if voice_config.engine == "elevenlabs":
+        return voice_config.elevenlabs_voice_id or "unknown"
+    return voice_config.kokoro_voice or "unknown"
+
+
 def _speaker_entries(
     turns: list[Turn], voices: dict[str, VoiceConfig]
 ) -> list[SpeakerEntry]:
@@ -59,8 +66,10 @@ def _speaker_entries(
         SpeakerEntry(
             speaker_id=speaker_id,
             display_name=display_name,
-            voice=voices[speaker_id].kokoro_voice,
+            voice=_voice_identifier(voices[speaker_id]),
             turn_count=turn_count,
+            engine=voices[speaker_id].engine,
+            character_profile=voices[speaker_id].character_profile,
         )
         for speaker_id, (display_name, turn_count) in speakers.items()
     ]
@@ -92,9 +101,10 @@ def write_manifest(
     voices: dict[str, VoiceConfig],
     output_path: Path,
     default_gap_ms: int = 0,
+    position_map: dict[tuple[str, int], int] | None = None,
 ) -> Path:
     segments_by_key = {
-        (segment.turn_index, segment.chunk_index): segment for segment in segments
+        (segment.turn_id, segment.chunk_index): segment for segment in segments
     }
     has_audio_segments = bool(segments)
     cursor_ms = 0
@@ -109,12 +119,15 @@ def write_manifest(
             turn_segments = [
                 segments_by_key[key]
                 for key in sorted(segments_by_key)
-                if key[0] == turn.turn_index
+                if key[0] == turn.turn_id
             ]
 
             for segment in turn_segments:
-                start_ms = cursor_ms
-                end_ms = start_ms + segment.duration_ms
+                if position_map and (segment.turn_id, segment.chunk_index) in position_map:
+                    start_ms = position_map[(segment.turn_id, segment.chunk_index)]
+                else:
+                    start_ms = cursor_ms
+                end_ms = start_ms + segment.speech_duration_ms
                 if not segment_entries:
                     turn_start_ms = start_ms
                 turn_end_ms = end_ms
@@ -123,6 +136,7 @@ def write_manifest(
                         chunk_index=segment.chunk_index,
                         segment_wav=_segment_relative_path(segment, output_path),
                         duration_ms=segment.duration_ms,
+                        speech_duration_ms=segment.speech_duration_ms,
                         start_ms=start_ms,
                         end_ms=end_ms,
                         gap_after_ms=segment.gap_after_ms,
@@ -141,6 +155,7 @@ def write_manifest(
         turn_entries.append(
             TurnEntry(
                 turn_index=turn.turn_index,
+                turn_id=turn.turn_id,
                 speaker_id=turn.speaker_id,
                 source_timestamp=turn.timestamp_mmss,
                 segments=segment_entries,

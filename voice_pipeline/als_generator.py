@@ -5,7 +5,9 @@ from __future__ import annotations
 import copy
 import gzip
 import os
+import shutil
 import xml.etree.ElementTree as ET
+from datetime import datetime
 from pathlib import Path
 from zlib import crc32
 
@@ -21,8 +23,6 @@ _PODCAST_TEMPLATE_RELATIVE_PATH = Path(
 _DEFAULT_SET_TEMPLATE_RELATIVE_PATH = Path(
     "Contents/App-Resources/Builtin/Templates/DefaultLiveSet.als"
 )
-_SPEAKERS = ["emmanuel_theodore", "ai_1", "ai_2"]
-_SPEAKER_SET = set(_SPEAKERS)
 
 
 def _ms_to_beats(ms: int) -> float:
@@ -113,6 +113,7 @@ def _build_audio_clip(
     clip_id: int,
     start_beats: float,
     length_beats: float,
+    file_length_beats: float,
     segment: SegmentResult,
     project_root: Path,
 ) -> ET.Element:
@@ -257,7 +258,7 @@ def _build_audio_clip(
         {
             "Id": str(_GENERATED_WARP_MARKER_ID_OFFSET + (clip_id * 2) + 1),
             "SecTime": _format_number(duration_seconds),
-            "BeatTime": _format_number(length_beats),
+            "BeatTime": _format_number(file_length_beats),
         },
     )
     ET.SubElement(clip, "SavedWarpMarkersForStretched")
@@ -318,34 +319,42 @@ def _set_master_tempo(root: ET.Element) -> None:
         tempo_manual.attrib["Value"] = str(_BPM)
 
 
-def generate_als(segment_results: list[SegmentResult], output_path: Path) -> Path:
+def generate_als(
+    segment_results: list[SegmentResult],
+    output_path: Path,
+    position_map: dict[tuple[str, int], int] | None = None,
+) -> Path:
     project_root = output_path.parent
 
+    # Dynamic speaker discovery: order of first appearance
+    speaker_order: list[str] = []
     for segment in segment_results:
-        if segment.speaker_id not in _SPEAKER_SET:
-            expected = ", ".join(_SPEAKERS)
-            raise ValueError(
-                f"Unknown speaker_id {segment.speaker_id!r}; expected one of: "
-                f"{expected}"
-            )
+        if segment.speaker_id not in speaker_order:
+            speaker_order.append(segment.speaker_id)
 
     positioned_segments: list[tuple[SegmentResult, int]] = []
     cursor_ms = 0
     for segment in segment_results:
-        positioned_segments.append((segment, cursor_ms))
-        cursor_ms += segment.duration_ms + segment.gap_after_ms
+        if position_map and (segment.turn_id, segment.chunk_index) in position_map:
+            start_ms = position_map[(segment.turn_id, segment.chunk_index)]
+        else:
+            start_ms = cursor_ms
+        cursor_ms = start_ms + segment.speech_duration_ms + segment.gap_after_ms
+        positioned_segments.append((segment, start_ms))
 
     clips_by_speaker: dict[str, list[ET.Element]] = {
-        speaker_id: [] for speaker_id in _SPEAKERS
+        speaker_id: [] for speaker_id in speaker_order
     }
     clip_id = 1
     for segment, start_ms in positioned_segments:
         start_beats = _ms_to_beats(start_ms)
-        length_beats = _ms_to_beats(segment.duration_ms)
+        length_beats = _ms_to_beats(segment.speech_duration_ms)
+        file_length_beats = _ms_to_beats(segment.duration_ms)
         clip = _build_audio_clip(
             clip_id,
             start_beats,
             length_beats,
+            file_length_beats,
             segment,
             project_root,
         )
@@ -353,8 +362,12 @@ def generate_als(segment_results: list[SegmentResult], output_path: Path) -> Pat
         clip_id += 1
 
     used_speakers = [
-        speaker_id for speaker_id in _SPEAKERS if clips_by_speaker[speaker_id]
-    ] or [_SPEAKERS[0]]
+        speaker_id for speaker_id in speaker_order if clips_by_speaker[speaker_id]
+    ] or [speaker_order[0]] if speaker_order else []
+
+    if not used_speakers:
+        raise ValueError("No segments to generate ALS from")
+
     root = _load_template_root()
     _set_master_tempo(root)
     tracks = _speaker_tracks(root, len(used_speakers))
@@ -374,6 +387,13 @@ def generate_als(segment_results: list[SegmentResult], output_path: Path) -> Pat
     ).encode("utf-8")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Backup existing ALS before overwriting
+    if output_path.exists():
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_path = output_path.with_suffix(f".backup_{timestamp}.als")
+        shutil.copy2(output_path, backup_path)
+
     with gzip.open(output_path, "wb") as als_file:
         als_file.write(xml_bytes)
 

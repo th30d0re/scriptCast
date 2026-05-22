@@ -15,12 +15,18 @@ def test_parse_transcript_turn_order() -> None:
     assert [turn.turn_index for turn in turns] == list(range(len(turns)))
 
 
+def test_parse_transcript_turn_ids_are_unique() -> None:
+    turns = parse_transcript(Path("Architecting_the_operation/podcasts/ATO_EP0.md"))
+    ids = [turn.turn_id for turn in turns]
+    assert len(ids) == len(set(ids)), "turn_ids should be unique"
+
+
 def test_parse_transcript_speaker_ids() -> None:
     turns = parse_transcript(Path("Architecting_the_operation/podcasts/ATO_EP0.md"))
     assert {turn.speaker_id for turn in turns} == {
         "emmanuel_theodore",
-        "ai_1",
-        "ai_2",
+        "toussaint",
+        "aisha",
     }
 
 

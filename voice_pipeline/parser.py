@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
 from pathlib import Path
@@ -28,6 +29,14 @@ def _clean_text(raw_text: str) -> str:
     return _MARKDOWN_FORMATTING_RE.sub("", raw_text).strip()
 
 
+def _compute_turn_id(
+    speaker_id: str, timestamp_mmss: str, clean_text: str
+) -> str:
+    return hashlib.sha256(
+        f"{speaker_id}:{timestamp_mmss}:{clean_text}".encode()
+    ).hexdigest()[:16]
+
+
 def parse_transcript(path: Path) -> list[Turn]:
     turns: list[Turn] = []
     current_header: re.Match[str] | None = None
@@ -45,16 +54,19 @@ def parse_transcript(path: Path) -> list[Turn]:
         display_name = current_header.group("display_name").strip()
         timestamp_mmss = current_header.group("timestamp")
         raw_text = "\n".join(current_body_lines).strip()
+        clean_text = _clean_text(raw_text)
+        speaker_id = _speaker_id(display_name)
         line_end = current_body_last_line or current_header_line
         turns.append(
             Turn(
                 turn_index=len(turns),
-                speaker_id=_speaker_id(display_name),
+                turn_id=_compute_turn_id(speaker_id, timestamp_mmss, clean_text),
+                speaker_id=speaker_id,
                 display_name=display_name,
                 timestamp_mmss=timestamp_mmss,
                 timestamp_ms=_timestamp_to_ms(timestamp_mmss),
                 raw_text=raw_text,
-                clean_text=_clean_text(raw_text),
+                clean_text=clean_text,
                 line_span=(current_header_line, line_end),
             )
         )

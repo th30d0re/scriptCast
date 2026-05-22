@@ -1,13 +1,19 @@
 speakers:
   emmanuel_theodore:
-    kokoro_voice: am_adam
-    lang_code: a
-    speed: 1.15
-  ai_1:
-    kokoro_voice: af_sky
-    lang_code: a
-    speed: 1.15
-  ai_2:
-    kokoro_voice: am_onyx
-    lang_code: a
-    speed: 1.15
+    name: "Emmanuel Theodore"
+    engine: "elevenlabs"
+    elevenlabs_voice_id: "YjlcD3XHztjJEo2wNszv"
+    character_profile: "Host and author of The Mathematics of Oppression"
+
+  toussaint:
+    name: "Toussaint"
+    engine: "elevenlabs"
+    elevenlabs_voice_id: "VlUmeC1Uzj3NnwiVR9K9"
+    character_profile: "Black male perspective — thoughtful, analytical, grounded"
+
+  aisha:
+    name: "Aisha"
+    engine: "elevenlabs"
+    elevenlabs_voice_id: "u0REnIJvUgcGQYW2Ux8K"
+    speed: 1.04
+    character_profile: "Black female perspective — sharp, insightful, direct"

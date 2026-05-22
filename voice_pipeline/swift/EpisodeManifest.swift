@@ -13,6 +13,7 @@ struct SegmentEntry: Codable, Sendable {
     let chunkIndex: Int
     let segmentWav: String
     let durationMs: Int
+    let speechDurationMs: Int
     let startMs: Int
     let endMs: Int
     let gapAfterMs: Int
@@ -22,6 +23,7 @@ struct SegmentEntry: Codable, Sendable {
         case chunkIndex = "chunk_index"
         case segmentWav = "segment_wav"
         case durationMs = "duration_ms"
+        case speechDurationMs = "speech_duration_ms"
         case startMs = "start_ms"
         case endMs = "end_ms"
         case gapAfterMs = "gap_after_ms"
@@ -33,6 +35,7 @@ struct SegmentEntry: Codable, Sendable {
 
 struct TurnEntry: Codable, Sendable {
     let turnIndex: Int
+    let turnId: String
     let speakerId: String
     let sourceTimestamp: String
     let segments: [SegmentEntry]
@@ -41,6 +44,7 @@ struct TurnEntry: Codable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case turnIndex = "turn_index"
+        case turnId = "turn_id"
         case speakerId = "speaker_id"
         case sourceTimestamp = "source_timestamp"
         case segments
@@ -56,12 +60,16 @@ struct SpeakerEntry: Codable, Sendable {
     let displayName: String
     let voice: String
     let turnCount: Int
+    let engine: String
+    let characterProfile: String?
 
     private enum CodingKeys: String, CodingKey {
         case speakerId = "speaker_id"
         case displayName = "display_name"
         case voice
         case turnCount = "turn_count"
+        case engine
+        case characterProfile = "character_profile"
     }
 }
 
