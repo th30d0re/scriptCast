@@ -3,7 +3,7 @@ speakers:
     name: "Emmanuel Theodore"
     engine: "elevenlabs"
     elevenlabs_voice_id: "YjlcD3XHztjJEo2wNszv"
-    character_profile: "Host and author of The Mathematics of Oppression"
+    character_profile: "Host and author of The Original Power"
 
   toussaint:
     name: "Toussaint"
