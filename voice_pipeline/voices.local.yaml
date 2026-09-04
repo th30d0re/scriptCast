@@ -1,0 +1,27 @@
+# On-device preview voices (MLX Kokoro). No network, no ElevenLabs credits.
+# Use with: python -m voice_pipeline --voices voice_pipeline/voices.local.yaml ...
+# The committed voices.yaml stays the ElevenLabs configuration for final renders.
+speakers:
+  emmanuel_theodore:
+    name: "Emmanuel Theodore"
+    engine: "mlx_kokoro"
+    kokoro_voice: "am_adam"
+    lang_code: "a"
+    speed: 1.0
+    character_profile: "Host and author of The Original Power"
+
+  toussaint:
+    name: "Toussaint"
+    engine: "mlx_kokoro"
+    kokoro_voice: "am_michael"
+    lang_code: "a"
+    speed: 1.0
+    character_profile: "Co-narrator, historical and structural throughline"
+
+  aisha:
+    name: "Aisha"
+    engine: "mlx_kokoro"
+    kokoro_voice: "af_heart"
+    lang_code: "a"
+    speed: 1.04
+    character_profile: "Co-narrator, mathematical and empirical throughline"

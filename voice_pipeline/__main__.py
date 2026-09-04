@@ -192,6 +192,14 @@ def _build_arg_parser() -> argparse.ArgumentParser:
              "installed and running on macOS.",
     )
     parser.add_argument(
+        "--voices",
+        type=Path,
+        default=None,
+        help="Path to a voices YAML. Defaults to voice_pipeline/voices.yaml. "
+             "Use this to render an on-device preview without editing the "
+             "committed ElevenLabs configuration.",
+    )
+    parser.add_argument(
         "--logic-dry-run",
         action="store_true",
         help="Generate the AppleScript for Logic Pro X export but do not execute it. "
@@ -801,7 +809,7 @@ def main() -> None:
     turns = tokenize_markup(parse_transcript(transcript_path))
     turns = _filter_turns(turns, args.max_turns)
 
-    voices_path = Path(__file__).with_name("voices.yaml")
+    voices_path = args.voices or Path(__file__).with_name("voices.yaml")
     voices = load_voices(voices_path)
     _validate_voices(turns, voices)
 

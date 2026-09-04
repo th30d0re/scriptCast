@@ -25,7 +25,7 @@ def load_voices(path: Path) -> dict[str, VoiceConfig]:
         config: dict[str, Any] = raw_config
         engine = str(config.get("engine", "kokoro"))
 
-        if engine == "kokoro":
+        if engine in ("kokoro", "mlx_kokoro"):
             missing = [
                 field for field in ("kokoro_voice", "lang_code")
                 if field not in config
@@ -33,7 +33,7 @@ def load_voices(path: Path) -> dict[str, VoiceConfig]:
             if missing:
                 missing_list = ", ".join(missing)
                 raise ValueError(
-                    f"Speaker '{speaker_id}' (engine='kokoro') is missing "
+                    f"Speaker '{speaker_id}' (engine='{engine}') is missing "
                     f"required field(s): {missing_list}"
                 )
         elif engine == "elevenlabs":
@@ -51,7 +51,7 @@ def load_voices(path: Path) -> dict[str, VoiceConfig]:
         else:
             raise ValueError(
                 f"Speaker '{speaker_id}' has unknown engine '{engine}'. "
-                f"Supported: kokoro, elevenlabs, mlx_chatterbox"
+                f"Supported: kokoro, mlx_kokoro, elevenlabs, mlx_chatterbox"
             )
 
         voices[speaker_id] = VoiceConfig(
