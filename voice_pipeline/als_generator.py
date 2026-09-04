@@ -54,12 +54,46 @@ def _ableton_template_candidates() -> list[Path]:
     return candidates
 
 
+def _force_template_tempo(root: ET.Element, bpm: float) -> None:
+    """Pin the set's tempo to `bpm`, automation included.
+
+    Beat positions here are computed from a fixed BPM. Ableton's stock
+    "Podcast & Radio" template ships a constant automation envelope on the tempo
+    parameter, and automation overrides the manual value, so the set actually
+    runs at that automated tempo. When it disagrees with the BPM used to place
+    clips, every clip's beat length is wrong by the tempo ratio and each one
+    renders with a trailing empty stripe proportional to its own length.
+
+    Setting Manual alone is not enough; the envelope has to agree.
+    """
+    target_ids: set[str] = set()
+    for tempo in root.iter("Tempo"):
+        manual = tempo.find("Manual")
+        if manual is not None:
+            manual.set("Value", _format_number(bpm))
+        target = tempo.find("AutomationTarget")
+        if target is not None and target.attrib.get("Id"):
+            target_ids.add(target.attrib["Id"])
+
+    if not target_ids:
+        return
+
+    for envelope in root.iter("AutomationEnvelope"):
+        pointee = envelope.find(".//PointeeId")
+        if pointee is None or pointee.attrib.get("Value") not in target_ids:
+            continue
+        for event in envelope.iter("FloatEvent"):
+            event.set("Value", _format_number(bpm))
+
+
 def _load_template_root() -> ET.Element:
     for template_path in _ableton_template_candidates():
         if not template_path.exists():
             continue
         with gzip.open(template_path, "rb") as template_file:
-            return ET.fromstring(template_file.read())
+            root = ET.fromstring(template_file.read())
+        _force_template_tempo(root, _BPM)
+        return root
 
     checked = ", ".join(str(path) for path in _ableton_template_candidates())
     raise RuntimeError(

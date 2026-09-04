@@ -30,15 +30,28 @@ def _clean_text(raw_text: str) -> str:
 
 
 def _compute_turn_id(
-    speaker_id: str, timestamp_mmss: str, clean_text: str
+    speaker_id: str, clean_text: str, occurrence: int = 0
 ) -> str:
-    return hashlib.sha256(
-        f"{speaker_id}:{timestamp_mmss}:{clean_text}".encode()
-    ).hexdigest()[:16]
+    """Stable identity for a turn: who says it and what they say.
+
+    The timestamp is deliberately excluded. It is a source reference, not part
+    of the content, and inter-turn spacing comes from --gap-ms rather than from
+    these values. Including it meant that inserting one turn near the top of a
+    script renumbered every timestamp below it, changed every turn_id, and
+    forced a full re-synthesis of an episode where only one turn was new.
+
+    `occurrence` disambiguates a speaker repeating a line verbatim, so ids stay
+    unique without reintroducing positional coupling.
+    """
+    payload = f"{speaker_id}:{clean_text}"
+    if occurrence:
+        payload = f"{payload}:{occurrence}"
+    return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 
 def parse_transcript(path: Path) -> list[Turn]:
     turns: list[Turn] = []
+    seen_turns: dict[tuple[str, str], int] = {}
     current_header: re.Match[str] | None = None
     current_header_line = 0
     current_body_lines: list[str] = []
@@ -57,10 +70,14 @@ def parse_transcript(path: Path) -> list[Turn]:
         clean_text = _clean_text(raw_text)
         speaker_id = _speaker_id(display_name)
         line_end = current_body_last_line or current_header_line
+        key = (speaker_id, clean_text)
+        occurrence = seen_turns.get(key, 0)
+        seen_turns[key] = occurrence + 1
+
         turns.append(
             Turn(
                 turn_index=len(turns),
-                turn_id=_compute_turn_id(speaker_id, timestamp_mmss, clean_text),
+                turn_id=_compute_turn_id(speaker_id, clean_text, occurrence),
                 speaker_id=speaker_id,
                 display_name=display_name,
                 timestamp_mmss=timestamp_mmss,

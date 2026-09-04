@@ -45,6 +45,7 @@ _DEFAULT_MODEL = "prince-canuma/Kokoro-82M"
 _DEFAULT_ENGINE = "mlx_kokoro"
 _TARGET_SAMPLE_RATE = 48000
 _DEFAULT_ELEVENLABS_MODEL = "eleven_multilingual_v2"
+_DEFAULT_CHATTERBOX_MODEL = "mlx-community/chatterbox-multilingual-v3"
 
 
 @dataclass(frozen=True)
@@ -190,6 +191,15 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Export to Logic Pro X via AppleScript. Requires Logic Pro X to be "
              "installed and running on macOS.",
+    )
+    parser.add_argument(
+        "--tail-ms",
+        type=int,
+        default=150,
+        help="Grace period in ms added after detected speech end, so trailing "
+             "consonants and breath are not clipped. Capped at the real clip "
+             "length. Applies to clip length and scheduling in the ALS, the "
+             "manifest, and any stitched audio.",
     )
     parser.add_argument(
         "--voices",
@@ -357,6 +367,7 @@ def _segment_from_wav(
     speaker_id: str,
     gap_after_ms: int,
     speech_threshold: float = 0.04,
+    tail_ms: int = 150,
 ) -> SegmentResult:
     info = soundfile.info(wav_path)
     duration_ms = int(info.frames / info.samplerate * 1000)
@@ -384,6 +395,7 @@ def _load_completed_turn_segments(
     jobs: list[_SpeechJob],
     output_path: Path,
     speech_threshold: float = 0.04,
+    tail_ms: int = 150,
 ) -> list[SegmentResult] | None:
     if not jobs:
         return []
@@ -416,6 +428,7 @@ def _load_completed_turn_segments(
             turn.speaker_id,
             gap_after_ms,
             speech_threshold,
+            tail_ms,
         )
         for chunk_index, gap_after_ms, wav_path in expected_paths
     ]
@@ -460,6 +473,7 @@ async def render_loop(
     resume: bool = False,
     sample_budget_ms: int | None = None,
     speech_threshold: float = 0.04,
+    tail_ms: int = 150,
     trim_edges: bool = True,
     regenerate_turn_indices: set[int] | None = None,
     regenerate_turn_ids: set[str] | None = None,
@@ -542,6 +556,7 @@ async def render_loop(
                 turn.speaker_id,
                 job.gap_after_ms,
                 speech_threshold,
+                tail_ms,
                 trim_edges,
             )
             segment_results.append(segment_result)
@@ -571,10 +586,14 @@ def _engine_for_key(
             f"Unknown engine {engine_key!r}. Available engine keys: {available}"
         )
 
-    # If the model_id looks like a HuggingFace repo (contains "/") and the engine
-    # is ElevenLabs, substitute the default ElevenLabs model.
+    # --model carries the Kokoro default, so any engine that needs a different
+    # checkpoint substitutes its own here. Without this, a mixed-engine voices
+    # file hands every engine the Kokoro repo and the non-Kokoro ones fail on a
+    # missing model.safetensors.
     if engine_key == "elevenlabs" and "/" in model_id:
         model_id = _DEFAULT_ELEVENLABS_MODEL
+    elif engine_key == "mlx_chatterbox" and "Kokoro" in model_id:
+        model_id = _DEFAULT_CHATTERBOX_MODEL
 
     try:
         return engine_class(model_id, trim_edges=trim_edges)
@@ -926,6 +945,7 @@ def main() -> None:
             resume=resume,
             sample_budget_ms=sample_budget,
             speech_threshold=args.speech_threshold,
+            tail_ms=args.tail_ms,
             trim_edges=not args.no_trim,
             regenerate_turn_indices=regenerate_turn_indices,
             regenerate_turn_ids=regenerate_turn_ids,

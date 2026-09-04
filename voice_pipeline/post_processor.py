@@ -52,8 +52,18 @@ def _trim_edge_silence(audio: numpy.ndarray, sample_rate: int) -> numpy.ndarray:
 
 
 def _measure_speech_duration(
-    audio: numpy.ndarray, sample_rate: int, speech_threshold: float = 0.04
+    audio: numpy.ndarray,
+    sample_rate: int,
+    speech_threshold: float = 0.04,
+    tail_ms: int = 0,
 ) -> int:
+    """Milliseconds to the end of speech, plus `tail_ms` of grace.
+
+    The RMS detector cuts at the last frame above threshold, which lands
+    mid-decay on trailing consonants and breath and audibly clips the word.
+    `tail_ms` restores that decay. The result is capped at the real audio
+    length, so this can never schedule past the end of the file.
+    """
     if audio.size == 0:
         return 0
 
@@ -71,7 +81,7 @@ def _measure_speech_duration(
     if last_voiced is None:
         return int(len(audio) / sample_rate * 1000)
 
-    measured_ms = (last_voiced + 1) * _FRAME_MS
+    measured_ms = (last_voiced + 1) * _FRAME_MS + tail_ms
     duration_ms = int(len(audio) / sample_rate * 1000)
     return min(measured_ms, duration_ms)
 
@@ -87,6 +97,7 @@ async def process_segment(
     speaker_id: str,
     gap_after_ms: int,
     speech_threshold: float = 0.04,
+    tail_ms: int = 0,
     trim_edges: bool = True,
 ) -> SegmentResult:
     if audio.size == 0:
@@ -110,7 +121,7 @@ async def process_segment(
 
     duration_ms = int(len(processed_audio) / target_rate * 1000)
     speech_duration_ms = _measure_speech_duration(
-        processed_audio, target_rate, speech_threshold
+        processed_audio, target_rate, speech_threshold, tail_ms
     )
     checksum = hashlib.sha256(wav_path.read_bytes()).hexdigest()
 

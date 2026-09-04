@@ -1,6 +1,9 @@
-# On-device preview voices (MLX Kokoro). No network, no ElevenLabs credits.
+# On-device preview voices. No network, no ElevenLabs credits.
 # Use with: python -m voice_pipeline --voices voice_pipeline/voices.local.yaml ...
 # The committed voices.yaml stays the ElevenLabs configuration for final renders.
+#
+# Toussaint and Aisha use Emmanuel's own cloned references in voices/ via
+# MLX Chatterbox. Emmanuel has no reference file, so he runs on MLX Kokoro.
 speakers:
   emmanuel_theodore:
     name: "Emmanuel Theodore"
@@ -12,16 +15,14 @@ speakers:
 
   toussaint:
     name: "Toussaint"
-    engine: "mlx_kokoro"
-    kokoro_voice: "am_michael"
-    lang_code: "a"
+    engine: "mlx_chatterbox"
+    reference_audio: "voices/toussaint_reference.wav"
     speed: 1.0
     character_profile: "Co-narrator, historical and structural throughline"
 
   aisha:
     name: "Aisha"
-    engine: "mlx_kokoro"
-    kokoro_voice: "af_heart"
-    lang_code: "a"
-    speed: 1.04
+    engine: "mlx_chatterbox"
+    reference_audio: "voices/aisha_reference.wav"
+    speed: 1.0
     character_profile: "Co-narrator, mathematical and empirical throughline"
