@@ -48,9 +48,10 @@ async def _fake_process_segment(
     speaker_id: str,
     gap_after_ms: int,
     speech_threshold: float = 0.04,
+    tail_ms: int = 0,
     trim_edges: bool = True,
 ) -> SegmentResult:
-    del audio, source_rate, speech_threshold, trim_edges
+    del audio, source_rate, speech_threshold, tail_ms, trim_edges
     wav_path = (
         output_path
         / "Samples"

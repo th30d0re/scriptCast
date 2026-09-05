@@ -258,10 +258,25 @@ def _has_existing_output(episode_out_dir: Path) -> bool:
     )
 
 
-def _prepare_episode_output(episode_out_dir: Path, overwrite: bool) -> bool:
+def _prepare_episode_output(
+    episode_out_dir: Path, overwrite: bool, incremental: bool = False
+) -> bool:
+    """Decide whether to resume, wipe, or ask, for an episode that already exists.
+
+    `incremental` is set by --precision-insert and --regenerate-turns. Those flags
+    already state exactly which turns to synthesize, so the existing output is the
+    input they operate on. Wiping it defeats them: --overwrite calls rmtree below,
+    and in a non-interactive shell --overwrite was the only way past the prompt, so
+    an incremental run silently degraded to a full re-render and deleted every clip
+    it was supposed to keep. Incremental runs therefore resume unconditionally.
+    """
     if not _has_existing_output(episode_out_dir):
         episode_out_dir.mkdir(parents=True, exist_ok=True)
         return False
+
+    if incremental:
+        episode_out_dir.mkdir(parents=True, exist_ok=True)
+        return True
 
     if overwrite:
         shutil.rmtree(episode_out_dir)
@@ -556,8 +571,8 @@ async def render_loop(
                 turn.speaker_id,
                 job.gap_after_ms,
                 speech_threshold,
-                tail_ms,
-                trim_edges,
+                tail_ms=tail_ms,
+                trim_edges=trim_edges,
             )
             segment_results.append(segment_result)
             emitted_ms += segment_result.duration_ms + segment_result.gap_after_ms
@@ -915,7 +930,10 @@ def main() -> None:
             print("Precision insert: no changes detected. Nothing to do.")
             return
 
-    resume = _prepare_episode_output(episode_out_dir, args.overwrite)
+    incremental = bool(args.precision_insert or args.regenerate_turns)
+    resume = _prepare_episode_output(
+        episode_out_dir, args.overwrite, incremental=incremental
+    )
     # If regenerating specific turns or doing precision insert, force resume mode
     if regenerate_turn_indices or use_precision_insert:
         resume = True
