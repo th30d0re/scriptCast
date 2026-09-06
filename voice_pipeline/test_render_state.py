@@ -135,7 +135,7 @@ class DetectChangedTurnsTests(TestCase):
             ],
             segments=[],
         )
-        self.assertEqual(detect_changed_turns(turns, previous), [0])
+        self.assertEqual(detect_changed_turns(turns, previous), ["abc123"])
 
     def test_new_turn(self) -> None:
         turns = [
@@ -170,7 +170,7 @@ class DetectChangedTurnsTests(TestCase):
             turns=[compute_turn_fingerprint(turns[0])],
             segments=[],
         )
-        self.assertEqual(detect_changed_turns(turns, previous), [1])
+        self.assertEqual(detect_changed_turns(turns, previous), ["def456"])
 
     def test_deleted_turn(self) -> None:
         turns = [

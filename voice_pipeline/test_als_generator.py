@@ -176,11 +176,18 @@ class GenerateAlsTests(TestCase):
             generate_als(segments, output_path)
             self.assertTrue(output_path.exists())
 
-            # Generate again — should create a backup
+            # Generate again — should create a backup under _backups/
             generate_als(segments, output_path)
-            backups = list(project_root.glob("*.backup_*.als"))
+            self.assertEqual(list(project_root.glob("*.backup_*.als")), [])
+            backups = list((project_root / "_backups").glob("*.backup_*.als"))
             self.assertEqual(len(backups), 1)
             self.assertTrue(backups[0].name.startswith("ATO_EP0.backup_"))
+
+            # The backup sits one level deeper, so its relative sample paths
+            # are reparented and still resolve.
+            xml = gzip.open(backups[0], "rb").read().decode("utf-8")
+            self.assertIn('<RelativePath Value="../Samples/', xml)
+            self.assertNotIn('<RelativePath Value="Samples/', xml)
 
     def _segment(
         self,

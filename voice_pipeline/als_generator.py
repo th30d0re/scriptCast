@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import gzip
 import os
+import re
 import shutil
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -353,6 +354,46 @@ def _set_master_tempo(root: ET.Element) -> None:
         tempo_manual.attrib["Value"] = str(_BPM)
 
 
+
+BACKUP_DIR_NAME = "_backups"
+
+
+def _reparent_sample_paths(als_path: Path, prefix: str = "../") -> None:
+    """Prefix every project-relative sample path inside an .als.
+
+    A clip stores its sample twice: `RelativePath`, resolved against the folder
+    holding the .als, and an absolute `Path`. Moving a set one directory deeper
+    leaves the relative form pointing at a Samples folder that is not there, so
+    Ableton falls back to the absolute path or asks the user to locate the file.
+    Prefixing keeps the relative form correct from the new location.
+    """
+    xml = gzip.open(als_path, "rb").read().decode("utf-8")
+    updated = re.sub(
+        r'(<RelativePath Value=")(Samples/)',
+        lambda m: m.group(1) + prefix + m.group(2),
+        xml,
+    )
+    if updated != xml:
+        with gzip.open(als_path, "wb") as handle:
+            handle.write(updated.encode("utf-8"))
+
+
+def _write_backup(output_path: Path) -> Path:
+    """Copy the current .als into the project's `_backups/` folder.
+
+    Ableton lists every .als beside the set in its own browser, so a run of
+    timestamped backups sitting in the project root buries the set the editor
+    actually opens. They go one level down instead, with their sample paths
+    reparented so an old backup still opens and finds its audio.
+    """
+    backup_dir = output_path.parent / BACKUP_DIR_NAME
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = backup_dir / f"{output_path.stem}.backup_{timestamp}.als"
+    shutil.copy2(output_path, backup_path)
+    _reparent_sample_paths(backup_path)
+    return backup_path
+
 def generate_als(
     segment_results: list[SegmentResult],
     output_path: Path,
@@ -424,9 +465,7 @@ def generate_als(
 
     # Backup existing ALS before overwriting
     if output_path.exists():
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = output_path.with_suffix(f".backup_{timestamp}.als")
-        shutil.copy2(output_path, backup_path)
+        _write_backup(output_path)
 
     with gzip.open(output_path, "wb") as als_file:
         als_file.write(xml_bytes)
