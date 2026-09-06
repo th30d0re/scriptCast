@@ -165,9 +165,20 @@ def _interpolate(old_ms: int, rows) -> int:
     return prev["new_ms"] + (old_ms - prev["old_ms"])
 
 
-def rewrite_shotlist(shotlist: Path, rows) -> tuple[int, list[str]]:
+def rewrite_shotlist(
+    shotlist: Path, rows, tolerance_s: int = 30
+) -> tuple[int, list[str], list[str]]:
+    """Remap anchors and hold times onto the new timeline.
+
+    An anchor is a join key: a speaker name plus that turn's timestamp. It is
+    remapped only when it resolves to a real turn by that speaker within
+    `tolerance_s`. Anything further away is a broken reference that predates
+    this run, so it is left alone and reported rather than snapped to whatever
+    turn happens to be nearest.
+    """
     text = shotlist.read_text()
     warnings: list[str] = []
+    unresolved: list[str] = []
     by_speaker: dict[str, list] = {}
     for row in rows:
         by_speaker.setdefault(row["display_name"], []).append(row)
@@ -177,14 +188,20 @@ def rewrite_shotlist(shotlist: Path, rows) -> tuple[int, list[str]]:
         old_ms = _to_ms(match.group("ts"))
         candidates = by_speaker.get(name)
         if not candidates:
-            warnings.append(f"anchor names unknown speaker {name!r}")
+            unresolved.append(f"`{name} ({match.group('ts')})` names an unknown speaker")
             return match.group(0)
         best = min(candidates, key=lambda r: abs(r["old_ms"] - old_ms))
         drift = abs(best["old_ms"] - old_ms) // 1000
-        if drift > 2:
+        if drift > tolerance_s:
+            unresolved.append(
+                f"`{name} ({match.group('ts')})` matches no turn within "
+                f"{tolerance_s}s (nearest is {best['old']}, {drift}s away)"
+            )
+            return match.group(0)
+        if drift:
             warnings.append(
-                f"anchor `{name} ({match.group('ts')})` snapped to "
-                f"{best['old']} -> {best['new']} ({drift}s drift)"
+                f"`{name} ({match.group('ts')})` -> {best['new']} "
+                f"(was {best['old']}, {drift}s drift)"
             )
         return f"`{name} ({best['new']})`"
 
@@ -194,7 +211,7 @@ def rewrite_shotlist(shotlist: Path, rows) -> tuple[int, list[str]]:
     text, anchors = _ANCHOR_RE.subn(fix_anchor, text)
     text, holds = _HOLD_RE.subn(fix_hold, text)
     shotlist.write_text(text)
-    return anchors + holds, warnings
+    return anchors + holds, warnings, unresolved
 
 
 def main() -> int:
@@ -208,7 +225,27 @@ def main() -> int:
                     help="Write the files. Without it, report only.")
     ap.add_argument("--map-out", type=Path, default=None,
                     help="Write the old-to-new mapping as JSON.")
+    ap.add_argument("--map-in", type=Path, default=None,
+                    help="Remap a shot list from a mapping written by an "
+                         "earlier run, after the script itself was rewritten.")
+    ap.add_argument("--tolerance-s", type=int, default=30,
+                    help="How far an anchor may sit from its turn and still "
+                         "count as naming it.")
     args = ap.parse_args()
+
+    if args.map_in:
+        rows = json.loads(args.map_in.read_text())
+        if not args.shotlist:
+            raise SystemExit("--map-in only makes sense with --shotlist")
+        count, warnings, unresolved = rewrite_shotlist(
+            args.shotlist, rows, args.tolerance_s
+        )
+        print(f"shotlist: rewrote {count} references")
+        for warning in warnings:
+            print(f"  moved: {warning}")
+        for item in unresolved:
+            print(f"  UNRESOLVED: {item}")
+        return 1 if unresolved else 0
 
     rows, total_ms, estimated, rates, fallback = retime(
         args.script, args.manifest, args.gap_ms
@@ -233,10 +270,15 @@ def main() -> int:
 
     print(f"script: rewrote {rewrite_script(args.script, rows)} headers")
     if args.shotlist:
-        count, warnings = rewrite_shotlist(args.shotlist, rows)
+        count, warnings, unresolved = rewrite_shotlist(
+            args.shotlist, rows, args.tolerance_s
+        )
         print(f"shotlist: rewrote {count} references")
         for warning in warnings:
-            print(f"  warn: {warning}")
+            print(f"  moved: {warning}")
+        for item in unresolved:
+            print(f"  UNRESOLVED: {item}")
+        return 1 if unresolved else 0
     return 0
 
 
