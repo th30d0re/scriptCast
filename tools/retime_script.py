@@ -37,6 +37,7 @@ _HEADER_RE = re.compile(r"^(?P<name>.+?) \((?P<ts>\d{1,2}:\d{2})\)\s*$")
 _ANCHOR_RE = re.compile(r"`(?P<name>[^`(]+?) \((?P<ts>\d{1,2}:\d{2})\)`")
 _HOLD_RE = re.compile(r"(?P<lead>\*\*Hold:\*\* through )(?P<ts>\d{1,2}:\d{2})")
 _DEFAULT_WPS = 2.55
+_RATES_PATH = Path(__file__).resolve().parent.parent / "voice_pipeline" / "speaker_rates.json"
 
 
 def _mmss(ms: int) -> str:
@@ -72,6 +73,29 @@ def _load_measured(manifest_path: Path | None) -> dict[str, int]:
     }
 
 
+def _load_known_rates() -> dict[str, float]:
+    """Speaker rates measured on earlier episodes."""
+    if not _RATES_PATH.exists():
+        return {}
+    try:
+        return {k: float(v) for k, v in json.loads(_RATES_PATH.read_text()).items()}
+    except (ValueError, TypeError):
+        return {}
+
+
+def _save_known_rates(rates: dict[str, float]) -> None:
+    """Carry this episode's measured rates forward.
+
+    A script with no audio yet has nothing to calibrate against, and the same
+    three voices read every episode. Persisting what the last render measured
+    means a brand-new script gets timestamps within a second of where its audio
+    will land, instead of a generic words-per-second guess.
+    """
+    known = _load_known_rates()
+    known.update({k: round(v, 4) for k, v in rates.items()})
+    _RATES_PATH.write_text(json.dumps(known, indent=1, sort_keys=True) + "\n")
+
+
 def _calibrate(turns, measured: dict[str, int]) -> dict[str, float]:
     """Words per second per speaker, from turns whose audio exists."""
     totals: dict[str, list[int]] = {}
@@ -92,6 +116,11 @@ def retime(script: Path, manifest: Path | None, gap_ms: int):
     turns = tokenize_markup(parse_transcript(script))
     measured = _load_measured(manifest)
     rates = _calibrate(turns, measured)
+    if rates:
+        _save_known_rates(rates)
+    # A speaker with no audio in this episode still has a rate from the last
+    # one, since the same voices read every episode.
+    rates = {**_load_known_rates(), **rates}
     fallback = (
         sum(rates.values()) / len(rates) if rates else _DEFAULT_WPS
     )
