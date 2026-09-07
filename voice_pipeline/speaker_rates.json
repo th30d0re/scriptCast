@@ -1,5 +1,14 @@
 {
- "aisha": 2.8956,
- "emmanuel_theodore": 3.3316,
- "toussaint": 2.8341
+ "aisha": {
+  "ms_per_mark": 359.85,
+  "ms_per_word": 302.51
+ },
+ "emmanuel_theodore": {
+  "ms_per_mark": 466.13,
+  "ms_per_word": 240.78
+ },
+ "toussaint": {
+  "ms_per_mark": 655.82,
+  "ms_per_word": 238.95
+ }
 }

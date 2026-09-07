@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from voice_pipeline.markup import tokenize_markup
 from voice_pipeline.parser import parse_transcript
 
+_MARK_RE = re.compile(r"[.,;:]")
 _HEADER_RE = re.compile(r"^(?P<name>.+?) \((?P<ts>\d{1,2}:\d{2})\)\s*$")
 _ANCHOR_RE = re.compile(r"`(?P<name>[^`(]+?) \((?P<ts>\d{1,2}:\d{2})\)`")
 _HOLD_RE = re.compile(r"(?P<lead>\*\*Hold:\*\* through )(?P<ts>\d{1,2}:\d{2})")
@@ -50,16 +51,24 @@ def _to_ms(mmss: str) -> int:
     return int(m) * 60_000 + int(s) * 1_000
 
 
-def _turn_speech(turn) -> tuple[int, int]:
-    """(word count, silence ms) for one tokenized turn."""
+def _turn_speech(turn) -> tuple[int, int, int]:
+    """(word count, punctuation marks, silence ms) for one tokenized turn.
+
+    Punctuation is counted because it costs real time. A comma-heavy list reads
+    with a pause at every mark, so a words-only model calls it over-long when it
+    is simply being read correctly.
+    """
     words = 0
+    marks = 0
     silence = 0
     for chunk in turn.markup_chunks:
         if chunk.kind == "speech":
-            words += len((chunk.text or "").split())
+            text = chunk.text or ""
+            words += len(text.split())
+            marks += len(_MARK_RE.findall(text))
         elif chunk.kind == "silence":
             silence += chunk.duration_ms or 0
-    return words, silence
+    return words, marks, silence
 
 
 def _load_measured(manifest_path: Path | None) -> dict[str, int]:
@@ -73,43 +82,92 @@ def _load_measured(manifest_path: Path | None) -> dict[str, int]:
     }
 
 
-def _load_known_rates() -> dict[str, float]:
-    """Speaker rates measured on earlier episodes."""
+def _load_known_rates() -> dict[str, tuple[float, float]]:
+    """Per-speaker (ms per word, ms per mark) measured on earlier episodes."""
     if not _RATES_PATH.exists():
         return {}
     try:
-        return {k: float(v) for k, v in json.loads(_RATES_PATH.read_text()).items()}
-    except (ValueError, TypeError):
+        raw = json.loads(_RATES_PATH.read_text())
+    except ValueError:
         return {}
+    known: dict[str, tuple[float, float]] = {}
+    for speaker, value in raw.items():
+        if isinstance(value, dict):
+            known[speaker] = (
+                float(value["ms_per_word"]), float(value.get("ms_per_mark", 0.0))
+            )
+        else:  # older files stored a bare words-per-second figure
+            known[speaker] = (1000.0 / float(value), 0.0)
+    return known
 
 
-def _save_known_rates(rates: dict[str, float]) -> None:
-    """Carry this episode's measured rates forward.
+def _save_known_rates(rates: dict[str, tuple[float, float]]) -> None:
+    """Carry this episode's measured coefficients forward.
 
     A script with no audio yet has nothing to calibrate against, and the same
-    three voices read every episode. Persisting what the last render measured
-    means a brand-new script gets timestamps within a second of where its audio
-    will land, instead of a generic words-per-second guess.
+    voices read every episode. Persisting what the last render measured means a
+    brand-new script gets timestamps close to where its audio will actually
+    land, instead of a generic words-per-second guess.
     """
-    known = _load_known_rates()
-    known.update({k: round(v, 4) for k, v in rates.items()})
+    known = {
+        speaker: {"ms_per_word": round(w, 2), "ms_per_mark": round(m, 2)}
+        for speaker, (w, m) in _load_known_rates().items()
+    }
+    known.update(
+        {
+            speaker: {"ms_per_word": round(w, 2), "ms_per_mark": round(m, 2)}
+            for speaker, (w, m) in rates.items()
+        }
+    )
     _RATES_PATH.write_text(json.dumps(known, indent=1, sort_keys=True) + "\n")
 
 
-def _calibrate(turns, measured: dict[str, int]) -> dict[str, float]:
-    """Words per second per speaker, from turns whose audio exists."""
-    totals: dict[str, list[int]] = {}
+_MIN_FIT_TURNS = 15
+
+
+def _calibrate(turns, measured: dict[str, int]) -> dict[str, tuple[float, float]]:
+    """Least-squares (ms per word, ms per mark) per speaker.
+
+    Duration is modelled as `a*words + b*marks` with no intercept and fitted on
+    turns whose audio exists. Fitting the two together matters: hold the word
+    rate fixed and any pause allowance is absorbed into it, which is how a
+    words-only model ends up flagging a correctly-read list as too long. A
+    speaker with too few measured turns falls back to a words-only rate.
+    """
+    samples: dict[str, list[tuple[int, int, int]]] = {}
     for turn in turns:
         if turn.turn_id not in measured:
             continue
-        words, silence = _turn_speech(turn)
+        words, marks, silence = _turn_speech(turn)
         speech_ms = measured[turn.turn_id] - silence
         if words < 5 or speech_ms <= 0:
             continue
-        bucket = totals.setdefault(turn.speaker_id, [0, 0])
-        bucket[0] += words
-        bucket[1] += speech_ms
-    return {sid: w / (ms / 1000.0) for sid, (w, ms) in totals.items() if ms}
+        samples.setdefault(turn.speaker_id, []).append((speech_ms, words, marks))
+
+    fitted: dict[str, tuple[float, float]] = {}
+    for speaker, rows in samples.items():
+        total_ms = sum(d for d, _, _ in rows)
+        total_words = sum(w for _, w, _ in rows)
+        if len(rows) < _MIN_FIT_TURNS:
+            fitted[speaker] = (total_ms / total_words, 0.0)
+            continue
+        sxx = sum(w * w for _, w, _ in rows)
+        smm = sum(m * m for _, _, m in rows)
+        sxm = sum(w * m for _, w, m in rows)
+        sxy = sum(w * d for d, w, _ in rows)
+        smy = sum(m * d for d, _, m in rows)
+        det = sxx * smm - sxm * sxm
+        if det <= 0:
+            fitted[speaker] = (total_ms / total_words, 0.0)
+            continue
+        per_word = (smm * sxy - sxm * smy) / det
+        per_mark = (sxx * smy - sxm * sxy) / det
+        # A negative coefficient means the fit is not describing speech.
+        if per_word <= 0 or per_mark < 0:
+            fitted[speaker] = (total_ms / total_words, 0.0)
+            continue
+        fitted[speaker] = (per_word, per_mark)
+    return fitted
 
 
 def retime(script: Path, manifest: Path | None, gap_ms: int):
@@ -118,24 +176,28 @@ def retime(script: Path, manifest: Path | None, gap_ms: int):
     rates = _calibrate(turns, measured)
     if rates:
         _save_known_rates(rates)
-    # A speaker with no audio in this episode still has a rate from the last
-    # one, since the same voices read every episode.
+    # A speaker with no audio in this episode still has coefficients from the
+    # last one, since the same voices read every episode.
     rates = {**_load_known_rates(), **rates}
-    fallback = (
-        sum(rates.values()) / len(rates) if rates else _DEFAULT_WPS
-    )
+    if rates:
+        fallback = (
+            sum(w for w, _ in rates.values()) / len(rates),
+            sum(m for _, m in rates.values()) / len(rates),
+        )
+    else:
+        fallback = (1000.0 / _DEFAULT_WPS, 0.0)
 
     cursor = 0
     rows = []
     estimated = 0
     for turn in turns:
-        words, silence = _turn_speech(turn)
+        words, marks, silence = _turn_speech(turn)
         if turn.turn_id in measured:
             duration = measured[turn.turn_id]
         else:
             estimated += 1
-            wps = rates.get(turn.speaker_id, fallback)
-            duration = int(round(words / wps * 1000)) + silence
+            per_word, per_mark = rates.get(turn.speaker_id, fallback)
+            duration = int(round(words * per_word + marks * per_mark)) + silence
         rows.append(
             {
                 "turn_index": turn.turn_index,
@@ -282,8 +344,9 @@ def main() -> int:
     moved = [r for r in rows if r["old"] != r["new"]]
 
     print(f"turns: {len(rows)}  measured: {len(rows) - estimated}  estimated: {estimated}")
-    print("rate wps: " + ", ".join(f"{k}={v:.2f}" for k, v in sorted(rates.items()))
-          + f"  fallback={fallback:.2f}")
+    print("rates: " + ", ".join(
+        f"{k}={w:.0f}ms/word+{m:.0f}ms/mark" for k, (w, m) in sorted(rates.items())
+    ))
     print(f"runtime: {_mmss(total_ms)}  timestamps changed: {len(moved)}")
     for row in moved[:5]:
         print(f"  turn {row['turn_index']:>3} {row['display_name']}: {row['old']} -> {row['new']}")
