@@ -71,6 +71,8 @@ def main() -> int:
     ap.add_argument("references", nargs="+", type=Path)
     ap.add_argument("--speaker", default="candidate")
     ap.add_argument("--engine", default="mlx_chatterbox")
+    ap.add_argument("--model-id", default=None,
+                    help="Engine model repo. Defaults to the pipeline's own.")
     ap.add_argument("--temperature", default="0.6",
                     help="Comma-separated values to sweep.")
     ap.add_argument("--cfg-weight", type=float, default=0.7)
@@ -85,7 +87,9 @@ def main() -> int:
     import mlx_whisper
     from verify_render import _MODELS
 
-    engine = ENGINE_REGISTRY[args.engine]()
+    from voice_pipeline.__main__ import _DEFAULT_CHATTERBOX_MODEL
+    model_id = args.model_id or _DEFAULT_CHATTERBOX_MODEL
+    engine = ENGINE_REGISTRY[args.engine](model_id)
     temperatures = [float(x) for x in args.temperature.split(",")]
     out_root = args.keep or Path(tempfile.mkdtemp(prefix="audition_"))
     out_root.mkdir(parents=True, exist_ok=True)
