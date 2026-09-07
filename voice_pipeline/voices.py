@@ -65,6 +65,8 @@ def load_voices(path: Path) -> dict[str, VoiceConfig]:
             reference_audio=str(config["reference_audio"]) if "reference_audio" in config else None,
             character_profile=str(config.get("character_profile", "")),
             exaggeration=float(config.get("exaggeration", 0.0)),
+            temperature=float(config.get("temperature", 0.6)),
+            cfg_weight=float(config.get("cfg_weight", 0.7)),
         )
 
     return voices

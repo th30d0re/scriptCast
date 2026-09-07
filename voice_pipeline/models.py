@@ -18,6 +18,12 @@ class VoiceConfig:
     reference_audio: str | None = None
     character_profile: str = ""
     exaggeration: float = 0.0
+    # Chatterbox sampling. The upstream defaults (temperature 0.8, cfg_weight
+    # 0.5) are tuned for expressive one-off generation. Reading a fixed script
+    # wants faithfulness instead: lower temperature narrows the sampling, higher
+    # cfg_weight holds the output closer to the text it was given.
+    temperature: float = 0.6
+    cfg_weight: float = 0.7
 
 
 @dataclass

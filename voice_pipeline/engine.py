@@ -227,8 +227,8 @@ class MLXChatterboxEngine(TTSEngine):
                 audio_prompt=self._reference_cache[speaker_id],
                 audio_prompt_sr=self.sample_rate,
                 exaggeration=voice_config.exaggeration,
-                cfg_weight=0.5,
-                temperature=0.8,
+                cfg_weight=voice_config.cfg_weight,
+                temperature=voice_config.temperature,
                 stream=False,
             )
         )
