@@ -46,6 +46,7 @@ _DEFAULT_ENGINE = "mlx_kokoro"
 _TARGET_SAMPLE_RATE = 48000
 _DEFAULT_ELEVENLABS_MODEL = "eleven_multilingual_v2"
 _DEFAULT_CHATTERBOX_MODEL = "mlx-community/chatterbox-multilingual-v3"
+_DEFAULT_OMNIVOICE_MODEL = "k2-fsa/OmniVoice"
 
 
 @dataclass(frozen=True)
@@ -627,6 +628,8 @@ def _engine_for_key(
         model_id = _DEFAULT_ELEVENLABS_MODEL
     elif engine_key == "mlx_chatterbox" and "Kokoro" in model_id:
         model_id = _DEFAULT_CHATTERBOX_MODEL
+    elif engine_key == "omnivoice" and "Kokoro" in model_id:
+        model_id = _DEFAULT_OMNIVOICE_MODEL
 
     try:
         return engine_class(model_id, trim_edges=trim_edges)
