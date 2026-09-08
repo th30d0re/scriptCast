@@ -478,6 +478,15 @@ def _print_turn_progress(
     )
 
 
+
+def _turn_is_emphasised(turn) -> bool:
+    """Whether the script marked this turn [emphasis]."""
+    return any(
+        chunk.kind == "annotation" and chunk.tag == "emphasis"
+        for chunk in turn.markup_chunks
+    )
+
+
 async def render_loop(
     turns: list[Turn],
     engines: dict[str, TTSEngine],
@@ -549,10 +558,19 @@ async def render_loop(
                 stop_rendering = True
                 break
 
-            raw_audio = await engine.synthesize_chunk(
-                job.text,
-                voice_config,
-            )
+            # A turn marked [emphasis] renders from the speaker's expressive
+            # reference where the engine has one. The tag survives into
+            # clean_text, so adding or removing it changes the turn_id and the
+            # turn re-renders on its own.
+            if getattr(engine, "supports_expressive", False) and _turn_is_emphasised(turn):
+                raw_audio = await engine.synthesize_chunk(
+                    job.text, voice_config, expressive=True
+                )
+            else:
+                raw_audio = await engine.synthesize_chunk(
+                    job.text,
+                    voice_config,
+                )
             raw_audio_array = numpy.asarray(raw_audio)
             if raw_audio_array.size == 0:
                 raise RuntimeError(

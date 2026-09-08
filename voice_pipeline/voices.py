@@ -48,10 +48,26 @@ def load_voices(path: Path) -> dict[str, VoiceConfig]:
                     f"Speaker '{speaker_id}' (engine='mlx_chatterbox') is missing "
                     f"required field: reference_audio"
                 )
+        elif engine == "omnivoice":
+            for field in ("reference_audio", "reference_text"):
+                if field not in config:
+                    raise ValueError(
+                        f"Speaker '{speaker_id}' (engine='omnivoice') is missing "
+                        f"required field: {field}"
+                    )
+            # The expressive alternate is optional, and useless half-declared.
+            has_audio = "reference_audio_expressive" in config
+            has_text = "reference_text_expressive" in config
+            if has_audio != has_text:
+                raise ValueError(
+                    f"Speaker '{speaker_id}' declares only one of "
+                    f"reference_audio_expressive / reference_text_expressive. "
+                    f"OmniVoice needs the clip and its transcript together."
+                )
         else:
             raise ValueError(
                 f"Speaker '{speaker_id}' has unknown engine '{engine}'. "
-                f"Supported: kokoro, mlx_kokoro, elevenlabs, mlx_chatterbox"
+                f"Supported: kokoro, mlx_kokoro, elevenlabs, mlx_chatterbox, omnivoice"
             )
 
         voices[speaker_id] = VoiceConfig(
@@ -67,6 +83,15 @@ def load_voices(path: Path) -> dict[str, VoiceConfig]:
             exaggeration=float(config.get("exaggeration", 0.0)),
             temperature=float(config.get("temperature", 0.6)),
             cfg_weight=float(config.get("cfg_weight", 0.7)),
+            reference_text=str(config["reference_text"]) if "reference_text" in config else None,
+            reference_audio_expressive=(
+                str(config["reference_audio_expressive"])
+                if "reference_audio_expressive" in config else None
+            ),
+            reference_text_expressive=(
+                str(config["reference_text_expressive"])
+                if "reference_text_expressive" in config else None
+            ),
         )
 
     return voices

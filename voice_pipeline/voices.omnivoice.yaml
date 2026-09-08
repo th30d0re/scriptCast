@@ -1,0 +1,32 @@
+# On-device voices using OmniVoice with real reference audio.
+# Use with: python -m voice_pipeline --voices voice_pipeline/voices.omnivoice.yaml ...
+#
+# OmniVoice conditions on the reference clip AND its transcript together, so
+# reference_text must match the clip word for word. A truncated or approximate
+# transcript is worse than a shorter clip; see the README section on reference
+# audio for the measurements behind that.
+#
+# A turn marked [emphasis] in the script renders from *_expressive instead.
+speakers:
+  emmanuel_theodore:
+    name: "Emmanuel Theodore"
+    engine: "omnivoice"
+    reference_audio: "voices/candidates/emmanuel_default.wav"
+    reference_text: "We can control electrons. We can control them so precisely that I can put my voice and my face on the other side of the planet in real time."
+    reference_audio_expressive: "voices/candidates/emmanuel_expressive.wav"
+    reference_text_expressive: "We can control electrons. We control them so precisely that I can put my voice and my face on the other side of the planet in real time."
+    character_profile: "Host and author of The Original Power"
+
+  toussaint:
+    name: "Toussaint"
+    engine: "omnivoice"
+    reference_audio: "voices/candidates/toussaint_sentence_ref.wav"
+    reference_text: "Which turns your own discomfort into a measurement. Wherever the exercise gets hardest is where something was installed."
+    character_profile: "Co-narrator, historical and structural throughline"
+
+  aisha:
+    name: "Aisha"
+    engine: "omnivoice"
+    reference_audio: "voices/candidates/aisha_sentence_ref.wav"
+    reference_text: "Elite Obscuration, and the Square Ceiling, which together make the apex invisible from the base."
+    character_profile: "Co-narrator, mathematical and empirical throughline"

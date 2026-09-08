@@ -24,6 +24,14 @@ class VoiceConfig:
     # cfg_weight holds the output closer to the text it was given.
     temperature: float = 0.6
     cfg_weight: float = 0.7
+    # OmniVoice conditions on the reference audio and its transcript together,
+    # so the text must match the clip word for word. A clip whose transcript is
+    # wrong or truncated is worse than no reference at all.
+    reference_text: str | None = None
+    # An optional second reference for turns marked [emphasis]: same speaker,
+    # a more expressive take.
+    reference_audio_expressive: str | None = None
+    reference_text_expressive: str | None = None
 
 
 @dataclass

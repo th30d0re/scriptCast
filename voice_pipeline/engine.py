@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import os
+import subprocess
+import tempfile
+import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
@@ -14,6 +18,10 @@ from voice_pipeline.post_processor import _trim_edge_silence
 
 
 class TTSEngine(ABC):
+
+    #: Whether this engine can render a turn from an alternate, more expressive
+    #: reference when the script marks it [emphasis].
+    supports_expressive: bool = False
     @abstractmethod
     async def load(self) -> None:
         """Load the engine resources."""
@@ -251,9 +259,143 @@ class MLXChatterboxEngine(TTSEngine):
         return 24000
 
 
+
+class OmniVoiceEngine(TTSEngine):
+    """OmniVoice, driven through a persistent worker in its own virtualenv.
+
+    OmniVoice pins torch 2.8 and transformers 5.16 against this package's torch
+    2.11 and MLX stack, so it runs out of process. The worker holds the model
+    across the whole render; loading it costs about a minute and doing that per
+    turn would dominate the run.
+
+    Unlike Chatterbox, this engine needs the reference transcript as well as the
+    clip, and a turn marked [emphasis] is synthesised from the speaker's
+    expressive reference when one is configured.
+    """
+
+    _READY_TIMEOUT_S = 600
+    supports_expressive = True
+
+    def __init__(
+        self,
+        model_id: str = "k2-fsa/OmniVoice",
+        python: str | None = None,
+        device: str = "mps",
+        trim_edges: bool = True,
+    ) -> None:
+        self.model_id = model_id
+        self.device = device
+        self.trim_edges = trim_edges
+        self.python = python or str(
+            Path(__file__).resolve().parent.parent / ".venv-omnivoice" / "bin" / "python"
+        )
+        self._process: subprocess.Popen[str] | None = None
+        self._scratch: tempfile.TemporaryDirectory[str] | None = None
+
+    async def load(self) -> None:
+        if self._process is not None:
+            return
+        if not Path(self.python).exists():
+            raise RuntimeError(
+                f"OmniVoice interpreter not found at {self.python}. Create it with:\n"
+                "  python3 -m venv .venv-omnivoice\n"
+                "  .venv-omnivoice/bin/pip install torch==2.8.0 torchaudio==2.8.0 omnivoice"
+            )
+        worker = Path(__file__).resolve().parent / "omnivoice_worker.py"
+        self._scratch = tempfile.TemporaryDirectory(prefix="omnivoice_")
+        self._process = subprocess.Popen(
+            [self.python, str(worker), self.model_id, self.device],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            text=True, bufsize=1,
+            cwd=str(Path(__file__).resolve().parent.parent),
+        )
+        assert self._process.stdout is not None
+        line = self._process.stdout.readline()
+        if not line:
+            stderr = self._process.stderr.read() if self._process.stderr else ""
+            raise RuntimeError(f"OmniVoice worker failed to start:\n{stderr[-2000:]}")
+        if not json.loads(line).get("ready"):
+            raise RuntimeError(f"OmniVoice worker sent an unexpected greeting: {line!r}")
+
+    def _reference(self, voice_config: VoiceConfig, expressive: bool) -> tuple[str, str]:
+        audio = voice_config.reference_audio
+        text = voice_config.reference_text
+        if expressive and voice_config.reference_audio_expressive:
+            audio = voice_config.reference_audio_expressive
+            text = voice_config.reference_text_expressive or text
+        if not audio:
+            raise RuntimeError(
+                f"Speaker {voice_config.speaker_id!r} uses engine 'omnivoice' but has "
+                "no reference_audio configured."
+            )
+        if not text:
+            raise RuntimeError(
+                f"Speaker {voice_config.speaker_id!r} has no reference_text. OmniVoice "
+                "conditions on the clip and its transcript together, so the text is "
+                "required and must match the clip word for word."
+            )
+        path = Path(audio).expanduser()
+        if not path.exists():
+            raise RuntimeError(f"Reference audio not found: {path}")
+        return str(path), text
+
+    async def synthesize_chunk(
+        self, text: str, voice_config: VoiceConfig, expressive: bool = False
+    ) -> numpy.ndarray:
+        await self.load()
+        if self._process is None or self._scratch is None:
+            raise RuntimeError("OmniVoice worker is not running")
+
+        ref_audio, ref_text = self._reference(voice_config, expressive)
+        out_path = Path(self._scratch.name) / f"{uuid.uuid4().hex}.wav"
+        request = {
+            "text": text, "ref_audio": ref_audio,
+            "ref_text": ref_text, "out": str(out_path),
+        }
+        assert self._process.stdin is not None and self._process.stdout is not None
+        self._process.stdin.write(json.dumps(request) + "\n")
+        self._process.stdin.flush()
+        line = self._process.stdout.readline()
+        if not line:
+            stderr = self._process.stderr.read() if self._process.stderr else ""
+            raise RuntimeError(f"OmniVoice worker died:\n{stderr[-2000:]}")
+        reply = json.loads(line)
+        if not reply.get("ok"):
+            raise RuntimeError(f"OmniVoice synthesis failed: {reply.get('error')}")
+
+        import soundfile
+
+        array, _ = soundfile.read(str(out_path), dtype="float32", always_2d=False)
+        out_path.unlink(missing_ok=True)
+        array = numpy.asarray(array)
+        if array.ndim > 1:
+            array = numpy.squeeze(array)
+        if self.trim_edges:
+            trimmed = _trim_edge_silence(array, self.sample_rate)
+            if trimmed.size == 0:
+                return numpy.array([], dtype=numpy.float32)
+            return trimmed
+        return array
+
+    def close(self) -> None:
+        if self._process is not None:
+            if self._process.stdin is not None:
+                self._process.stdin.close()
+            self._process.wait(timeout=30)
+            self._process = None
+        if self._scratch is not None:
+            self._scratch.cleanup()
+            self._scratch = None
+
+    @property
+    def sample_rate(self) -> int:
+        return 24000
+
+
 ENGINE_REGISTRY: dict[str, type[TTSEngine]] = {
     "mlx_kokoro": MLXKokoroEngine,
     "elevenlabs": ElevenLabsEngine,
     "mlx_dia": MLXDiaEngine,
     "mlx_chatterbox": MLXChatterboxEngine,
+    "omnivoice": OmniVoiceEngine,
 }
