@@ -27,6 +27,11 @@ class TurnFingerprint:
     speaker_id: str
     text_hash: str
     segment_count: int
+    # How this speaker was voiced. Change detection used to compare text alone,
+    # so switching a speaker's engine or reference audio left every unchanged
+    # turn holding audio from the previous voice. Episode 2 spent a day as a mix
+    # of Kokoro, Chatterbox and OmniVoice clips because of it.
+    voice_hash: str = ""
 
 
 @dataclass
@@ -71,7 +76,33 @@ def compute_source_hash(path: Path) -> str:
     return hasher.hexdigest()
 
 
-def compute_turn_fingerprint(turn: Turn) -> TurnFingerprint:
+def compute_voice_hash(voice) -> str:
+    """Identity of the voice a turn was rendered with.
+
+    Covers everything that changes how the audio sounds: the engine, the model
+    checkpoint, the reference clip and its transcript, and the sampling
+    settings. A change to any of them invalidates that speaker's turns and
+    nobody else's.
+    """
+    if voice is None:
+        return ""
+    parts = [
+        getattr(voice, "engine", ""),
+        getattr(voice, "kokoro_voice", "") or "",
+        getattr(voice, "elevenlabs_voice_id", "") or "",
+        getattr(voice, "reference_audio", "") or "",
+        getattr(voice, "reference_text", "") or "",
+        getattr(voice, "reference_audio_expressive", "") or "",
+        getattr(voice, "reference_text_expressive", "") or "",
+        f"{getattr(voice, 'temperature', '')}",
+        f"{getattr(voice, 'cfg_weight', '')}",
+        f"{getattr(voice, 'exaggeration', '')}",
+        f"{getattr(voice, 'speed', '')}",
+    ]
+    return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()[:16]
+
+
+def compute_turn_fingerprint(turn: Turn, voice=None) -> TurnFingerprint:
     text_hash = hashlib.sha256(turn.clean_text.encode("utf-8")).hexdigest()
     speech_count = sum(
         1
@@ -83,6 +114,7 @@ def compute_turn_fingerprint(turn: Turn) -> TurnFingerprint:
         speaker_id=turn.speaker_id,
         text_hash=text_hash,
         segment_count=speech_count,
+        voice_hash=compute_voice_hash(voice),
     )
 
 
@@ -103,16 +135,23 @@ def save_render_state(episode_out_dir: Path, state: RenderState) -> None:
 
 
 def detect_changed_turns(
-    current_turns: list[Turn], previous_state: RenderState
+    current_turns: list[Turn], previous_state: RenderState, voices=None
 ) -> list[str]:
-    """Return turn IDs that differ from the previous render."""
+    """Return turn IDs that differ from the previous render.
+
+    `voices` maps speaker_id to VoiceConfig. Pass it so a change of engine or
+    reference audio invalidates that speaker's turns; omit it and only text is
+    compared, which is the old behaviour.
+    """
     previous_by_id: dict[str, TurnFingerprint] = {
         fp.turn_id: fp for fp in previous_state.turns
     }
     changed: set[str] = set()
 
     for turn in current_turns:
-        fp = compute_turn_fingerprint(turn)
+        fp = compute_turn_fingerprint(
+            turn, (voices or {}).get(turn.speaker_id)
+        )
         prev = previous_by_id.get(turn.turn_id)
         if prev is None:
             changed.add(turn.turn_id)
@@ -120,6 +159,10 @@ def detect_changed_turns(
             prev.speaker_id != fp.speaker_id
             or prev.text_hash != fp.text_hash
             or prev.segment_count != fp.segment_count
+            # An empty stored hash means the state predates voice tracking;
+            # treat that as "unknown" rather than "changed" so an old episode
+            # does not re-render wholesale on first contact.
+            or (prev.voice_hash and fp.voice_hash and prev.voice_hash != fp.voice_hash)
         ):
             changed.add(turn.turn_id)
 
@@ -207,6 +250,10 @@ def plan_precision_insert(
             prev.speaker_id != fp.speaker_id
             or prev.text_hash != fp.text_hash
             or prev.segment_count != fp.segment_count
+            # An empty stored hash means the state predates voice tracking;
+            # treat that as "unknown" rather than "changed" so an old episode
+            # does not re-render wholesale on first contact.
+            or (prev.voice_hash and fp.voice_hash and prev.voice_hash != fp.voice_hash)
         ):
             modified.append(turn)
         else:

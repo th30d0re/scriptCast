@@ -875,7 +875,7 @@ def main() -> None:
         if previous_state is None:
             print("No previous render state found. Cannot detect changes.")
             return
-        changed = detect_changed_turns(turns, previous_state)
+        changed = detect_changed_turns(turns, previous_state, voices)
         _print_change_report(turns, changed)
         return
 
@@ -1071,7 +1071,7 @@ def main() -> None:
         source_file=str(transcript_path),
         source_hash=compute_source_hash(transcript_path),
         rendered_at=datetime.utcnow().isoformat() + "Z",
-        turns=[compute_turn_fingerprint(t) for t in turns],
+        turns=[compute_turn_fingerprint(t, voices.get(t.speaker_id)) for t in turns],
         segments=segment_positions,
         als_path=str(als_path) if not args.skip_als else None,
         fcpxml_path=str(fcpxml_path) if args.fcpxml else None,

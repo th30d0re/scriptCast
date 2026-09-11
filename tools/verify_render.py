@@ -82,6 +82,38 @@ def _sounds_alike(want: str, got: str, floor: float = 0.75) -> bool:
     return difflib.SequenceMatcher(None, a, b).ratio() >= floor
 
 
+def _repetition(expected: str, heard: str) -> str | None:
+    """An inserted span that duplicates its neighbours: a stutter.
+
+    This needs its own rule rather than a similarity threshold. Emmanuel heard
+    "you categorize because categorize because categorizing" in Episode 2; the
+    transcript caught it, and the clip still passed at 0.940 with a worst run of
+    2, under both thresholds. A duplicated span is a defect at any length, so
+    length is not what decides it.
+
+    An acoustic detector is the wrong tool here. Whisper repairs disfluencies
+    when it can, but when it does surface one it surfaces it as an insertion,
+    and that is cheap and exact to match.
+    """
+    a, b = _normalize(expected), _normalize(heard)
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b).get_opcodes():
+        if tag not in ("insert", "replace"):
+            continue
+        span = b[j1:j2]
+        if not span:
+            continue
+        # Does the inserted span repeat what sits immediately before or after it
+        # in the heard text?
+        before = b[max(0, j1 - len(span)) : j1]
+        after = b[j2 : j2 + len(span)]
+        if span == before or span == after:
+            return " ".join(span)
+        # A single word doubled: "the the".
+        if len(span) == 1 and (b[j1 - 1 : j1] == span or b[j2 : j2 + 1] == span):
+            return span[0]
+    return None
+
+
 def _score(expected: str, heard: str) -> tuple[float, int]:
     """(overall word similarity, longest run of consecutive words mangled).
 
@@ -187,9 +219,11 @@ def main() -> int:
             for seg in turn["segments"]
         )
         ratio, worst_run = _score(expected, heard)
+        repeated = _repetition(expected, heard)
         results.append(
             {
                 "turn": source.turn_index,
+                "repetition": repeated,
                 "manifest_turn": turn["turn_index"],
                 "speaker": turn["speaker_id"],
                 "turn_id": turn["turn_id"],
@@ -211,12 +245,15 @@ def main() -> int:
 
     flagged = sorted(
         (r for r in results
-         if r["score"] < args.threshold or r["worst_run"] > args.max_run),
+         if r["score"] < args.threshold
+         or r["worst_run"] > args.max_run
+         or r["repetition"]),
         key=lambda r: r["score"],
     )
     for r in flagged:
+        tag = f"  REPEATS {r['repetition']!r}" if r["repetition"] else ""
         print(f"\n  {r['score']:.3f}  run {r['worst_run']:>2}  turn {r['turn']:>3}  "
-              f"{r['speaker']}  {r['turn_id']}")
+              f"{r['speaker']}  {r['turn_id']}{tag}")
         print(f"      want: {r['expected'][:150]}")
         print(f"      got : {r['heard'][:150]}")
         d = _diff(r["expected"], r["heard"])
