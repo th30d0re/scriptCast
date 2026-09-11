@@ -164,12 +164,21 @@ def write_manifest(
             )
         )
 
+    # Report what the speakers actually used rather than the --engine default.
+    # A voices file sets the engine per speaker, so the flag is frequently
+    # wrong: Episode 2 rendered entirely on OmniVoice while this field read
+    # "mlx_kokoro", which is the field anyone diagnosing a mixed render looks
+    # at first.
+    used = sorted({v.engine for sid, v in voices.items()
+                   if any(t.speaker_id == sid for t in turns)})
+    engine_field = used[0] if len(used) == 1 else ", ".join(used) if used else engine
+
     manifest = EpisodeManifest(
         schema_version=_SCHEMA_VERSION,
         episode_id=episode_id,
         source_file=_normalize_source_file(source_file),
         model_id=model_id,
-        engine=engine,
+        engine=engine_field,
         sample_rate=_TARGET_SAMPLE_RATE,
         created_at=datetime.utcnow().isoformat() + "Z",
         speakers=_speaker_entries(turns, voices),
