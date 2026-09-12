@@ -14,6 +14,13 @@ cheap quickly. A turn that fails `--max-passes` times in a row is reported and
 left alone: repeated failure on the same text points at the text or the
 reference audio rather than at a bad sample, and that wants a person.
 
+Pass 0 is the one expensive step by default, because it transcribes the whole
+episode to find out what needs fixing. If the suspect turns are already known
+(from a manual `verify_render.py --turns` run, or because only a handful of
+turns were just edited), skip that with `--turns 20,38,50` to verify only
+those on pass 0, or `--seed-json` to reuse a prior `verify_render.py
+--json-out` file outright.
+
 The final pass relays the timeline, because a regenerated clip is a different
 length and leaves a hole where the old one sat.
 """
@@ -80,6 +87,13 @@ def main() -> int:
     ap.add_argument("--seed-json", type=Path, default=None,
                     help="Reuse a verify_render --json-out file for pass 0 "
                          "instead of transcribing the whole episode again.")
+    ap.add_argument("--turns", type=str, default=None,
+                    help="Comma-separated turn indices to verify on pass 0, "
+                         "instead of the whole episode. For a small, "
+                         "already-known set of suspect turns (e.g. from a "
+                         "manual `verify_render.py --turns` run), this skips "
+                         "re-transcribing everything just to re-derive a list "
+                         "already in hand. Ignored if --seed-json is set.")
     args = ap.parse_args()
 
     if args.seed_json:
@@ -87,6 +101,12 @@ def main() -> int:
         seeded = json.loads(args.seed_json.read_text())
         failing = [r for r in seeded
                    if r["score"] < args.threshold or r["worst_run"] > args.max_run]
+    elif args.turns:
+        turns0 = sorted({int(x) for x in args.turns.split(",")})
+        print(f"pass 0: verifying {len(turns0)} specified turn(s) "
+              f"with whisper-{args.model}.en")
+        failing = _verify(args.episode_dir, args.transcript, args.model, turns0,
+                          args.threshold, args.max_run)
     else:
         print(f"pass 0: verifying every turn with whisper-{args.model}.en")
         failing = _verify(args.episode_dir, args.transcript, args.model, None,
