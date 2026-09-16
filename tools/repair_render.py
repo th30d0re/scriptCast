@@ -35,6 +35,15 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parent.parent
 
 
+def _failed(result: dict, threshold: float, max_run: int) -> bool:
+    """verify_render's own verdict, which covers repetitions and heteronym
+    stress as well as the score. Older --json-out files lack it; judge those
+    by score and run."""
+    if "failed" in result:
+        return bool(result["failed"])
+    return result["score"] < threshold or result["worst_run"] > max_run
+
+
 def _verify(episode_dir: Path, transcript: Path, model: str,
             turns: list[int] | None, threshold: float, max_run: int) -> list[dict]:
     out = _ROOT / ".verify_pass.json"
@@ -51,10 +60,7 @@ def _verify(episode_dir: Path, transcript: Path, model: str,
         return []
     results = json.loads(out.read_text())
     out.unlink()
-    return [
-        r for r in results
-        if r["score"] < threshold or r["worst_run"] > max_run
-    ]
+    return [r for r in results if _failed(r, threshold, max_run)]
 
 
 def _regenerate(transcript: Path, episode_id: str, out_dir: Path,
@@ -99,8 +105,7 @@ def main() -> int:
     if args.seed_json:
         print(f"pass 0: reusing {args.seed_json}")
         seeded = json.loads(args.seed_json.read_text())
-        failing = [r for r in seeded
-                   if r["score"] < args.threshold or r["worst_run"] > args.max_run]
+        failing = [r for r in seeded if _failed(r, args.threshold, args.max_run)]
     elif args.turns:
         turns0 = sorted({int(x) for x in args.turns.split(",")})
         print(f"pass 0: verifying {len(turns0)} specified turn(s) "

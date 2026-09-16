@@ -24,6 +24,12 @@ model before re-synthesizing, since tiny mishears proper nouns on its own.
 Scores are word-sequence similarity after normalization, so they carry ASR error
 as well as synthesis error. Read the printed pairs; do not regenerate on the
 number alone.
+
+Heteronyms get a second check that Whisper cannot give. A wrong stress ("the
+historical re-CORD") transcribes as the right word and scores 1.000, so every
+heteronym is also cut out of the audio and judged by a phoneme recognizer
+against the reading its context calls for (`tools/stress_check.py`). A turn
+fails when one comes back "wrong" or "garbled". Skip it with `--no-stress`.
 """
 from __future__ import annotations
 
@@ -40,6 +46,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from voice_pipeline.markup import tokenize_markup
 from voice_pipeline.parser import parse_transcript
+from voice_pipeline.pronunciation import find_heteronyms
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from stress_check import check_segment  # noqa: E402
+
+_STRESS_FAILS = {"wrong", "garbled"}
 
 _MODELS = {
     "tiny": "mlx-community/whisper-tiny.en-mlx",
@@ -176,6 +188,8 @@ def main() -> int:
     ap.add_argument("--turns", type=str, default=None,
                     help="Comma-separated turn indices to check instead of all.")
     ap.add_argument("--json-out", type=Path, default=None)
+    ap.add_argument("--no-stress", action="store_true",
+                    help="Skip the heteronym stress check.")
     args = ap.parse_args()
 
     logging.disable(logging.WARNING)
@@ -205,21 +219,37 @@ def main() -> int:
             continue
         if wanted is not None and source.turn_index not in wanted:
             continue
-        expected = " ".join(
-            c.text or "" for c in source.markup_chunks if c.kind == "speech"
-        ).strip()
+        chunks = [
+            c.text.strip() for c in source.markup_chunks
+            if c.kind == "speech" and c.text and c.text.strip()
+        ]
+        expected = " ".join(chunks).strip()
         if not expected:
             continue
-        heard = " ".join(
-            mlx_whisper.transcribe(
-                str(args.episode_dir / seg["segment_wav"]),
+        heard_parts: list[str] = []
+        stress: list[dict] = []
+        segments = sorted(turn["segments"], key=lambda seg: seg["chunk_index"])
+        for position, seg in enumerate(segments):
+            wav = args.episode_dir / seg["segment_wav"]
+            chunk_text = chunks[position] if position < len(chunks) else ""
+            readings = (
+                [] if args.no_stress or len(segments) != len(chunks)
+                else find_heteronyms(chunk_text)
+            )
+            result = mlx_whisper.transcribe(
+                str(wav),
                 path_or_hf_repo=_MODELS[args.model],
                 verbose=False,
-            )["text"].strip()
-            for seg in turn["segments"]
-        )
+                word_timestamps=bool(readings),
+            )
+            heard_parts.append(result["text"].strip())
+            if readings:
+                words = [w for part in result["segments"] for w in part.get("words", [])]
+                stress.extend(check_segment(wav, chunk_text, words, readings))
+        heard = " ".join(heard_parts)
         ratio, worst_run = _score(expected, heard)
         repeated = _repetition(expected, heard)
+        stress_flags = [e for e in stress if e.get("verdict") in _STRESS_FAILS]
         results.append(
             {
                 "turn": source.turn_index,
@@ -229,6 +259,13 @@ def main() -> int:
                 "turn_id": turn["turn_id"],
                 "score": round(ratio, 3),
                 "worst_run": worst_run,
+                "stress": stress,
+                "failed": bool(
+                    ratio < args.threshold
+                    or worst_run > args.max_run
+                    or repeated
+                    or stress_flags
+                ),
                 "expected": expected,
                 "heard": heard,
             }
@@ -243,13 +280,14 @@ def main() -> int:
           f"median {statistics.median(scores):.3f} | "
           f"p05 {scores[max(0, int(len(scores) * 0.05))]:.3f} | min {scores[0]:.3f}")
 
-    flagged = sorted(
-        (r for r in results
-         if r["score"] < args.threshold
-         or r["worst_run"] > args.max_run
-         or r["repetition"]),
-        key=lambda r: r["score"],
-    )
+    checked = [e for r in results for e in r["stress"]]
+    if checked:
+        tally = {v: sum(1 for e in checked if e.get("verdict") == v)
+                 for v in ("ok", "unclear", "unaligned", "minor", "partial", "wrong", "garbled")}
+        print(f"{len(checked)} heteronyms found | "
+              + " | ".join(f"{k} {n}" for k, n in tally.items()))
+
+    flagged = sorted((r for r in results if r["failed"]), key=lambda r: r["score"])
     for r in flagged:
         tag = f"  REPEATS {r['repetition']!r}" if r["repetition"] else ""
         print(f"\n  {r['score']:.3f}  run {r['worst_run']:>2}  turn {r['turn']:>3}  "
@@ -259,14 +297,18 @@ def main() -> int:
         d = _diff(r["expected"], r["heard"])
         if d:
             print(f"      diff: {d}")
+        for e in r["stress"]:
+            if e.get("verdict") in _STRESS_FAILS:
+                print(f"      stress: {e['word']!r} {e['verdict'].upper()} at {e.get('at_s')}s, "
+                      f"wanted {e['expected']} ({e['reading']}), heard [{e.get('heard')}]")
 
     if args.json_out:
         args.json_out.write_text(json.dumps(results, indent=1))
 
     if flagged:
-        print(f"\n{len(flagged)} turn(s) flagged (score < {args.threshold} or a mangled "
-              f"run longer than {args.max_run} words). Re-check with a larger model "
-              f"before regenerating:")
+        print(f"\n{len(flagged)} turn(s) flagged (score < {args.threshold}, a mangled "
+              f"run longer than {args.max_run} words, a repetition, or a heteronym "
+              f"spoken wrong). Re-check with a larger model before regenerating:")
         print(f"  --model small --turns {','.join(str(r['turn']) for r in flagged)}")
         return 1
     print(f"verify-render: nothing flagged.")

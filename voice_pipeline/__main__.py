@@ -27,6 +27,7 @@ from voice_pipeline.models import SegmentResult, Turn, VoiceConfig
 from voice_pipeline.parser import parse_transcript
 from voice_pipeline.platform_check import require_apple_silicon
 from voice_pipeline.post_processor import _measure_speech_duration, process_segment
+from voice_pipeline.pronunciation import speech_text_for
 from voice_pipeline.render_state import (
     RenderState,
     SegmentPosition,
@@ -563,13 +564,17 @@ async def render_loop(
             # reference where the engine has one. The tag survives into
             # clean_text, so adding or removing it changes the turn_id and the
             # turn re-renders on its own.
+            # Heteronyms go to text-reading engines respelled for the reading
+            # their context calls for (pronunciation.py). The script, captions
+            # and verification keep the real word.
+            speech_text = speech_text_for(voice_config.engine, job.text)
             if getattr(engine, "supports_expressive", False) and _turn_is_emphasised(turn):
                 raw_audio = await engine.synthesize_chunk(
-                    job.text, voice_config, expressive=True
+                    speech_text, voice_config, expressive=True
                 )
             else:
                 raw_audio = await engine.synthesize_chunk(
-                    job.text,
+                    speech_text,
                     voice_config,
                 )
             raw_audio_array = numpy.asarray(raw_audio)
@@ -930,7 +935,7 @@ def main() -> None:
                 "--precision-insert requires a previous render state. "
                 "Run a full render first, or use --migrate if upgrading from v1.0."
             )
-        plan = plan_precision_insert(turns, previous_state)
+        plan = plan_precision_insert(turns, previous_state, voices)
         use_precision_insert = True
         # Delete files for deleted turns
         old_id_to_speaker = {fp.turn_id: fp.speaker_id for fp in previous_state.turns}

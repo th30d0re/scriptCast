@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 from voice_pipeline.models import Turn
+from voice_pipeline.pronunciation import speech_text_hash
 
 
 @dataclass
@@ -32,6 +33,10 @@ class TurnFingerprint:
     # turn holding audio from the previous voice. Episode 2 spent a day as a mix
     # of Kokoro, Chatterbox and OmniVoice clips because of it.
     voice_hash: str = ""
+    # Identity of the text the engine was actually handed, when a heteronym
+    # respelling changed it (pronunciation.py). Empty when nothing changed, so
+    # adding a respelling re-renders only the turns that use the word.
+    speech_text_hash: str = ""
 
 
 @dataclass
@@ -104,17 +109,38 @@ def compute_voice_hash(voice) -> str:
 
 def compute_turn_fingerprint(turn: Turn, voice=None) -> TurnFingerprint:
     text_hash = hashlib.sha256(turn.clean_text.encode("utf-8")).hexdigest()
-    speech_count = sum(
-        1
+    speech_texts = [
+        chunk.text
         for chunk in turn.markup_chunks
         if chunk.kind == "speech" and chunk.text and chunk.text.strip()
-    )
+    ]
     return TurnFingerprint(
         turn_id=turn.turn_id,
         speaker_id=turn.speaker_id,
         text_hash=text_hash,
-        segment_count=speech_count,
+        segment_count=len(speech_texts),
         voice_hash=compute_voice_hash(voice),
+        speech_text_hash=(
+            speech_text_hash(getattr(voice, "engine", ""), speech_texts)
+            if voice is not None
+            else ""
+        ),
+    )
+
+
+def _fingerprint_changed(prev: TurnFingerprint, fp: TurnFingerprint) -> bool:
+    return bool(
+        prev.speaker_id != fp.speaker_id
+        or prev.text_hash != fp.text_hash
+        or prev.segment_count != fp.segment_count
+        # An empty stored hash means the state predates voice tracking;
+        # treat that as "unknown" rather than "changed" so an old episode
+        # does not re-render wholesale on first contact.
+        or (prev.voice_hash and fp.voice_hash and prev.voice_hash != fp.voice_hash)
+        # Unlike the voice hash, an empty value here is meaningful: it says the
+        # engine got the plain text. A turn rendered before a respelling existed
+        # has to re-render to pick it up.
+        or (fp.voice_hash and prev.speech_text_hash != fp.speech_text_hash)
     )
 
 
@@ -155,15 +181,7 @@ def detect_changed_turns(
         prev = previous_by_id.get(turn.turn_id)
         if prev is None:
             changed.add(turn.turn_id)
-        elif (
-            prev.speaker_id != fp.speaker_id
-            or prev.text_hash != fp.text_hash
-            or prev.segment_count != fp.segment_count
-            # An empty stored hash means the state predates voice tracking;
-            # treat that as "unknown" rather than "changed" so an old episode
-            # does not re-render wholesale on first contact.
-            or (prev.voice_hash and fp.voice_hash and prev.voice_hash != fp.voice_hash)
-        ):
+        elif _fingerprint_changed(prev, fp):
             changed.add(turn.turn_id)
 
     # Detect deleted turns (present in previous but not current)
@@ -222,7 +240,7 @@ class PrecisionInsertPlan:
 
 
 def plan_precision_insert(
-    current_turns: list[Turn], previous_state: RenderState
+    current_turns: list[Turn], previous_state: RenderState, voices=None
 ) -> PrecisionInsertPlan:
     """Compare current transcript to previous render state and classify turns.
 
@@ -230,6 +248,9 @@ def plan_precision_insert(
     - **Modified**: turn_id in previous state but fingerprint differs → resynthesize
     - **Deleted**: turn_id in previous state but not in current → delete files
     - **Unchanged**: turn_id in previous state and fingerprint matches → load existing
+
+    Pass `voices` (speaker_id to VoiceConfig). Without it a change of reference
+    audio or engine goes unnoticed and the episode keeps the old voice's clips.
     """
     previous_by_id: dict[str, TurnFingerprint] = {
         fp.turn_id: fp for fp in previous_state.turns
@@ -242,19 +263,11 @@ def plan_precision_insert(
 
     for turn in current_turns:
         current_ids.add(turn.turn_id)
-        fp = compute_turn_fingerprint(turn)
+        fp = compute_turn_fingerprint(turn, (voices or {}).get(turn.speaker_id))
         prev = previous_by_id.get(turn.turn_id)
         if prev is None:
             inserted.append(turn)
-        elif (
-            prev.speaker_id != fp.speaker_id
-            or prev.text_hash != fp.text_hash
-            or prev.segment_count != fp.segment_count
-            # An empty stored hash means the state predates voice tracking;
-            # treat that as "unknown" rather than "changed" so an old episode
-            # does not re-render wholesale on first contact.
-            or (prev.voice_hash and fp.voice_hash and prev.voice_hash != fp.voice_hash)
-        ):
+        elif _fingerprint_changed(prev, fp):
             modified.append(turn)
         else:
             unchanged.append(turn)
