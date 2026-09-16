@@ -11,9 +11,13 @@ speakers:
   emmanuel_theodore:
     name: "Emmanuel Theodore"
     engine: "omnivoice"
-    reference_audio: "voices/candidates/emmanuel_default.wav"
-    reference_text: "We can control electrons. We can control them so precisely that I can put my voice and my face on the other side of the planet in real time."
-    reference_audio_expressive: "voices/candidates/emmanuel_expressive.wav"
+    # The expressive take, high-passed at 80 Hz and denoised (ffmpeg
+    # highpass=f=80:poles=2,afftdn=nf=-50:tn=1). Chosen 2026-09-16 over the
+    # default take, which carried heavy breath noise. The model clones a
+    # reference's noise floor into every line it renders.
+    reference_audio: "voices/candidates/emmanuel_expressive_clean.wav"
+    reference_text: "We can control electrons. We control them so precisely that I can put my voice and my face on the other side of the planet in real time."
+    reference_audio_expressive: "voices/candidates/emmanuel_expressive_clean.wav"
     reference_text_expressive: "We can control electrons. We control them so precisely that I can put my voice and my face on the other side of the planet in real time."
     character_profile: "Host and author of The Original Power"
 
