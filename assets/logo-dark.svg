@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 96" width="420" height="96">
+  <defs>
+    <style>
+      .text-script {
+        font-family: ui-sans-serif, -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-weight: 700;
+        font-size: 56px;
+        fill: #F3F4F6;
+      }
+      .text-cast {
+        font-family: ui-sans-serif, -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-weight: 800;
+        font-size: 56px;
+        fill: #a78bfa;
+      }
+      .glyph {
+        fill: #a78bfa;
+      }
+      .bar {
+        fill: #111827;
+      }
+    </style>
+  </defs>
+
+  <!-- Speech bubble with waveform -->
+  <g transform="translate(16, 16)">
+    <!-- Speech bubble outline/shape -->
+    <path class="glyph" d="M32 0 C50 0 64 14 64 32 C64 50 50 64 32 64 C22 64 12 72 8 76 C10 68 12 60 8 52 C3 46 0 39 0 32 C0 14 14 0 32 0 Z"/>
+    
+    <!-- Waveform bars -->
+    <rect class="bar" x="18" y="26" width="4" height="12" rx="2" />
+    <rect class="bar" x="25" y="18" width="4" height="28" rx="2" />
+    <rect class="bar" x="32" y="22" width="4" height="20" rx="2" />
+    <rect class="bar" x="39" y="14" width="4" height="36" rx="2" />
+    <rect class="bar" x="46" y="24" width="4" height="16" rx="2" />
+  </g>
+
+  <!-- Wordmark -->
+  <text x="100" y="68">
+    <tspan class="text-script">script</tspan><tspan class="text-cast">Cast</tspan>
+  </text>
+</svg>
