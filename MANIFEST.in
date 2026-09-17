@@ -1,0 +1,5 @@
+include CHANGELOG.md
+recursive-include tests/fixtures *
+recursive-include examples *
+recursive-include swift *.swift
+recursive-include assets *.svg

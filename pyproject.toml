@@ -1,12 +1,25 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "scriptcast"
 version = "0.1.0"
 description = "Render markdown podcast scripts to per-turn speech, and export Ableton, FCPXML and Logic sessions."
+readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [{ name = "Emmanuel Theodore" }]
 requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
 dependencies = [
     "mlx-audio",
     "misaki[en]",
@@ -19,6 +32,12 @@ dependencies = [
 [project.optional-dependencies]
 verify = ["mlx-whisper"]
 elevenlabs = ["elevenlabs"]
+
+[project.urls]
+Homepage = "https://github.com/th30d0re/scriptCast"
+Source = "https://github.com/th30d0re/scriptCast"
+Issues = "https://github.com/th30d0re/scriptCast/issues"
+Changelog = "https://github.com/th30d0re/scriptCast/blob/main/CHANGELOG.md"
 
 [project.scripts]
 scriptcast = "scriptcast.__main__:main"
