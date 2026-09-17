@@ -1,14 +1,14 @@
 {
  "aisha": {
-  "ms_per_mark": 295.95,
-  "ms_per_word": 363.15
+  "ms_per_mark": 198.7,
+  "ms_per_word": 325.94
  },
  "emmanuel_theodore": {
-  "ms_per_mark": 356.06,
-  "ms_per_word": 406.97
+  "ms_per_mark": 534.76,
+  "ms_per_word": 293.81
  },
  "toussaint": {
-  "ms_per_mark": 116.3,
-  "ms_per_word": 234.72
+  "ms_per_mark": 155.23,
+  "ms_per_word": 225.43
  }
 }
