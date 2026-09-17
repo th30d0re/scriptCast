@@ -39,8 +39,8 @@ class ComputeTurnFingerprintTests(TestCase):
         turn = Turn(
             turn_index=0,
             turn_id="abc123",
-            speaker_id="toussaint",
-            display_name="Toussaint",
+            speaker_id="cohost",
+            display_name="Cohost",
             timestamp_mmss="00:00",
             timestamp_ms=0,
             raw_text="Hello world.",
@@ -50,15 +50,15 @@ class ComputeTurnFingerprintTests(TestCase):
         fp1 = compute_turn_fingerprint(turn)
         fp2 = compute_turn_fingerprint(turn)
         self.assertEqual(fp1.text_hash, fp2.text_hash)
-        self.assertEqual(fp1.speaker_id, "toussaint")
+        self.assertEqual(fp1.speaker_id, "cohost")
         self.assertEqual(fp1.turn_id, "abc123")
 
     def test_different_text_different_hash(self) -> None:
         turn1 = Turn(
             turn_index=0,
             turn_id="abc123",
-            speaker_id="toussaint",
-            display_name="Toussaint",
+            speaker_id="cohost",
+            display_name="Cohost",
             timestamp_mmss="00:00",
             timestamp_ms=0,
             raw_text="Hello.",
@@ -68,8 +68,8 @@ class ComputeTurnFingerprintTests(TestCase):
         turn2 = Turn(
             turn_index=0,
             turn_id="abc123",
-            speaker_id="toussaint",
-            display_name="Toussaint",
+            speaker_id="cohost",
+            display_name="Cohost",
             timestamp_mmss="00:00",
             timestamp_ms=0,
             raw_text="Goodbye.",
@@ -87,8 +87,8 @@ class DetectChangedTurnsTests(TestCase):
             Turn(
                 turn_index=0,
                 turn_id="abc123",
-                speaker_id="toussaint",
-                display_name="Toussaint",
+                speaker_id="cohost",
+                display_name="Cohost",
                 timestamp_mmss="00:00",
                 timestamp_ms=0,
                 raw_text="Hello.",
@@ -111,8 +111,8 @@ class DetectChangedTurnsTests(TestCase):
             Turn(
                 turn_index=0,
                 turn_id="abc123",
-                speaker_id="toussaint",
-                display_name="Toussaint",
+                speaker_id="cohost",
+                display_name="Cohost",
                 timestamp_mmss="00:00",
                 timestamp_ms=0,
                 raw_text="Goodbye.",
@@ -128,7 +128,7 @@ class DetectChangedTurnsTests(TestCase):
             turns=[
                 TurnFingerprint(
                     turn_id="abc123",
-                    speaker_id="toussaint",
+                    speaker_id="cohost",
                     text_hash="oldhash",
                     segment_count=1,
                 )
@@ -142,8 +142,8 @@ class DetectChangedTurnsTests(TestCase):
             Turn(
                 turn_index=0,
                 turn_id="abc123",
-                speaker_id="toussaint",
-                display_name="Toussaint",
+                speaker_id="cohost",
+                display_name="Cohost",
                 timestamp_mmss="00:00",
                 timestamp_ms=0,
                 raw_text="Hello.",
@@ -153,8 +153,8 @@ class DetectChangedTurnsTests(TestCase):
             Turn(
                 turn_index=1,
                 turn_id="def456",
-                speaker_id="aisha",
-                display_name="Aisha",
+                speaker_id="guest",
+                display_name="Guest",
                 timestamp_mmss="00:01",
                 timestamp_ms=1000,
                 raw_text="Hi.",
@@ -177,8 +177,8 @@ class DetectChangedTurnsTests(TestCase):
             Turn(
                 turn_index=0,
                 turn_id="abc123",
-                speaker_id="toussaint",
-                display_name="Toussaint",
+                speaker_id="cohost",
+                display_name="Cohost",
                 timestamp_mmss="00:00",
                 timestamp_ms=0,
                 raw_text="Hello.",
@@ -195,7 +195,7 @@ class DetectChangedTurnsTests(TestCase):
                 compute_turn_fingerprint(turns[0]),
                 TurnFingerprint(
                     turn_id="def456",
-                    speaker_id="aisha",
+                    speaker_id="guest",
                     text_hash="oldhash",
                     segment_count=1,
                 ),
@@ -215,7 +215,7 @@ class SaveLoadRenderStateTests(TestCase):
             turns=[
                 TurnFingerprint(
                     turn_id="abc123",
-                    speaker_id="toussaint",
+                    speaker_id="cohost",
                     text_hash="hash1",
                     segment_count=1,
                 )
@@ -241,7 +241,7 @@ class SaveLoadRenderStateTests(TestCase):
             loaded = load_render_state(out_dir)
             assert loaded is not None
             self.assertEqual(loaded.source_hash, "abc123")
-            self.assertEqual(loaded.turns[0].speaker_id, "toussaint")
+            self.assertEqual(loaded.turns[0].speaker_id, "cohost")
             self.assertEqual(loaded.segments[0].start_ms, 0)
             self.assertEqual(loaded.als_path, "/path/to/file.als")
 

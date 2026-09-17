@@ -10,7 +10,7 @@ and compared with the reading misaki expects and with the readings it does not.
     scriptcast-stress outputs/<episode_id>/segments/x.wav \
         --text "It includes one specific historical record."
 
-`tools/verify_render.py` calls `check_segment` for every turn that contains a
+`scriptcast-verify` calls `check_segment` for every turn that contains a
 heteronym. The recognizer is facebook/wav2vec2-lv-60-espeak-cv-ft, about 1.2 GB,
 downloaded on first use.
 """

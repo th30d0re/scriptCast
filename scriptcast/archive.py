@@ -3,22 +3,22 @@
 A turn whose speaker uses the "archive" engine plays a registered excerpt
 instead of synthesizing speech:
 
-    Lee Atwater (14:02)
-    [clip:atwater_1981] <verbatim transcript of the excerpt>
+    Archivist (14:02)
+    [clip:speech_1963] <verbatim transcript of the excerpt>
 
-The transcript after the tag is what captions show and what `verify_render.py`
+The transcript after the tag is what captions show and what `scriptcast-verify`
 checks the audio against, so a mis-cut clip fails verification the same way a
 garbled synthetic line does. The registry, `archive/clips.yaml` under the
 project root, holds where each excerpt comes from:
 
     clips:
-      atwater_1981:
-        source: archive/sources/atwater_1981.m4a
+      speech_1963:
+        source: archive/sources/speech_1963.m4a
         start: 12.40          # seconds into the source
         end: 48.15
-        citation: "Perlstein, R. (2012). ... The Nation."
+        citation: "Author, A. (Year). Title. Publisher."
         origin_url: https://...
-        content_note: Contains a racial slur.
+        content_note: Contains strong language.
 
 `scriptcast-clip` finds the start and end by searching the source's word
 timings for a phrase, so nobody trims by hand. Sources stay out of git.
@@ -39,9 +39,9 @@ import yaml
 from scriptcast.project import current
 
 SAMPLE_RATE = 24000
-# Median loudness of active speech in the rendered voices, measured over the
-# five-level Episode 3. Clips are matched to it so a quote neither jumps out nor
-# disappears beside the synthetic hosts.
+# Median loudness of active speech in the rendered voices, measured over a
+# full rendered episode. Clips are matched to it so a quote neither jumps out
+# nor disappears beside the synthetic hosts.
 TARGET_ACTIVE_RMS_DBFS = -18.5
 _FADE_S = 0.015
 _CLIP_TAG = re.compile(r"\[clip:([A-Za-z0-9_\-]+)\]")

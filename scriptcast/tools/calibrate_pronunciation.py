@@ -5,9 +5,9 @@ candidate respelling, several takes each, and judges every take with the
 phoneme stress check. The engine is stochastic, so one good take proves
 nothing; the rate across takes is what counts.
 
-    python3 tools/calibrate_pronunciation.py record --reading default \
+    scriptcast-calibrate record --reading default \
         --candidates reckerd,wreck-urd --takes 6
-    python3 tools/calibrate_pronunciation.py record --reading verb \
+    scriptcast-calibrate record --reading verb \
         --candidates ree-CORD --takes 6 --write
 
 Readings use misaki's lexicon keys ("default", "verb", "noun", ...). Run with

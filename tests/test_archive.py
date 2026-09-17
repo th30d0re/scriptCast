@@ -23,7 +23,7 @@ def _registry(tmp_path: Path, start: float, end: float) -> Path:
 
 
 def test_clip_tag_becomes_annotation_and_transcript_stays_speech():
-    turn = Turn(0, "id", "lee_atwater", "Lee Atwater", "00:00", 0,
+    turn = Turn(0, "id", "archivist", "Archivist", "00:00", 0,
                 "[clip:quote_one] What he said.", "[clip:quote_one] What he said.", (1, 2))
     tokenize_markup([turn])
     assert [c.kind for c in turn.markup_chunks] == ["annotation", "speech"]
@@ -32,7 +32,7 @@ def test_clip_tag_becomes_annotation_and_transcript_stays_speech():
 
 
 def test_markdown_cleaning_keeps_underscores_inside_tags():
-    assert _clean_text("__bold__ [clip:atwater_1981] text") == "bold [clip:atwater_1981] text"
+    assert _clean_text("__bold__ [clip:speech_1963] text") == "bold [clip:speech_1963] text"
 
 
 def test_render_clip_cuts_and_matches_voice_loudness(tmp_path):

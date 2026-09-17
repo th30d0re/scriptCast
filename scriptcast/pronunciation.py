@@ -13,7 +13,7 @@ Two halves live here:
   the render verifier checks the audio against it.
 * **Steering the engine.** `pronunciations.yaml` maps a word and a reading to a
   spelling that OmniVoice pronounces the intended way, found by rendering
-  candidates and checking them (`tools/calibrate_pronunciation.py`). The
+  candidates and checking them (`scriptcast-calibrate`). The
   spelling reaches the engine only. The script, captions, and verification keep
   the real word.
 

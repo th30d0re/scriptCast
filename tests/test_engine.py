@@ -65,7 +65,7 @@ def test_elevenlabs_engine_synthesize_chunk() -> None:
         engine._client = fake_client
 
         config = VoiceConfig(
-            speaker_id="kareem",
+            speaker_id="host",
             engine="elevenlabs",
             elevenlabs_voice_id="VlUmeC1Uzj3NnwiVR9K9",
         )
@@ -90,7 +90,7 @@ def test_elevenlabs_engine_missing_voice_id_raises() -> None:
     engine._client = MagicMock()
 
     config = VoiceConfig(
-        speaker_id="kareem",
+        speaker_id="host",
         engine="elevenlabs",
         elevenlabs_voice_id=None,
     )
@@ -108,7 +108,7 @@ def test_mlx_chatterbox_engine_synthesize_chunk(tmp_path) -> None:
     engine = MLXChatterboxEngine("dummy_model", trim_edges=False)
 
     # Create a dummy reference audio file
-    ref_path = tmp_path / "kareem_reference.wav"
+    ref_path = tmp_path / "host_reference.wav"
     ref_path.write_bytes(b"fake wav content")
 
     # Bypass load() and reference-cache loading by pre-seeding internals
@@ -120,10 +120,10 @@ def test_mlx_chatterbox_engine_synthesize_chunk(tmp_path) -> None:
             return iter([fake_result])
 
     engine._model = FakeModel()
-    engine._reference_cache["kareem"] = object()  # any truthy value; generate() mocked anyway
+    engine._reference_cache["host"] = object()  # any truthy value; generate() mocked anyway
 
     config = VoiceConfig(
-        speaker_id="kareem",
+        speaker_id="host",
         engine="mlx_chatterbox",
         reference_audio=str(ref_path),
         exaggeration=0.3,
@@ -139,7 +139,7 @@ def test_mlx_chatterbox_engine_missing_reference_audio_raises() -> None:
     engine._model = object()  # bypass load()
 
     config = VoiceConfig(
-        speaker_id="kareem",
+        speaker_id="host",
         engine="mlx_chatterbox",
         reference_audio=None,
     )
@@ -152,7 +152,7 @@ def test_mlx_chatterbox_engine_missing_reference_file_raises(tmp_path) -> None:
     engine._model = object()  # bypass load()
 
     config = VoiceConfig(
-        speaker_id="kareem",
+        speaker_id="host",
         engine="mlx_chatterbox",
         reference_audio=str(tmp_path / "nonexistent.wav"),
     )

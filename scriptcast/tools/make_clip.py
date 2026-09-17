@@ -1,9 +1,9 @@
 """Cut an archival excerpt by naming its first and last words.
 
-    python3 tools/make_clip.py ~/Downloads/atwater_1981.m4a --id atwater_1981 \
-        --from "you start out in 1954" --to "a byproduct of them" \
-        --citation "Perlstein, R. (2012). Exclusive: Lee Atwater's Infamous 1981 Interview on the Southern Strategy. The Nation." \
-        --url https://www.thenation.com/... --content-note "Contains a racial slur."
+    scriptcast-clip ~/Downloads/speech_1963.m4a --id speech_1963 \
+        --from "the first words of the excerpt" --to "the last words of it" \
+        --citation "Author, A. (Year). Title. Publisher." \
+        --url https://example.com/... --content-note "Contains strong language."
 
 Transcribes the source with Whisper word timings, finds the two phrases,
 copies the source into the project's clip sources directory, writes the

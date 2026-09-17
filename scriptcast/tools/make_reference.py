@@ -6,8 +6,8 @@ two signals that disagree; early references cut that way failed one generation
 in three. This picks a window that starts and ends on sentence
 boundaries instead, then transcribes it and writes both halves.
 
-    scriptcast-reference ~/joshua.m4a --name host
-    scriptcast-reference ~/gracie.m4a --name guest --seconds 8
+    scriptcast-reference ~/raw_host.m4a --name host
+    scriptcast-reference ~/raw_guest.m4a --name guest --seconds 8
 
 Writes <references>/<name>.wav and adds the transcript to
 <references>/reference_texts.json, where <references> is the project's

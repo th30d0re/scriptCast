@@ -4,41 +4,43 @@ import pytest
 
 from scriptcast.parser import parse_transcript
 
+FIXTURE = Path(__file__).parent / "fixtures" / "sample_episode.md"
+
 
 def test_parse_transcript_turn_count() -> None:
-    turns = parse_transcript(Path("Architecting_the_operation/podcasts/ATO_EP0.md"))
-    assert len(turns) >= 130
+    turns = parse_transcript(FIXTURE)
+    assert len(turns) == 55
 
 
 def test_parse_transcript_turn_order() -> None:
-    turns = parse_transcript(Path("Architecting_the_operation/podcasts/ATO_EP0.md"))
+    turns = parse_transcript(FIXTURE)
     assert [turn.turn_index for turn in turns] == list(range(len(turns)))
 
 
 def test_parse_transcript_turn_ids_are_unique() -> None:
-    turns = parse_transcript(Path("Architecting_the_operation/podcasts/ATO_EP0.md"))
+    turns = parse_transcript(FIXTURE)
     ids = [turn.turn_id for turn in turns]
     assert len(ids) == len(set(ids)), "turn_ids should be unique"
 
 
 def test_parse_transcript_speaker_ids() -> None:
-    turns = parse_transcript(Path("Architecting_the_operation/podcasts/ATO_EP0.md"))
+    turns = parse_transcript(FIXTURE)
     assert {turn.speaker_id for turn in turns} == {
-        "emmanuel_theodore",
-        "toussaint",
-        "aisha",
+        "host",
+        "guest",
+        "narrator",
     }
 
 
 def test_parse_transcript_first_turn() -> None:
-    turns = parse_transcript(Path("Architecting_the_operation/podcasts/ATO_EP0.md"))
-    assert turns[0].speaker_id == "emmanuel_theodore"
+    turns = parse_transcript(FIXTURE)
+    assert turns[0].speaker_id == "host"
     assert turns[0].timestamp_mmss == "00:01"
-    assert turns[0].display_name == "Emmanuel Theodore"
+    assert turns[0].display_name == "Host"
 
 
 def test_parse_transcript_clean_text_no_asterisks() -> None:
-    turns = parse_transcript(Path("Architecting_the_operation/podcasts/ATO_EP0.md"))
+    turns = parse_transcript(FIXTURE)
     assert all("*" not in turn.clean_text and "_" not in turn.clean_text for turn in turns)
 
 
@@ -49,10 +51,10 @@ def test_parse_transcript_preamble_skipped(tmp_path) -> None:
             [
                 "This is preamble text.",
                 "",
-                "Emmanuel Theodore (00:00)",
+                "Host (00:00)",
                 "Hello.",
                 "",
-                "AI 1 (00:03)",
+                "Guest (00:03)",
                 "Reply.",
             ]
         ),
@@ -82,7 +84,7 @@ def test_parse_transcript_no_speaker_lines_raises(tmp_path) -> None:
 
 
 def test_parse_transcript_timestamp_ms() -> None:
-    turns = parse_transcript(Path("Architecting_the_operation/podcasts/ATO_EP0.md"))
+    turns = parse_transcript(FIXTURE)
 
     assert turns[0].timestamp_ms == 1000
 
@@ -93,7 +95,7 @@ def test_parse_transcript_timestamp_ms() -> None:
 
 
 def test_parse_transcript_line_span() -> None:
-    turns = parse_transcript(Path("Architecting_the_operation/podcasts/ATO_EP0.md"))
+    turns = parse_transcript(FIXTURE)
 
     assert all(
         isinstance(turn.line_span, tuple)

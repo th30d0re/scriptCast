@@ -1,4 +1,4 @@
-"""Shared data models for the voice pipeline."""
+"""Shared data models for scriptcast."""
 
 from __future__ import annotations
 

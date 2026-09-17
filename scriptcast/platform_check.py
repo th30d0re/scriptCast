@@ -1,4 +1,4 @@
-"""Platform checks for MLX-backed voice pipeline commands."""
+"""Platform checks for MLX-backed scriptcast commands."""
 
 import platform
 import sys

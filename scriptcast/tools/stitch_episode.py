@@ -8,7 +8,7 @@ clip's trailing silence, which is audible as long, eerie gaps between turns.
 This script lays clips out at their manifest `start_ms` and cuts each one at its
 `speech_duration_ms`, so the MP3 matches what the Ableton set plays.
 
-Usage: python3 tools/stitch_episode.py outputs/<episode_id> [--pad-ms N]
+Usage: scriptcast-stitch outputs/<episode_id> [--pad-ms N]
 """
 from __future__ import annotations
 

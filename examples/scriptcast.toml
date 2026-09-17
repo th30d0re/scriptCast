@@ -1,0 +1,34 @@
+# scriptCast project configuration.
+# Every key is optional; these are the defaults. Relative paths anchor at the
+# project root (the directory containing this file).
+
+# Voices YAML: speaker ids -> engine and voice settings.
+# Read by `scriptcast` (default for --voices) and `scriptcast-calibrate`.
+voices = "voices.yaml"
+
+# Heteronym respellings: word/reading -> spelling the engine says correctly.
+# Read by the pronunciation steering; written by `scriptcast-calibrate --write`.
+pronunciations = "pronunciations.yaml"
+
+# Measured speech rates per speaker (ms per word, ms per punctuation mark).
+# Read by `scriptcast-retime` and `scriptcast-outliers`.
+speaker_rates = "speaker_rates.json"
+
+# Archival clip registry: clip id -> source/start/end/citation/...
+# Read by the archive engine; written by `scriptcast-clip`.
+clips = "archive/clips.yaml"
+
+# Where `scriptcast-clip` stores copied source recordings.
+clip_sources = "archive/sources"
+
+# Where `scriptcast-reference` writes reference WAVs and reference_texts.json.
+references = "voices/candidates"
+
+# Script directory; `scriptcast-calibrate` mines real sentences here.
+scripts = "scripts"
+
+# Output root; `scriptcast` renders episodes under it (default for --out-dir).
+outputs = "outputs"
+
+# Python interpreter of the OmniVoice worker venv.
+omnivoice_python = ".venv-omnivoice/bin/python"

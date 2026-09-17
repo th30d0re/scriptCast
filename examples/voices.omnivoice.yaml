@@ -1,0 +1,33 @@
+# OmniVoice voices. OmniVoice conditions on the reference clip AND its
+# transcript together, so reference_text must match reference_audio word for
+# word; a truncated or approximate transcript is worse than a shorter clip.
+# Relative reference_audio paths resolve against the project root.
+#
+# A turn marked [emphasis] in the script renders from the *_expressive pair
+# where one is declared. Declare reference_audio_expressive and
+# reference_text_expressive together or not at all.
+speakers:
+  host:
+    name: "Host Name"
+    engine: "omnivoice"
+    reference_audio: "voices/candidates/host_reference.wav"
+    reference_text: "The exact sentence spoken in the reference clip, word for word."
+    reference_audio_expressive: "voices/candidates/host_expressive.wav"
+    reference_text_expressive: "The exact sentence spoken in the expressive clip, word for word."
+    character_profile: "The show's host"
+
+  guest:
+    name: "Guest Name"
+    engine: "omnivoice"
+    reference_audio: "voices/candidates/guest_reference.wav"
+    reference_text: "The exact sentence spoken in the guest reference clip."
+    # speed scales the duration estimate OmniVoice derives from the reference
+    # clip: below 1.0 is slower, above 1.0 is faster.
+    speed: 1.0
+    character_profile: "A recurring guest"
+
+  narrator:
+    name: "Narrator Name"
+    engine: "omnivoice"
+    reference_audio: "voices/candidates/narrator_reference.wav"
+    reference_text: "The exact sentence spoken in the narrator reference clip."

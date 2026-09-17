@@ -166,7 +166,7 @@ def write_manifest(
 
     # Report what the speakers actually used rather than the --engine default.
     # A voices file sets the engine per speaker, so the flag is frequently
-    # wrong: Episode 2 rendered entirely on OmniVoice while this field read
+    # wrong: one episode rendered entirely on OmniVoice while this field read
     # "mlx_kokoro", which is the field anyone diagnosing a mixed render looks
     # at first.
     used = sorted({v.engine for sid, v in voices.items()

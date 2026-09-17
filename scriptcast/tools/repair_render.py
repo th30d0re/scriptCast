@@ -16,9 +16,9 @@ reference audio rather than at a bad sample, and that wants a person.
 
 Pass 0 is the one expensive step by default, because it transcribes the whole
 episode to find out what needs fixing. If the suspect turns are already known
-(from a manual `verify_render.py --turns` run, or because only a handful of
+(from a manual `scriptcast-verify --turns` run, or because only a handful of
 turns were just edited), skip that with `--turns 20,38,50` to verify only
-those on pass 0, or `--seed-json` to reuse a prior `verify_render.py
+those on pass 0, or `--seed-json` to reuse a prior `scriptcast-verify
 --json-out` file outright.
 
 The final pass relays the timeline, because a regenerated clip is a different
@@ -108,7 +108,7 @@ def main() -> int:
                     help="Comma-separated turn indices to verify on pass 0, "
                          "instead of the whole episode. For a small, "
                          "already-known set of suspect turns (e.g. from a "
-                         "manual `verify_render.py --turns` run), this skips "
+                         "manual `scriptcast-verify --turns` run), this skips "
                          "re-transcribing everything just to re-derive a list "
                          "already in hand. Ignored if --seed-json is set.")
     args = ap.parse_args()

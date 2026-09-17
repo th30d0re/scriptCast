@@ -1,4 +1,4 @@
-"""MLX Local TTS Pipeline - scriptcast package."""
+"""scriptcast: render markdown podcast scripts to per-turn speech."""
 
 from importlib import import_module
 from typing import Any

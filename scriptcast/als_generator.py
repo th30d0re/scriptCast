@@ -17,7 +17,7 @@ from scriptcast.models import SegmentResult
 _BPM = 120
 _MS_PER_BEAT = 60000.0 / _BPM
 _GENERATED_WARP_MARKER_ID_OFFSET = 1_000_000
-_TEMPLATE_ENV_VAR = "VOICE_PIPELINE_ALS_TEMPLATE"
+_TEMPLATE_ENV_VAR = "SCRIPTCAST_ALS_TEMPLATE"
 _PODCAST_TEMPLATE_RELATIVE_PATH = Path(
     "Contents/App-Resources/Core Library/Templates/Podcast & Radio.als"
 )

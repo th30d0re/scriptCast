@@ -14,9 +14,9 @@ class GenerateAlsTests(TestCase):
     ) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project_root = Path(tmp)
-            output_path = project_root / "ATO_EP0.als"
+            output_path = project_root / "ep01.als"
             segments = [
-                self._segment(project_root, 0, "emmanuel_theodore", 1000, 800, 250),
+                self._segment(project_root, 0, "host", 1000, 800, 250),
                 self._segment(project_root, 1, "ai_1", 500, 400, 100),
                 self._segment(project_root, 2, "ai_2", 250, 200, 0),
             ]
@@ -33,7 +33,7 @@ class GenerateAlsTests(TestCase):
         track_names = [
             track.find("./Name/EffectiveName").attrib["Value"] for track in tracks
         ]
-        self.assertIn("emmanuel_theodore", track_names)
+        self.assertIn("host", track_names)
         self.assertIn("ai_1", track_names)
         self.assertIn("ai_2", track_names)
 
@@ -101,11 +101,11 @@ class GenerateAlsTests(TestCase):
     def test_dynamic_speaker_discovery_orders_by_first_appearance(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project_root = Path(tmp)
-            output_path = project_root / "ATO_EP0.als"
-            # ai_1 appears first, then emmanuel_theodore, then guest
+            output_path = project_root / "ep01.als"
+            # ai_1 appears first, then host, then guest
             segments = [
                 self._segment(project_root, 0, "ai_1", 500, 400, 100),
-                self._segment(project_root, 1, "emmanuel_theodore", 1000, 800, 250),
+                self._segment(project_root, 1, "host", 1000, 800, 250),
                 self._segment(project_root, 2, "guest", 250, 200, 0),
             ]
 
@@ -121,14 +121,14 @@ class GenerateAlsTests(TestCase):
         ]
         # Only the used speaker tracks are renamed; filter for our speakers
         self.assertEqual(
-            [name for name in track_names if name in ("ai_1", "emmanuel_theodore", "guest")],
-            ["ai_1", "emmanuel_theodore", "guest"],
+            [name for name in track_names if name in ("ai_1", "host", "guest")],
+            ["ai_1", "host", "guest"],
         )
 
     def test_empty_segments_raises(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project_root = Path(tmp)
-            output_path = project_root / "ATO_EP0.als"
+            output_path = project_root / "ep01.als"
 
             with self.assertRaisesRegex(ValueError, "No segments"):
                 generate_als([], output_path)
@@ -136,11 +136,11 @@ class GenerateAlsTests(TestCase):
     def test_position_map_preserves_exact_start_ms(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project_root = Path(tmp)
-            output_path = project_root / "ATO_EP0.als"
+            output_path = project_root / "ep01.als"
             segments = [
-                self._segment(project_root, 0, "emmanuel_theodore", 1000, 800, 250),
-                self._segment(project_root, 1, "aisha", 500, 400, 100),
-                self._segment(project_root, 2, "toussaint", 250, 200, 0),
+                self._segment(project_root, 0, "host", 1000, 800, 250),
+                self._segment(project_root, 1, "guest", 500, 400, 100),
+                self._segment(project_root, 2, "cohost", 250, 200, 0),
             ]
             # Force custom positions: seg0 at 0ms, seg1 at 5000ms, seg2 at 10000ms
             position_map = {
@@ -169,9 +169,9 @@ class GenerateAlsTests(TestCase):
     def test_backup_created_on_overwrite(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project_root = Path(tmp)
-            output_path = project_root / "ATO_EP0.als"
+            output_path = project_root / "ep01.als"
             segments = [
-                self._segment(project_root, 0, "emmanuel_theodore", 1000, 800, 250),
+                self._segment(project_root, 0, "host", 1000, 800, 250),
             ]
             generate_als(segments, output_path)
             self.assertTrue(output_path.exists())
@@ -181,7 +181,7 @@ class GenerateAlsTests(TestCase):
             self.assertEqual(list(project_root.glob("*.backup_*.als")), [])
             backups = list((project_root / "_backups").glob("*.backup_*.als"))
             self.assertEqual(len(backups), 1)
-            self.assertTrue(backups[0].name.startswith("ATO_EP0.backup_"))
+            self.assertTrue(backups[0].name.startswith("ep01.backup_"))
 
             # The backup sits one level deeper, so its relative sample paths
             # are reparented and still resolve.

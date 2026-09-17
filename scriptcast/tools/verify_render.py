@@ -27,7 +27,7 @@ number alone.
 Heteronyms get a second check that Whisper cannot give. A wrong stress ("the
 historical re-CORD") transcribes as the right word and scores 1.000, so every
 heteronym is also cut out of the audio and judged by a phoneme recognizer
-against the reading its context calls for (`tools/stress_check.py`). A turn
+against the reading its context calls for (`scriptcast-stress`). A turn
 fails when one comes back "wrong" or "garbled". Skip it with `--no-stress`.
 """
 from __future__ import annotations
@@ -126,9 +126,9 @@ def _score(expected: str, heard: str) -> tuple[float, int]:
 
     The run length is the signal that matters. A whole-turn ratio barely moves
     when one word out of twenty comes out wrong, and one wrong word is exactly
-    what a listener hears as a glitch. Episode 2's opening had "Prejudice plus
-    power" render as something no model could read as "prejudice", and it still
-    scored 0.909 overall.
+    what a listener hears as a glitch. One episode's opening had a two-word
+    phrase render as something no model could read as the scripted words, and
+    the turn still scored 0.909 overall.
 
     Runs that only differ in spelling are not counted, so a correctly-read line
     does not keep failing on the transcriber's habits.

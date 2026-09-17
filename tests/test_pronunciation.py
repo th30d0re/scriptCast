@@ -66,8 +66,8 @@ def _turn(text: str, turn_id: str = "t1") -> Turn:
     return Turn(
         turn_index=0,
         turn_id=turn_id,
-        speaker_id="emmanuel_theodore",
-        display_name="Emmanuel Theodore",
+        speaker_id="host",
+        display_name="Host",
         timestamp_mmss="00:00",
         timestamp_ms=0,
         raw_text=text,
@@ -77,7 +77,7 @@ def _turn(text: str, turn_id: str = "t1") -> Turn:
     )
 
 
-VOICE = VoiceConfig(speaker_id="emmanuel_theodore", engine="omnivoice",
+VOICE = VoiceConfig(speaker_id="host", engine="omnivoice",
                     reference_audio="ref.wav", reference_text="ref")
 
 
@@ -86,10 +86,16 @@ def _state(fingerprints):
                        rendered_at="now", turns=fingerprints, segments=[])
 
 
-def test_turn_rendered_before_its_respelling_existed_re_renders():
+def test_turn_rendered_before_its_respelling_existed_re_renders(tmp_path, monkeypatch):
+    # A project whose pronunciations.yaml respells "record", so the turn's
+    # speech-text hash differs from the "" stored before the respelling existed.
+    (tmp_path / "pronunciations.yaml").write_text(
+        "record:\n  default: reckerd\n", encoding="utf-8"
+    )
+    monkeypatch.setenv("SCRIPTCAST_PROJECT", str(tmp_path))
     turn = _turn("The historical record.")
     before = replace(compute_turn_fingerprint(turn, VOICE), speech_text_hash="")
-    voices = {"emmanuel_theodore": VOICE}
+    voices = {"host": VOICE}
     assert detect_changed_turns([turn], _state([before]), voices) == ["t1"]
     assert plan_precision_insert([turn], _state([before]), voices).modified == [turn]
 
@@ -97,7 +103,7 @@ def test_turn_rendered_before_its_respelling_existed_re_renders():
 def test_turn_without_heteronyms_stays_put():
     turn = _turn("Nothing here changes.")
     fp = compute_turn_fingerprint(turn, VOICE)
-    voices = {"emmanuel_theodore": VOICE}
+    voices = {"host": VOICE}
     assert detect_changed_turns([turn], _state([fp]), voices) == []
     assert plan_precision_insert([turn], _state([fp]), voices).unchanged == [turn]
 
@@ -106,5 +112,5 @@ def test_precision_insert_notices_a_new_reference_clip():
     turn = _turn("Nothing here changes.")
     old = compute_turn_fingerprint(turn, VOICE)
     new_voice = replace(VOICE, reference_audio="clean.wav")
-    plan = plan_precision_insert([turn], _state([old]), {"emmanuel_theodore": new_voice})
+    plan = plan_precision_insert([turn], _state([old]), {"host": new_voice})
     assert plan.modified == [turn]

@@ -1,12 +1,16 @@
 import json
+import shutil
 from pathlib import Path
 
 from scriptcast.manifest import write_manifest
 from scriptcast.models import SegmentResult, Turn, VoiceConfig
 
+FIXTURE = Path(__file__).parent / "fixtures" / "sample_episode.md"
 
-def test_manifest_paths_are_relative_to_manifest_directory(tmp_path) -> None:
-    episode_dir = tmp_path / "ATO_EP0"
+
+def test_manifest_paths_are_relative_to_manifest_directory(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    episode_dir = tmp_path / "ep01"
     wav_path = (
         episode_dir
         / "Samples"
@@ -16,7 +20,9 @@ def test_manifest_paths_are_relative_to_manifest_directory(tmp_path) -> None:
     )
     wav_path.parent.mkdir(parents=True, exist_ok=True)
     wav_path.write_bytes(b"fake wav")
-    source_path = Path("Architecting_the_operation/podcasts/ATO_EP0.md").resolve()
+    source_path = tmp_path / "scripts" / "ep01.md"
+    source_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(FIXTURE, source_path)
     turns = [
         Turn(
             turn_index=0,
@@ -54,7 +60,7 @@ def test_manifest_paths_are_relative_to_manifest_directory(tmp_path) -> None:
     ]
 
     manifest_path = write_manifest(
-        episode_id="ATO_EP0",
+        episode_id="ep01",
         source_file=str(source_path),
         model_id="model",
         engine="mlx_kokoro",
@@ -69,19 +75,19 @@ def test_manifest_paths_are_relative_to_manifest_directory(tmp_path) -> None:
 
     assert segment_wav.startswith("Samples/Processed/")
     assert (manifest_path.parent / segment_wav).resolve() == wav_path.resolve()
-    assert manifest["source_file"] == "Architecting_the_operation/podcasts/ATO_EP0.md"
+    assert manifest["source_file"] == "scripts/ep01.md"
     assert not Path(manifest["source_file"]).is_absolute()
     # speech_duration_ms should be present in the segment entry
     assert manifest["turns"][0]["segments"][0]["speech_duration_ms"] == 850
 
 
 def test_manifest_includes_engine_and_character_profile_for_elevenlabs(tmp_path) -> None:
-    episode_dir = tmp_path / "ATO_EP0"
+    episode_dir = tmp_path / "ep01"
     wav_path = (
         episode_dir
         / "Samples"
         / "Processed"
-        / "kareem"
+        / "host"
         / "id0_chunk_0000.wav"
     )
     wav_path.parent.mkdir(parents=True, exist_ok=True)
@@ -90,8 +96,8 @@ def test_manifest_includes_engine_and_character_profile_for_elevenlabs(tmp_path)
         Turn(
             turn_index=0,
             turn_id="id0",
-            speaker_id="kareem",
-            display_name="Kareem",
+            speaker_id="host",
+            display_name="Host",
             timestamp_mmss="00:00",
             timestamp_ms=0,
             raw_text="Hello.",
@@ -100,11 +106,11 @@ def test_manifest_includes_engine_and_character_profile_for_elevenlabs(tmp_path)
         )
     ]
     voices = {
-        "kareem": VoiceConfig(
-            speaker_id="kareem",
+        "host": VoiceConfig(
+            speaker_id="host",
             engine="elevenlabs",
-            elevenlabs_voice_id="VlUmeC1Uzj3NnwiVR9K9",
-            character_profile="Black male perspective",
+            elevenlabs_voice_id="voice-id-123",
+            character_profile="A calm, measured speaker",
         )
     }
     segments = [
@@ -112,7 +118,7 @@ def test_manifest_includes_engine_and_character_profile_for_elevenlabs(tmp_path)
             turn_index=0,
             turn_id="id0",
             chunk_index=0,
-            speaker_id="kareem",
+            speaker_id="host",
             wav_path=wav_path,
             duration_ms=1000,
             speech_duration_ms=850,
@@ -123,7 +129,7 @@ def test_manifest_includes_engine_and_character_profile_for_elevenlabs(tmp_path)
     ]
 
     manifest_path = write_manifest(
-        episode_id="ATO_EP0",
+        episode_id="ep01",
         source_file="test.md",
         model_id="eleven_multilingual_v2",
         engine="elevenlabs",
@@ -135,7 +141,7 @@ def test_manifest_includes_engine_and_character_profile_for_elevenlabs(tmp_path)
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     speaker = manifest["speakers"][0]
-    assert speaker["speaker_id"] == "kareem"
+    assert speaker["speaker_id"] == "host"
     assert speaker["engine"] == "elevenlabs"
-    assert speaker["voice"] == "VlUmeC1Uzj3NnwiVR9K9"
-    assert speaker["character_profile"] == "Black male perspective"
+    assert speaker["voice"] == "voice-id-123"
+    assert speaker["character_profile"] == "A calm, measured speaker"

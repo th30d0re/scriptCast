@@ -36,7 +36,7 @@ class LoadVoicesTests(TestCase):
                 "\n".join(
                     [
                         "speakers:",
-                        "  kareem:",
+                        "  host:",
                         "    engine: elevenlabs",
                     ]
                 ),
@@ -53,9 +53,9 @@ class LoadVoicesTests(TestCase):
                 "\n".join(
                     [
                         "speakers:",
-                        "  kareem:",
+                        "  host:",
                         "    engine: elevenlabs",
-                        "    elevenlabs_voice_id: VlUmeC1Uzj3NnwiVR9K9",
+                        "    elevenlabs_voice_id: voice-id-123",
                         "    character_profile: Test profile",
                     ]
                 ),
@@ -64,9 +64,9 @@ class LoadVoicesTests(TestCase):
 
             voices = load_voices(voices_path)
 
-        self.assertEqual(voices["kareem"].engine, "elevenlabs")
-        self.assertEqual(voices["kareem"].elevenlabs_voice_id, "VlUmeC1Uzj3NnwiVR9K9")
-        self.assertEqual(voices["kareem"].character_profile, "Test profile")
+        self.assertEqual(voices["host"].engine, "elevenlabs")
+        self.assertEqual(voices["host"].elevenlabs_voice_id, "voice-id-123")
+        self.assertEqual(voices["host"].character_profile, "Test profile")
 
     def test_kokoro_voice_requires_kokoro_voice_and_lang_code(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -92,10 +92,10 @@ class LoadVoicesTests(TestCase):
                 "\n".join(
                     [
                         "speakers:",
-                        "  kareem:",
+                        "  host:",
                         "    engine: mlx_chatterbox",
-                        "    reference_audio: voices/kareem_reference.wav",
-                        "    character_profile: Black male perspective",
+                        "    reference_audio: voices/host_reference.wav",
+                        "    character_profile: A calm, measured speaker",
                         "    exaggeration: 0.3",
                     ]
                 ),
@@ -104,10 +104,10 @@ class LoadVoicesTests(TestCase):
 
             voices = load_voices(voices_path)
 
-        self.assertEqual(voices["kareem"].engine, "mlx_chatterbox")
-        self.assertEqual(voices["kareem"].reference_audio, "voices/kareem_reference.wav")
-        self.assertEqual(voices["kareem"].character_profile, "Black male perspective")
-        self.assertEqual(voices["kareem"].exaggeration, 0.3)
+        self.assertEqual(voices["host"].engine, "mlx_chatterbox")
+        self.assertEqual(voices["host"].reference_audio, "voices/host_reference.wav")
+        self.assertEqual(voices["host"].character_profile, "A calm, measured speaker")
+        self.assertEqual(voices["host"].exaggeration, 0.3)
 
     def test_mlx_chatterbox_voice_requires_reference_audio(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -116,7 +116,7 @@ class LoadVoicesTests(TestCase):
                 "\n".join(
                     [
                         "speakers:",
-                        "  kareem:",
+                        "  host:",
                         "    engine: mlx_chatterbox",
                     ]
                 ),

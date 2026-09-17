@@ -13,9 +13,9 @@ class GenerateFcpxmlTests(TestCase):
             project_root = Path(tmp)
             output_path = project_root / "test.fcpxml"
             segments = [
-                self._segment(project_root, 0, "emmanuel_theodore", 1000, 950, 250),
-                self._segment(project_root, 1, "toussaint", 500, 450, 100),
-                self._segment(project_root, 2, "aisha", 750, 700, 0),
+                self._segment(project_root, 0, "host", 1000, 950, 250),
+                self._segment(project_root, 1, "cohost", 500, 450, 100),
+                self._segment(project_root, 2, "guest", 750, 700, 0),
             ]
 
             result_path = generate_fcpxml(segments, output_path, episode_id="test_ep")
@@ -57,8 +57,8 @@ class GenerateFcpxmlTests(TestCase):
             project_root = Path(tmp)
             output_path = project_root / "test.fcpxml"
             segments = [
-                self._segment(project_root, 0, "emmanuel_theodore", 1000, 950, 250),
-                self._segment(project_root, 1, "toussaint", 500, 450, 100),
+                self._segment(project_root, 0, "host", 1000, 950, 250),
+                self._segment(project_root, 1, "cohost", 500, 450, 100),
             ]
             position_map = {("id0", 0): 0, ("id1", 0): 5000}
 

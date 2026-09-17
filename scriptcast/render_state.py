@@ -30,8 +30,8 @@ class TurnFingerprint:
     segment_count: int
     # How this speaker was voiced. Change detection used to compare text alone,
     # so switching a speaker's engine or reference audio left every unchanged
-    # turn holding audio from the previous voice. Episode 2 spent a day as a mix
-    # of Kokoro, Chatterbox and OmniVoice clips because of it.
+    # turn holding audio from the previous voice. One episode spent a day as a
+    # mix of Kokoro, Chatterbox and OmniVoice clips because of it.
     voice_hash: str = ""
     # Identity of the text the engine was actually handed, when a heteronym
     # respelling changed it (pronunciation.py). Empty when nothing changed, so

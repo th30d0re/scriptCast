@@ -1,4 +1,4 @@
-"""Entry point for the local voice pipeline."""
+"""Render a markdown script to per-turn speech (the `scriptcast` command)."""
 
 from __future__ import annotations
 

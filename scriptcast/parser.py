@@ -1,4 +1,4 @@
-"""Transcript parsing for the voice pipeline."""
+"""Transcript parsing for scriptcast."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ _TAG_RE = re.compile(r"(\[[^\]]*\])")
 
 
 def _clean_text(raw_text: str) -> str:
-    # Markup tags keep their contents: a clip id like [clip:atwater_1981] needs
+    # Markup tags keep their contents: a clip id like [clip:speech_1963] needs
     # its underscores. Everything outside a tag is stripped of markdown emphasis.
     parts = _TAG_RE.split(raw_text)
     return "".join(

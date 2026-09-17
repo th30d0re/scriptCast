@@ -25,23 +25,23 @@ class LogicExporterTests(TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             project_root = Path(tmp)
             segments = [
-                self._segment(project_root, 0, "emmanuel_theodore", 1000, 950, 250),
-                self._segment(project_root, 1, "toussaint", 500, 450, 100),
-                self._segment(project_root, 2, "aisha", 750, 700, 0),
+                self._segment(project_root, 0, "host", 1000, 950, 250),
+                self._segment(project_root, 1, "cohost", 500, 450, 100),
+                self._segment(project_root, 2, "guest", 750, 700, 0),
             ]
             script = _generate_applescript(segments, None, "TestEpisode", update_existing=False)
 
         self.assertIn('tell application "Logic Pro"', script)
         self.assertIn("set proj to make new project", script)
-        self.assertIn('make new audio track at end of tracks with properties {name:"Emmanuel Theodore"}', script)
-        self.assertIn('make new audio track at end of tracks with properties {name:"Toussaint"}', script)
-        self.assertIn('make new audio track at end of tracks with properties {name:"Aisha"}', script)
+        self.assertIn('make new audio track at end of tracks with properties {name:"Host"}', script)
+        self.assertIn('make new audio track at end of tracks with properties {name:"Cohost"}', script)
+        self.assertIn('make new audio track at end of tracks with properties {name:"Guest"}', script)
 
     def test_generate_applescript_uses_existing_project_when_update_existing(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project_root = Path(tmp)
             segments = [
-                self._segment(project_root, 0, "toussaint", 500, 450, 100),
+                self._segment(project_root, 0, "cohost", 500, 450, 100),
             ]
             script = _generate_applescript(segments, None, "TestEpisode", update_existing=True)
 
@@ -52,7 +52,7 @@ class LogicExporterTests(TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             project_root = Path(tmp)
             segments = [
-                self._segment(project_root, 0, "toussaint", 1000, 950, 250),
+                self._segment(project_root, 0, "cohost", 1000, 950, 250),
             ]
             position_map = {("id0", 0): 5000}
             script = _generate_applescript(segments, position_map, "TestEpisode")
@@ -64,13 +64,13 @@ class LogicExporterTests(TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             project_root = Path(tmp)
             segments = [
-                self._segment(project_root, 0, "emmanuel_theodore", 1000, 950, 250),
-                self._segment(project_root, 1, "toussaint", 500, 450, 100),
+                self._segment(project_root, 0, "host", 1000, 950, 250),
+                self._segment(project_root, 1, "cohost", 500, 450, 100),
             ]
             script = _generate_applescript(segments, None, "TestEpisode")
 
-        # Emmanuel Theodore is first speaker -> track 1
-        # Toussaint is second speaker -> track 2
+        # Host is first speaker -> track 1
+        # Cohost is second speaker -> track 2
         self.assertIn("tell track 1 of proj", script)
         self.assertIn("tell track 2 of proj", script)
 

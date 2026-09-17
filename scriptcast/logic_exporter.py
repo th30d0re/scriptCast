@@ -132,7 +132,7 @@ def _generate_applescript(
         ])
 
     lines.extend([
-        '    display notification "Voice pipeline export complete" with title "Logic Pro"',
+        '    display notification "scriptcast export complete" with title "Logic Pro"',
         "end tell",
         "",
     ])
@@ -143,7 +143,7 @@ def _generate_applescript(
 def export_to_logic(
     segment_results: list[SegmentResult],
     position_map: dict[tuple[str, int], int] | None = None,
-    project_name: str = "Voice Pipeline Export",
+    project_name: str = "scriptcast Export",
     update_existing: bool = False,
     dry_run: bool = False,
 ) -> tuple[str, str]:

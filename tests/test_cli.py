@@ -75,13 +75,13 @@ async def _fake_process_segment(
     )
 
 
-def test_sample_seconds_cli_uses_rendered_timeline_and_reaches_ep0_speakers(
+def test_sample_seconds_cli_uses_rendered_timeline_and_reaches_all_speakers(
     tmp_path,
     monkeypatch,
     capsys,
 ) -> None:
-    episode_id = "ep0_sample"
-    transcript_path = Path("Architecting_the_operation/podcasts/ATO_EP0.md")
+    episode_id = "sample"
+    transcript_path = Path(__file__).parent / "fixtures" / "sample_episode.md"
     monkeypatch.setattr(cli, "require_apple_silicon", lambda: None)
     monkeypatch.setattr(cli, "_engine_for_key", lambda _key, _model, trim_edges=True: _FakeEngine())
     monkeypatch.setattr(cli, "process_segment", _fake_process_segment)
@@ -89,20 +89,20 @@ def test_sample_seconds_cli_uses_rendered_timeline_and_reaches_ep0_speakers(
         cli,
         "load_voices",
         lambda _path: {
-            "emmanuel_theodore": VoiceConfig(
-                speaker_id="emmanuel_theodore",
+            "host": VoiceConfig(
+                speaker_id="host",
                 kokoro_voice="am_adam",
                 lang_code="a",
                 speed=1.15,
             ),
-            "toussaint": VoiceConfig(
-                speaker_id="toussaint",
+            "guest": VoiceConfig(
+                speaker_id="guest",
                 kokoro_voice="af_sky",
                 lang_code="a",
                 speed=1.15,
             ),
-            "aisha": VoiceConfig(
-                speaker_id="aisha",
+            "narrator": VoiceConfig(
+                speaker_id="narrator",
                 kokoro_voice="am_echo",
                 lang_code="a",
                 speed=1.15,
@@ -143,9 +143,9 @@ def test_sample_seconds_cli_uses_rendered_timeline_and_reaches_ep0_speakers(
     )
 
     assert {
-        "emmanuel_theodore",
-        "toussaint",
-        "aisha",
+        "host",
+        "guest",
+        "narrator",
     }.issubset(speakers_with_segments)
     # Budget is approximate; transcript markup (e.g. [BEAT]) can shift exact total
     assert 59_000 <= emitted_ms <= 62_000
@@ -201,7 +201,7 @@ def test_dry_run_cli_prints_turn_summary(tmp_path, monkeypatch, capsys) -> None:
     transcript_path.write_text(
         "\n".join(
             [
-                "Emmanuel Theodore (00:00)",
+                "Host (00:00)",
                 "Hello there.",
                 "",
                 "AI 1 (00:03)",
@@ -215,8 +215,8 @@ def test_dry_run_cli_prints_turn_summary(tmp_path, monkeypatch, capsys) -> None:
         cli,
         "load_voices",
         lambda _path: {
-            "emmanuel_theodore": VoiceConfig(
-                speaker_id="emmanuel_theodore",
+            "host": VoiceConfig(
+                speaker_id="host",
                 kokoro_voice="am_adam",
                 lang_code="a",
                 speed=1.15,
@@ -249,8 +249,8 @@ def test_dry_run_cli_prints_turn_summary(tmp_path, monkeypatch, capsys) -> None:
     output = capsys.readouterr().out
     assert "Dry run complete." in output
     assert "Total turns: 2" in output
-    assert "Speakers found: Emmanuel Theodore (emmanuel_theodore), AI 1 (ai_1)" in output
-    assert "First turn: [00:00] Emmanuel Theodore: Hello there." in output
+    assert "Speakers found: Host (host), AI 1 (ai_1)" in output
+    assert "First turn: [00:00] Host: Hello there." in output
     assert "Last turn: [00:03] AI 1: A short reply." in output
     assert "Manifest:" in output
 
