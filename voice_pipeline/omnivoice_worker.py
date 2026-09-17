@@ -43,6 +43,7 @@ def main() -> int:
                 text=request["text"],
                 ref_audio=request["ref_audio"],
                 ref_text=request["ref_text"],
+                speed=request.get("speed"),
             )
             samples = audio[0]
             soundfile.write(request["out"], samples, 24000)

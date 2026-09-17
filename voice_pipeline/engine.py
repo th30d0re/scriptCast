@@ -352,6 +352,11 @@ class OmniVoiceEngine(TTSEngine):
             "text": text, "ref_audio": ref_audio,
             "ref_text": ref_text, "out": str(out_path),
         }
+        # OmniVoice estimates a duration from the text and the reference clip,
+        # so a clone inherits its reference's pace. `speed` in voices.yaml
+        # scales that estimate: below 1.0 is slower.
+        if voice_config.speed and voice_config.speed != 1.0:
+            request["speed"] = voice_config.speed
         assert self._process.stdin is not None and self._process.stdout is not None
         self._process.stdin.write(json.dumps(request) + "\n")
         self._process.stdin.flush()

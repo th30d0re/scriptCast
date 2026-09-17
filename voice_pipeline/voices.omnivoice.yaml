@@ -26,6 +26,9 @@ speakers:
     engine: "omnivoice"
     reference_audio: "voices/candidates/toussaint_sentence_ref.wav"
     reference_text: "Which turns your own discomfort into a measurement. Wherever the exercise gets hardest is where something was installed."
+    # The reference clip rendered him near 230 wpm against Aisha's 171.
+    # Emmanuel chose 0.75 (about 180 wpm) by ear, 2026-09-16.
+    speed: 0.75
     character_profile: "Co-narrator, historical and structural throughline"
 
   aisha:
