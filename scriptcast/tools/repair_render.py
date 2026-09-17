@@ -5,9 +5,9 @@ on a re-roll, which makes the fix mechanical: transcribe the audio, compare it
 to the script, regenerate the turns that disagree, and check again. Doing that
 by ear does not scale past one episode.
 
-    python3 tools/repair_render.py outputs/ATO_EP02_local \
-        --transcript Architecting_the_operation/podcasts/ATO_EP02_preface.md \
-        --voices voice_pipeline/voices.local.yaml --episode-id ATO_EP02_local
+    scriptcast-repair outputs/<episode_id> \
+        --transcript scripts/<episode>.md \
+        --voices voices.yaml --episode-id <episode_id>
 
 Each pass regenerates the flagged turns and re-checks only those, so passes get
 cheap quickly. A turn that fails `--max-passes` times in a row is reported and
@@ -28,11 +28,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parent.parent
+from scriptcast.project import current
+
+
+def _child_env() -> dict[str, str]:
+    """An environment where `python -m scriptcast...` imports this package."""
+    env = dict(os.environ)
+    package_parent = str(Path(__file__).resolve().parents[2])
+    env["PYTHONPATH"] = package_parent + os.pathsep + env.get("PYTHONPATH", "")
+    return env
 
 
 def _failed(result: dict, threshold: float, max_run: int) -> bool:
@@ -46,16 +55,16 @@ def _failed(result: dict, threshold: float, max_run: int) -> bool:
 
 def _verify(episode_dir: Path, transcript: Path, model: str,
             turns: list[int] | None, threshold: float, max_run: int) -> list[dict]:
-    out = _ROOT / ".verify_pass.json"
+    out = episode_dir / ".verify_pass.json"
     cmd = [
-        sys.executable, str(_ROOT / "tools" / "verify_render.py"), str(episode_dir),
+        sys.executable, "-m", "scriptcast.tools.verify_render", str(episode_dir),
         "--transcript", str(transcript), "--model", model,
         "--threshold", str(threshold), "--max-run", str(max_run),
         "--json-out", str(out),
     ]
     if turns:
         cmd += ["--turns", ",".join(str(t) for t in turns)]
-    subprocess.run(cmd, cwd=_ROOT, capture_output=True, text=True)
+    subprocess.run(cmd, env=_child_env(), capture_output=True, text=True)
     if not out.exists():
         return []
     results = json.loads(out.read_text())
@@ -67,13 +76,13 @@ def _regenerate(transcript: Path, episode_id: str, out_dir: Path,
                 voices: Path, gap_ms: int, turns: list[int]) -> None:
     subprocess.run(
         [
-            sys.executable, "-m", "voice_pipeline",
+            sys.executable, "-m", "scriptcast",
             "--transcript", str(transcript), "--episode-id", episode_id,
             "--out-dir", str(out_dir), "--voices", str(voices),
             "--gap-ms", str(gap_ms),
             "--regenerate-turns", ",".join(str(t) for t in turns),
         ],
-        cwd=_ROOT, capture_output=True, text=True, check=True,
+        env=_child_env(), capture_output=True, text=True, check=True,
     )
 
 
@@ -83,7 +92,9 @@ def main() -> int:
     ap.add_argument("--transcript", type=Path, required=True)
     ap.add_argument("--episode-id", required=True)
     ap.add_argument("--voices", type=Path, required=True)
-    ap.add_argument("--out-dir", type=Path, default=Path("./outputs"))
+    ap.add_argument("--out-dir", type=Path, default=None,
+                    help="Root output directory. Defaults to the project's "
+                         "outputs directory.")
     ap.add_argument("--gap-ms", type=int, default=350)
     ap.add_argument("--model", choices=["tiny", "small", "medium"], default="small")
     ap.add_argument("--threshold", type=float, default=0.90)
@@ -101,6 +112,8 @@ def main() -> int:
                          "re-transcribing everything just to re-derive a list "
                          "already in hand. Ignored if --seed-json is set.")
     args = ap.parse_args()
+
+    out_dir = args.out_dir or current().outputs
 
     if args.seed_json:
         print(f"pass 0: reusing {args.seed_json}")
@@ -133,7 +146,7 @@ def main() -> int:
         for r in failing:
             attempts[r["turn_id"]] = attempts.get(r["turn_id"], 0) + 1
         print(f"\npass {pass_no}: re-synthesizing {len(turns)} turn(s)")
-        _regenerate(args.transcript, args.episode_id, args.out_dir,
+        _regenerate(args.transcript, args.episode_id, out_dir,
                     args.voices, args.gap_ms, turns)
         failing = _verify(args.episode_dir, args.transcript, args.model, turns,
                           args.threshold, args.max_run)
@@ -144,9 +157,9 @@ def main() -> int:
     if not args.skip_relayout:
         print("\nrelaying the timeline")
         subprocess.run(
-            [sys.executable, str(_ROOT / "tools" / "relayout_episode.py"),
+            [sys.executable, "-m", "scriptcast.tools.relayout_episode",
              str(args.episode_dir), "--gap-ms", str(args.gap_ms)],
-            cwd=_ROOT, check=True,
+            env=_child_env(), check=True,
         )
 
     if failing:

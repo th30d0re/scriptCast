@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from voice_pipeline.manifest import write_manifest
-from voice_pipeline.models import SegmentResult, Turn, VoiceConfig
+from scriptcast.manifest import write_manifest
+from scriptcast.models import SegmentResult, Turn, VoiceConfig
 
 
 def test_manifest_paths_are_relative_to_manifest_directory(tmp_path) -> None:

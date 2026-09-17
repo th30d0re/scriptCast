@@ -8,25 +8,24 @@ instead of synthesizing speech:
 
 The transcript after the tag is what captions show and what `verify_render.py`
 checks the audio against, so a mis-cut clip fails verification the same way a
-garbled synthetic line does. The registry, `Architecting_the_operation/archive/
-clips.yaml`, holds where each excerpt comes from:
+garbled synthetic line does. The registry, `archive/clips.yaml` under the
+project root, holds where each excerpt comes from:
 
     clips:
       atwater_1981:
-        source: Architecting_the_operation/archive/sources/atwater_1981.m4a
+        source: archive/sources/atwater_1981.m4a
         start: 12.40          # seconds into the source
         end: 48.15
         citation: "Perlstein, R. (2012). ... The Nation."
         origin_url: https://...
         content_note: Contains a racial slur.
 
-`tools/make_clip.py` finds the start and end by searching the source's word
+`scriptcast-clip` finds the start and end by searching the source's word
 timings for a phrase, so nobody trims by hand. Sources stay out of git.
 """
 from __future__ import annotations
 
 import hashlib
-import os
 import re
 import subprocess
 import tempfile
@@ -37,10 +36,8 @@ import numpy
 import soundfile
 import yaml
 
-ROOT = Path(__file__).resolve().parent.parent
-REGISTRY_PATH = Path(
-    os.environ.get("VOICE_PIPELINE_CLIPS", ROOT / "Architecting_the_operation" / "archive" / "clips.yaml")
-)
+from scriptcast.project import current
+
 SAMPLE_RATE = 24000
 # Median loudness of active speech in the rendered voices, measured over the
 # five-level Episode 3. Clips are matched to it so a quote neither jumps out nor
@@ -56,7 +53,7 @@ def clip_id_in(text: str) -> str | None:
 
 
 def load_registry(path: Path | None = None) -> dict[str, dict]:
-    path = path or REGISTRY_PATH
+    path = path or current().clips
     if not path.exists():
         return {}
     data = yaml.safe_load(path.read_text()) or {}
@@ -66,7 +63,7 @@ def load_registry(path: Path | None = None) -> dict[str, dict]:
 def clip_entry(clip_id: str, path: Path | None = None) -> dict:
     entry = load_registry(path).get(clip_id)
     if entry is None:
-        raise KeyError(f"clip {clip_id!r} is not registered in {path or REGISTRY_PATH}")
+        raise KeyError(f"clip {clip_id!r} is not registered in {path or current().clips}")
     for field in ("source", "start", "end"):
         if field not in entry:
             raise ValueError(f"clip {clip_id!r} is missing {field!r}")
@@ -76,8 +73,7 @@ def clip_entry(clip_id: str, path: Path | None = None) -> dict:
 
 
 def _source_path(entry: dict) -> Path:
-    source = Path(str(entry["source"])).expanduser()
-    return source if source.is_absolute() else ROOT / source
+    return current().resolve(str(entry["source"]))
 
 
 def clip_fingerprint(clip_id: str, path: Path | None = None) -> str:

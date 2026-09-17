@@ -12,7 +12,7 @@ nothing; the rate across takes is what counts.
 
 Readings use misaki's lexicon keys ("default", "verb", "noun", ...). Run with
 no --reading to list the keys a word has. `--write` records the winner in
-voice_pipeline/pronunciations.yaml when it beats the plain spelling. Audio is
+the project's pronunciations file when it beats the plain spelling. Audio is
 kept under outputs/pronunciation_calibration/ for listening.
 
 What spells well: single lowercase words ("reckerd") held up; hyphens and
@@ -25,34 +25,28 @@ import argparse
 import asyncio
 import logging
 import re
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import soundfile
 import yaml
 
-from stress_check import check_segment
-from voice_pipeline.engine import ENGINE_REGISTRY
-from voice_pipeline.pronunciation import (
-    RESPELLINGS_PATH,
+from scriptcast.engine import ENGINE_REGISTRY
+from scriptcast.project import current
+from scriptcast.pronunciation import (
     _heteronym_table,
     find_heteronyms,
+    respellings_path,
 )
-from voice_pipeline.voices import load_voices
+from scriptcast.tools.stress_check import check_segment
+from scriptcast.voices import load_voices
 
-_ROOT = Path(__file__).resolve().parent.parent
-_SCRIPTS = _ROOT / "Architecting_the_operation" / "podcasts"
-_OUT = _ROOT / "outputs" / "pronunciation_calibration"
 _SENTENCE_RE = re.compile(r"[^.!?]*[.!?]")
 
 
-def _script_sentences(word: str, reading: str, limit: int) -> list[str]:
-    """Sentences from the episode scripts where `word` takes `reading`."""
+def _script_sentences(word: str, reading: str, limit: int, scripts_dir: Path) -> list[str]:
+    """Sentences from the project scripts where `word` takes `reading`."""
     found: list[str] = []
-    for path in sorted(_SCRIPTS.glob("ATO_EP0[1-9]*.md")):
+    for path in sorted(scripts_dir.rglob("*.md")):
         for line in path.read_text().splitlines():
             if word not in line.lower() or re.match(r"^[A-Z][A-Za-z ]+ \(\d+:\d{2}\)$", line):
                 continue
@@ -87,11 +81,19 @@ def main() -> int:
                     help="Comma-separated respellings to try. The plain word is always tried.")
     ap.add_argument("--takes", type=int, default=5)
     ap.add_argument("--sentences", type=int, default=2)
-    ap.add_argument("--speaker", default="emmanuel_theodore")
-    ap.add_argument("--voices", type=Path, default=_ROOT / "voice_pipeline" / "voices.omnivoice.yaml")
+    ap.add_argument("--speaker", required=True,
+                    help="Speaker id from the voices file; must use the omnivoice engine.")
+    ap.add_argument("--voices", type=Path, default=None,
+                    help="Voices YAML. Defaults to the project's voices file.")
+    ap.add_argument("--scripts", type=Path, default=None,
+                    help="Directory of markdown scripts to mine for sentences. "
+                         "Defaults to the project's scripts directory.")
     ap.add_argument("--write", action="store_true")
     args = ap.parse_args()
     logging.disable(logging.WARNING)
+
+    project = current()
+    scripts_dir = args.scripts or project.scripts
 
     word = args.word.lower()
     readings = _heteronym_table().get(word)
@@ -104,20 +106,20 @@ def main() -> int:
         return 0
     reading = args.reading.lower()
 
-    sentences = _script_sentences(word, reading, args.sentences)
+    sentences = _script_sentences(word, reading, args.sentences, scripts_dir)
     if not sentences:
         print(f"no script sentence uses {word!r} as {reading!r}.")
         return 1
 
     import mlx_whisper
 
-    voice = load_voices(args.voices)[args.speaker]
+    voice = load_voices(args.voices or project.voices)[args.speaker]
     if voice.engine != "omnivoice":
         print(f"calibration drives OmniVoice; {args.speaker} uses {voice.engine!r}.")
         return 1
     engine = ENGINE_REGISTRY["omnivoice"]("k2-fsa/OmniVoice")
     spellings = [word] + [c.strip() for c in args.candidates.split(",") if c.strip()]
-    out_dir = _OUT / f"{word}_{reading}"
+    out_dir = project.outputs / "pronunciation_calibration" / f"{word}_{reading}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     async def render(text: str, path: Path) -> None:
@@ -151,12 +153,16 @@ def main() -> int:
         if best[0] == word or best[1] <= plain[1]:
             print("plain spelling is as good as any candidate; nothing written.")
             return 0
-        data = yaml.safe_load(RESPELLINGS_PATH.read_text()) or {}
+        out_path = respellings_path()
+        data: dict = {}
+        header = ""
+        if out_path.exists():
+            data = yaml.safe_load(out_path.read_text()) or {}
+            header = out_path.read_text().split("\n\n")[0]
         data.setdefault(word, {})[reading] = best[0]
-        header = RESPELLINGS_PATH.read_text().split("\n\n")[0] if RESPELLINGS_PATH.exists() else ""
         body = yaml.safe_dump(data, sort_keys=True, allow_unicode=True)
-        RESPELLINGS_PATH.write_text((header + "\n\n" if header.startswith("#") else "") + body)
-        print(f"wrote {word}.{reading} = {best[0]!r} to {RESPELLINGS_PATH}")
+        out_path.write_text((header + "\n\n" if header.startswith("#") else "") + body)
+        print(f"wrote {word}.{reading} = {best[0]!r} to {out_path}")
     return 0
 
 

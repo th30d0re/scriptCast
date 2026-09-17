@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from zlib import crc32
 
-from voice_pipeline.models import SegmentResult
+from scriptcast.models import SegmentResult
 
 _BPM = 120
 _MS_PER_BEAT = 60000.0 / _BPM

@@ -4,10 +4,10 @@ import numpy
 import soundfile
 import yaml
 
-from voice_pipeline import archive
-from voice_pipeline.markup import tokenize_markup
-from voice_pipeline.parser import _clean_text
-from voice_pipeline.models import Turn
+from scriptcast import archive
+from scriptcast.markup import tokenize_markup
+from scriptcast.parser import _clean_text
+from scriptcast.models import Turn
 
 
 def _registry(tmp_path: Path, start: float, end: float) -> Path:

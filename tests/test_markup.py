@@ -1,5 +1,5 @@
-from voice_pipeline.markup import tokenize_markup
-from voice_pipeline.models import Turn
+from scriptcast.markup import tokenize_markup
+from scriptcast.models import Turn
 
 
 def _make_turn(clean_text: str, turn_index: int = 0) -> Turn:

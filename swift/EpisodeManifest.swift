@@ -1,8 +1,8 @@
 //
 //  EpisodeManifest.swift
-//  Redefining_racism
 //
-//  Created by Emmanuel on 5/10/26.
+//  Swift decoding contract for episode_manifest.json, written by
+//  scriptcast.manifest.write_manifest.
 //
 
 import Foundation

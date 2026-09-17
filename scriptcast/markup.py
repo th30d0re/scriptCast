@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import re
 
-from voice_pipeline.models import MarkupChunk, Turn
+from scriptcast.models import MarkupChunk, Turn
 
 _LOGGER = logging.getLogger(__name__)
 _TAG_RE = re.compile(r"\[(\w+)(?::([^\]]+))?\]")

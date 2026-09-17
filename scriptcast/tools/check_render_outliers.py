@@ -5,9 +5,9 @@ keeps going, babbling or repeating until it hits the generation limit. The clip
 is valid audio, the manifest is consistent, and the Ableton set looks correct,
 so nothing downstream notices. Only a listener does.
 
-The signal is the duration ratio. `voice_pipeline/speaker_rates.json` holds each
+The signal is the duration ratio. The project's speaker-rates file holds each
 speaker's measured milliseconds per word and per punctuation mark, fitted by
-`tools/retime_script.py`, so a turn that runs far longer than its own text
+`scriptcast-retime`, so a turn that runs far longer than its own text
 predicts is suspect. Short turns carry fixed breath and pacing overhead that does
 not scale with length, so only turns above `--min-words` are ranked.
 
@@ -21,8 +21,8 @@ stopped", but `_measure_speech_duration` adds `--tail-ms` (150 by default) and
 clamps to the clip length. The two fields therefore match on any clip whose speech
 ends within 150ms of the file end, which is most of them.
 
-    python3 tools/check_render_outliers.py outputs/ATO_EP02_local \
-        --transcript Architecting_the_operation/podcasts/ATO_EP02_preface.md
+    scriptcast-outliers outputs/<episode_id> \
+        --transcript scripts/<episode>.md
 """
 from __future__ import annotations
 
@@ -31,15 +31,12 @@ import json
 import logging
 import re
 import statistics
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from scriptcast.markup import tokenize_markup
+from scriptcast.parser import parse_transcript
+from scriptcast.project import current
 
-from voice_pipeline.markup import tokenize_markup
-from voice_pipeline.parser import parse_transcript
-
-_RATES_PATH = Path(__file__).resolve().parent.parent / "voice_pipeline" / "speaker_rates.json"
 _MARK_RE = re.compile(r"[.,;:]")
 _DEFAULT = (392.0, 0.0)  # ms per word, ms per mark
 
@@ -57,9 +54,10 @@ def _speech(turn) -> tuple[int, int, int]:
 
 
 def _load_rates() -> dict[str, tuple[float, float]]:
-    if not _RATES_PATH.exists():
+    rates_path = current().speaker_rates
+    if not rates_path.exists():
         return {}
-    raw = json.loads(_RATES_PATH.read_text())
+    raw = json.loads(rates_path.read_text())
     out: dict[str, tuple[float, float]] = {}
     for speaker, value in raw.items():
         if isinstance(value, dict):

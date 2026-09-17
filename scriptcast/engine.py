@@ -13,8 +13,14 @@ from typing import Any
 
 import numpy
 
-from voice_pipeline.models import VoiceConfig
-from voice_pipeline.post_processor import _trim_edge_silence
+from scriptcast.models import VoiceConfig
+from scriptcast.post_processor import _trim_edge_silence
+from scriptcast.project import current
+
+
+def _resolve_reference(audio: str) -> Path:
+    """A reference clip path; relative paths anchor at the project root."""
+    return current().resolve(audio)
 
 
 class TTSEngine(ABC):
@@ -212,7 +218,7 @@ class MLXChatterboxEngine(TTSEngine):
                 f"Speaker {voice_config.speaker_id!r} uses engine 'mlx_chatterbox' "
                 "but has no reference_audio configured."
             )
-        ref_path = Path(ref_path).expanduser()
+        ref_path = _resolve_reference(ref_path)
         if not ref_path.exists():
             raise RuntimeError(f"Reference audio not found: {ref_path}")
 
@@ -286,9 +292,7 @@ class OmniVoiceEngine(TTSEngine):
         self.model_id = model_id
         self.device = device
         self.trim_edges = trim_edges
-        self.python = python or str(
-            Path(__file__).resolve().parent.parent / ".venv-omnivoice" / "bin" / "python"
-        )
+        self.python = python or str(current().omnivoice_python)
         self._process: subprocess.Popen[str] | None = None
         self._scratch: tempfile.TemporaryDirectory[str] | None = None
 
@@ -299,7 +303,8 @@ class OmniVoiceEngine(TTSEngine):
             raise RuntimeError(
                 f"OmniVoice interpreter not found at {self.python}. Create it with:\n"
                 "  python3 -m venv .venv-omnivoice\n"
-                "  .venv-omnivoice/bin/pip install torch==2.8.0 torchaudio==2.8.0 omnivoice"
+                "  .venv-omnivoice/bin/pip install torch==2.8.0 torchaudio==2.8.0 omnivoice\n"
+                "or point `omnivoice_python` in scriptcast.toml at an existing one."
             )
         worker = Path(__file__).resolve().parent / "omnivoice_worker.py"
         self._scratch = tempfile.TemporaryDirectory(prefix="omnivoice_")
@@ -307,7 +312,7 @@ class OmniVoiceEngine(TTSEngine):
             [self.python, str(worker), self.model_id, self.device],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, bufsize=1,
-            cwd=str(Path(__file__).resolve().parent.parent),
+            cwd=str(current().root),
         )
         assert self._process.stdout is not None
         line = self._process.stdout.readline()
@@ -334,7 +339,7 @@ class OmniVoiceEngine(TTSEngine):
                 "conditions on the clip and its transcript together, so the text is "
                 "required and must match the clip word for word."
             )
-        path = Path(audio).expanduser()
+        path = _resolve_reference(audio)
         if not path.exists():
             raise RuntimeError(f"Reference audio not found: {path}")
         return str(path), text
@@ -418,13 +423,13 @@ class ArchiveEngine(TTSEngine):
         )
 
     async def clip_audio(self, clip_id: str) -> numpy.ndarray:
-        from voice_pipeline.archive import render_clip
+        from scriptcast.archive import render_clip
 
         return render_clip(clip_id)
 
     @property
     def sample_rate(self) -> int:
-        from voice_pipeline.archive import SAMPLE_RATE
+        from scriptcast.archive import SAMPLE_RATE
 
         return SAMPLE_RATE
 

@@ -17,18 +17,19 @@ from pathlib import Path
 import numpy
 import soundfile
 
-from voice_pipeline.als_generator import generate_als
-from voice_pipeline.engine import ENGINE_REGISTRY, TTSEngine
-from voice_pipeline.fcpxml_generator import generate_fcpxml
-from voice_pipeline.logic_exporter import export_to_logic
-from voice_pipeline.manifest import write_manifest
-from voice_pipeline.markup import tokenize_markup
-from voice_pipeline.models import SegmentResult, Turn, VoiceConfig
-from voice_pipeline.parser import parse_transcript
-from voice_pipeline.platform_check import require_apple_silicon
-from voice_pipeline.post_processor import _measure_speech_duration, process_segment
-from voice_pipeline.pronunciation import speech_text_for
-from voice_pipeline.render_state import (
+from scriptcast.als_generator import generate_als
+from scriptcast.engine import ENGINE_REGISTRY, TTSEngine
+from scriptcast.fcpxml_generator import generate_fcpxml
+from scriptcast.logic_exporter import export_to_logic
+from scriptcast.manifest import write_manifest
+from scriptcast.markup import tokenize_markup
+from scriptcast.models import SegmentResult, Turn, VoiceConfig
+from scriptcast.parser import parse_transcript
+from scriptcast.platform_check import require_apple_silicon
+from scriptcast.post_processor import _measure_speech_duration, process_segment
+from scriptcast.project import current
+from scriptcast.pronunciation import speech_text_for
+from scriptcast.render_state import (
     RenderState,
     SegmentPosition,
     build_position_map,
@@ -40,7 +41,7 @@ from voice_pipeline.render_state import (
     plan_precision_insert,
     save_render_state,
 )
-from voice_pipeline.voices import load_voices
+from scriptcast.voices import load_voices
 
 _DEFAULT_MODEL = "prince-canuma/Kokoro-82M"
 _DEFAULT_ENGINE = "mlx_kokoro"
@@ -77,8 +78,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--out-dir",
         type=Path,
-        default=Path("./outputs"),
-        help="Root output directory",
+        default=None,
+        help="Root output directory. Defaults to the project's outputs directory "
+             "(`outputs` in scriptcast.toml, default outputs/).",
     )
     parser.add_argument(
         "--model",
@@ -207,9 +209,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "--voices",
         type=Path,
         default=None,
-        help="Path to a voices YAML. Defaults to voice_pipeline/voices.yaml. "
-             "Use this to render an on-device preview without editing the "
-             "committed ElevenLabs configuration.",
+        help="Path to a voices YAML. Defaults to the project's voices file "
+             "(`voices` in scriptcast.toml, default voices.yaml).",
     )
     parser.add_argument(
         "--logic-dry-run",
@@ -808,7 +809,7 @@ def _run_migration(
     previous_state: RenderState | None,
 ) -> None:
     """Rename old turn-index WAV files to new turn-id format and save v2.0 state."""
-    from voice_pipeline.render_state import _is_v1_state
+    from scriptcast.render_state import _is_v1_state
 
     state_path = episode_out_dir / "render_state.json"
     if not state_path.exists():
@@ -877,16 +878,23 @@ def main() -> None:
     if not transcript_path.exists():
         raise SystemExit(f"Transcript not found: {transcript_path}")
 
+    project = current()
     episode_id = args.episode_id or transcript_path.stem
-    output_root = args.out_dir.expanduser().resolve()
+    output_root = (args.out_dir or project.outputs).expanduser().resolve()
     episode_out_dir = output_root / episode_id
     sample_budget = _sample_budget_ms(args.sample_seconds)
 
     turns = tokenize_markup(parse_transcript(transcript_path))
     turns = _filter_turns(turns, args.max_turns)
 
-    voices_path = args.voices or Path(__file__).with_name("voices.yaml")
-    voices = load_voices(voices_path)
+    voices_path = args.voices or project.voices
+    try:
+        voices = load_voices(voices_path)
+    except FileNotFoundError:
+        raise SystemExit(
+            f"Voices file not found: {voices_path}. "
+            "Pass --voices or set `voices` in scriptcast.toml."
+        ) from None
     _validate_voices(turns, voices)
 
     # Load previous render state for change detection and position preservation

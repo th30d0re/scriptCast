@@ -1,8 +1,8 @@
 from pathlib import Path
 from unittest import TestCase
 
-from voice_pipeline.models import Turn
-from voice_pipeline.render_state import (
+from scriptcast.models import Turn
+from scriptcast.render_state import (
     RenderState,
     SegmentPosition,
     TurnFingerprint,

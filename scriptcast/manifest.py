@@ -9,7 +9,7 @@ from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
-from voice_pipeline.models import (
+from scriptcast.models import (
     EpisodeManifest,
     SegmentEntry,
     SegmentResult,

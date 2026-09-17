@@ -14,7 +14,7 @@ Protocol, one JSON object per line in each direction:
     out  {"ok": true, "out": "path.wav", "samples": 123456}
          {"ok": false, "error": "..."}
 
-Started by voice_pipeline.engine.OmniVoiceEngine; not run by hand.
+Started by scriptcast.engine.OmniVoiceEngine; not run by hand.
 """
 from __future__ import annotations
 

@@ -3,8 +3,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from unittest import TestCase
 
-from voice_pipeline.fcpxml_generator import generate_fcpxml
-from voice_pipeline.models import SegmentResult
+from scriptcast.fcpxml_generator import generate_fcpxml
+from scriptcast.models import SegmentResult
 
 
 class GenerateFcpxmlTests(TestCase):

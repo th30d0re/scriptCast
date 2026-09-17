@@ -12,20 +12,17 @@ exists on disk, then rewrites the manifest, the render state, and the .als. It
 takes seconds and touches no WAV file, so gaps are a dial rather than a
 14-minute re-render.
 
-    python3 tools/relayout_episode.py outputs/<episode_id> --gap-ms 350
+    scriptcast-relayout outputs/<episode_id> --gap-ms 350
 """
 from __future__ import annotations
 
 import argparse
 import json
 import shutil
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from voice_pipeline.als_generator import generate_als
-from voice_pipeline.models import SegmentResult
+from scriptcast.als_generator import generate_als
+from scriptcast.models import SegmentResult
 
 
 def main() -> int:

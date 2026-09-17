@@ -4,8 +4,8 @@ An editor's lookup table: where each turn lands in the stitched audio, what the
 script header says, who speaks it, which clip file carries it, and enough words
 to recognize it. Regenerate after any render or retime.
 
-    python3 tools/turn_index.py outputs/ATO_EP01_local \
-        --transcript Architecting_the_operation/podcasts/ATO_EP01_authors_preface.md
+    scriptcast-turn-index outputs/<episode_id> \
+        --transcript scripts/<episode>.md
 """
 from __future__ import annotations
 
@@ -13,12 +13,9 @@ import argparse
 import csv
 import json
 import logging
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from voice_pipeline.parser import parse_transcript
+from scriptcast.parser import parse_transcript
 
 
 def _mmss(ms: int) -> str:

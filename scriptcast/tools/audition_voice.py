@@ -7,8 +7,8 @@ first word of an utterance. This renders a fixed passage set that stresses each
 of those, transcribes the result, and scores it, so two candidates can be
 compared on the same evidence.
 
-    python3 tools/audition_voice.py candidates/*.wav --speaker aisha
-    python3 tools/audition_voice.py voices/aisha_reference.wav --temperature 0.4,0.6,0.8
+    scriptcast-audition candidates/*.wav --speaker guest
+    scriptcast-audition voices/guest_reference.wav --temperature 0.4,0.6,0.8
 
 A reference wants to be clean mono speech at the engine's sample rate, a few
 seconds long, with no music, no background, and no other speaker.
@@ -19,16 +19,13 @@ import argparse
 import asyncio
 import json
 import statistics
-import sys
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 import soundfile
 
-from voice_pipeline.engine import ENGINE_REGISTRY
-from voice_pipeline.models import VoiceConfig
+from scriptcast.engine import ENGINE_REGISTRY
+from scriptcast.models import VoiceConfig
 
 # Drawn from the two rendered episodes, weighted toward the lines that have
 # actually failed. Each one targets a mode seen in the wild.
@@ -81,13 +78,11 @@ def main() -> int:
                     help="Directory to keep the rendered auditions in.")
     args = ap.parse_args()
 
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from verify_render import _score
+    from scriptcast.tools.verify_render import _MODELS, _score
 
     import mlx_whisper
-    from verify_render import _MODELS
 
-    from voice_pipeline.__main__ import _DEFAULT_CHATTERBOX_MODEL
+    from scriptcast.__main__ import _DEFAULT_CHATTERBOX_MODEL
     model_id = args.model_id or _DEFAULT_CHATTERBOX_MODEL
     engine = ENGINE_REGISTRY[args.engine](model_id)
     temperatures = [float(x) for x in args.temperature.split(",")]

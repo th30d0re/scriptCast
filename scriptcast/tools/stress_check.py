@@ -7,7 +7,7 @@ REC-ord is /ɹɛkəɹd/ and re-CORD is /ɹəkɔɹd/. A phoneme recognizer hears 
 difference, so each heteronym is cut out of the audio, transcribed as phonemes,
 and compared with the reading misaki expects and with the readings it does not.
 
-    python3 tools/stress_check.py outputs/ATO_EP03_local/segments/x.wav \
+    scriptcast-stress outputs/<episode_id>/segments/x.wav \
         --text "It includes one specific historical record."
 
 `tools/verify_render.py` calls `check_segment` for every turn that contains a
@@ -20,16 +20,13 @@ import argparse
 import difflib
 import json
 import re
-import sys
 from functools import lru_cache
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy
 import soundfile
 
-from voice_pipeline.pronunciation import HeteronymReading, find_heteronyms
+from scriptcast.pronunciation import HeteronymReading, find_heteronyms
 
 MODEL_ID = "facebook/wav2vec2-lv-60-espeak-cv-ft"
 _RATE = 16000
@@ -39,8 +36,8 @@ _PAD_S = 0.2
 MARGIN = 0.6
 # A heard word this far from the expected reading, and no closer to another, is
 # not a stress error but a mangled word. Calibrated on hand-labelled renders:
-# clean takes sat at 1.3 or below, the garbled "historical record" takes Emmanuel
-# heard sat above 3.
+# clean takes sat at 1.3 or below, the garbled "historical record" takes a
+# listener heard sat above 3.
 GARBLED = 2.5
 
 # The recognizer covers dozens of languages. On a poor cut it reaches for

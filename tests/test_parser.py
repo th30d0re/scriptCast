@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from voice_pipeline.parser import parse_transcript
+from scriptcast.parser import parse_transcript
 
 
 def test_parse_transcript_turn_count() -> None:

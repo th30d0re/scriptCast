@@ -8,8 +8,8 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 
-from voice_pipeline.models import Turn
-from voice_pipeline.pronunciation import speech_text_hash
+from scriptcast.models import Turn
+from scriptcast.pronunciation import speech_text_hash
 
 
 @dataclass
@@ -135,7 +135,7 @@ def _audio_source_hash(turn: Turn, voice, speech_texts: list[str]) -> str:
         return ""
     engine = getattr(voice, "engine", "")
     if engine == "archive":
-        from voice_pipeline.archive import clip_fingerprint, clip_id_in
+        from scriptcast.archive import clip_fingerprint, clip_id_in
 
         clip_id = clip_id_in(turn.clean_text)
         return clip_fingerprint(clip_id) if clip_id else ""

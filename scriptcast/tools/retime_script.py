@@ -1,6 +1,6 @@
 """Recompute an episode script's timestamps from measured audio.
 
-Header timestamps in `Architecting_the_operation/podcasts/*.md` are source
+Header timestamps in the markdown scripts are source
 references and the join key between a script and its shot list. They are not
 what the renderer uses for spacing, but they have to stay monotonic and honest,
 and hand-maintaining them after every insert is how collisions get introduced.
@@ -15,9 +15,9 @@ timeline.
 A shot list can be remapped in the same pass: anchors snap to the real turn they
 name, and hold times ride a piecewise-linear old-to-new map.
 
-    python3 tools/retime_script.py Architecting_the_operation/podcasts/ATO_EP01_authors_preface.md \
-        --manifest outputs/ATO_EP01_local/episode_manifest.json \
-        --shotlist Architecting_the_operation/video/ATO_EP01_shotlist.md \
+    scriptcast-retime scripts/<episode>.md \
+        --manifest outputs/<episode_id>/episode_manifest.json \
+        --shotlist video/<episode>_shotlist.md \
         --apply
 """
 from __future__ import annotations
@@ -25,20 +25,22 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from voice_pipeline.markup import tokenize_markup
-from voice_pipeline.parser import parse_transcript
+from scriptcast.markup import tokenize_markup
+from scriptcast.parser import parse_transcript
+from scriptcast.project import current
 
 _MARK_RE = re.compile(r"[.,;:]")
 _HEADER_RE = re.compile(r"^(?P<name>.+?) \((?P<ts>\d{1,2}:\d{2})\)\s*$")
 _ANCHOR_RE = re.compile(r"`(?P<name>[^`(]+?) \((?P<ts>\d{1,2}:\d{2})\)`")
 _HOLD_RE = re.compile(r"(?P<lead>\*\*Hold:\*\* through )(?P<ts>\d{1,2}:\d{2})")
 _DEFAULT_WPS = 2.55
-_RATES_PATH = Path(__file__).resolve().parent.parent / "voice_pipeline" / "speaker_rates.json"
+
+
+def _rates_path() -> Path:
+    """The project's speaker-rates file, resolved when called."""
+    return current().speaker_rates
 
 
 def _mmss(ms: int) -> str:
@@ -84,10 +86,10 @@ def _load_measured(manifest_path: Path | None) -> dict[str, int]:
 
 def _load_known_rates() -> dict[str, tuple[float, float]]:
     """Per-speaker (ms per word, ms per mark) measured on earlier episodes."""
-    if not _RATES_PATH.exists():
+    if not _rates_path().exists():
         return {}
     try:
-        raw = json.loads(_RATES_PATH.read_text())
+        raw = json.loads(_rates_path().read_text())
     except ValueError:
         return {}
     known: dict[str, tuple[float, float]] = {}
@@ -119,7 +121,7 @@ def _save_known_rates(rates: dict[str, tuple[float, float]]) -> None:
             for speaker, (w, m) in rates.items()
         }
     )
-    _RATES_PATH.write_text(json.dumps(known, indent=1, sort_keys=True) + "\n")
+    _rates_path().write_text(json.dumps(known, indent=1, sort_keys=True) + "\n")
 
 
 _MIN_FIT_TURNS = 15

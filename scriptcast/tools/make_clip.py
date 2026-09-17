@@ -6,7 +6,7 @@
         --url https://www.thenation.com/... --content-note "Contains a racial slur."
 
 Transcribes the source with Whisper word timings, finds the two phrases,
-copies the source into Architecting_the_operation/archive/sources/, writes the
+copies the source into the project's clip sources directory, writes the
 cut into the clip registry, and prints the script turn to paste. Read the
 printed transcript against the recording and correct it by hand: it becomes the
 caption and the text verification checks the clip against.
@@ -16,16 +16,12 @@ from __future__ import annotations
 import argparse
 import re
 import shutil
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import yaml
 
-from voice_pipeline.archive import REGISTRY_PATH, ROOT
+from scriptcast.project import current
 
-_SOURCES = ROOT / "Architecting_the_operation" / "archive" / "sources"
 _MODELS = {
     "small": "mlx-community/whisper-small.en-mlx",
     "medium": "mlx-community/whisper-medium.en-mlx",
@@ -70,25 +66,29 @@ def main() -> int:
     end = words[last]["end"] + args.pad
     transcript = " ".join(w["word"].strip() for w in words[first : last + 1])
 
-    _SOURCES.mkdir(parents=True, exist_ok=True)
-    stored = _SOURCES / f"{args.id}{args.source.suffix.lower()}"
+    project = current()
+    sources_dir = project.clip_sources
+    registry_path = project.clips
+
+    sources_dir.mkdir(parents=True, exist_ok=True)
+    stored = sources_dir / f"{args.id}{args.source.suffix.lower()}"
     if args.source.resolve() != stored.resolve():
         shutil.copy2(args.source, stored)
 
-    data = yaml.safe_load(REGISTRY_PATH.read_text()) if REGISTRY_PATH.exists() else None
+    data = yaml.safe_load(registry_path.read_text()) if registry_path.exists() else None
     data = data or {"clips": {}}
     data.setdefault("clips", {})[args.id] = {
-        "source": str(stored.relative_to(ROOT)),
+        "source": str(stored.relative_to(project.root)),
         "start": round(float(start), 2),
         "end": round(float(end), 2),
         "citation": args.citation,
         "origin_url": args.url,
         "content_note": args.content_note,
     }
-    REGISTRY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REGISTRY_PATH.write_text(yaml.safe_dump(data, sort_keys=True, allow_unicode=True))
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    registry_path.write_text(yaml.safe_dump(data, sort_keys=True, allow_unicode=True))
 
-    print(f"registered {args.id}: {start:.2f}s to {end:.2f}s ({end - start:.1f}s) in {REGISTRY_PATH}")
+    print(f"registered {args.id}: {start:.2f}s to {end:.2f}s ({end - start:.1f}s) in {registry_path}")
     print("\nScript turn (check the transcript against the recording):\n")
     print(f"{args.speaker or 'Archive'} (00:00)\n[clip:{args.id}] {transcript}")
     return 0

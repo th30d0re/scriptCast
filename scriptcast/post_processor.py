@@ -7,7 +7,7 @@ import numpy
 import soundfile
 from scipy.signal import resample_poly
 
-from voice_pipeline.models import SegmentResult
+from scriptcast.models import SegmentResult
 
 _FRAME_MS = 10
 _PAD_MS = 20

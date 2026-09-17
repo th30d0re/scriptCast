@@ -30,7 +30,12 @@ from pathlib import Path
 
 import yaml
 
-RESPELLINGS_PATH = Path(__file__).with_name("pronunciations.yaml")
+from scriptcast.project import current
+
+
+def respellings_path() -> Path:
+    """The project's pronunciations file, resolved when called."""
+    return current().pronunciations
 
 # Engines that read plain text and choose stress themselves.
 RESPELLING_ENGINES = frozenset({"omnivoice", "mlx_chatterbox", "elevenlabs", "mlx_dia"})
@@ -164,7 +169,8 @@ def find_heteronyms(text: str) -> list[HeteronymReading]:
     return found
 
 
-def load_respellings(path: Path = RESPELLINGS_PATH) -> dict[str, dict[str, str]]:
+def load_respellings(path: Path | None = None) -> dict[str, dict[str, str]]:
+    path = path or respellings_path()
     if not path.exists():
         return {}
     data = yaml.safe_load(path.read_text()) or {}

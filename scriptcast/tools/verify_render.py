@@ -15,10 +15,9 @@ whisper-tiny.en at roughly a quarter-second per segment, which is fast enough to
 run over a whole episode. Anything it flags is worth re-checking with a larger
 model before re-synthesizing, since tiny mishears proper nouns on its own.
 
-    python3 tools/verify_render.py outputs/ATO_EP02_local \
-        --transcript Architecting_the_operation/podcasts/ATO_EP02_preface.md
+    scriptcast-verify outputs/<episode_id> --transcript scripts/<episode>.md
 
-    python3 tools/verify_render.py outputs/ATO_EP02_local \
+    scriptcast-verify outputs/<episode_id> \
         --transcript ... --model small --turns 1,7,41
 
 Scores are word-sequence similarity after normalization, so they carry ASR error
@@ -39,18 +38,13 @@ import json
 import logging
 import re
 import statistics
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from voice_pipeline.markup import tokenize_markup
-from voice_pipeline.parser import parse_transcript
-from voice_pipeline.archive import clip_id_in
-from voice_pipeline.pronunciation import find_heteronyms
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from stress_check import check_segment  # noqa: E402
+from scriptcast.markup import tokenize_markup
+from scriptcast.parser import parse_transcript
+from scriptcast.archive import clip_id_in
+from scriptcast.pronunciation import find_heteronyms
+from scriptcast.tools.stress_check import check_segment
 
 _STRESS_FAILS = {"wrong", "garbled"}
 
@@ -98,8 +92,8 @@ def _sounds_alike(want: str, got: str, floor: float = 0.75) -> bool:
 def _repetition(expected: str, heard: str) -> str | None:
     """An inserted span that duplicates its neighbours: a stutter.
 
-    This needs its own rule rather than a similarity threshold. Emmanuel heard
-    "you categorize because categorize because categorizing" in Episode 2; the
+    This needs its own rule rather than a similarity threshold. A listener heard
+    "you categorize because categorize because categorizing" in one episode; the
     transcript caught it, and the clip still passed at 0.940 with a worst run of
     2, under both thresholds. A duplicated span is a defect at any length, so
     length is not what decides it.

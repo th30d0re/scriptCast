@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-import voice_pipeline.__main__ as cli
-from voice_pipeline.markup import tokenize_markup
-from voice_pipeline.models import SegmentResult, Turn, VoiceConfig
+import scriptcast.__main__ as cli
+from scriptcast.markup import tokenize_markup
+from scriptcast.models import SegmentResult, Turn, VoiceConfig
 
 
 class _FakeEngine:
@@ -113,7 +113,7 @@ def test_sample_seconds_cli_uses_rendered_timeline_and_reaches_ep0_speakers(
         sys,
         "argv",
         [
-            "voice_pipeline",
+            "scriptcast",
             "--transcript",
             str(transcript_path),
             "--episode-id",
@@ -233,7 +233,7 @@ def test_dry_run_cli_prints_turn_summary(tmp_path, monkeypatch, capsys) -> None:
         sys,
         "argv",
         [
-            "voice_pipeline",
+            "scriptcast",
             "--transcript",
             str(transcript_path),
             "--episode-id",
@@ -332,7 +332,7 @@ def test_standalone_pause_turn_is_preserved_in_manifest_timeline(
         sys,
         "argv",
         [
-            "voice_pipeline",
+            "scriptcast",
             "--transcript",
             str(transcript_path),
             "--episode-id",

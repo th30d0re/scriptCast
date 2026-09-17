@@ -2,14 +2,14 @@ from dataclasses import replace
 
 import pytest
 
-from voice_pipeline.models import MarkupChunk, Turn, VoiceConfig
-from voice_pipeline.pronunciation import (
+from scriptcast.models import MarkupChunk, Turn, VoiceConfig
+from scriptcast.pronunciation import (
     find_heteronyms,
     respell,
     speech_text_for,
     speech_text_hash,
 )
-from voice_pipeline.render_state import (
+from scriptcast.render_state import (
     RenderState,
     compute_turn_fingerprint,
     detect_changed_turns,

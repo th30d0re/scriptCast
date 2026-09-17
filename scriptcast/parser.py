@@ -7,7 +7,7 @@ import logging
 import re
 from pathlib import Path
 
-from voice_pipeline.models import Turn
+from scriptcast.models import Turn
 
 _LOGGER = logging.getLogger(__name__)
 _SPEAKER_RE = re.compile(

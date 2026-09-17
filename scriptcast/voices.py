@@ -5,7 +5,7 @@ from typing import Any
 
 import yaml
 
-from voice_pipeline.models import VoiceConfig
+from scriptcast.models import VoiceConfig
 
 
 def load_voices(path: Path) -> dict[str, VoiceConfig]:
@@ -65,7 +65,7 @@ def load_voices(path: Path) -> dict[str, VoiceConfig]:
                     f"OmniVoice needs the clip and its transcript together."
                 )
         elif engine == "archive":
-            pass  # plays registered recordings; see voice_pipeline/archive.py
+            pass  # plays registered recordings; see scriptcast/archive.py
         else:
             raise ValueError(
                 f"Speaker '{speaker_id}' has unknown engine '{engine}'. "

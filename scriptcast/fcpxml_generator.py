@@ -8,7 +8,7 @@ from pathlib import Path
 
 import hashlib
 
-from voice_pipeline.models import SegmentResult
+from scriptcast.models import SegmentResult
 
 _FCPXML_VERSION = "1.10"
 

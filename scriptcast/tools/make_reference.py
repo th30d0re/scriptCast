@@ -2,15 +2,16 @@
 
 OmniVoice conditions on the clip and its text together, so the two must agree
 word for word. A window cut by loudness slices mid-phrase and hands the model
-two signals that disagree; that is what made the first Toussaint reference fail
-one generation in three. This picks a window that starts and ends on sentence
+two signals that disagree; early references cut that way failed one generation
+in three. This picks a window that starts and ends on sentence
 boundaries instead, then transcribes it and writes both halves.
 
-    python3 tools/make_reference.py ~/joshua.m4a --name toussaint
-    python3 tools/make_reference.py ~/gracie.m4a --name aisha --seconds 8
+    scriptcast-reference ~/joshua.m4a --name host
+    scriptcast-reference ~/gracie.m4a --name guest --seconds 8
 
-Writes voices/candidates/<name>.wav and adds the transcript to
-voices/candidates/reference_texts.json. Print the transcript and read it against
+Writes <references>/<name>.wav and adds the transcript to
+<references>/reference_texts.json, where <references> is the project's
+`references` directory. Print the transcript and read it against
 the clip before trusting it: a wrong transcript is worse than a shorter clip.
 """
 from __future__ import annotations
@@ -25,8 +26,9 @@ from pathlib import Path
 import numpy
 import soundfile
 
+from scriptcast.project import current
+
 _TARGET_SR = 24000
-_TEXTS = Path("voices/candidates/reference_texts.json")
 
 
 def _to_wav(source: Path, dest: Path) -> None:
@@ -73,7 +75,7 @@ def _best_window(segments: list[dict], seconds: float) -> tuple[float, float, st
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("recording", type=Path)
-    ap.add_argument("--name", required=True, help="Reference name, e.g. toussaint")
+    ap.add_argument("--name", required=True, help="Reference name, e.g. host")
     ap.add_argument("--seconds", type=float, default=9.0,
                     help="Preferred clip length; the nearest sentence run wins.")
     ap.add_argument("--model", default="mlx-community/whisper-medium.en-mlx")
@@ -107,14 +109,15 @@ def main() -> int:
     if peak > 0:
         clip = clip / peak * args.peak
 
-    out_dir = Path("voices/candidates")
+    out_dir = current().references
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{args.name}.wav"
     soundfile.write(str(out_path), clip, _TARGET_SR)
 
-    texts = json.loads(_TEXTS.read_text()) if _TEXTS.exists() else {}
+    texts_path = out_dir / "reference_texts.json"
+    texts = json.loads(texts_path.read_text()) if texts_path.exists() else {}
     texts[args.name] = text
-    _TEXTS.write_text(json.dumps(texts, indent=1, sort_keys=True) + "\n")
+    texts_path.write_text(json.dumps(texts, indent=1, sort_keys=True) + "\n")
 
     print(f"wrote {out_path}  {len(clip)/_TARGET_SR:.2f}s  "
           f"from {start:.1f}s to {end:.1f}s of the recording")

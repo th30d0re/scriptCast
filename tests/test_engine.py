@@ -4,13 +4,13 @@ from unittest.mock import MagicMock, patch
 import numpy
 import pytest
 
-from voice_pipeline.engine import (
+from scriptcast.engine import (
     ElevenLabsEngine,
     MLXChatterboxEngine,
     MLXKokoroEngine,
     _elevenlabs_api_key,
 )
-from voice_pipeline.models import VoiceConfig
+from scriptcast.models import VoiceConfig
 
 
 def test_synthesize_chunk_skips_silent_sub_chunks() -> None:

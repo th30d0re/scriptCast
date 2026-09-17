@@ -2,7 +2,7 @@ import numpy
 import pytest
 import asyncio
 
-from voice_pipeline.post_processor import _trim_edge_silence, _measure_speech_duration
+from scriptcast.post_processor import _trim_edge_silence, _measure_speech_duration
 
 
 def test_trim_edge_silence_preserves_internal_pauses() -> None:
@@ -118,7 +118,7 @@ def test_measure_speech_duration_threshold_parameter() -> None:
 
 
 def test_process_segment_rejects_empty_audio(tmp_path) -> None:
-    from voice_pipeline.post_processor import process_segment
+    from scriptcast.post_processor import process_segment
 
     with pytest.raises(ValueError, match="empty audio segment"):
         asyncio.run(

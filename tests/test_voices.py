@@ -2,7 +2,7 @@ import tempfile
 from pathlib import Path
 from unittest import TestCase
 
-from voice_pipeline.voices import load_voices
+from scriptcast.voices import load_voices
 
 
 class LoadVoicesTests(TestCase):

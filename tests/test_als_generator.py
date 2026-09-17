@@ -4,8 +4,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from unittest import TestCase
 
-from voice_pipeline.als_generator import generate_als
-from voice_pipeline.models import SegmentResult
+from scriptcast.als_generator import generate_als
+from scriptcast.models import SegmentResult
 
 
 class GenerateAlsTests(TestCase):

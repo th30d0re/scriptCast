@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scriptcast"
+version = "0.1.0"
+description = "Render markdown podcast scripts to per-turn speech, and export Ableton, FCPXML and Logic sessions."
+requires-python = ">=3.11"
+dependencies = [
+    "mlx-audio",
+    "misaki[en]",
+    "numpy",
+    "scipy",
+    "soundfile",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+verify = ["mlx-whisper"]
+elevenlabs = ["elevenlabs"]
+
+[project.scripts]
+scriptcast = "scriptcast.__main__:main"
+scriptcast-verify = "scriptcast.tools.verify_render:main"
+scriptcast-repair = "scriptcast.tools.repair_render:main"
+scriptcast-relayout = "scriptcast.tools.relayout_episode:main"
+scriptcast-stitch = "scriptcast.tools.stitch_episode:main"
+scriptcast-retime = "scriptcast.tools.retime_script:main"
+scriptcast-turn-index = "scriptcast.tools.turn_index:main"
+scriptcast-outliers = "scriptcast.tools.check_render_outliers:main"
+scriptcast-stress = "scriptcast.tools.stress_check:main"
+scriptcast-clip = "scriptcast.tools.make_clip:main"
+scriptcast-reference = "scriptcast.tools.make_reference:main"
+scriptcast-audition = "scriptcast.tools.audition_voice:main"
+scriptcast-calibrate = "scriptcast.tools.calibrate_pronunciation:main"
+
+[tool.setuptools.packages.find]
+include = ["scriptcast*"]

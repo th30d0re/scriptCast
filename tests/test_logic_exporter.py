@@ -2,12 +2,12 @@ import tempfile
 from pathlib import Path
 from unittest import TestCase
 
-from voice_pipeline.logic_exporter import (
+from scriptcast.logic_exporter import (
     _escape_applescript_string,
     _generate_applescript,
     _ms_to_smpte,
 )
-from voice_pipeline.models import SegmentResult
+from scriptcast.models import SegmentResult
 
 
 class LogicExporterTests(TestCase):
