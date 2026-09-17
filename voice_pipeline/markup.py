@@ -49,6 +49,10 @@ def tokenize_markup(turns: list[Turn]) -> list[Turn]:
                     )
             elif tag_name == "beat":
                 chunks.append(MarkupChunk(kind="silence", duration_ms=_BEAT_MS))
+            elif tag_name == "clip" and tag_value:
+                # Archival audio plays in place of synthesis; the text after
+                # the tag is the excerpt's verbatim transcript (archive.py).
+                chunks.append(MarkupChunk(kind="annotation", tag=f"clip:{tag_value.strip()}"))
             elif tag_name in {"emphasis", "tone"}:
                 chunks.append(MarkupChunk(kind="annotation", tag=tag_name))
                 _LOGGER.info(

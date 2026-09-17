@@ -46,6 +46,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from voice_pipeline.markup import tokenize_markup
 from voice_pipeline.parser import parse_transcript
+from voice_pipeline.archive import clip_id_in
 from voice_pipeline.pronunciation import find_heteronyms
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -234,6 +235,8 @@ def main() -> int:
             chunk_text = chunks[position] if position < len(chunks) else ""
             readings = (
                 [] if args.no_stress or len(segments) != len(chunks)
+                # Archival clips are someone's real voice; stress is theirs.
+                or clip_id_in(source.clean_text)
                 else find_heteronyms(chunk_text)
             )
             result = mlx_whisper.transcribe(

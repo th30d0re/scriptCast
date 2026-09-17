@@ -481,6 +481,14 @@ def _print_turn_progress(
 
 
 
+def _turn_clip_id(turn) -> str | None:
+    """The archival clip a turn plays, from its [clip:id] tag."""
+    for chunk in turn.markup_chunks:
+        if chunk.kind == "annotation" and chunk.tag and chunk.tag.startswith("clip:"):
+            return chunk.tag.split(":", 1)[1]
+    return None
+
+
 def _turn_is_emphasised(turn) -> bool:
     """Whether the script marked this turn [emphasis]."""
     return any(
@@ -568,7 +576,15 @@ async def render_loop(
             # their context calls for (pronunciation.py). The script, captions
             # and verification keep the real word.
             speech_text = speech_text_for(voice_config.engine, job.text)
-            if getattr(engine, "supports_expressive", False) and _turn_is_emphasised(turn):
+            if voice_config.engine == "archive":
+                clip_id = _turn_clip_id(turn)
+                if clip_id is None or len(jobs) != 1:
+                    raise RuntimeError(
+                        f"Turn {turn.turn_index} ({turn.speaker_id}) is an archive turn and "
+                        "needs exactly one [clip:id] tag followed by its transcript."
+                    )
+                raw_audio = await engine.clip_audio(clip_id)
+            elif getattr(engine, "supports_expressive", False) and _turn_is_emphasised(turn):
                 raw_audio = await engine.synthesize_chunk(
                     speech_text, voice_config, expressive=True
                 )

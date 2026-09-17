@@ -397,7 +397,40 @@ class OmniVoiceEngine(TTSEngine):
         return 24000
 
 
+class ArchiveEngine(TTSEngine):
+    """Plays a registered archival recording where the script quotes it.
+
+    Nothing is synthesized. The render loop hands this engine the turn's
+    `[clip:id]` and gets back the cut, loudness-matched excerpt.
+    """
+
+    def __init__(self, model_id: str = "", trim_edges: bool = True) -> None:
+        self.model_id = model_id
+        self.trim_edges = trim_edges
+
+    async def load(self) -> None:
+        return None
+
+    async def synthesize_chunk(self, text: str, voice_config: VoiceConfig) -> numpy.ndarray:
+        raise RuntimeError(
+            f"{voice_config.speaker_id} uses the archive engine; its turns need a "
+            "[clip:id] tag naming a clip in the archive registry."
+        )
+
+    async def clip_audio(self, clip_id: str) -> numpy.ndarray:
+        from voice_pipeline.archive import render_clip
+
+        return render_clip(clip_id)
+
+    @property
+    def sample_rate(self) -> int:
+        from voice_pipeline.archive import SAMPLE_RATE
+
+        return SAMPLE_RATE
+
+
 ENGINE_REGISTRY: dict[str, type[TTSEngine]] = {
+    "archive": ArchiveEngine,
     "mlx_kokoro": MLXKokoroEngine,
     "elevenlabs": ElevenLabsEngine,
     "mlx_dia": MLXDiaEngine,

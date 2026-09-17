@@ -120,12 +120,26 @@ def compute_turn_fingerprint(turn: Turn, voice=None) -> TurnFingerprint:
         text_hash=text_hash,
         segment_count=len(speech_texts),
         voice_hash=compute_voice_hash(voice),
-        speech_text_hash=(
-            speech_text_hash(getattr(voice, "engine", ""), speech_texts)
-            if voice is not None
-            else ""
-        ),
+        speech_text_hash=_audio_source_hash(turn, voice, speech_texts),
     )
+
+
+def _audio_source_hash(turn: Turn, voice, speech_texts: list[str]) -> str:
+    """What the engine renders from, beyond the script text.
+
+    For synthetic voices that is the respelled text, when a respelling changed
+    it. For archival clips it is the source file and the cut points, so
+    re-trimming a clip re-renders that turn and nothing else.
+    """
+    if voice is None:
+        return ""
+    engine = getattr(voice, "engine", "")
+    if engine == "archive":
+        from voice_pipeline.archive import clip_fingerprint, clip_id_in
+
+        clip_id = clip_id_in(turn.clean_text)
+        return clip_fingerprint(clip_id) if clip_id else ""
+    return speech_text_hash(engine, speech_texts)
 
 
 def _fingerprint_changed(prev: TurnFingerprint, fp: TurnFingerprint) -> bool:

@@ -25,8 +25,17 @@ def _timestamp_to_ms(timestamp_mmss: str) -> int:
     return int(minutes_text) * 60_000 + int(seconds_text) * 1_000
 
 
+_TAG_RE = re.compile(r"(\[[^\]]*\])")
+
+
 def _clean_text(raw_text: str) -> str:
-    return _MARKDOWN_FORMATTING_RE.sub("", raw_text).strip()
+    # Markup tags keep their contents: a clip id like [clip:atwater_1981] needs
+    # its underscores. Everything outside a tag is stripped of markdown emphasis.
+    parts = _TAG_RE.split(raw_text)
+    return "".join(
+        part if index % 2 else _MARKDOWN_FORMATTING_RE.sub("", part)
+        for index, part in enumerate(parts)
+    ).strip()
 
 
 def _compute_turn_id(

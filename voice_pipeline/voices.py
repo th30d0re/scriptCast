@@ -64,10 +64,12 @@ def load_voices(path: Path) -> dict[str, VoiceConfig]:
                     f"reference_audio_expressive / reference_text_expressive. "
                     f"OmniVoice needs the clip and its transcript together."
                 )
+        elif engine == "archive":
+            pass  # plays registered recordings; see voice_pipeline/archive.py
         else:
             raise ValueError(
                 f"Speaker '{speaker_id}' has unknown engine '{engine}'. "
-                f"Supported: kokoro, mlx_kokoro, elevenlabs, mlx_chatterbox, omnivoice"
+                f"Supported: kokoro, mlx_kokoro, elevenlabs, mlx_chatterbox, omnivoice, archive"
             )
 
         voices[speaker_id] = VoiceConfig(
