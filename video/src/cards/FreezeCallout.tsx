@@ -11,7 +11,7 @@ export function FreezeCallout(props: FreezeProps) {
   if (/^(\/|[a-z]+:)/i.test(props.image) || props.image.split('/').includes('..')) {
     throw new Error('image must be a relative path under public/');
   }
-  return <Frame {...props}>{scale => <>
+  return <Frame {...props} qr={props.qr ?? false}>{scale => <>
     <div style={{flex: 1, minHeight: 0, display: 'flex', justifyContent: 'center'}}>
       <div style={{height: '100%', aspectRatio: String(props.aspect), position: 'relative'}}>
         <Img src={staticFile(props.image)} alt="" style={{display: 'block', width: '100%', height: '100%'}} />
