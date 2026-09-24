@@ -9,5 +9,27 @@
     "request_hash": "2d7f17ca80c7a925084dd92b042670facaa732eacea5d9e03896041fd4b0ab0e",
     "output_index": 0,
     "output_count": 1
+  },
+  {
+    "prompt": "Two identical semi-automatic AR-15 style rifles side by side, exact duplicates at the same scale, each with pistol grip, detachable box magazine, adjustable collapsible stock and handguard rail, pointing right, centered in a wide horizontal frame with a thin gap between them. No text, no logos, no brand marks, no people, no hands.",
+    "model": "arrow-2",
+    "request_id": "c680281f-abcb-4e43-9d23-d0b98685a9ee",
+    "date": "2026-09-24T22:15:07.361Z",
+    "endpoint": "/svgs/generations",
+    "hash": "e532f4bd6edcc7827435f04536acd05e972e4c0406adb8be331e837fdd285b8e",
+    "request_hash": "e532f4bd6edcc7827435f04536acd05e972e4c0406adb8be331e837fdd285b8e",
+    "output_index": 0,
+    "output_count": 1
+  },
+  {
+    "prompt": "Abstract flat vector map motif of a 1930s redlining map: a grid of irregular city-block zones with thin street lines, zones coloured in four grades from safe to hazardous, with one cluster of hazardous zones highlighted. No text, no labels, no real place names, no logos, no people.",
+    "model": "arrow-2",
+    "request_id": "ce1bf3c5-9eca-444a-884e-451377304d41",
+    "date": "2026-09-24T22:17:12.321Z",
+    "endpoint": "/svgs/generations",
+    "hash": "3eae4a4473fc4d4d2698bd2578a3e1273e0f53caca2ba149546471d7325937a1",
+    "request_hash": "3eae4a4473fc4d4d2698bd2578a3e1273e0f53caca2ba149546471d7325937a1",
+    "output_index": 0,
+    "output_count": 1
   }
 ]
