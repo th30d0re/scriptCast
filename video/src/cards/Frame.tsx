@@ -2,9 +2,10 @@ import {Img, staticFile, continueRender, delayRender} from 'remotion';
 import {ReactNode, useLayoutEffect, useRef, useState} from 'react';
 import {USABLE_BOX, WIDTH, HEIGHT} from '../safeZone';
 import {palette as p, fontFamily} from '../theme';
+import {QrCode} from './QrCode';
 
 export type ArtProp = {src: string; size?: 'strip' | 'hero'; caption?: string};
-export type BaseProps = {headline: string; sources: string; svgAsset?: string; art?: ArtProp; qr?: boolean};
+export type BaseProps = {headline: string; sources: string; svgAsset?: string; art?: ArtProp; qr?: boolean; qrUrl?: string};
 
 // Type sizes are fixed at their base values; Frame shrinks the content block
 // until it fits (measured in the browser). Kept for callers that pass it through.
@@ -34,7 +35,7 @@ export function getTextLength(obj: any): number {
 // same card start at the answer instead of re-running the shrink loop.
 const fittedScale = new Map<string, number>();
 
-export function Frame({headline, sources, svgAsset, art, qr = true, children}: BaseProps & {children: (scale: number) => ReactNode}) {
+export function Frame({headline, sources, svgAsset, art, qr = true, qrUrl, children}: BaseProps & {children: (scale: number) => ReactNode}) {
   const effectiveArt = art || (svgAsset ? {src: svgAsset, size: 'strip' as const} : undefined);
   
   if (effectiveArt?.src) {
@@ -94,7 +95,7 @@ export function Frame({headline, sources, svgAsset, art, qr = true, children}: B
 
       <footer style={{textAlign: 'center', flexShrink: 0}}>
         <div style={{fontSize: Math.max(16, Math.round(26 * scale)), lineHeight: 1.2, color: p.mute}}>{sources}</div>
-        {qr && <div style={{boxSizing: 'border-box', width: 120, height: 120, border: `3px solid ${p.mute}`, borderRadius: 10, margin: `${Math.round(12 * scale)}px auto 0`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: p.mute, fontSize: 30, fontWeight: 700}}>QR</div>}
+        {qr && (qrUrl ? <div style={{margin: `${Math.round(12 * scale)}px auto 0`, width: 150}}><QrCode url={qrUrl} size={150} /></div> : <div style={{boxSizing: 'border-box', width: 120, height: 120, border: `3px solid ${p.mute}`, borderRadius: 10, margin: `${Math.round(12 * scale)}px auto 0`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: p.mute, fontSize: 30, fontWeight: 700}}>QR</div>)}
       </footer>
     </main>
   </div>;
