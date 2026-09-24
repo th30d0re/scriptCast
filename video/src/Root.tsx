@@ -5,6 +5,7 @@ import {TimelineCard} from './cards/TimelineCard';
 import {StatBarsCard, type StatBarsProps} from './cards/StatBarsCard';
 import {TitleCard} from './cards/TitleCard';
 import {CompareCard} from './cards/CompareCard';
+import {FreezeCallout} from './cards/FreezeCallout';
 import {WIDTH, HEIGHT} from './safeZone';
 import g10 from '../examples/g10.json';
 import g11 from '../examples/g11.json';
@@ -16,4 +17,5 @@ export const Root = () => <>
   <Composition {...settings} id="StatBarsCard" component={StatBarsCard} defaultProps={{headline: 'Stats', sources: 'Sources: Example', items: [{label: 'A', period: 'Now', values: [10], color: 'mute'}]}} />
   <Composition {...settings} id="TitleCard" component={TitleCard} defaultProps={{headline: 'Title', sources: 'Sources: Example', items: [{title: 'Point'}]}} />
   <Composition {...settings} id="CompareCard" component={CompareCard} defaultProps={{headline: 'Compare', sources: 'Sources: Example', items: [{title: 'Left', points: ['1']}, {title: 'Right', points: ['2']}]}} />
+  <Composition {...settings} id="FreezeCallout" component={FreezeCallout} defaultProps={{headline: 'Frame', sources: 'Sources: Example', image: 'assets/example.svg', aspect: 1, callouts: []}} />
 </>;

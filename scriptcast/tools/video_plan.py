@@ -6,7 +6,7 @@ import math
 from pathlib import Path
 import re
 
-COMPONENTS = {"TimelineCard", "StatBarsCard", "TitleCard", "CompareCard"}
+COMPONENTS = {"TimelineCard", "StatBarsCard", "TitleCard", "CompareCard", "FreezeCallout"}
 
 
 def frame_at(ms: float, fps: int = 30) -> int:

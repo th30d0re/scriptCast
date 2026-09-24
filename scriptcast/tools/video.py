@@ -58,6 +58,8 @@ def check_missing_assets(cards_list, allow_missing, parser):
         srcs = []
         if "svgAsset" in card and isinstance(card["svgAsset"], str):
             srcs.append(card["svgAsset"])
+        if isinstance(card.get("image"), str):
+            srcs.append(card["image"])
         if "art" in card and isinstance(card["art"], dict) and isinstance(card.get("art", {}).get("src"), str):
             srcs.append(card["art"]["src"])
         for src in srcs:
