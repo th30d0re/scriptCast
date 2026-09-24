@@ -1,13 +1,11 @@
-import {Frame, type BaseProps, computeDensity, getTextLength} from './Frame';
+import {Frame, type BaseProps} from './Frame';
 import {palette as p} from '../theme';
 
 export type TimelineProps = BaseProps & {items: {date: string; title: string; detail: string; highlight?: boolean; badge?: string}[]; note?: string};
 
 export function TimelineCard(props: TimelineProps) {
-  const textLength = getTextLength(props.items) + getTextLength(props.note || '');
-  const scale = computeDensity(props.items.length, textLength);
 
-  return <Frame {...props} scale={scale}><div style={{display: 'flex', flexDirection: 'column', gap: Math.round(14 * scale)}}>
+  return <Frame {...props}>{scale => <div style={{display: 'flex', flexDirection: 'column', gap: Math.round(14 * scale)}}>
     {props.items.map((item, i) => <div key={i} style={{display: 'grid', gridTemplateColumns: '110px 1fr', gap: Math.round(18 * scale)}}>
       <div style={{fontSize: Math.round(32 * scale), color: p.mute, whiteSpace: 'pre-line', textAlign: 'right', fontWeight: 600}}>{item.date}</div>
       <div style={{borderLeft: `5px solid ${item.highlight ? p.red : p.teal}`, paddingLeft: Math.round(18 * scale)}}>
@@ -17,5 +15,5 @@ export function TimelineCard(props: TimelineProps) {
       </div>
     </div>)}
     {props.note && <div style={{border: `3px solid ${p.red}`, borderRadius: 12, padding: Math.round(14 * scale), fontSize: Math.round(32 * scale), textAlign: 'center'}}>{props.note}</div>}
-  </div></Frame>;
+  </div>}</Frame>;
 }

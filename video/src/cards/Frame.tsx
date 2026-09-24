@@ -6,7 +6,12 @@ import {palette as p, fontFamily} from '../theme';
 export type ArtProp = {src: string; size?: 'strip' | 'hero'; caption?: string};
 export type BaseProps = {headline: string; sources: string; svgAsset?: string; art?: ArtProp};
 
+// Type sizes are fixed at their base values; Frame shrinks the content block
+// until it fits (measured in the browser). Kept for callers that pass it through.
 export function computeDensity(itemCount: number, textLength: number) {
+  void itemCount; void textLength;
+  return 1.0;
+  // eslint-disable-next-line no-unreachable
   let scale = 1.0;
   if (textLength > 200 || itemCount > 2) scale = 0.9;
   if (textLength > 300 || itemCount > 3) scale = 0.8;
@@ -25,7 +30,7 @@ export function getTextLength(obj: any): number {
   return 0;
 }
 
-export function Frame({headline, sources, svgAsset, art, scale = 1.0, children}: BaseProps & {scale?: number; children: ReactNode}) {
+export function Frame({headline, sources, svgAsset, art, children}: BaseProps & {children: (scale: number) => ReactNode}) {
   const effectiveArt = art || (svgAsset ? {src: svgAsset, size: 'strip' as const} : undefined);
   
   if (effectiveArt?.src) {
@@ -36,18 +41,23 @@ export function Frame({headline, sources, svgAsset, art, scale = 1.0, children}:
   }
 
   const [handle] = useState(() => delayRender());
+  const [scale, setScale] = useState(1);
   const contentRef = useRef<HTMLElement>(null);
 
+  // Shrink-to-fit: lower the type scale in 5% steps until every descendant of the
+  // content block sits inside it (measured in the browser). Fails loudly below the
+  // floor instead of clipping.
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
-    if (contentRef.current) {
-      const el = contentRef.current;
-      if (el.scrollHeight > el.clientHeight + 1) { // 1px tolerance
-         throw new Error(`Overflow detected in card: ${headline}`);
-      }
+    const el = contentRef.current;
+    const boxBottom = el ? el.getBoundingClientRect().bottom : 0;
+    const bottom = el ? Math.max(0, ...Array.from(el.querySelectorAll('*')).map(n => n.getBoundingClientRect().bottom)) : 0;
+    if (el && bottom > boxBottom + 2) {
+      if (scale > 0.5) { setScale(sc => Number((sc - 0.05).toFixed(2))); return; }
+      throw new Error(`Overflow detected in card: ${headline} (content bottom ${Math.round(bottom)}px, box bottom ${Math.round(boxBottom)}px, scale ${scale})`);
     }
     continueRender(handle);
-  }, [handle, headline]);
+  }, [handle, headline, scale]);
 
   const hero = effectiveArt?.size === 'hero';
   
@@ -73,7 +83,7 @@ export function Frame({headline, sources, svgAsset, art, scale = 1.0, children}:
       </div>}
 
       <section ref={contentRef} style={{flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly'}}>
-        {children}
+        {children(scale)}
       </section>
 
       <footer style={{textAlign: 'center', flexShrink: 0}}>

@@ -1,11 +1,10 @@
-import {Frame, type BaseProps, computeDensity, getTextLength} from './Frame';
+import {Frame, type BaseProps} from './Frame';
 import {palette as p} from '../theme';
 
 export type CompareProps = BaseProps & {items: {title: string; points: string[]}[]; verdict?: string};
 
 export function CompareCard(props: CompareProps) {
-  const scale = computeDensity(Math.max(...props.items.map(i => i.points.length)), getTextLength(props.items) + getTextLength(props.verdict || ''));
-  return <Frame {...props} scale={scale}>
+  return <Frame {...props}>{scale => 
     <div style={{display: 'flex', flexDirection: 'column', gap: Math.round(20 * scale), flex: 1, minHeight: 0}}>
       <div style={{display: 'flex', gap: Math.round(20 * scale), flex: 1, minHeight: 0}}>
         {props.items.map((item, i) => <div key={i} style={{flex: 1, minWidth: 0, background: p.navy2, padding: Math.round(24 * scale), borderRadius: 12, display: 'flex', flexDirection: 'column', gap: Math.round(16 * scale)}}>
@@ -21,5 +20,5 @@ export function CompareCard(props: CompareProps) {
       </div>
       {props.verdict && <div style={{background: p.navy2, padding: Math.round(20 * scale), borderRadius: 12, textAlign: 'center', fontSize: Math.round(32 * scale), fontWeight: 800, color: p.gold, border: `2px solid ${p.red}`}}>{props.verdict}</div>}
     </div>
-  </Frame>;
+  }</Frame>;
 }

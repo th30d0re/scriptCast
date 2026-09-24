@@ -1,4 +1,4 @@
-import {Frame, type BaseProps, computeDensity, getTextLength} from './Frame';
+import {Frame, type BaseProps} from './Frame';
 import {palette as p} from '../theme';
 
 export type StatBarsProps = BaseProps & {lead?: string; items: {label: string; sublabel?: string; period: string; values: number[]; delta?: string; color: string}[]; quote?: string; attribution?: string};
@@ -10,10 +10,8 @@ export function barWidths(values: number[]): number[] {
 }
 
 export function StatBarsCard(props: StatBarsProps) {
-  const textLength = getTextLength(props.items) + getTextLength(props.lead || '') + getTextLength(props.quote || '');
-  const scale = computeDensity(props.items.length * 2.5, textLength); // count items more heavily since they take vertical space
 
-  return <Frame {...props} scale={scale}>
+  return <Frame {...props}>{scale => 
     <div style={{display: 'flex', flexDirection: 'column', gap: Math.round(12 * scale), minHeight: 0}}>
       {props.lead && <div style={{fontSize: Math.round(32 * scale), lineHeight: 1.2, textAlign: 'center', marginBottom: Math.round(8 * scale)}}>{props.lead}</div>}
       
@@ -37,5 +35,5 @@ export function StatBarsCard(props: StatBarsProps) {
         {props.attribution && <div style={{fontSize: Math.round(28 * scale), color: p.mute, marginTop: 6}}>{props.attribution}</div>}
       </div>}
     </div>
-  </Frame>;
+  }</Frame>;
 }
