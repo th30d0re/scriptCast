@@ -71,7 +71,7 @@ for (const markup of [
 
 // Hero art check
 const heroMarkup2 = renderToStaticMarkup(<CompareCard {...neutral} items={[]} art={{src: 'assets/example.svg', size: 'hero', caption: 'A caption'}} />);
-assert(heroMarkup2.includes('height:40%'), 'Hero art height missing');
+assert(heroMarkup2.includes('height:34%'), 'Hero art height missing');
 assert(heroMarkup2.includes('A caption'), 'Hero art caption missing');
 
 // Title emphasis check
