@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - Unreleased
 
 ### Added
+- `scriptcast-shotspec` resolves Markdown shot lists through script turn order into manifest timing; extracts URL/card citations and validates `[source]`. Manuscript citations and checks are opt-in with `--book PATH` and/or `--repo ROOT`; supports JSON output and `--strict`.
 - `scriptcast-refit` remeasures existing WAVs, backs up the manifest, updates render state, and optionally relays out clips with `--gap-ms`.
 - Project settings `tail_ms` (400) and `speech_threshold` (0.03), shared by CLI defaults. Explicit CLI flags override saved refit settings, which override project settings on subsequent renders.
 

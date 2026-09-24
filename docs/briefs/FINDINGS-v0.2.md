@@ -111,3 +111,82 @@ FAILED tests/test_project.py::test_defaults - KeyError: "unknown project key ...
 1 failed, 123 passed, 5 warnings in 4.76s
 sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
 ```
+
+## Phase 2
+
+### Scope and initial inspection
+
+- This run implements Phase 2 only; the earlier Phase 1 record above is preserved verbatim. The user reports Phase 1 committed and a corrected baseline of 124 passing tests; its historical blocker text is not the current acceptance status.
+- Read the full brief and reference shotspec implementation. User instructions override the brief's commit and later-phase instructions. No git commands, network, synthesis, README edits, or manuscript-repository writes are planned.
+- Preserve `_manifest_lookup` unchanged, including first-match behavior and fallback when no script mapping is available.
+- Manuscript checks will be enabled by either `--book` or `--repo`. `--repo` retains the reference's default manuscript location `Paper/The_Original_Power.tex`; `--book` selects a manuscript (relative to `--repo`, or the working directory when no root is supplied). Generic URLs/cards remain available in either mode.
+
+### Implementation and comparison findings
+
+- Added the tool, console registration, neutral Tiny Shapes fixtures, and synthetic tests. No Phase 3 or 4 work.
+- Real-data comparison passed all required fields for all 16 shots, including complete anchors. Prompt seeds also match. Differences are limited to newly recognized source tags, generic URL/card citations, and validation. G-03, G-04, and G-16 have source tags without a URL/card reference and correctly report errors; non-strict execution still exits zero.
+- Initial test run: 137 passed and two new parametrized tests failed because their test argv slice left a dangling `--book`; corrected the test harness. No existing expectations changed.
+- Reference behavior retained: nonexistent manuscripts skip quote/label checks, explicit missing cited files error, and only lines past EOF are rejected (zero line numbers are not newly rejected).
+
+### Final acceptance output (raw)
+
+Command: `/Users/emmanuel/Documents/Theory/TheOriginalPower/.venv-voice/bin/python -m pytest tests -q`
+
+```text
+........................................................................ [ 51%]
+...................................................................      [100%]
+=============================== warnings summary ===============================
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  /Users/emmanuel/Documents/Theory/TheOriginalPower/.venv-voice/lib/python3.11/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  /Users/emmanuel/Documents/Theory/TheOriginalPower/.venv-voice/lib/python3.11/site-packages/misaki/en.py:143: DeprecationWarning: open_text is deprecated. Use files() instead. Refer to https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy for migration advice.
+    with importlib.resources.open_text(data, f"{'gb' if british else 'us'}_gold.json") as r:
+
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  /Users/emmanuel/Documents/Theory/TheOriginalPower/.venv-voice/lib/python3.11/site-packages/misaki/en.py:145: DeprecationWarning: open_text is deprecated. Use files() instead. Refer to https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy for migration advice.
+    with importlib.resources.open_text(data, f"{'gb' if british else 'us'}_silver.json") as r:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+139 passed, 5 warnings in 4.24s
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+```
+
+Real-data command ran from `/Users/emmanuel/Documents/Theory/TheOriginalPower`, using its `.venv-voice/bin/python`, with `PYTHONPATH=/Users/emmanuel/Documents/Theory/scriptCast` to select this implementation and `PYTHONDONTWRITEBYTECODE=1` to prevent writes there:
+
+```text
+python -m scriptcast.tools.shotspec Architecting_the_operation/video/chapter135_rebuttal_shotlist.md --script Architecting_the_operation/podcasts/chapter135_rebuttal_reply.md --manifest outputs/chapter135_reply/episode_manifest.json --out /tmp/shotspec_new.json
+```
+
+```text
+Skipping non-speaker preamble line 1 in Architecting_the_operation/podcasts/chapter135_rebuttal_reply.md
+chapter135_rebuttal_shotlist.md: 16 shots, 16 anchored to real time, 16 vector
+  error G-03     tagged [source] with no URL or card reference
+  error G-04     tagged [source] with no URL or card reference
+  error G-16     tagged [source] with no URL or card reference
+wrote /tmp/shotspec_new.json
+Compared 16 shots.
+anchor.start_ms differences: 0
+Required-field differences: []
+Identical fields: id, title, anchor, hold, type, described, note, suggested_track
+Differing field provenance.citations: G-01, G-02, G-05, G-06, G-07, G-08, G-09, G-10, G-11, G-12, G-13, G-14, G-15
+Differing field provenance.tags: G-01, G-02, G-03, G-04, G-05, G-06, G-07, G-08, G-09, G-10, G-11, G-12, G-13, G-14, G-15, G-16
+Differing document field: validation
+prompt_seed differences: 0
+```
+
+The comparison checked equal shot counts, every required field per shot, all provenance subfields, prompt seeds, and document-level fields. An AST comparison also verified `_manifest_lookup` is identical to the reference. All 124 existing tests and 15 new cases passed.
+
+### Verification limits
+
+- Installed `scriptcast-shotspec` console script was not smoke-tested: `command -v scriptcast-shotspec` exited 1. No installation was attempted in the read-only reference environment. Module execution and CLI `main()` were tested; pyproject registration is present.
+- Opt-in manuscript validation was tested with synthetic files, not against the real manuscript. The required real-data comparison used default generic mode.
+- No synthesis, audio/perceptual checks, DAW round trips, container checks, Phase 3/4 tooling, live APIs, or video rendering were performed; all are outside Phase 2 scope.
+- No git commands ran, changes remain uncommitted, Phase 1 findings and README are untouched, and scratch output is under `/tmp`.
