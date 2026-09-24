@@ -37,16 +37,25 @@ export const clipSourceFrame = (clip: Clip, fps: number, frame: number) => {
   return Math.min(first + frame, last);
 };
 function ClipView({clip, fps}: {clip: Clip; fps: number}) {
-  const frame = useCurrentFrame();
-  // Freeze evaluates a source frame directly: clamp to the excerpt's final frame
-  // for long turns, without replaying or depending on the media's EOF behavior.
-  return <Freeze frame={clipSourceFrame(clip, fps, frame)}>
-    <OffthreadVideo src={staticFile(clip.src)} muted style={{
-      position: 'absolute', left: USABLE_BOX.x, top: '50%',
-      transform: 'translateY(-50%)', width: USABLE_BOX.width,
-      height: '100%', objectFit: 'contain',
-    }} />
-  </Freeze>;
+  const first = frameAt(clip.in_ms, fps);
+  const last = clipSourceFrame(clip, fps, Number.MAX_SAFE_INTEGER);
+  const style = {
+    position: 'absolute', left: USABLE_BOX.x, top: '50%',
+    transform: 'translateY(-50%)', width: USABLE_BOX.width,
+    height: '100%', objectFit: 'contain',
+  } as const;
+  // Play the excerpt from its own in-point (startFrom seeks the source; Freeze
+  // with an absolute frame does not), then hold the final frame for any remainder.
+  return <>
+    <Sequence durationInFrames={last - first + 1}>
+      <OffthreadVideo src={staticFile(clip.src)} muted startFrom={first} endAt={last + 1} style={style} />
+    </Sequence>
+    <Sequence from={last - first + 1}>
+      <Freeze frame={0}>
+        <OffthreadVideo src={staticFile(clip.src)} muted startFrom={last} endAt={last + 1} style={style} />
+      </Freeze>
+    </Sequence>
+  </>;
 }
 export function Episode(plan: EpisodePlan) {
   return <AbsoluteFill style={{backgroundColor: palette.navy}}>
