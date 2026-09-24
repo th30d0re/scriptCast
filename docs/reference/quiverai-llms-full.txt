@@ -1,0 +1,2407 @@
+# QuiverAI Docs
+
+> Documentation for QuiverAI and the QuiverAI API.
+
+# Overview
+Source: https://docs.quiver.ai/
+
+QuiverAI generates and vectorizes SVGs using AI. Create directly in the App, or use the developer docs and API reference to build and manage an integration.
+
+**[App](/app)**
+
+Create visuals and review completed work in the QuiverAI App. Start here for interactive use.
+
+**[Developers](/developers)**
+
+Build with the API and manage projects, credentials, access, spend, limits, and data policy.
+Start here for an integration.
+
+**[API Reference](/api-reference/introduction)**
+
+Look up endpoints, request fields, and response schemas. Start here when implementing a specific
+call.
+
+---
+
+# QuiverAI API
+Source: https://docs.quiver.ai/api-reference
+
+The QuiverAI API enables developers to generate and edit SVG graphics using AI, with support for streaming responses and model discovery.
+
+Version 1.0.0
+
+Base URL: `https://api.quiver.ai`
+
+## Models
+
+Operations for listing and retrieving available models.
+
+- [`GET /v1/models`](/api-reference/models/list-models) — List Models.
+- [`GET /v1/models/{model}`](/api-reference/models/get-model) — Get Model.
+
+## OpenResponses
+
+Create Open Responses-compatible outputs with caller-declared tools.
+
+- [`POST /v1/responses`](/api-reference/openresponses/create-open-response) — Create OpenResponse.
+
+## Animate SVG
+
+Animate SVG inputs from SVG source references.
+
+- [`POST /v1/svgs/animations`](/api-reference/animate-svg/animate-svg) — SVG animation.
+
+## Edit SVG
+
+- [`POST /v1/svgs/edits`](/api-reference/edit-svg/edit-svg) — SVG edit.
+
+## Create SVGs
+
+Generate SVG graphics from text prompts and reference images.
+
+- [`POST /v1/svgs/generations`](/api-reference/create-svgs/generate-svg) — Text to SVG.
+
+## Vectorize SVG
+
+Convert raster image inputs into SVG outputs.
+
+- [`POST /v1/svgs/vectorizations`](/api-reference/vectorize-svg/vectorize-svg) — Image to SVG.
+
+---
+
+# SVG animation
+Source: https://docs.quiver.ai/api-reference/animate-svg/animate-svg
+
+Animates an input SVG from a remote or base64-encoded SVG source.
+
+`POST /v1/svgs/animations`
+
+---
+
+# Text to SVG
+Source: https://docs.quiver.ai/api-reference/create-svgs/generate-svg
+
+Generates one or more SVGs from a prompt and optional references.
+
+`POST /v1/svgs/generations`
+
+---
+
+# SVG edit
+Source: https://docs.quiver.ai/api-reference/edit-svg/edit-svg
+
+Edits an input SVG from inline SVG markup or a remote/base64 SVG source.
+
+`POST /v1/svgs/edits`
+
+---
+
+# Introduction
+Source: https://docs.quiver.ai/api-reference/introduction
+
+This reference covers the HTTP API at `api.quiver.ai`. Start with the
+[Quickstart](/developers/quickstart) to configure an API Platform project and key before using
+the endpoint schemas.
+
+:::note
+If you are creating directly in the QuiverAI App, start with the [App docs](/app).
+:::
+
+## Authentication
+
+The QuiverAI API uses API keys with bearer authentication. Create and manage keys in
+[API Keys](https://platform.quiver.ai/api-keys), keep the secret server-side, and load it from an
+environment variable or secret manager.
+
+```http
+Authorization: Bearer <QUIVERAI_API_KEY>
+```
+
+Send requests to `https://api.quiver.ai/v1`. JSON requests also require:
+
+```http
+Content-Type: application/json
+```
+
+## Choose an endpoint family
+
+### Responses API
+
+Use `POST /v1/responses` with a catalog model that supports `open_responses` when your application
+provides functions or custom tools for Arrow to call. Responses uses Open Responses request,
+response, and SSE event shapes. Your application handles `function_call` or `custom_tool_call`
+items and replays their results to continue the conversation; the API does not execute those tools.
+
+Responses requests are stateless: set `store: false` or omit it. Stored response retrieval and
+non-null `previous_response_id` values are not supported. Replay earlier input and output items
+in `input` to continue a conversation. Use HTTP requests or SSE streaming; WebSockets are not
+supported.
+
+See [Current limitations](/developers/guides/migrate-to-responses#current-limitations) before adapting
+an existing Responses client, and [SDK compatibility](/developers/guides/migrate-to-responses#sdk-compatibility)
+for provider configuration.
+
+A Test key calls the Responses API against the sandbox rather than a model. Confirm model
+availability and key authority before routing an integration to it. See
+[Migrate to the Responses API](/developers/guides/migrate-to-responses)
+for the conditional migration path.
+
+### Native SVG endpoints
+
+The native endpoints remain supported and are the narrower contract when the operation is already
+known:
+
+- `POST /v1/svgs/generations`
+- `POST /v1/svgs/vectorizations`
+- `POST /v1/svgs/edits`
+- `POST /v1/svgs/animations`
+
+Use `GET /v1/models` and `GET /v1/models/{model}` to discover the catalog and the operation and
+billing capabilities available to the organization. The key must also authorize the requested
+model and operation; appearing in the catalog does not grant access.
+
+## Streaming and final results
+
+Native SVG streams use `reasoning`, `draft`, and final `content` events. Responses streams use
+OpenResponses events. In both cases, `data: [DONE]` ends the transport; it is not itself proof of a
+successful final result. Do not persist preview output as an authoritative SVG.
+
+For terminal event and retry handling, see
+[Errors and debugging](/developers/guides/errors-and-debugging).
+
+## Billing and usage
+
+Read each model's `billing.kind` from `GET /v1/models` or `GET /v1/models/{model}` before
+calculating cost:
+
+- Fixed-credit models publish per-operation `pricing_credits`. Generations debit `svg_generate`
+  for each SVG returned; successful vectorizations debit `svg_vectorize` once per request. Other
+  supported operations use their corresponding catalog rate. When some conversions in a batch
+  fail, `data` can hold fewer than `n` SVGs, and a stream can deliver its completed SVGs and then
+  an `error` event.
+- Token-priced models publish `billing.rates` and settle validated terminal token usage. Each
+  Responses request in a tool loop is metered separately.
+
+API Platform usage draws from the organization's prepaid on-demand balance, not from App
+subscription credits. Manage the API balance and automatic top-up in
+[API Platform Billing](https://platform.quiver.ai/billing), review estimated attribution in
+[Usage](https://platform.quiver.ai/usage), and see [API pricing](/developers/pricing) for billing
+details.
+
+## Response headers
+
+Every response includes `X-Request-ID`. Preserve it for request correlation and support.
+
+You can send an optional caller trace id in `x-trace-id`. The API echoes it in `X-Trace-ID` for
+correlation with your own telemetry.
+
+Capacity rejections can include:
+
+- `X-RateLimit-Limit` and `X-RateLimit-Remaining` for the reported window;
+- `X-RateLimit-Reset` when a fixed reset time applies;
+- `X-RateLimit-Scope` and optional `X-RateLimit-Subject` for the rejecting scope;
+- `X-RateLimit-Dimension` for request, operation, input-token, or output-token capacity;
+- `Retry-After` when retry timing is available.
+
+Responses authenticated with an API Platform key also carry the complete data-posture
+header set when tenant and project attribution succeeds. See
+[Data controls](/developers/platform/data-controls) for those headers.
+
+## Errors and rate limits
+
+Error responses carry `status`, `code`, `message`, and `request_id`. Use the machine-readable status
+and code for control flow, and retain the request ID. A `/v1/responses` stream that fails after it
+starts reports them inside the `error` object of its `event: error` frame, with `status` as
+`error.status_code`; the native SVG streams report the envelope as it is. The
+[Errors and debugging guide](/developers/guides/errors-and-debugging)
+contains the status/code matrix, rate-limit behavior, streaming failures, Logs workflow, and
+support escalation checklist.
+
+When funding is insufficient, resolve it in
+[API Platform Billing](https://platform.quiver.ai/billing). When capacity rejects a request,
+review [API Platform Limits](https://platform.quiver.ai/limits).
+
+## SDKs
+
+QuiverAI provides an official [Node.js SDK](https://github.com/quiverai/quiverai-node):
+
+```bash
+npm install @quiverai/sdk
+```
+
+You can also use the official OpenAI JavaScript and TypeScript SDK by setting QuiverAI as the base
+URL:
+
+```typescript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.QUIVERAI_API_KEY,
+  baseURL: "https://api.quiver.ai/v1",
+});
+
+const response = await client.responses.create({
+  model: "arrow-2",
+  input: "Create a minimal geometric compass icon in blue.",
+  store: false,
+});
+```
+
+The Open Responses endpoint is also verified with the Vercel AI SDK's
+[`@ai-sdk/open-responses`](https://www.npmjs.com/package/@ai-sdk/open-responses) provider for
+streaming and non-streaming tool loops:
+
+```typescript
+import { createOpenResponses } from "@ai-sdk/open-responses";
+
+const arrow = createOpenResponses({
+  name: "quiver",
+  url: "https://api.quiver.ai/v1/responses",
+  headers: {
+    Authorization: `Bearer ${process.env.QUIVERAI_API_KEY}`,
+  },
+})("arrow-2");
+```
+
+Other Open Responses clients can target the same endpoint when they support a custom URL and bearer
+headers. For other integrations, call the REST API directly.
+
+---
+
+# Get Model
+Source: https://docs.quiver.ai/api-reference/models/get-model
+
+Returns metadata for a single model.
+
+`GET /v1/models/{model}`
+
+---
+
+# List Models
+Source: https://docs.quiver.ai/api-reference/models/list-models
+
+Returns all models available to the authenticated organization.
+
+`GET /v1/models`
+
+---
+
+# Create OpenResponse
+Source: https://docs.quiver.ai/api-reference/openresponses/create-open-response
+
+OpenResponses endpoint backed by Arrow. The endpoint is stateless: previous_response_id may only be null and store may only be false, so a prior turn is continued by replaying it in input. Caller-declared function and custom tools are returned as function_call and custom_tool_call output items for the caller to execute and replay. Streaming ends with the literal [DONE] transport sentinel.
+
+`POST /v1/responses`
+
+---
+
+# Image to SVG
+Source: https://docs.quiver.ai/api-reference/vectorize-svg/vectorize-svg
+
+Converts an image input into an SVG output.
+
+`POST /v1/svgs/vectorizations`
+
+---
+
+# App
+Source: https://docs.quiver.ai/app
+
+![QuiverAI Create](/images/create.png)
+
+The QuiverAI App at [app.quiver.ai](https://app.quiver.ai) is where you create visuals, review and
+share completed work in Gallery, and manage your App account and billing.
+
+## Playground
+
+Use Create with Arrow 2 to generate editable SVGs, upload raster images for vectorization, edit
+existing artwork, and animate SVGs.
+
+**[Open Playground](https://app.quiver.ai/creations)**
+
+Generate and vectorize SVGs interactively, then review completed work in Gallery.
+
+New to Arrow? The [Arrow 2 Prompt Guide](/app/prompt-guide) shows how to prompt vector artwork, use
+references, vectorize an image, and add focused motion.
+
+## MCP server
+
+Connect QuiverAI to AI agents and MCP-compatible clients from the hosted
+[MCP server](/app/mcp). Agents can create SVGs, vectorize images, inspect your Gallery,
+and fetch completed artwork after you authorize access
+with your QuiverAI account.
+
+## Gallery, sharing, and export
+
+- Review completed creations in Gallery and reopen them from recent work.
+- Share completed creations with a public link from the creation viewer.
+- Export one or more creations as SVG, PNG, JPEG, or WebP. MP4 export is also available when
+  the browser supports it.
+- Delete a single creation or remove all outputs from a finished multi-output generation.
+- Available export formats depend on your plan.
+- Use [Pricing](/app/pricing) to compare plan limits and export options.
+
+## Account and billing
+
+Use [App Billing](https://app.quiver.ai/settings/billing) to manage your plan, buy App credits,
+review weekly App credit usage, and configure automatic top-up.
+
+## Developer integrations
+
+API projects, credentials, usage, and prepaid API balance belong to the API Platform. Start
+with the [Developers docs](/developers) when integrating QuiverAI into your own services.
+
+---
+
+# MCP server
+Source: https://docs.quiver.ai/app/mcp
+
+The QuiverAI MCP server lets compatible AI agents create SVGs, vectorize images,
+inspect your Gallery, and fetch completed SVG content through a secure hosted connection.
+
+Connect your MCP client to:
+
+```text
+https://app.quiver.ai/mcp
+```
+
+QuiverAI uses the remote Model Context Protocol over Streamable HTTP with OAuth. Your
+client starts the sign-in flow, you authorize access with your QuiverAI account, and the
+client receives a token scoped to your account.
+
+:::info
+MCP access is in beta. Model and operation availability follows your QuiverAI plan, account
+limits, and available usage.
+:::
+
+## What agents can do
+
+Once connected, agents can:
+
+- List the QuiverAI models available to your account with `list_models`.
+- Browse Gallery metadata with `list_creations` and fetch selected creation metadata or SVG content
+  with `get_creation` and `get_creation_content`.
+- Filter `list_creations` with `cursor`, `limit` (1–100), `method` (`generate`, `vectorize`, or `animate`), and
+  `status`, and set `includeContent` when inline SVG is needed for multiple items.
+- Request a PNG preview alongside SVG content when they need to show a creation in chat.
+- Create text-to-SVG generation tasks with `create_generation`; set `n` from 1 to 16 when you need
+  multiple outputs (the default is 1).
+- Pass image and SVG sources directly to create tools as public URLs, base64 payloads, or completed
+  QuiverAI upload IDs. QuiverAI fetches or decodes non-upload sources, validates them, stores them, and
+  persists upload IDs in the task. URL and base64 sources may include an optional `filename`.
+- Vectorize raster image sources with `create_vectorization`.
+- Animate an existing SVG creation or SVG source with `create_animation` when the tool is available.
+- Successful create calls wait for completion and return `status: "completed"`, a `taskId`, and
+  completed `creationIds`. Fetch those creations directly with `get_creation_content`.
+
+### Models and completion
+
+Call `list_models` before choosing a model. The response is the source of truth for the model and
+operations available to the connected App account. MCP create tools currently accept the returned
+Arrow 2 model only; inspect its account-level `access` and operation-level `availability` before a
+paid create. Do not substitute a model from the API Platform catalog.
+
+A successful create response is already complete. Pass each returned `creationId` directly to
+`get_creation_content`; a task ID is not a creation ID. Use `get_task` only when you need to inspect
+an existing request later. Do not submit another paid create call to check progress or retry a
+failed create automatically.
+
+## Setup
+
+Choose an installer below. Cursor and Visual Studio Code open an install confirmation.
+
+<InstallButtons
+  items={[
+    {
+      ariaLabel: "Install QuiverAI MCP Server in Cursor",
+      href: "https://cursor.com/en-US/install-mcp?name=quiverai&config=eyJ1cmwiOiJodHRwczovL2FwcC5xdWl2ZXIuYWkvbWNwIn0%3D",
+      icon: "/images/agents/cursor.svg",
+      invertIconInDark: true,
+      label: "Install in Cursor",
+    },
+    {
+      ariaLabel: "Install QuiverAI MCP Server in Visual Studio Code",
+      href: "vscode:mcp/install?%7B%22name%22%3A%22quiverai%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fapp.quiver.ai%2Fmcp%22%7D",
+      icon: "/images/agents/visual-studio-code.svg",
+      label: "Install in VS Code",
+    },
+  ]}
+/>
+
+:::tip
+Codex and Cursor users can also install the public [agent plugins](/app/plugins); direct MCP setup
+is below.
+:::
+
+### Manual setup
+
+**Codex**
+
+Add QuiverAI from the CLI:
+
+```bash
+codex mcp add quiverai --url https://app.quiver.ai/mcp
+```
+
+Then run the login flow when Codex prompts you, or start it manually:
+
+```bash
+codex mcp login quiverai
+```
+
+**Claude Code**
+
+Add QuiverAI as an HTTP MCP server:
+
+```bash
+claude mcp add --transport http quiverai https://app.quiver.ai/mcp
+```
+
+Open a Claude Code session and run `/mcp` to complete authentication.
+
+**Cursor**
+
+Add QuiverAI to your Cursor MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "quiverai": {
+      "url": "https://app.quiver.ai/mcp"
+    }
+  }
+}
+```
+
+After saving the config, use Cursor's MCP tools UI or command palette to connect
+and complete the OAuth flow.
+
+**VS Code**
+
+Add QuiverAI to your user or workspace MCP configuration:
+
+```json
+{
+  "servers": {
+    "quiverai": {
+      "type": "http",
+      "url": "https://app.quiver.ai/mcp"
+    }
+  }
+}
+```
+
+Start the server from the MCP configuration editor and complete the OAuth flow.
+
+**Other clients**
+
+For clients with native remote MCP support, add `https://app.quiver.ai/mcp` as a
+Streamable HTTP server.
+
+For clients that only support stdio MCP servers, use `mcp-remote`:
+
+```json
+{
+  "mcpServers": {
+    "quiverai": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://app.quiver.ai/mcp"]
+    }
+  }
+}
+```
+
+## Permissions
+
+The MCP server uses scoped OAuth access:
+
+- Read access lets agents list models, inspect Gallery items, read creation content, and
+  inspect existing tasks.
+- Write access lets agents start text-to-SVG generations and vectorizations. The MCP
+  server does not expose a separate upload-slot tool; sources are supplied inline to create tools or
+  referenced by an existing completed upload ID.
+
+MCP is an App product surface. MCP task creation counts toward the eligible weekly App usage
+allowance first, then toward prepaid App usage. Public API calls use the API Platform prepaid
+balance; see [API Pricing](/developers/pricing).
+
+## Animation availability
+
+The MCP server advertises `create_animation` only when animation is enabled for the connection and
+the visible Arrow 2 catalog entry allows it. Check the available tools and `list_models` before
+calling it. A locked operation can still require different plan or prepaid usage access.
+
+## Reading creation previews
+
+Use `get_creation_content` when your client needs the SVG for a specific creation. By
+default the tool returns SVG content only.
+
+When the client should render the creation visually in chat, set `includePng: true`.
+QuiverAI returns the SVG together with a PNG preview and a render instruction so the
+client can display the image directly to the user without rasterizing the SVG itself.
+
+## Troubleshooting
+
+If connection fails, verify that your client supports remote MCP over Streamable HTTP or
+use the `mcp-remote` fallback shown above. If authentication opens in the browser but
+does not return to the client, remove the saved MCP connection from your client and add
+it again.
+
+For account issues, [contact us](https://quiver.ai/contact).
+
+---
+
+# Agent plugins
+Source: https://docs.quiver.ai/app/plugins
+
+QuiverAI publishes public agent plugins for clients that can load plugin bundles. The
+plugins package the hosted [MCP server](/app/mcp) configuration with QuiverAI-specific
+agent instructions for SVG generation and vectorization.
+
+Use a plugin when your client supports plugin bundles or marketplace installation. Use the manual
+MCP setup on the [MCP server](/app/mcp) page when your client does not support plugins yet.
+
+:::info
+Plugins do not contain QuiverAI credentials or local secrets. Authentication still runs through
+the MCP OAuth flow in your client.
+:::
+
+## Available plugins
+
+<CopyToast />
+<InstallButtons
+  items={[
+    {
+      ariaLabel: "Copy the QuiverAI Codex plugin install commands",
+      copyErrorMessage:
+        "Could not copy the Codex install commands. Select and copy them from the Codex instructions below.",
+      copySuccessMessage: "Codex install commands copied",
+      copyText:
+        "codex plugin marketplace add quiverai/codex-plugin\ncodex plugin add quiverai@quiverai",
+      icon: "/images/agents/codex.svg",
+      invertIconInDark: true,
+      label: "Install in Codex",
+    },
+    {
+      ariaLabel: "Install the QuiverAI plugin for Cursor",
+      href: "https://cursor.com/marketplace/quiverai",
+      icon: "/images/agents/cursor.svg",
+      invertIconInDark: true,
+      label: "Install in Cursor",
+    },
+  ]}
+/>
+
+## What the plugins include
+
+- A client-specific plugin manifest.
+- MCP server configuration for `https://app.quiver.ai/mcp`.
+- The QuiverAI skill for model discovery, reference images, generation, vectorization, and completed
+  result handling. It consumes completed `creationIds` directly and requests both SVG content and a
+  PNG preview for results shown in chat.
+- A manual fallback snippet in each public repository README.
+
+The MCP server remains hosted by QuiverAI. The plugins only package setup metadata and
+agent instructions.
+
+## Install and authenticate
+
+**Codex**
+
+Add the QuiverAI plugin marketplace and install the plugin:
+
+```bash
+codex plugin marketplace add quiverai/codex-plugin
+codex plugin add quiverai@quiverai
+```
+
+After installation, verify that the MCP server is registered:
+
+```bash
+codex mcp list
+```
+
+If Codex marks the server as needing login, start the OAuth flow:
+
+```bash
+codex mcp login quiverai
+```
+
+**Cursor**
+
+Install QuiverAI from the Cursor marketplace:
+
+```text
+https://cursor.com/marketplace/quiverai
+```
+
+After installation, verify that the MCP server is registered:
+
+```bash
+cursor-agent mcp list
+cursor-agent mcp list-tools quiverai
+```
+
+If Cursor marks the server as needing login, authenticate from Cursor's MCP UI or run:
+
+```bash
+cursor-agent mcp login quiverai
+```
+
+## Troubleshooting
+
+If your client does not discover the plugin's MCP server, use the manual MCP configuration
+from the [MCP server](/app/mcp) page. If authentication opens in the browser but does not
+return to the client, remove the saved MCP connection from your client and add it again.
+
+For account issues, [contact us](https://quiver.ai/contact).
+
+---
+
+# Pricing
+Source: https://docs.quiver.ai/app/pricing
+
+QuiverAI offers monthly plans with included weekly App credits. Manage your plan from
+[Billing](https://app.quiver.ai/settings/billing).
+
+## Plans
+
+<PricingPlans />
+
+Upgrade or downgrade any time from [Billing](https://app.quiver.ai/settings/billing).
+
+After you use your weekly included App credits, you can keep generating in the App by buying
+prepaid App credits in [Billing](https://app.quiver.ai/settings/billing).
+
+The App uses Arrow 2. The amount of App usage a creation consumes depends on the request. Billing
+shows your current weekly allowance and prepaid balance.
+
+## Automatic top-up
+
+You can enable automatic top-up in [Billing](https://app.quiver.ai/settings/billing) so prepaid App
+credits are added when your App credit balance drops below the configured threshold.
+
+:::note
+Using the API instead? API calls use the API Platform prepaid balance, not weekly or prepaid
+App credits. Manage that balance in
+[API Platform Billing](https://platform.quiver.ai/billing), and see
+[API Pricing](/developers/pricing) for billing models.
+:::
+
+For full pricing details, visit [quiver.ai/pricing](https://quiver.ai/pricing).
+
+## Custom pricing
+
+For higher volumes or custom arrangements, [contact sales](https://quiver.ai/sales).
+
+---
+
+# Arrow 2 Prompt Guide
+Source: https://docs.quiver.ai/app/prompt-guide
+
+![Blue gradient letter a with an Arrow 2 prompt](/images/prompt-guide/arrow-2-prompt-guide-cover.png)
+
+Turn a design goal into an editable SVG. Define the intended use, visual direction, and constraints,
+then refine one decision at a time.
+
+Start in [Create](https://app.quiver.ai/creations), or review the [App overview](/app). For
+service-to-service use, follow the [API quickstart](/developers/quickstart).
+
+## Write a clear vector prompt
+
+Start with this template and replace the brackets with your requirements:
+
+```text
+Create [subject] for [use and size].
+Use [style], [colors], and [composition].
+Include [required details].
+Avoid [unwanted details].
+```
+
+Cover the details that change the result:
+
+1. **Purpose:** asset type, use, and final size.
+2. **Style:** flat icon, editorial illustration, technical line art, or another clear direction.
+3. **Composition:** viewpoint, crop, placement, scale, and spacing.
+4. **Construction:** palette, fills, stroke weight, geometry, and background.
+5. **Text:** exact wording, capitalization, and placement.
+6. **Constraints:** required, excluded, and unchanged elements.
+
+Instead of “Make a coffee icon,” specify its context and construction:
+
+```text
+Create a 24 × 24px SVG icon of a ceramic coffee cup for a mobile toolbar.
+Use a 0 0 24 24 view box, a front three-quarter view, rounded geometric shapes,
+a two-color navy and cream palette, and a consistent 2-unit outline.
+Center it on a transparent background. Do not include text, a saucer, or shadows.
+```
+
+Size and viewpoint set the composition. Palette, shapes, and stroke weight define its construction.
+Include a constraint when it rules out a plausible but unwanted result.
+
+## Use a reference image
+
+Use a reference to direct style or composition. Name what to preserve and what may change.
+
+![A large vector portrait beside four new portraits with consistent framing, shape language, and shading](/images/prompt-guide/reference-portrait-family.png)
+
+Prompt shown:
+
+> Using the reference image, create more characters in the same style
+
+For more control, separate what to preserve from what to change:
+
+```text
+Use the reference image for its close portrait framing, bold shape language,
+flat graphic shading, and high-contrast palette. Create a new character with
+different hair, clothing, and background colors. Keep the head scale, crop,
+and shading treatment consistent.
+```
+
+With multiple references, assign one role to each—for example, silhouette from the first and
+palette from the second. To convert the source itself, use
+[vectorization](#vectorize-a-raster-image).
+
+## Structure your prompt with JSON
+
+For a detailed or reusable prompt, JSON can separate style, composition, palette, subject, and
+output requirements. Choose keys that fit the task; they are not an Arrow-defined schema.
+
+![Three decorative mask illustrations using bold flat colors, alongside a partial structured prompt](/images/prompt-guide/json-decorative-masks.png)
+
+_Three decorative mask results beside a partial structured prompt._
+
+**View the complete JSON prompt**
+
+```json
+{
+  "task": "Generate a single decorative mask illustration in a bold flat folk-art style — one mask per generation",
+  "style": {
+    "genre": "contemporary folk art, flat vector illustration, stylized ritual/ceremonial mask design",
+    "influences": [
+      "Newari, Tibetan, and Balinese ritual masks",
+      "Mexican lucha and Day-of-the-Dead mask iconography",
+      "modern editorial and children's-book character illustration",
+      "mid-century screen-print poster art"
+    ],
+    "line_work": "clean flat vector shapes, minimal to no outlines — color blocks sit directly against each other; thin linear detail allowed only for texture (fur strokes, spots, wrinkles, patterns, face-paint lines)",
+    "shading": "strictly flat color, no gradients, no drop shadows, no 3D rendering — depth implied only by layered flat shapes",
+    "symmetry": "bilateral symmetry around a vertical center axis by default; occasionally break it deliberately with a two-tone split face or asymmetric ornament for variety"
+  },
+  "color_palette": {
+    "approach": "highly saturated, maximalist, joyfully clashing combinations, 3-5 colors per mask",
+    "background": "flat warm off-white / cream (#F2EEDD range), no texture, no vignette",
+    "color_pool": [
+      "hot pink / magenta",
+      "cobalt or royal blue",
+      "marigold yellow / mustard",
+      "coral red / vermillion",
+      "kelly green",
+      "black as a bold color block",
+      "burnt orange",
+      "teal",
+      "lavender"
+    ],
+    "rule": "contrast the base face color strongly against feature colors (eyes, mouth, ears, headdress) rather than using tonal/shaded variants of the same hue"
+  },
+  "composition": {
+    "canvas": "square or portrait, mask centered with generous cream padding",
+    "framing": "face/head only, cropped at neck or chin — no shoulders, body, or hands",
+    "orientation": "front-facing, direct eye contact with the viewer"
+  },
+  "subject_matter": {
+    "categories": [
+      "wrathful demon or guardian deity (horns, fangs, third eye, protruding tongue, flame motifs)",
+      "animal mask (tiger, leopard, wolf/jackal, monkey, bull, owl, boar) with expressive human-like eyes",
+      "human ceremonial face with face paint, tattoos, or patterned skin markings",
+      "royal or divine figure with an elaborate crown, headdress, or beaded halo",
+      "abstract patterned 'face' (concentric circles, polka dots, chevrons, spirals) mapped onto a face silhouette",
+      "hybrid creature (part animal, part human, part mythic — e.g. bird-beaked deity, fanged monkey-king)"
+    ],
+    "must_include_at_least_two": [
+      "large expressive almond or circular eyes with a visible pupil, outlined in a contrasting color",
+      "one striking facial ornament: horns, crown, oversized earrings, headdress feathers/spikes, tusks, or a face-paint pattern",
+      "a distinct mouth treatment: fangs, a lolling tongue, a bold mustache, painted lips, or bared teeth"
+    ],
+    "optional_accents": [
+      "dangling earrings, tassels, or beaded jewelry",
+      "a third eye on the forehead",
+      "facial hair as a bold flat graphic shape",
+      "symmetrical cheek markings (dots, swirls, stripes, rainbows)",
+      "small jewelry details: bindis, studs, hoops, nose rings"
+    ]
+  },
+  "mood": "playful yet powerful — mythic, slightly uncanny, equal parts cute and fierce; every mask should feel like it belongs to its own character or story",
+  "technical_output": {
+    "format": "flat 2D vector-style illustration, clean crisp edges",
+    "scalability": "SVG shapes that remain clear at the intended print, sticker, or icon size",
+    "avoid": [
+      "photorealism",
+      "3D shading, gradients, or embossing",
+      "muted/desaturated palettes",
+      "busy backgrounds or scenery",
+      "text or typography",
+      "visible body/torso — head only"
+    ]
+  },
+  "generation_instructions": "Produce exactly ONE mask per generation call. Use the subject category, 3-5 colors from the pool, ornament type, mouth treatment, and optional accents specified for this generation. Keep the flat-color technique, symmetry approach, and cream background consistent so the set reads as one cohesive collection."
+}
+```
+
+For a set, reuse the structure and change the subject, colors, or details deliberately. Record each
+combination because independent requests do not carry that history.
+
+JSON organizes the prompt; it is not a separate generation mode. For the SVG generation endpoint,
+pass it as text in the string `prompt` field. For the Responses API, include it as text in `input`.
+
+## Create a family of icons
+
+Build an icon family from one reusable prompt. Define its size, geometry, spacing, and fill or
+stroke treatment, then change only the subject.
+
+![Nine minimalist black geometric animal icons beside an enlarged octopus icon inside a blue selection box](/images/prompt-guide/animal-icons.png)
+
+Prompt shown:
+
+> Minimalist geometric animal logo in black color and smooth curves
+
+A more specific prompt to try is:
+
+```text
+Create a 24px [animal] icon as a solid black geometric silhouette. Use smooth
+rounded curves, consistent visual weight, and a square view box. Keep small gaps
+and interior negative space readable at 24px. Use filled shapes only, with no
+outlines, gradients, text, or background.
+```
+
+Replace `[animal]` for each icon. Compare the set at 24px and adjust only silhouettes that lose
+their identity.
+
+## Experiment with models and effort
+
+Compare settings with the same prompt, reference images, and output size.
+
+![A robotic arm rendered by Arrow 2 with broad flat surfaces beside an Arrow 2 Telos version with more vents and tonal shading](/images/prompt-guide/arrow-2-model-comparison.png)
+
+_Arrow 2 on the left and Arrow 2 Telos on the right. In this example, the left result uses larger,
+flatter surfaces; the right adds vent details and tonal shading._
+
+Hold effort fixed while comparing models. Then choose a model and adjust effort separately. Judge
+the silhouette, geometry, prompt adherence, and legibility at the final size. Extra detail or
+effort is not necessary for every task, especially a small icon or mark.
+
+## Create technical illustrations
+
+For line work, name the viewpoint, construction details, line hierarchy, and any highlight color.
+
+### Fashion concepts
+
+![Three tailored jacket concepts with contrasting panels, seams, collars, and zip closures](/images/prompt-guide/fashion-jacket-concepts.png)
+
+Prompt shown:
+
+> Create a cool jacket inspired by Prada, line work sketch for fashion pattern
+
+A more specific prompt to try is:
+
+```text
+Create one tailored jacket concept as a clean fashion line drawing. Show a
+front three-quarter view with a cropped silhouette, contrasting shoulder panels,
+a structured collar, visible seam placement, and an asymmetric zip closure.
+Use black lines with one muted accent fill on a white background. Keep major
+outlines heavier than construction details and omit the figure.
+```
+
+Check that seams, closures, and panels connect as intended before using a concept as a pattern.
+
+### Technical line art
+
+![Shoulder, thigh, and calf line-art studies with selected muscles highlighted in red](/images/prompt-guide/anatomical-line-art.png)
+
+_Shoulder, thigh, and calf studies with selected areas highlighted in red. The recorded prompt
+describes the shoulder panel._
+
+Prompt shown:
+
+> Anatomical shoulder sketch, deltoid muscle areas highlighted red, black-and-white medical line art.
+
+Verify anatomical details independently before using the illustration as a technical reference.
+
+## Turn a sketch into vector artwork
+
+Use a sketch as the starting point when you want a polished interpretation rather than a faithful
+trace. State which parts of the concept to preserve and which parts Arrow may simplify or restyle.
+
+![A hand-drawn mask sketch beside a black vector interpretation](/images/prompt-guide/sketch-to-vector.png)
+
+Prompt shown:
+
+> Turn this sketch into a vector
+
+For refinement, name one change and the parts to keep:
+
+```text
+Simplify the interior marks. Preserve the outer silhouette and eye placement,
+and keep the result solid black.
+```
+
+Check that the defining contour and negative space still read at the final size.
+
+## Vectorize a raster image
+
+If you already have finished raster artwork, use vectorization to convert its visible shapes. In
+the App, upload a raster image and prompt “Vectorize this image.”
+
+![A picture.jpeg raster sign compared with a picture.svg vector sign, including enlarged edge details](/images/prompt-guide/raster-to-vector.png)
+
+_A `picture.jpeg` and `picture.svg` comparison. The enlarged details compare raster edges with the
+vector result._
+
+The octagonal outline, black pictogram, flat colors, and high contrast separate into distinct
+shapes. Crop irrelevant borders before submitting. Compare the outline, pictogram, corners, colors,
+and transparency with the source. Refine the converted result separately when needed:
+
+```text
+Set the red areas to #FF1F1F. Keep the pictogram, border width, layout,
+and viewBox unchanged.
+```
+
+## Add micro animations
+
+Start with an existing SVG and describe the movement:
+
+- **Element:** Identify the existing shape or group that moves.
+- **Motion:** Describe direction, distance or scale, duration, and easing.
+- **Playback:** Choose a loop or one-time playback, including any pause.
+- **Preserve:** List the shapes, colors, text, and layout that stay unchanged.
+
+<VideoShowcase
+  label="Arrow 2 micro-animation examples"
+  items={[
+    {
+      caption: "The owl's eyes move in a seamless loop.",
+      height: 668,
+      label: "Looping animation of a red illustrated owl",
+      src: "/images/arrow-2-owl-animation.mp4",
+      width: 1094,
+    },
+    {
+      caption: "Steam rises and fades above the cup.",
+      height: 668,
+      label: "Animation of an illustrated cup with rising steam",
+      src: "/images/arrow-2-cup-animation.mp4",
+      width: 1094,
+    },
+    {
+      caption: "Paths pulse across mirrored geometric panels.",
+      height: 668,
+      label: "Ambient animation of mirrored geometric panels and connecting lines",
+      src: "/images/arrow-2-ambient-animation.mp4",
+      width: 1094,
+    },
+    {
+      caption: "The monogram paths draw in before the solid mark appears.",
+      height: 668,
+      label: "Animated black geometric monogram reveal",
+      src: "/images/arrow-2-monogram-animation.mp4",
+      width: 1094,
+    },
+  ]}
+/>
+
+Example refinement for the cup:
+
+```text
+Animate only the three steam paths. Move each path upward 12px while fading
+from fully visible to transparent over 1.4 seconds with ease-out timing.
+Stagger their starts by 150ms, pause for 300ms, and loop seamlessly.
+Keep the cup, colors, stroke widths, view box, and layout unchanged.
+```
+
+Select the preview to pause or play. Check the final loop for jumps and unintended movement.
+
+## Refine and inspect the result
+
+Use each result as the reference for the next focused change:
+
+1. Compare it with the prompt and choose the result closest to the intended use.
+2. Request one change and name the elements that must stay fixed.
+3. Check the revision at its final size before the next edit or export.
+
+```text
+Change only [one element] to [new requirement].
+Keep [silhouette, layout, colors, text, and other fixed details] unchanged.
+```
+
+For example: “Change only the cup handle to make it 15% wider. Keep the viewpoint, colors, stroke
+weight, view box, and all other shapes unchanged.”
+
+| If you see               | Try next                                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------------------- |
+| Too much detail          | Name the intended display size and remove secondary texture or decoration.                |
+| Wrong composition        | Specify the viewpoint, crop, placement, and relative scale of the main elements.          |
+| Inconsistent style       | State concrete stroke, fill, palette, and geometry rules; give each reference one role.   |
+| Incorrect text or labels | Supply the exact text and capitalization, then inspect every label in the output.         |
+| A weak vectorization     | Crop closer, remove background clutter, or start from a cleaner, higher-resolution image. |
+| An edit changed too much | Name the single change and list the shapes, colors, text, and layout to preserve.         |
+
+Before exporting, inspect the silhouette, text, small geometry, background, transparency, and
+editability. Open the SVG in its destination tool and confirm it renders at the intended size.
+
+**[Explore what others are creating](https://app.quiver.ai/discover)**
+
+Browse vector artwork and prompts in Explore.
+
+---
+
+# Developers
+Source: https://docs.quiver.ai/developers
+
+Generate SVGs from text or vectorize images with the QuiverAI API. Use the API Platform to
+manage the projects, API keys, billing, and data controls behind your integration.
+
+**[Quickstart](/developers/quickstart)**
+
+Generate your first SVG, save it, and open it in your browser.
+
+**[Get an API key](https://platform.quiver.ai/api-keys)**
+
+Create a project-scoped key in the API Platform.
+
+**[API Reference](/api-reference/introduction)**
+
+Look up endpoints, request fields, and response schemas.
+
+## Build
+
+- [Models](/developers/models): compare Arrow 2 and Arrow 2 Telos, then check availability for your API key.
+- [Text to SVG](/developers/models/text-to-svg): generate SVGs from a prompt with the native API.
+- [Image to SVG](/developers/models/image-to-svg): convert a raster image into an SVG.
+- [Migrate to Responses](/developers/guides/migrate-to-responses): adapt an existing native integration when your catalog includes a Responses model.
+
+## Operate
+
+Start with [API Platform concepts](/developers/platform) for organizations, projects, and
+credentials, then use these guides as your integration grows:
+
+- [Pricing](/developers/pricing) and [billing and limits](/developers/platform/billing-and-limits): understand charges, fund requests, and manage capacity.
+- [Errors and debugging](/developers/guides/errors-and-debugging) and [usage and logs](/developers/platform/usage-and-logs): investigate requests and track usage.
+- [Data controls](/developers/platform/data-controls): understand storage and policy settings.
+
+---
+
+# Errors and debugging
+Source: https://docs.quiver.ai/developers/guides/errors-and-debugging
+
+QuiverAI API failures use standard HTTP statuses and a machine-readable JSON envelope:
+
+```json
+{
+  "status": 429,
+  "code": "rate_limit_exceeded",
+  "message": "Rate limit exceeded",
+  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+Branch on `status` and `code`, not on the human-readable `message`.
+
+A request rejected for one particular parameter also carries `param`, that parameter as a path
+from the body root:
+
+```json
+{
+  "status": 400,
+  "code": "invalid_request",
+  "message": "Invalid value for 'store'",
+  "param": "store",
+  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+`param` names one parameter, the first the request failed on; correcting it can reveal another.
+It is a parameter name, never a value you submitted. Nested parameters read as a path
+(`size.width`, `input[0].content`). The key is absent when the failure is not about one particular
+parameter, or when the parameter cannot be named, so a missing `param` is not an error.
+
+A failure raised once streaming has started reports the same fields on its `event: error` frame,
+in the shape each endpoint streams. The native SVG streams under `/v1/svgs/` send this envelope
+unchanged. `/v1/responses` sends the Open Responses error event instead: the fields sit under
+`error`, `status` is `error.status_code`, `error.param` is `null` rather than absent, and
+`error.request_id` and `error.retry_after` carry the request id and the retry wait. A frame the
+API itself sends there has `error.type` set to `quiver_error`, and its `sequence_number`
+continues the stream's numbering.
+
+On `/v1/responses`, an `event: error` frame the API itself sends is not the last event. It is
+followed by `response.failed`, which carries the last response snapshot the stream sent and the
+output items completed before the failure, and then by `data: [DONE]`. Without a response snapshot
+to report, `data: [DONE]` follows the `event: error` frame directly. Read `code`, `status_code` and
+`request_id` from the `event: error` frame; the `response.failed` after it reports the failure only
+as `server_error`, with the same message.
+
+Two messages distinguish the two ways a parameter can be wrong:
+
+| Message                                                               | Meaning                                                          | What to do                       |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------- | -------------------------------- |
+| `Invalid value for '<param>'`, optionally `Supported values are: ...` | The endpoint accepts this parameter, but not the value you sent. | Send one of the values it lists. |
+| `Unrecognized request argument supplied: <param>`                     | The endpoint does not accept this parameter at all.              | Remove it from the request body. |
+
+The second is the common failure when porting a request from another Responses implementation:
+the endpoint rejects arguments it does not declare rather than ignoring them. `param` is the key
+your request actually contained, so it also catches a misspelling.
+
+When the parameter accepts a fixed set of values, the first message names them in a second
+sentence, and the list is the complete set the endpoint accepts:
+
+```json
+{
+  "status": 400,
+  "code": "invalid_request",
+  "message": "Invalid value for 'tools[0]'. Supported values are: 'function' and 'custom'.",
+  "param": "tools[0]",
+  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+A tool type, a `tool_choice`, and an enumerated option such as `reasoning.effort` all report this
+way. The sentence lists what the endpoint accepts and never repeats what you sent. It is absent
+when the parameter is not restricted to a fixed set — a free-form string, a number out of range, or
+a value of the wrong type — so read its absence as "this parameter has no list", not as a different
+class of failure.
+
+## Failures found after the body parses
+
+Some requests are well-formed and are still refused for one parameter. These name it too:
+
+| Failure                                                                                 | `param`                                                                              |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `404` `model_not_found` — unknown or retired model, or one outside your key's authority | `model`                                                                              |
+| `400` `Model does not support this operation` or `Model does not support SVG animation` | `model`                                                                              |
+| `400` `max_output_tokens exceeds the selected model limit`                              | `max_output_tokens`                                                                  |
+| `400` an unreadable reference image, or too many of them, on `POST /v1/responses`       | the path to the offending image, such as `input[0].content[1].image_url`, or `input` |
+
+These are the requests that carry the model in their body. `param` is always a path from the
+request body root, so a request that names the model in its URL instead — `GET /v1/models/{model}`
+— reports no `param`: the field it would name is already the path you called.
+
+A `model_not_found` naming `model` does not distinguish a typo from a model your key may not
+reach; check the model against `GET /v1/models`, which lists what this key can call.
+
+## Status and code guide
+
+| Status         | Common codes                                                                                                                              | What to do                                                                                                                                                                                                                                                   |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `400`          | `invalid_request`                                                                                                                         | Correct the parameter named by `param`, or the missing, malformed, or incompatible parameters. Do not retry the same body unchanged.                                                                                                                         |
+| `401`          | `invalid_api_key`, `unauthorized`                                                                                                         | Check the Bearer header, secret, key status, environment, project, and key authority.                                                                                                                                                                        |
+| `402`          | `insufficient_credits`, `funding_pending`, `funding_payment_method_required`, `funding_payment_action_required`, `funding_payment_failed` | Resolve funding in [API Platform Billing](https://platform.quiver.ai/billing), then retry when the balance or payment action is settled.                                                                                                                     |
+| `403`          | `unauthorized`, `account_frozen`, `content_policy_violation`, `invalid_request`                                                           | For `unauthorized`, check the key's allowed operations and models, then resolve any account or content-policy restriction. For `invalid_request`, the credential is accepted and this request is refused, so another key will not help — change the request. |
+| `404`          | `model_not_found` or `invalid_request`                                                                                                    | Refresh `GET /v1/models` for model availability, and verify the endpoint path and HTTP method.                                                                                                                                                               |
+| `408` or `504` | `request_timeout`                                                                                                                         | Treat the outcome as potentially uncertain. Before retrying, assess duplicate-work risk; Responses has no documented idempotency key.                                                                                                                        |
+| `413`          | `payload_too_large`                                                                                                                       | Reduce the upload or request payload before retrying.                                                                                                                                                                                                        |
+| `415`          | `invalid_request`                                                                                                                         | Send the body with a `Content-Type` of `application/json`. `POST /v1/responses` refuses a body it cannot read as JSON, including one sent with no `Content-Type` at all.                                                                                     |
+| `429`          | `rate_limit_exceeded`, `operation_rate_limit_exceeded`, `weekly_limit_exceeded`                                                           | Respect `Retry-After` when present, add backoff and jitter, and review [Limits](https://platform.quiver.ai/limits).                                                                                                                                          |
+| `500`          | `server_error`                                                                                                                            | Before retrying, assess duplicate-work risk; Responses has no documented idempotency key. Escalate persistent failures.                                                                                                                                      |
+| `502`          | `model_error`                                                                                                                             | Before retrying, assess duplicate-work risk; Responses has no documented idempotency key. Escalate persistent failures.                                                                                                                                      |
+| `503`          | `model_unavailable`                                                                                                                       | Before retrying, assess duplicate-work risk; Responses has no documented idempotency key. Escalate persistent failures.                                                                                                                                      |
+
+## Correlate a request
+
+Every response includes `X-Request-ID`. On an error response, it matches the envelope's
+`request_id`. Record this value with the endpoint, model, status, code, and UTC timestamp.
+
+You can also send an optional `x-trace-id` from your application. The API echoes it in
+`X-Trace-ID`, letting you join QuiverAI request records with caller telemetry.
+
+When request metadata is available under your data policy, use
+[Logs](https://platform.quiver.ai/logs) to inspect the request outcome. Logs can help correlate a
+request with its project, API key, endpoint, model, status, charge state, and public error code;
+they do not capture prompts, request or response bodies, uploads, or generated artifacts. The
+public error code is `invalid_request` for every rejected request body, so start from `param` on
+the response itself to find which parameter was wrong; Logs tell you which request, not which
+field.
+
+## Interpret a rate-limit response
+
+A `429` means an independently enforced capacity rejected the request. Use the canonical
+[response-header definitions](/api-reference/introduction#response-headers) to interpret the
+reported scope, subject, dimension, remaining capacity, reset time, and optional `Retry-After`.
+
+A key that does not authorize the requested operation or model can reject with `403 unauthorized`.
+When the capability is what the key lacks, the message names it and the remedy. A key's
+capabilities and models are fixed when it is created, so the remedy is a new key from
+[API Keys](https://platform.quiver.ai/api-keys); changing capacity settings does not grant a key
+additional authority.
+
+Honor `Retry-After` when it is present. When no retry timing is supplied and the reported capacity
+is zero, the relevant limit must change before the request can succeed.
+
+## Unsupported Responses options
+
+The Responses endpoint is stateless. `store: true` and a non-null `previous_response_id` return
+`400 invalid_request` before model execution, regardless of organization policy. Omit `store` or
+send `false`; omit `previous_response_id` or send `null`. Continue by replaying the full input
+history, not by retrieving a stored response. Changing data policy will not enable these features.
+
+Remove unsupported fields such as `background`, `include`, and `websocket` before retrying. See
+[Current limitations](/developers/guides/migrate-to-responses#current-limitations). Caller-tool
+storage is your application's responsibility and is distinct from QuiverAI's metadata and
+inference-retention policies in [Data controls](/developers/platform/data-controls).
+
+## Streaming failures
+
+Handle each failure boundary separately:
+
+- **HTTP setup failure:** A non-`200` response before SSE begins uses the JSON error envelope.
+- **Terminal SSE failure:** For `/v1/responses`, handle `response.failed`, `response.incomplete`,
+  and `event: error`. Collect complete `function_call` or `custom_tool_call` items before handling
+  them; partial arguments are not executable calls. A completed call can be followed by more
+  refinement turns, so do not publish staged content until the tool loop finishes successfully.
+- **Early EOF:** If the connection closes before a recognized terminal event, treat the outcome as
+  uncertain and retain the request id for investigation.
+- **Client cancellation or timeout:** Stopping the client does not prove server-side work stopped.
+  Assess duplicate-work risk before submitting another Responses request because the endpoint has
+  no documented idempotency key.
+- Native SVG streams emit preview events before the final `content` event. Do not persist a preview.
+- `data: [DONE]` ends the transport. Evaluate the events that preceded it to determine the request
+  outcome. On `/v1/responses`, a stream that sent `event: error` failed, whatever follows it; take
+  the failure's `code` and `request_id` from that frame.
+
+## Test error handling
+
+Test keys use the production base URL and published response shapes without model calls or charges.
+Use the sandbox's deterministic outcomes and supported failure markers to exercise client handling.
+The sandbox serves `/v1/responses` as well as the native endpoints; see
+[Sandbox and test keys](/developers/guides/sandbox-and-test-keys).
+
+## Escalate a persistent failure
+
+Provide support with:
+
+- the `X-Request-ID` or error `request_id`;
+- UTC timestamp, endpoint, model, HTTP status, and machine-readable code;
+- a minimal reproduction and sanitized request shape;
+- whether the request was streaming and which terminal event arrived.
+
+Never send an API key or other secret. Include prompts, source assets, or generated output only when
+they are necessary to reproduce the issue and your data-sharing policy permits it.
+
+---
+
+# Migrate to the Responses API
+Source: https://docs.quiver.ai/developers/guides/migrate-to-responses
+
+Use `POST /v1/responses` with a model whose catalog entry includes `open_responses`. Responses lets
+your application declare functions or custom tools, handle the returned calls, and send results
+back for another turn. Native SVG endpoints remain the simpler choice for a known SVG operation.
+
+## Choose the right contract
+
+| Need                                                       | Recommended API                                                                  |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Generate, vectorize, edit, or animate an SVG               | The corresponding native `/v1/svgs/*` endpoint                                   |
+| Let Arrow choose among functions your application provides | `/v1/responses` with declared tools and `tool_choice: "auto"`                    |
+| Request a specific caller function                         | `/v1/responses` with `tool_choice: { "type": "function", "name": "write_file" }` |
+| Continue after executing a tool                            | `/v1/responses`, replaying messages, calls, and matching tool results            |
+
+Native endpoints remain supported; migration is conditional, not a prerequisite for existing
+integrations.
+
+## SDK compatibility
+
+Responses uses the [Open Responses](https://www.openresponses.org/) wire format. Compatibility
+covers the supported HTTP Responses surface, not every OpenAI endpoint or SDK feature.
+
+| Client                               | Configuration                                                                                                                                                    |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vercel AI SDK                        | Prefer `@ai-sdk/open-responses` with the complete `https://api.quiver.ai/v1/responses` URL. Streaming and non-streaming tool loops are supported.                |
+| OpenAI JavaScript and TypeScript SDK | Set `baseURL: "https://api.quiver.ai/v1"`, provide your QuiverAI API key, and use `client.responses.create`. Use the Responses API rather than Chat Completions. |
+
+For Vercel AI SDK integrations, configure the provider on your server:
+
+```typescript
+import { createOpenResponses } from "@ai-sdk/open-responses";
+
+const apiKey = process.env.QUIVERAI_API_KEY;
+if (!apiKey) throw new Error("Set QUIVERAI_API_KEY before creating the provider.");
+
+const quiver = createOpenResponses({
+  name: "quiver",
+  url: "https://api.quiver.ai/v1/responses",
+  apiKey,
+});
+const model = quiver("arrow-2");
+```
+
+Confirm model access before using this configuration. With any SDK, disable stored responses and
+response-ID continuation, and avoid options that add `include`, `background`, or hosted tools.
+Some OpenAI-specific reasoning options add unsupported fields; prefer the Open Responses provider
+when integrating through Vercel AI SDK.
+
+TanStack Start is an application framework, not a separate model protocol. Call these clients
+from server-side code in a TanStack Start application and keep the API key out of browser code.
+
+## Current limitations
+
+The following limits apply regardless of which SDK sends the request:
+
+| Feature                        | Current behavior                                                                                                                                                                                                      |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Transport                      | HTTP with a JSON response or SSE streaming. WebSockets are not supported.                                                                                                                                             |
+| Response storage and retrieval | Stateless requests only. Omit `store` or send `store: false`; there is no stored-response retrieval endpoint.                                                                                                         |
+| Conversation continuation      | Replay the full conversation input, including prior messages, returned calls, matching tool results, and opaque reasoning IDs. Omit `previous_response_id` or send `null`; response-ID continuation is not supported. |
+| Tools                          | Declare `function` or `custom` tools and execute them in your application. Hosted tools, including old `quiver:*` tools, are not supported.                                                                           |
+| Other options                  | `background`, `include`, `websocket`, and unknown top-level fields are rejected.                                                                                                                                      |
+
+`store: true`, a non-null `previous_response_id`, and unsupported request fields return
+`400 invalid_request` before model execution. Organization data policy cannot enable these
+features. Stateless Responses behavior is separate from metadata and inference-retention policy;
+see [Data controls](/developers/platform/data-controls).
+
+## Before migrating
+
+1. Call `GET /v1/models` and choose a model whose `supported_operations` includes `open_responses`.
+   The catalog describes organization availability; the key must separately allow the model.
+2. Use a key whose authority permits **Responses** (`open_responses`) and your chosen model, plus
+   **Model catalog** (`catalog_read`) for the listing in step 1. Native SVG capability authority is
+   not required for a Responses call. The
+   sandbox serves `/v1/responses`, so a Test key can exercise the migration target without
+   reaching a model — see [Sandbox and test keys](/developers/guides/sandbox-and-test-keys).
+3. Read the model's live `billing.rates`. Each Responses request in a tool loop can incur token
+   charges; keep a limit on the number of requests your application makes.
+
+## Map the request
+
+A native generation request names the operation in its URL and returns the generated SVG. A
+Responses request declares tools that your application implements. `write_file` below is an
+application-defined function, not a hosted filesystem service. Save this body as `request.json`:
+
+```json
+{
+  "model": "arrow-2",
+  "input": "Create a minimal geometric compass icon in blue and stage it as compass.svg using write_file.",
+  "tools": [
+    {
+      "type": "function",
+      "name": "write_file",
+      "description": "Stage compass.svg content for the caller to save after refinement is complete.",
+      "parameters": {
+        "type": "object",
+        "properties": { "path": { "type": "string" }, "content": { "type": "string" } },
+        "required": ["path", "content"],
+        "additionalProperties": false
+      },
+      "strict": false
+    }
+  ],
+  "tool_choice": { "type": "function", "name": "write_file" },
+  "stream": false,
+  "store": false,
+  "parallel_tool_calls": false
+}
+```
+
+Send one turn with cURL:
+
+```bash
+curl --fail-with-body https://api.quiver.ai/v1/responses \
+  --header "Authorization: Bearer $QUIVERAI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data @request.json \
+  --output response.json
+```
+
+This command receives the model's response; it does not execute a tool or finish a multi-turn
+integration. The [Quickstart](/developers/quickstart) includes a complete bounded tool loop.
+
+Old `quiver:*` hosted-tool definitions and their `result.data[].svg` receipts are not this
+contract. See [Current limitations](#current-limitations) when adapting an existing client.
+
+## Map the result
+
+Native JSON responses return final SVGs in `data[].svg`. Responses can return `function_call`,
+`custom_tool_call`, and assistant message items in `output`. A function call contains a `name`,
+`call_id`, and JSON-encoded `arguments`, for example:
+
+```json
+{
+  "type": "function_call",
+  "id": "fc_1",
+  "call_id": "call_1",
+  "name": "write_file",
+  "status": "completed",
+  "arguments": "{\"path\":\"compass.svg\",\"content\":\"<svg xmlns=\\\"http://www.w3.org/2000/svg\\\"/>\"}"
+}
+```
+
+Validate the function name and arguments before handling it. Restrict file destinations in your
+application; never execute arbitrary paths or commands from model output.
+
+## Continue the tool loop
+
+After handling a function call, append the relevant prior messages, the `function_call` item, and
+a `function_call_output` whose `call_id` matches it. For the staging function above, the result is:
+
+```json
+{
+  "type": "function_call_output",
+  "call_id": "call_1",
+  "output": "{\"path\":\"compass.svg\",\"staged\":true}"
+}
+```
+
+Preserve returned opaque reasoning IDs in their original history order as
+`{ "type": "reasoning", "id": "<returned-id>" }`; do not send private reasoning text or request
+encrypted reasoning. Send the history as `input` with the same model and tool definitions. Use `tool_choice: "auto"`
+on follow-up turns so the model can finish without another call. Custom tools use
+`custom_tool_call_output` with the corresponding `call_id`.
+
+A completed tool call is not necessarily the last revision of an asset. Publish the latest staged
+content only after a completed response has no pending calls. An exhausted request limit, failed
+response, or incomplete response must not publish staged content as finished work. Do not use
+reasoning text as an artifact.
+
+For streaming integrations, collect function-argument or custom-input deltas, then handle complete
+calls from the terminal response. Do not execute partial arguments. See
+[Errors and debugging](/developers/guides/errors-and-debugging) for terminal
+failure handling.
+
+## Roll out safely
+
+Keep the native path available while validating the Responses path for an authorized project and
+key. Compare final SVG handling, token-usage accounting, timeout behavior, and retry policy before
+routing production traffic. A test key validates request and response handling against the
+sandbox; token-usage accounting and billing need a narrowly authorized Production key, because
+sandbox requests are never billed.
+
+---
+
+# Run the Open Responses conformance suite
+Source: https://docs.quiver.ai/developers/guides/open-responses-conformance
+
+The [Open Responses](https://www.openresponses.org/) project publishes a conformance CLI in the
+`openresponses/openresponses` repository. It calls `POST /v1/responses` on any host that implements
+the protocol and reports, test by test, what the host got right. This guide covers what a QuiverAI
+key needs before that suite can run, which of its tests apply, and the one test that needs a
+production key.
+
+## Create the key
+
+Create the key in the API Platform at [API Keys](https://platform.quiver.ai/api-keys). Two of
+its authority choices decide whether the suite runs at all:
+
+- **Capabilities.** Grant **Responses**, the capability `/v1/responses` requires. Nothing else in
+  the suite needs a second capability.
+- **Models.** Grant `arrow-2`, or all current and future models. The suite sends one model on every
+  request and `arrow-2` is the model to send.
+
+Capabilities and models are fixed when the key is created. A key minted without **Responses**
+cannot be repaired — create a second key rather than trying to widen the first.
+
+## Choose the environment
+
+The environment is the other choice made once, at creation:
+
+- An `sk_test_` key runs the suite against the sandbox. Nothing is billed, nothing reaches a model,
+  and every response is built from the same published schema a production call returns. See
+  [Sandbox and test keys](/developers/guides/sandbox-and-test-keys).
+- An `sk_live_` key runs the suite against the real model. Requests are billed as ordinary token
+  usage.
+
+Start on a test key: it proves your host wiring, the request shape, and the streaming event
+sequence without spending anything.
+
+## Run the suite
+
+```bash
+bun run bin/compliance-test.ts \
+  --base-url https://api.quiver.ai/v1 \
+  --api-key "$QUIVERAI_API_KEY" \
+  --model arrow-2
+```
+
+`--base-url` is the `/v1` prefix, not the endpoint: the CLI appends `/responses` itself. There is no
+separate sandbox host — a test key and a production key both call `https://api.quiver.ai`.
+
+The suite also ships seven `websocket-*` tests and two `compaction-*` tests. `/v1/responses` is a
+stateless HTTP endpoint and serves neither by design, so those nine fail on every key; use the
+CLI's `--filter` option to run the HTTP tests only.
+
+## Run `tool-calling` against a production key
+
+Run the `tool-calling` test on an `sk_live_` key. The sandbox returns a `function_call` output item
+only for the file-writing tool shape, so the suite's own tool declaration comes back as an assistant
+message and the test reports a failure that says nothing about the API. The remaining HTTP tests
+are answered the same way by both environments.
+
+## If a request is refused
+
+A key that was minted without **Responses** is refused with `403 unauthorized`, and the message
+names the missing capability and the remedy:
+
+```json
+{
+  "status": 403,
+  "code": "unauthorized",
+  "message": "This API key is not allowed to use Responses. A key's capabilities are fixed when it is created, so create a new key with the Responses capability in the API Platform at https://platform.quiver.ai/api-keys, then retry.",
+  "request_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+A `404 model_not_found` on `arrow-2` is a different problem: the model is not in the catalog this
+key can reach. Confirm it with `GET /v1/models` on the same key. See
+[Errors and debugging](/developers/guides/errors-and-debugging) for the full status and code matrix.
+
+---
+
+# Sandbox and test keys
+Source: https://docs.quiver.ai/developers/guides/sandbox-and-test-keys
+
+Every QuiverAI API key is created for one environment, chosen when the key is created and fixed
+for the key's life: **production** (`sk_live_...`) or **test** (`sk_test_...`). This page covers
+the test environment — the sandbox.
+
+## What a test key does
+
+A verified test key **never reaches a model.** `api.quiver.ai` routes the request to an in-process
+mock instead of dispatching inference, and returns a response built from the exact same published
+schema a production call would return. There is no separate sandbox host: use
+`https://api.quiver.ai`. Every Production endpoint has a sandbox fixture.
+
+Because no inference happens:
+
+- **Nothing is billed.** Sandbox requests carry no credit cost.
+- **The response is deterministic.** The same request body from the same key produces byte-identical
+  output every time, including across process restarts — useful for asserting on a response in your
+  own test suite instead of matching loosely.
+- **Ordinary rate limits still apply.** A test key is not exempt from rate limiting — request
+  flooding is still an abuse vector even against a mock — but sandbox capacity is resolved from its
+  own budget, independent of your organization's paid tier. Evaluating the API does not require
+  buying capacity first, and sandbox requests do not consume Production capacity buckets.
+
+## The sandbox serves the same models production would
+
+Model visibility and admission mirror production for your organization. `GET /v1/models` on a test
+key lists exactly what it would list for a live key on the same organization — same catalog, same
+preview rollouts, Arrow 2 included — and every listed model is callable on the SVG routes the
+sandbox serves. A model your organization is not entitled to returns `404 model_not_found` for both
+keys, so a sandbox integration test proves your production model access rather than a broader
+sandbox catalog.
+
+Token-priced responses carry the same `usage` block production returns:
+
+```json
+{
+  "usage": { "input_tokens": 120, "output_tokens": 220, "total_tokens": 340 }
+}
+```
+
+Those counts are mock values, fixed by the same determinism as the rest of the response. Nothing is
+billed and nothing is counted against your token capacity — parse the block and assert on its shape,
+not on what it would have cost.
+
+## Identifying a sandbox response
+
+Every response served to a test key carries a response header:
+
+```http
+x-quiver-environment: test
+```
+
+Check for this header in any code path that treats a response as billable or as real output — for
+example before caching a generation, queuing it for review, or writing it to a datastore your
+production pipeline also reads from.
+
+## The SVG markers
+
+Every SVG a sandbox response returns is marked twice in the artwork itself — once for your code,
+once for your eyes.
+
+The machine-readable half is an attribute on the root `<svg>` element:
+
+```xml
+<svg data-quiverai-sandbox="true" viewBox="0 0 24 24">...</svg>
+```
+
+The visible half is a banner drawn across the top of the artwork, reading **SANDBOX RESULT**. It is
+the document's last child, a nested `<svg>` carrying its own attribute:
+
+```xml
+<svg data-quiverai-sandbox-label="true" ...>...SANDBOX RESULT...</svg>
+```
+
+Sized in percentages, it scales with whatever artwork it sits on, so a rendered sandbox SVG says
+what it is without anybody having to read its source. The only SVG without the banner is a
+self-closing root, which has no closing tag to put it before. It still carries the root attribute.
+
+This is deliberate and unmistakable: a mock SVG should never be reviewable, shippable, or cacheable
+as a real generation. If your pipeline stores or renders generated SVGs, check for the attribute
+before treating one as production output — the same rule as the response header, expressed in the
+artifact itself so it survives being copied out of the response body.
+
+## Triggering specific outcomes
+
+The sandbox recognizes a marker you can put in a request field to deliberately exercise
+edge-case handling before production exercises it for you:
+
+| Marker               | Where                                  | Effect                                                                 |
+| -------------------- | -------------------------------------- | ---------------------------------------------------------------------- |
+| `[mock:slow-stream]` | in the `prompt` of a streaming request | slows the stream down, useful for testing client-side timeout handling |
+
+This marker is inert in production — sending it to a production key does not do anything
+special, since production never inspects the prompt for a sandbox marker.
+
+## `/v1/responses` in the sandbox
+
+A test key calls `/v1/responses` the same way a Production key does, and gets the same
+`ResponseResource` shape back — `id`, `status`, `output`, `usage` — built from the published
+schema rather than from a model.
+
+Without `tools`, the answer is an assistant message whose text quotes the SVG in a fenced
+` ```svg ` block. Declare a `write_file` function tool and the sandbox answers with
+`function_call` output items instead, whose `arguments` carry the `path` and `content` your
+integration would write.
+
+Set `"stream": true` and the sandbox streams the same event sequence, from `response.created`
+through `response.completed`, terminated by `data: [DONE]`.
+
+Every SVG in either shape carries both sandbox markers described above, inside the fenced block or
+inside the serialized tool-call arguments.
+
+To run the Open Responses conformance suite against a key, see
+[Run the Open Responses conformance suite](/developers/guides/open-responses-conformance).
+
+## Next steps
+
+- Create a test key from [API Keys](https://platform.quiver.ai/api-keys) — the environment
+  choice is made once, at creation, and cannot be changed later.
+- Use [Text to SVG](/developers/models/text-to-svg) or [Image to SVG](/developers/models/image-to-svg)
+  for native request examples. The [Quickstart](/developers/quickstart) uses the Responses API,
+  which a test key can call too.
+- See [pricing and plans](/developers/pricing) — sandbox usage is excluded from spend entirely.
+
+---
+
+# Scalable Vector Graphics (SVG)
+Source: https://docs.quiver.ai/developers/guides/scalable-vector-graphics-svg
+
+SVG (Scalable Vector Graphics) is an XML-based vector image format. Unlike raster images (PNG/JPEG), SVGs scale cleanly to any size, making them ideal for logos, icons, illustrations, and UI assets.
+
+## Why SVG matters
+
+- **Crisp at any resolution**: Perfect for responsive UIs and high-DPI displays.
+- **Editable**: You can tweak colors, strokes, and paths in design tools or code.
+- **Small and fast**: Well-optimized SVGs can be lightweight and compress well.
+- **Programmable**: CSS and JS can style and animate SVGs.
+
+## Core concepts
+
+- **`viewBox`**: Defines the internal coordinate system. A good `viewBox` makes your SVG easy to scale and position.
+- **Paths and shapes**: Most generated SVGs are a mix of `<path>`, `<circle>`, `<rect>`, etc.
+- **Fill and stroke**:
+  - Use `fill` for solid areas.
+  - Use `stroke` for outlines (with `stroke-width`, `stroke-linecap`, etc).
+
+## Using generated SVGs safely
+
+- **Sanitize untrusted SVGs**: If you render SVGs coming from untrusted sources, sanitize them first (SVGs can embed scripts).
+- **Prefer inline SVG for theming**: Inline SVG lets you style with CSS variables and class names.
+- **Optimize for production**: Run output through an optimizer (for example SVGO) if you need smaller payloads.
+
+## Tips for better results with QuiverAI API
+
+- **Be explicit about style**: e.g. “flat monochrome icon”, “duotone illustration”, “clean geometric lines”.
+- **Constrain composition**: Include framing details like “centered icon” or “wide horizontal logo”.
+- **For image vectorization**: Crop tightly, and use `auto_crop` only as a fallback when you can’t crop manually.
+
+---
+
+# Models
+Source: https://docs.quiver.ai/developers/models
+
+Choose an Arrow model for your integration. Compare capabilities and limits below, then check
+[`GET /v1/models`](/api-reference/models/list-models) for the models and operations available to your organization.
+
+:::warning
+Arrow 1.x retires at **08:00 UTC (10:00 Berlin) on October 16, 2026**. The affected IDs are
+`arrow-1`, `arrow-preview`, `arrow-1.1`, and `arrow-1.1-max`. Existing requests continue to work
+until then. Move generation, vectorization, editing, and animation to `arrow-2`; the native
+endpoint paths do not change. `arrow-1.0` is already rejected and remains rejected.
+:::
+
+<ModelCards />
+
+## Compare models
+
+Arrow 2 Telos and Arrow 2 are generally available, on Production and Test keys alike. Their
+presence here does not mean a given key may call them: the key's authority must include the
+chosen model and operation. Use the returned model's `supported_operations` and `billing` fields
+to confirm your request path and pricing.
+
+|                           | Arrow 2 Telos                            | Arrow 2                                 | Arrow 1.1                                         |
+| ------------------------- | ---------------------------------------- | --------------------------------------- | ------------------------------------------------- |
+| API model ID              | `arrow-2-telos`                          | `arrow-2`                               | `arrow-1.1`                                       |
+| Focus                     | Complex SVG creation and longer contexts | Balance of generation quality and speed | General-purpose generation and vectorization      |
+| Input modalities          | Text, image, SVG                         | Text, image, SVG                        | Text, image, SVG                                  |
+| Output modality           | SVG                                      | SVG                                     | SVG                                               |
+| Context window            | 1,050,000 tokens                         | 131,072 tokens                          | 131,072 tokens                                    |
+| Maximum output            | 65,536 tokens                            | 65,536 tokens                           | 65,536 tokens                                     |
+| SVG generation            | Supported                                | Supported                               | Supported                                         |
+| Image vectorization       | Supported                                | Supported                               | Supported                                         |
+| SVG editing and animation | When enabled in your catalog             | When enabled in your catalog            | Not supported                                     |
+| Responses API             | When `open_responses` is available       | When `open_responses` is available      | Not advertised in catalog; use native endpoints   |
+| Billing                   | Token usage                              | Token usage                             | Fixed price per SVG or vectorization              |
+| Standard pricing          | $6 input / $30 output per 1M tokens      | $4 input / $20 output per 1M tokens     | $0.20 per generated SVG / $0.15 per vectorization |
+
+These are model limits, not a promise that every endpoint accepts every input modality. Request
+fields and input limits depend on the [endpoint](/api-reference/introduction). For charges, see
+[Pricing](/developers/pricing) and the live model's billing metadata.
+
+All dollar prices are USD. Arrow 2 Telos has **50% higher token rates** than Arrow 2 in every category. Request totals
+depend on actual token usage, not just the model: there is no fixed price per SVG for either
+model. At $0.01 per pricing credit, Arrow 1.1 costs **$0.20 per generated SVG** or **$0.15 per
+vectorization** until it retires. See the [pricing comparison and worked example](/developers/pricing).
+
+## Choose a request path
+
+- **First integration:** follow the [Quickstart](/developers/quickstart) to generate and save an SVG.
+- **Responses:** use a model returned with `open_responses`. See [Migrate to Responses](/developers/guides/migrate-to-responses) for the request and output contract.
+- **Native SVG endpoints:** follow [Text to SVG](/developers/models/text-to-svg) or [Image to SVG](/developers/models/image-to-svg). Choose a model that advertises the matching operation.
+
+For setup and authority requirements, see [API keys](/developers/platform/api-keys). Test keys
+exercise [sandbox behavior](/developers/guides/sandbox-and-test-keys), not live model quality.
+
+---
+
+# API Platform
+Source: https://docs.quiver.ai/developers/platform
+
+Use the [API Platform](https://platform.quiver.ai) to administer the organization behind your
+QuiverAI API integration. The API guides explain how to call `api.quiver.ai`; this section explains
+organizations and projects, API keys, billing and limits, usage and logs, audit history, and data
+controls.
+
+![QuiverAI API Platform overview and navigation](/images/developer-platform-cover.png)
+
+**[Organizations and projects](/developers/platform/organizations-and-projects)**
+
+Understand roles, project-scoped access, integration boundaries, and lifecycle.
+
+**[API keys](/developers/platform/api-keys)**
+
+Create project-bound Production or Test credentials with explicit authority.
+
+**[Billing and limits](/developers/platform/billing-and-limits)**
+
+Fund API usage, configure spend alerts, and understand request capacity.
+
+**[Usage and logs](/developers/platform/usage-and-logs)**
+
+Analyze aggregate consumption and investigate individual API requests.
+
+**[Audit](/developers/platform/audit)**
+
+Review customer-visible administrative changes and API key lifecycle events.
+
+**[Data controls](/developers/platform/data-controls)**
+
+Review effective data-handling policy and retention by scope.
+
+Start with the [Quickstart](/developers/quickstart). For endpoint paths and schemas, use the
+[API Reference](/api-reference/introduction).
+
+---
+
+# API keys
+Source: https://docs.quiver.ai/developers/platform/api-keys
+
+API keys authenticate requests to `api.quiver.ai`. Each key belongs permanently to one project and has an environment, an owning principal, and explicit authority over capabilities and models.
+
+## Environments
+
+- **Production** keys send real model requests and create billable usage.
+- **Test** keys use the production API base URL, and every endpoint returns a mock response
+  without model calls or charges.
+
+The environment cannot be changed after creation. Use separate keys when an integration needs both Test and Production traffic.
+
+## Ownership and authority
+
+A key can be owned by a person or a service account. Prefer a service account for production integrations so the credential is not coupled to a member's lifecycle.
+
+Authority controls which API capabilities and models a key may use. Grant only what the integration needs. Authority and project binding cannot be edited after creation; create a replacement key when either must change.
+
+:::warning
+New exact-model keys can no longer select Arrow 1.x. Arrow 1.x retires at **08:00 UTC
+(10:00 Berlin) on October 16, 2026**. The affected IDs are `arrow-1`, `arrow-preview`,
+`arrow-1.1`, and `arrow-1.1-max`; `arrow-1.0` is already rejected.
+:::
+
+## Migrate an Arrow 1.x key
+
+- If the key allows all models, deploy `arrow-2` as the request model. The key does not need to
+  change.
+- If the key allows an exact Arrow 1.x model, create a new key that allows `arrow-2`, deploy the
+  new secret, then revoke the old key after traffic has moved. Exact-model authority is immutable.
+- Rotating an existing key replaces its secret but preserves its authority. Rotation is not a
+  model migration.
+
+Arrow 2 supports public SVG generation, vectorization, editing, and animation. Existing native
+endpoint paths stay the same. Arrow 2 is billed by token usage rather than fixed credits.
+
+## Secret lifecycle
+
+The full secret is available only when the key is created or rotated. Store it in a secrets manager, never in source control or client-side code.
+
+Rotation replaces the secret while preserving project attribution and authority. You can choose a grace period during which the outgoing secret and new secret overlap: deploy the new secret before that period ends. The no-overlap option retires the outgoing secret immediately. In either case, the outgoing secret can continue authenticating for about a minute after its retirement time while invalidation finishes.
+
+Revoke a key when it should no longer authenticate and no overlap is needed. Clients using it can continue authenticating for about a minute while invalidation finishes.
+
+**[Open API Keys](https://platform.quiver.ai/api-keys)**
+
+Create, rotate, and revoke project-bound credentials.
+
+Continue with the [Quickstart](/developers/quickstart), or use the
+[API Reference](/api-reference/introduction) for authentication and endpoint details.
+
+---
+
+# Audit
+Source: https://docs.quiver.ai/developers/platform/audit
+
+The Audit timeline is an organization-wide record for investigating changes made through the
+API Platform. Owner and Admin members can view it; Developer and Viewer members cannot.
+
+It combines customer-visible administrative events with API key lifecycle events. Administrative
+events cover capacity, contracts, organization and membership, data policy, and projects. Internal
+events that are not marked customer-visible do not appear.
+
+Use the actor, event family, project, or API key filters to narrow the timeline. Preset windows cover
+24 hours, 7 days, 30 days, and 90 days, and an **All time** view is available. The timeline does not
+currently offer configurable retention or scheduled pruning. This product behavior is not a
+contractual retention commitment.
+
+**[Open Audit](https://platform.quiver.ai/organization/audit)**
+
+Review customer-visible organization changes and API key lifecycle events.
+
+---
+
+# Billing and limits
+Source: https://docs.quiver.ai/developers/platform/billing-and-limits
+
+API Platform billing is organization-wide. The organization's available balance funds
+billable Production requests across its projects. Manual purchases add funding to that balance,
+and purchase records preserve the funding history. Members with billing management permission can
+buy credits and manage payment and tax details.
+
+**[Open Billing](https://platform.quiver.ai/billing)**
+
+Manage organization funding, payment details, purchase history, and automatic top-up.
+
+## Request charges
+
+Token-priced requests reserve **$1 of prepaid balance** before dispatch. Once a non-streaming
+response or terminal streaming event provides validated usage, the API Platform settles the
+actual token charge and releases unused funds. The reservation is not an extra fee, an estimate,
+or a maximum charge.
+
+If output was delivered but final usage evidence is missing, the reserved balance remains held
+while the charge is reconciled. The API Platform does not cancel that hold or substitute
+guessed usage. Each request in a Responses tool loop is charged separately.
+
+See [Pricing](/developers/pricing) for model rates and a worked example.
+
+## Automatic top-up
+
+After an eligible Production request reserves funding, automatic top-up checks the remaining
+available balance. If it is below the chosen threshold, automatic top-up begins a purchase for the
+configured funding amount. Insufficient balance is handled separately, so enabling automatic top-up
+does not guarantee that an underfunded request can continue. A daily maximum limits how many
+automatic top-ups can begin in one UTC day, and a saved default payment method is required before
+automatic top-up can be enabled.
+
+## Monthly budget
+
+A monthly budget compares the organization's estimated calendar-month spend with a chosen amount.
+When a check detects a newly reached threshold, it sends an email for the highest reached threshold:
+50%, 75%, or 100%. If spend passes more than one threshold between checks, lower skipped thresholds
+do not send separate emails.
+
+:::warning
+A budget is an alerting threshold, not a spending cap. Requests can continue after estimated spend
+reaches or exceeds it.
+:::
+
+Budget spend is an operational estimate. Use billing records and invoices as the record of charges.
+
+**[Open budget overview](https://platform.quiver.ai/overview)**
+
+Manage the monthly alerting budget and review period-to-date estimated spend.
+
+## Request capacity
+
+API traffic is subject to capacity assigned to the organization and project. Capacity can
+come from the organization's usage tier, an enterprise contract, or an explicit override.
+
+- **Request rate** limits total requests over a time window.
+- **Operation throughput** limits related capabilities or a specific model operation.
+- **Input and output token rates** limit measured-token traffic.
+- **Project overrides** can lower the organization request-rate, input-token, or output-token ceiling
+  for a project; they do not increase an organization ceiling.
+
+A model without its own ceiling uses the broader applicable capability or organization limit.
+Several independently enforced ceilings can apply to the same request. A capacity rejection's
+headers identify the scope and dimension that rejected it.
+
+**[Open Limits](https://platform.quiver.ai/limits)**
+
+Review organization capacity, project overrides, capability limits, model limits, and token rates.
+
+See [Errors and debugging](/developers/guides/errors-and-debugging) for `429` handling and
+[API pricing](/developers/pricing) for billing models.
+
+---
+
+# Data controls
+Source: https://docs.quiver.ai/developers/platform/data-controls
+
+An effective data-handling posture applies to the organization and each project. A value can come
+from the default policy, organization policy, project policy, contract, or a compliance override.
+The posture identifies the source and scope of each value and is read-only in the API Platform.
+
+## What the posture describes
+
+| Policy axis              | What it describes                                                                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Request metadata         | Whether operational fields such as request id, status, model, operation, timing, and cost attribution can appear in Usage, Logs, filters, and exports. |
+| Customer content         | Whether customer-provided content can be stored separately from request metadata.                                                                      |
+| Inference data           | Whether inference inputs and outputs can be retained for benchmarks or training.                                                                       |
+| Request detail retention | Whether new request-level detail is retained and for how long it remains available.                                                                    |
+| Historical detail        | Whether request detail retained before a policy change remains available.                                                                              |
+| Improve QuiverAI         | Whether eligible organization data may be used to improve QuiverAI.                                                                                    |
+
+Prompts, request bodies, response bodies, uploads, and generated artifacts are not captured
+alongside request metadata. A request-detail retention window describes supported access, not proof
+of physical deletion at its boundary. When policy becomes more restrictive, historical detail can
+be withdrawn immediately or after the policy change finishes applying.
+
+The one manageable setting is organization consent to **Improve QuiverAI**. Owner and Admin members
+can change that consent when it is not contract-controlled. The remaining axes describe the policy
+in force; they are not editable settings.
+
+## Responses API behavior
+
+`POST /v1/responses` is stateless. Omit `store` or send `store: false`. `store: true` returns
+`400 invalid_request` regardless of organization policy; changing policy cannot enable response
+storage. There is no stored-response retrieval endpoint.
+
+To continue a conversation, replay the full input history rather than a response ID. Omit
+`previous_response_id` or send `null`; a non-null value also returns `400 invalid_request`. See
+[Responses limitations](/developers/guides/migrate-to-responses#current-limitations).
+
+These API limitations do not replace the metadata and inference-retention policies above.
+Caller functions run in your application, so any files or other content they store remain your
+application's responsibility.
+
+## Runtime policy evidence
+
+Successful attributed API requests include response headers that identify the effective policy:
+
+- `x-quiver-request-metadata-policy`
+- `x-quiver-request-metadata-retention-seconds`
+- `x-quiver-payload-capture`
+- `x-quiver-inference-data-policy`
+- `x-quiver-zero-data-retention`
+
+Record these headers with the request id when your integration needs evidence of the policy applied
+to a request. Their values describe the effective posture; they do not replace your organization's
+contract or compliance requirements.
+
+**[Open Data Controls](https://platform.quiver.ai/data-controls)**
+
+Review effective organization and project policy, retention, provenance, and runtime headers.
+
+Policy can reduce or remove information from
+[Usage and Logs](/developers/platform/usage-and-logs).
+
+---
+
+# Organizations and projects
+Source: https://docs.quiver.ai/developers/platform/organizations-and-projects
+
+An organization is the top-level tenancy boundary in the API Platform. It owns projects,
+members, billing, and organization-wide policy. Projects divide integrations within that boundary:
+they scope API keys, member access, usage and request-log attribution, and applicable project limits.
+
+## Roles and project grants
+
+| Role      | Scope             | Primary responsibilities                                                                                              |
+| --------- | ----------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Owner     | Organization-wide | Full administration, including ownership transfer and organization deletion. An organization has exactly one Owner.   |
+| Admin     | Organization-wide | Manage members, invites, project grants, projects, and organization settings.                                         |
+| Developer | Granted projects  | Create and revoke credentials and read operational data within explicitly granted projects.                           |
+| Viewer    | Granted projects  | Read usage, logs, resolved limits, and membership information without creating credentials or changing configuration. |
+
+Developer and Viewer access is default-deny: they can access only explicitly granted projects.
+Owner and Admin access is organization-wide and does not depend on project grants.
+
+API key authority is independent of the role held by the member who created the key. A later role
+or membership change does not silently change a running integration's key permissions.
+
+**[Open Organization](https://platform.quiver.ai/organization)**
+
+Manage organization membership, roles, invitations, grants, and settings.
+
+## Project lifecycle
+
+Every organization has a Default Project and can create additional projects for separate
+applications, environments, teams, or customers.
+
+- The Default Project can be renamed but cannot be archived.
+- Archiving another project retires its API keys; final invalidation can take about a minute.
+- Archived projects remain as historical attribution for usage and request logs.
+- Treat each production integration as its own project when it needs independent credentials,
+  access, or attribution.
+
+**[Open Projects](https://platform.quiver.ai/projects)**
+
+Manage the project boundaries within an organization.
+
+---
+
+# Usage and logs
+Source: https://docs.quiver.ai/developers/platform/usage-and-logs
+
+Usage and Logs answer different operational questions. Both respect project access and the effective data policy shown in Data Controls.
+
+## Usage
+
+Usage aggregates requests and estimated cost by time bucket. Group results by the authorized
+project, key, model, or operation. Filter them by project, key, model, operation, environment, or
+status. Test-environment traffic can appear in Usage but is not counted as spend.
+
+Estimated usage cost is not an invoice. When policy withholds request metadata, the visible aggregate may be incomplete; billing records remain the record of spend.
+
+**[Open Usage](https://platform.quiver.ai/usage)**
+
+Analyze request counts and estimated cost across the projects you can access.
+
+## Logs
+
+When Logs is available for your organization, it provides request-level metadata for recent API traffic. Use the request id, status, error code, project, key, endpoint, environment, or model to investigate failures and confirm which integration sent a request.
+
+Log availability and detail depend on your organization's effective data policy and retention window. Request and response payloads, prompts, uploads, and generated artifacts are not captured alongside request metadata. A request-detail window describes supported access, not proof that data was physically deleted at its boundary.
+
+**[Open Logs](https://platform.quiver.ai/logs)**
+
+Investigate individual requests within the available metadata and retention policy.
+
+Review [Data controls](/developers/platform/data-controls) to understand what can appear in these
+surfaces, and [Billing and limits](/developers/platform/billing-and-limits) when a request is
+capacity-constrained.
+
+---
+
+# Pricing
+Source: https://docs.quiver.ai/developers/pricing
+
+API usage is deducted from your organization's prepaid balance. Arrow 2 and Arrow 2 Telos are
+billed by token usage; Arrow 1-series models have fixed prices per SVG or vectorization.
+
+:::warning
+Arrow 1.x retires at **08:00 UTC (10:00 Berlin) on October 16, 2026**. The affected IDs are
+`arrow-1`, `arrow-preview`, `arrow-1.1`, and `arrow-1.1-max`; `arrow-1.0` is already rejected.
+Move supported public operations to `arrow-2`, which uses token pricing instead of fixed credits.
+The native SVG endpoint paths do not change.
+:::
+
+## Token-usage pricing
+
+Prices below are **USD per 1 million tokens** and apply across supported Responses and SVG
+operations.
+
+| Model                                             | Input | Cached input | Cache write | Output |
+| ------------------------------------------------- | ----- | ------------ | ----------- | ------ |
+| [Arrow 2](/developers/models/arrow-2)             | $4.00 | $0.40        | $5.00       | $20.00 |
+| [Arrow 2 Telos](/developers/models/arrow-2-telos) | $6.00 | $0.60        | $7.50       | $30.00 |
+
+**Arrow 2 has the lower token rates.** Arrow 2 Telos offers a larger context window for complex
+SVG creation at **50% higher rates in every token category**. Actual costs depend on the tokens
+each model uses. Compare [model capabilities](/developers/models).
+
+<span id="fixed-credit-usage" />
+
+## Fixed-price SVG models
+
+Until the retirement cutoff, Arrow 1-series models charge a fixed amount per successful SVG
+output or vectorization, rather than by token usage.
+
+| Model         | SVG generation, per SVG | Image vectorization, per call |
+| ------------- | ----------------------- | ----------------------------- |
+| Arrow 1.1     | **$0.20** · 20 credits  | **$0.15** · 15 credits        |
+| Arrow 1.1 Max | **$0.25** · 25 credits  | **$0.20** · 20 credits        |
+| Arrow 1.0     | **$0.30** · 30 credits  | **$0.30** · 30 credits        |
+
+All prices are USD, using **$0.01 per pricing credit**. A generation request with multiple outputs
+is charged for each successful SVG. Custom funding terms are shown in [Billing](https://platform.quiver.ai/billing).
+
+## How token charges are calculated
+
+For example, a request using **10,000 uncached input tokens and 2,000 output tokens**, with no
+cache reads or writes, costs:
+
+| Model         | Input charge | Output charge | Total     |
+| ------------- | ------------ | ------------- | --------- |
+| Arrow 2       | $0.04        | $0.04         | **$0.08** |
+| Arrow 2 Telos | $0.06        | $0.06         | **$0.12** |
+
+This is a token-count example, not a fixed price per SVG. Each HTTP request in a Responses tool
+loop has its own usage and settlement, so producing one final SVG can incur several charges.
+
+Cached input and cache-write tokens are charged at their respective rates **instead of** the
+ordinary input rate. Output includes reasoning tokens; reasoning is not charged again separately.
+
+<span id="credits" />
+
+## How billing works
+
+- **Prepaid balance:** add funds in [Billing](https://platform.quiver.ai/billing). Token charges and fixed-price usage draw from the same API balance; one pricing credit represents $0.01.
+- **Purchases and top-ups:** the default minimum purchase is $10. Billing shows your account's purchase limits and custom funding terms. You can enable automatic top-up when your balance drops below a chosen threshold.
+- **Expiration:** purchased credits expire 1 year after purchase.
+- **Separate App billing:** App subscription credits cannot be spent through the API. See [App plans](https://quiver.ai/pricing) for monthly subscriptions.
+
+<span id="reservation-and-settlement" />
+
+For token-priced requests, **$1 of balance is temporarily held before the request runs**. Once
+usage is confirmed, the actual charge is settled and unused funds are released. This hold is not
+an extra fee, a price estimate, or a maximum charge. See
+[Billing and limits](/developers/platform/billing-and-limits#request-charges) for settlement details.
+
+If your available balance cannot cover a request, the API can return `402 Payment Required`
+before running it. See [Errors and debugging](/developers/guides/errors-and-debugging).
+
+<details>
+<summary>API billing metadata</summary>
+
+Read [`GET /v1/models`](/api-reference/models/list-models) for current pricing, model access, and
+supported operations for your organization and API key.
+
+- **Token-priced models** have `billing.kind: "token_usage"`. Use `billing.rates`: `input`, `cached_input`, `cache_write`, and `output`. Rates use `millicents_per_million_tokens`; divide by 100,000 to get USD per million tokens.
+- **Fixed-price models** have `billing.kind: "fixed_credit"`. Use `pricing_credits.svg_generate` per SVG returned and `pricing_credits.svg_vectorize` per successful vectorization call. Generation debits `svg_generate` for each SVG returned, so a partial batch is charged only for the SVGs it delivered, not for the `n` you requested.
+- **Legacy `model.pricing` strings** are deprecated placeholders for older clients. Use the fields above instead.
+
+With rates expressed in USD per million tokens:
+
+**Request cost = (uncached input × input rate + cached input × cached rate + cache-write input ×
+cache-write rate + output × output rate) ÷ 1,000,000.**
+
+</details>
+
+## Custom pricing
+
+For higher volumes or custom arrangements, [contact sales](https://quiver.ai/sales).
+
+Custom funding terms are reflected in the Billing page before checkout.
+
+---
+
+# Quickstart
+Source: https://docs.quiver.ai/developers/quickstart
+
+Create a compass icon with Arrow 2 through the Responses API and save the result as `compass.svg`.
+This guide makes real, billable requests with a Production key. The API Platform's
+built-in Quickstart uses a separate Test-key sandbox.
+
+If you want to create directly in the QuiverAI App, start with the [App docs](/app).
+
+1. **Prepare your project**
+
+    Sign in to the [API Platform](https://platform.quiver.ai) and choose or create the
+    [project](https://platform.quiver.ai/projects) that will own the integration.
+
+    Check that your organization has sufficient funding in
+    [Billing](https://platform.quiver.ai/billing). Ask a member with billing management permission
+    to add funding if needed. See [API pricing](/developers/pricing) for charges.
+
+2. **Create and store an API key**
+
+    ![Create API key dialog with Production environment and a new service account selected](/blume-assets/content/developers/images/create-api-key.png)
+
+    Create a **Production** key for your project in
+    [API Keys](https://platform.quiver.ai/api-keys). Allow **Responses** (`open_responses`),
+    **Model catalog** (`catalog_read`) for the model listing below, and the model you will use.
+    This Responses example does not require a native SVG capability. A test key would answer this
+    call from the [sandbox](/developers/guides/sandbox-and-test-keys) instead of a model.
+
+    Copy the secret immediately; it is shown only once. Keep it server-side and never commit it to
+    source control. Set it in the terminal where you will run the example:
+
+    **macOS / Linux**
+
+    ```bash
+    export QUIVERAI_API_KEY="<your-key>"
+    ```
+
+    **Windows PowerShell**
+
+    ```powershell
+    $env:QUIVERAI_API_KEY="<your-key>"
+    ```
+
+3. **Check model availability**
+
+    Read the catalog available to your organization. Use cURL 7.76 or later:
+
+    **macOS / Linux**
+
+    ```bash
+    curl --fail-with-body https://api.quiver.ai/v1/models \
+      --header "Authorization: Bearer $QUIVERAI_API_KEY"
+    ```
+
+    **Windows PowerShell**
+
+    ```powershell
+    curl.exe --fail-with-body https://api.quiver.ai/v1/models `
+      --header "Authorization: Bearer $env:QUIVERAI_API_KEY"
+    ```
+
+    Continue when `data` contains a model with `id: "arrow-2"` and
+    `"open_responses"` in its `supported_operations` list. Your key must also allow that model;
+    appearing in the catalog does not grant the key access.
+
+    If that model and operation are unavailable, use an authorized native model with the
+    [Text to SVG](/developers/models/text-to-svg) or [Image to SVG](/developers/models/image-to-svg)
+    guide instead. Those guides include the official `@quiverai/sdk` examples. Native requests also
+    require the corresponding key capability, such as **Generate SVGs**.
+
+4. **Generate and save an SVG**
+
+    Responses returns tool calls for your application to handle. This example declares a
+    `write_file` function that stages the latest SVG in memory, reports each tool result back to
+    Arrow, and saves `compass.svg` only after a completed response has no more tool calls.
+
+    The endpoint is stateless. The example sends `store: false` and replays input history on each
+    turn rather than continuing from a stored response ID. See
+    [Current limitations](/developers/guides/migrate-to-responses#current-limitations) for supported
+    transports and request options.
+
+    Use Node.js 22 or later. No packages are required. Save this as `generate.mjs`:
+
+    ```javascript
+    import { writeFile } from "node:fs/promises";
+
+    const apiKey = process.env.QUIVERAI_API_KEY;
+    if (!apiKey) throw new Error("Set QUIVERAI_API_KEY before running this example.");
+
+    const input = [{
+      type: "message",
+      role: "user",
+      content: "Create a minimal geometric compass icon in blue. Use write_file to stage the complete SVG as compass.svg, then confirm when finished.",
+    }];
+    const tools = [{
+      type: "function",
+      name: "write_file",
+      description: "Stage compass.svg content. The caller saves the latest staged version after you finish.",
+      parameters: {
+        type: "object",
+        properties: { path: { type: "string" }, content: { type: "string" } },
+        required: ["path", "content"],
+        additionalProperties: false,
+      },
+      strict: false,
+    }];
+    let svg;
+    let finished = false;
+
+    for (let turn = 0; turn < 5; turn += 1) {
+      const response = await fetch("https://api.quiver.ai/v1/responses", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "arrow-2",
+          input,
+          tools,
+          tool_choice: turn === 0 ? { type: "function", name: "write_file" } : "auto",
+          stream: false,
+          store: false,
+          parallel_tool_calls: false,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`Request failed (${response.status}): ${await response.text()}`);
+      }
+      const result = await response.json();
+      if (result.status !== "completed" || result.error || result.incomplete_details) {
+        throw new Error(`Generation did not complete (${result.status}). No file was saved.`);
+      }
+      const calls = result.output.filter((item) => item.type === "function_call");
+      if (result.output.some((item) => item.type === "custom_tool_call")) {
+        throw new Error("Unexpected custom tool call. No file was saved.");
+      }
+      if (calls.length === 0) {
+        if (!svg) throw new Error("No SVG was staged.");
+        await writeFile("compass.svg", svg, "utf8");
+        finished = true;
+        break;
+      }
+      for (const item of result.output) {
+        if (item.type === "reasoning" && item.id) {
+          input.push({ type: "reasoning", id: item.id });
+        } else if (item.type === "message" || item.type === "function_call") {
+          input.push(item);
+        }
+      }
+      for (const call of calls) {
+        if (call.name !== "write_file" || (call.status && call.status !== "completed")) {
+          throw new Error("Unexpected or incomplete tool call. No file was saved.");
+        }
+        const args = JSON.parse(call.arguments);
+        if (args.path !== "compass.svg" || typeof args.content !== "string" || !args.content.trim()) {
+          throw new Error("Invalid write_file arguments. No file was saved.");
+        }
+        svg = args.content;
+        input.push({
+          type: "function_call_output",
+          call_id: call.call_id,
+          output: JSON.stringify({ path: "compass.svg", staged: true }),
+        });
+      }
+    }
+    if (!finished) throw new Error("Stopped after five requests. No file was saved.");
+    console.log("Saved compass.svg. Open it in your browser to view the result.");
+    ```
+
+    Run it from the same directory:
+
+    ```bash
+    node generate.mjs
+    ```
+
+    The example allows at most five API requests, each of which can incur token charges. It keeps
+    intermediate writes out of the filesystem and never uses a model-supplied destination path.
+    An error, incomplete response, or exhausted request limit leaves no new file to publish.
+    See [Migrate to Responses](/developers/guides/migrate-to-responses) for the raw HTTP request
+    and tool-result replay shapes.
+
+5. **Open your SVG**
+
+    Open `compass.svg` in your browser or drag it into a vector editor. You should see a blue
+    compass icon; the exact design varies between requests.
+
+    The saved file contains the latest content staged by `write_file` after the tool loop finishes.
+    A completed individual tool call can still be followed by a revision; reasoning text and
+    partial argument deltas are not a finished SVG.
+
+    If a request fails or returns no completed SVG, use
+    [Errors and debugging](/developers/guides/errors-and-debugging) to interpret the response.
+
+## Next steps
+
+- [SDK compatibility](/developers/guides/migrate-to-responses#sdk-compatibility): configure Vercel AI SDK or an OpenAI Responses client.
+- [API Reference](/api-reference/introduction): explore request options and response schemas.
+- [Image to SVG](/developers/models/image-to-svg): vectorize an existing image with the native API.
+- [API Platform](/developers/platform): manage your integration's keys, usage, limits, and data controls.

@@ -685,3 +685,160 @@ wrote /private/tmp/scriptcast-phase3b-v1hruta1/console.mp4.plan.json
 - Installed `scriptcast-video render` WAS smoke-tested for help and real-data plan-only using explicit source `PYTHONPATH`; installed console rendering and wheel-only distribution were not tested.
 - Staged run directories are retained for the orchestrator and are ignored. Plans depend on these directories remaining under this source workspace's public directory. Copy/write interruption recovery and arbitrarily malformed card payloads beyond component selection were not tested.
 - No git commands, README changes, package installation, network requests, manuscript-repository writes, or Phase 4 work occurred. All implementation changes are left uncommitted.
+
+## Phase 4
+
+### Scope and initial decisions
+
+- Implementing TypeScript in `video/src/quiver/`, using plain Node fetch with no SDK runtime imports. SDK installation is for schema inspection only.
+- Verification uses synthetic fixtures, injected credential providers/fetch, and dry runs. No real environment credential will be inspected and no Quiver endpoint contacted. Network is restricted to the authorized SDK npm installation. No renders, git mutations, README edits, or writes to TheOriginalPower.
+- This section supersedes earlier phases' historical scope notes. Implementation and acceptance evidence follow below.
+
+### Schema evidence and SDK decision
+
+Installed `@quiverai/sdk` **0.9.4** using `npm install @quiverai/sdk --save-dev --ignore-scripts --no-audit --no-fund --update-notifier=false --cache /tmp/scriptcast-npm-cache` inside `video/` (two packages added: SDK and its zod dependency). The SDK is pinned as a development-only schema reference; neither application code nor tests import it. Runtime uses Node fetch, crypto, fs, path, and util. No new test framework or execution tool was added. The available Node is v23.7.0; the implementation uses APIs available in Node 22, but was not separately executed under Node 22.
+
+All SDK paths below are relative to `video/node_modules/@quiverai/sdk/`:
+
+| Fields / contract | Exact source |
+| --- | --- |
+| Generation request `model`, `prompt`, `instructions`, `references` (URL string or `{url}` / `{base64}`), `n`, `stream`, `temperature`, `top_p`, `presence_penalty`, `max_output_tokens`; generation limits/defaults | Saved `docs/reference/quiver_developers_models_text-to-svg.md`, Parameters and Reference images; corroborated by `src/sdk/models/shared/generatesvgrequest.ts` outbound schema |
+| Animation `model`, optional `prompt`, `max_output_tokens`, `reasoning_effort` (`low`, `medium`, `high`, `xhigh`), `stream`, `svg_source`, `temperature` | `src/sdk/models/shared/animatesvgrequest.ts`, `AnimateSVGRequest$Outbound` and outbound schema (wire names are snake_case, not SDK camelCase) |
+| Animation `svg_source` union `{url: string}` or `{base64: string}`; base64 is the raw encoded payload | `src/sdk/models/shared/svginputreference.ts`, `svginputreferenceurl.ts`, `svginputreferencebase64.ts` |
+| Generation JSON envelope `created`, optional `credits`, `data`, `id`, optional `usage` | `src/sdk/models/operations/generatesvg.ts` result union selects `SvgResponse`; `src/sdk/models/shared/svgresponse.ts` inbound schema |
+| Each generation document's `svg`, `mime_type: "image/svg+xml"` | `src/sdk/models/shared/svgdocument.ts` inbound schema |
+| Generation `usage.input_tokens`, `output_tokens`, `total_tokens` | `src/sdk/models/shared/svgusage.ts` inbound schema |
+| Animation envelope `created`, optional `credits`, `data`, `id`, optional nullable `svg_score`, optional nullable `usage`; usage token fields | `src/sdk/models/operations/animatesvg.ts`, `AnimateSVGResponseBody$inboundSchema` and `Usage$inboundSchema` |
+| Each animation document's `svg`, `mime_type`, optional nullable `loop_period_ms`, `opening_animation_ms` | `src/sdk/models/shared/animatedsvgresponse.ts` inbound schema |
+| Model-list envelope `object: "list"`, `data`; model `id` | `src/sdk/models/shared/listmodelsresponse.ts`, `src/sdk/models/shared/model.ts` inbound schemas; other catalog fields pass through as unknown values rather than guessed billing types |
+| Methods/paths and JSON body transport (not the SDK's wrapper object) | `src/funcs/createSVGsGenerateSVG.ts`, `src/funcs/animateSVGAnimateSVG.ts`, `src/funcs/modelsListModels.ts` |
+| Base URL, Bearer authorization, JSON content type, `X-Request-ID`, `Retry-After`, error `status`, `code`, `message`, `request_id` | Saved `quiverai-llms-full.txt`, Introduction; `quiver_developers_guides_errors-and-debugging.md` |
+| Sandbox environment header and SVG markers; reject test outputs from production asset cache | Saved `quiver_developers_guides_sandbox-and-test-keys.md` |
+
+Both missing response shapes and the animation request are derived from SDK schemas; **no opaque/unverified-shape fallback was necessary**. The SDK's `headers`/`result` wrapper is not the HTTP JSON envelope. `request_id` comes from the response header, not generation `id`. Animation sends local SVG bytes as base64, never an invented inline `svg` field. Default model is `arrow-2`, as confirmed by the saved Arrow 2 page. Saved documentation describes token pricing and production-host test keys; neither production nor sandbox was contacted.
+
+The SDK generation type contains additional `attributes` and `reasoning_effort` fields absent from the saved generation parameter table. This client deliberately exposes the documented generation subset. Its reference-limit comment discusses Arrow 1.x, whereas the saved docs explicitly give Arrow 2's limit of 14; CLI supplies no references, and the client does not infer Arrow 2 limits from that older comment. Streaming is explicitly unsupported (only omitted/false accepted), so no SSE preview can enter the cache.
+
+### Implementation and asset policy
+
+- `client.ts` exports `generateSvg`, `animateSvg`, `listModels`, and an injectable `QuiverClient`. Credential lookup happens only when making a request, never during construction/import. Tests inject in-memory random synthetic credentials; no environment credential was read, printed, or written. Errors redact the supplied credential if an error response reflects it; transport errors omit potentially sensitive details. Redirects fail instead of forwarding authentication elsewhere.
+- Retries apply only to 429/503, defaulting to two retries. Numeric seconds and HTTP-date `Retry-After` are honored using injectable sleep/clock; missing headers use 1s/2s backoff. Invalid or over-bound delays surface the typed error rather than retrying early. Default maximum accepted wait is 60s; configurable bounds are validated. Other HTTP failures are not retried. Error status/code/message/request_id are preserved (with credential redaction).
+- Cache identity is SHA-256 of recursively sorted JSON `{endpoint, request, output_index}`; the request includes model and parameters and has no authentication field. Endpoint separation avoids generation/animation collisions. Output zero uses the request hash; further outputs use their own indexed hashes. Every returned SVG is retained, including batches, with prompt/model/request_id/date/endpoint/hash plus request_hash/output_index/output_count in the manifest. A complete hit checks every file and avoids both credential access and fetch. Missing files are regenerated; malformed manifest JSON fails visibly.
+- Cache defaults to `public/assets/quiver` relative to the video workspace; the Python wrapper always sets that cwd. Direct library consumers outside `video/` should pass the explicit cache directory. Manifest replacement is atomic, but the cache is designed for sequential CLI use, not concurrent writers: read/merge/write is not a cross-process lock, and SVG writes are not a multi-file transaction.
+- **Version-control policy:** retain `video/public/assets/quiver/manifest.json` (initially `[]`) and generated `*.svg` together under version control for reproducible rendering. No new `.gitignore` rules: nothing in this asset directory is ignored. Files are left uncommitted as requested. Test cache files were created in temporary directories and removed individually; no generated SVG was added to public assets.
+- CLI compiles exactly like check-copy using existing tsc, then runs Node. `npm run --silent quiver -- ...` is the Python passthrough. Generation validates `--n` in 1–16; animation resolves paths against caller cwd before switching to `video/`. `--dry-run` prints exact method/URL/body and exits before creating a client/cache or resolving credentials. `models --dry-run` is also supported and has no JSON body because it is GET.
+- All four components forward `svgAsset` to shared `Frame`, which renders `Img`/`staticFile` in a 140px-high contained slot inside the clipped safe-zone box. Paths must be public-relative SVGs without traversal, URL schemes, query/fragment, backslash, or encoded path escapes. `g10_svg.json` reuses G-10 copy and references the hand-written neutral circle at `assets/example.svg`.
+- Initial tsc uncovered a parseArgs union inference issue, fixed with string narrowing. Initial markup check expected SSR `Img` to include `src`; Remotion defers that attribute. The final check separately verifies actual React `Img` props equal `staticFile(...)` in all four components, plus emitted image markup and shared bounds. No browser was launched.
+- Six new Python cases cover SVG argv/defaults/flags, path resolution, models, child exit propagation, and missing compiler dependencies. TypeScript checks cover all three endpoint requests/headers, missing/lazy credentials, seconds/date/bounded retries, typed errors/redaction, stable nested cache keys, credential-independent zero-fetch hits, manifest/files, multiple outputs, animation, sandbox rejection, and all dry-run forms.
+
+### Acceptance output (raw)
+
+`/Users/emmanuel/Documents/Theory/TheOriginalPower/.venv-voice/bin/python -m pytest tests -q` (exit 0)
+
+```text
+........................................................................ [ 43%]
+........................................................................ [ 87%]
+.....................                                                    [100%]
+=============================== warnings summary ===============================
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  /Users/emmanuel/Documents/Theory/TheOriginalPower/.venv-voice/lib/python3.11/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  /Users/emmanuel/Documents/Theory/TheOriginalPower/.venv-voice/lib/python3.11/site-packages/misaki/en.py:143: DeprecationWarning: open_text is deprecated. Use files() instead. Refer to https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy for migration advice.
+    with importlib.resources.open_text(data, f"{'gb' if british else 'us'}_gold.json") as r:
+
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  /Users/emmanuel/Documents/Theory/TheOriginalPower/.venv-voice/lib/python3.11/site-packages/misaki/en.py:145: DeprecationWarning: open_text is deprecated. Use files() instead. Refer to https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy for migration advice.
+    with importlib.resources.open_text(data, f"{'gb' if british else 'us'}_silver.json") as r:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+165 passed, 5 warnings in 6.85s
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+```
+
+`cd video && npx tsc --noEmit` (exit 0; empty stdout/stderr)
+
+```text
+```
+
+`cd video && npm run check-copy` (exit 0)
+
+```text
+
+> scriptcast-video@0.2.0 check-copy
+> tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/check-copy.js
+
+PASS: all G-10/G-11 copy and numbers; four card layouts within safe-zone constants; QR below sources; group-relative bar widths.
+PASS: public SVG slot renders in all four cards inside the shared safe-zone box.
+```
+
+`cd video && npm run check-quiver` (exit 0)
+
+```text
+
+> scriptcast-video@0.2.0 check-quiver
+> tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/check-quiver.js
+
+PASS: documented generation/animation/models wire requests, lazy credentials, missing key, retries/date/bounds, typed errors and redaction.
+PASS: canonical cache keys, credential-independent hits with zero fetches, SVG/manifest persistence, multi-output and animation caching, sandbox rejection, and exact key-free CLI dry runs.
+```
+
+### Installed console smoke test (raw)
+
+The installed `/Users/emmanuel/Documents/Theory/TheOriginalPower/.venv-voice/bin/scriptcast-video` WAS smoke-tested for all three SVG commands, using `PYTHONDONTWRITEBYTECODE=1` and `PYTHONPATH=/Users/emmanuel/Documents/Theory/scriptCast`, from this workspace. Each exited 0. This verifies the installed entry point against source code, not a rebuilt wheel or live API dispatch.
+
+```text
+svg generate 'A plain circle' --dry-run
+svg animate video/public/assets/example.svg --prompt Rotate --dry-run
+svg models --dry-run
+```
+
+Combined raw stdout/stderr:
+
+```text
+{
+  "method": "POST",
+  "url": "https://api.quiver.ai/v1/svgs/generations",
+  "body": {
+    "model": "arrow-2",
+    "prompt": "A plain circle",
+    "n": 1
+  }
+}
+{
+  "method": "POST",
+  "url": "https://api.quiver.ai/v1/svgs/animations",
+  "body": {
+    "model": "arrow-2",
+    "svg_source": {
+      "base64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgMTAwIj48Y2lyY2xlIGN4PSI4MCIgY3k9IjUwIiByPSIzNiIgZmlsbD0iIzZlYzNjMCIvPjwvc3ZnPgo="
+    },
+    "prompt": "Rotate"
+  }
+}
+{
+  "method": "GET",
+  "url": "https://api.quiver.ai/v1/models"
+}
+```
+
+### Files changed and verification limits
+
+- Modified: `CHANGELOG.md`, this findings file, `scriptcast/tools/video.py`, `tests/test_video.py`, `video/package.json`, `video/package-lock.json`, `video/scripts/check-copy.tsx`, `video/src/cards/Frame.tsx`.
+- Added: `video/src/quiver/client.ts`, `video/src/quiver/cache.ts`, `video/scripts/quiver.ts`, `video/scripts/check-quiver.ts`, `video/examples/g10_svg.json`, `video/public/assets/example.svg`, `video/public/assets/quiver/manifest.json`.
+- User-supplied untracked `docs/reference/` and `docs/briefs/phase4-prompt.md` were not changed. README and TheOriginalPower were not modified. No git add/commit/checkout/stash was run; implementation is uncommitted. `git diff --check` passed with empty output.
+- **No live API call was made**, including test-key/sandbox calls. Authentication, account/model availability, billing, live rate limits, generation quality, animation appearance, and compatibility of the shipped SDK schemas with the live service remain unverified.
+- **No animation or response shape remains underived** for the implemented non-streaming endpoints. Full runtime validation of all response metadata and model billing subtypes is not implemented; cache checks SVG data before persistence. Streaming, edits, and vectorization are outside scope.
+- **Renders were not run**; Chrome was not probed. Image decoding, visual overflow/clipping, actual animation timing/determinism within Remotion, and encoded output need orchestrator validation. The extra art slot reduces text space; long content can be clipped by the existing safe-zone container.
+- **Installed `scriptcast-video svg` console path was smoke-tested**, as described above; installed wheel-only packaging and non-dry-run console dispatch were not tested. Node 22 specifically and simultaneous cache writers were not tested.
+
+### Orchestrator review (Phase 4)
+
+Rendered `examples/g10_svg.json` outside the sandbox: with Codex's 140px art slot the G-10 note box and last timeline node were clipped by the safe-zone box, which the markup check did not catch (it asserts bounds, not content overflow). Fix: art slot reduced to 64px (`Frame.tsx`, `check-copy.tsx`), and the SVG example sets `"note": ""` (Remotion merges example props over composition defaults, so removal alone does not suppress it). Dense cards with art still need to drop optional elements; a content-overflow assertion is a follow-up.

@@ -63,3 +63,28 @@ def test_missing_dependencies(workspace):
     (root / "node_modules/.bin/remotion").unlink()
     with pytest.raises(SystemExit):
         video.main(["still", str(card), "out.png"])
+
+
+@pytest.mark.parametrize("argv, expected", [
+    (["generate", "A circle"], ["generate", "A circle", "--model", "arrow-2", "--n", "1"]),
+    (["generate", "A square", "--model", "arrow-2", "--instructions", "Flat shape", "--n", "2", "--dry-run"],
+     ["generate", "A square", "--model", "arrow-2", "--n", "2", "--instructions", "Flat shape", "--dry-run"]),
+    (["animate", "shape art.svg", "--prompt", "Rotate", "--dry-run"],
+     ["animate", "ABSOLUTE", "--prompt", "Rotate", "--dry-run"]),
+    (["models"], ["models"]),
+    (["models", "--dry-run"], ["models", "--dry-run"]),
+])
+def test_svg_command(workspace, monkeypatch, argv, expected):
+    root, card = workspace
+    (root / "node_modules/.bin/tsc").touch()
+    expected = [str(card.parent / "shape art.svg") if x == "ABSOLUTE" else x for x in expected]
+    calls = []
+    monkeypatch.setattr(video.subprocess, "run", lambda cmd, **kw: calls.append((cmd, kw)) or SimpleNamespace(returncode=7))
+    assert video.main(["svg", *argv]) == 7
+    assert calls == [(["npm", "run", "--silent", "quiver", "--", *expected], {"cwd": root, "check": False})]
+
+
+def test_svg_compile_dependency_missing(workspace):
+    with pytest.raises(SystemExit) as exc:
+        video.main(["svg", "models", "--dry-run"])
+    assert exc.value.code == 2

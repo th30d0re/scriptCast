@@ -1,3 +1,6 @@
+import {isValidElement, type ReactNode} from 'react';
+import {Img, staticFile} from 'remotion';
+import {Frame} from '../src/cards/Frame';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {TimelineCard} from '../src/cards/TimelineCard';
 import {StatBarsCard, barWidths, type StatBarsProps} from '../src/cards/StatBarsCard';
@@ -33,3 +36,30 @@ for (const markup of [timeline, stats, renderToStaticMarkup(<TitleCard {...neutr
 assert(JSON.stringify(barWidths([10, 5, 0])) === '[100,50,0]', 'Group maximum calculation');
 assert(JSON.stringify(barWidths([0, 0])) === '[0,0]', 'Zero bars');
 console.log('PASS: all G-10/G-11 copy and numbers; four card layouts within safe-zone constants; QR below sources; group-relative bar widths.');
+// Each component forwards the slot into the same clipped safe-zone main container.
+for (const markup of [
+  renderToStaticMarkup(<TimelineCard {...g10} svgAsset="assets/example.svg" />),
+  renderToStaticMarkup(<StatBarsCard {...g11 as StatBarsProps} svgAsset="assets/example.svg" />),
+  renderToStaticMarkup(<TitleCard {...neutral} items={[]} svgAsset="assets/example.svg" />),
+  renderToStaticMarkup(<CompareCard {...neutral} items={[]} svgAsset="assets/example.svg" />),
+]) {
+  const main = markup.slice(markup.indexOf('<main'), markup.indexOf('</main>'));
+  assert(main.includes(`left:${box.x}px`) && main.includes(`width:${box.width}px`) && main.includes(`top:${box.y}px`) && main.includes(`height:${box.height}px`), 'Art safe-zone bounds');
+  assert(main.includes('data-svg-slot') && main.includes('<img '), 'SVG slot must render an image within main');
+  assert(main.includes('width:100%;height:64px;flex-shrink:0;overflow:hidden') && main.includes('object-fit:contain'), 'Art must stay bounded');
+  assert((markup.match(/position:absolute/g) || []).length === 1, 'Art must remain in bounded flow');
+}
+console.log('PASS: public SVG slot renders in all four cards inside the shared safe-zone box.');
+
+function findImage(node: ReactNode): boolean {
+  if (Array.isArray(node)) return node.some(findImage);
+  if (!isValidElement<{src?: string; children?: ReactNode}>(node)) return false;
+  if (node.type === Img) return node.props.src === staticFile('assets/example.svg');
+  return findImage(node.props.children);
+}
+for (const card of [
+  TimelineCard({...g10, svgAsset: 'assets/example.svg'}),
+  StatBarsCard({...g11 as StatBarsProps, svgAsset: 'assets/example.svg'}),
+  TitleCard({...neutral, items: [], svgAsset: 'assets/example.svg'}),
+  CompareCard({...neutral, items: [], svgAsset: 'assets/example.svg'}),
+]) assert(card.type === Frame && findImage(Frame(card.props)), 'Each card must pass its asset to Img/staticFile');

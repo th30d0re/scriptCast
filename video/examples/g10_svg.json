@@ -1,0 +1,36 @@
+{
+  "component": "TimelineCard",
+  "headline": "The timeline they don't put in the press release",
+  "items": [
+    {
+      "date": "JUL\n25\n2024",
+      "title": "Chapter 135 signed",
+      "detail": "Original effective date set: October 23, 2024."
+    },
+    {
+      "date": "OCT\n2\n2024",
+      "title": "Emergency preamble signed",
+      "detail": "Law takes effect immediately. A referendum petition can no longer stay it. Stated reasons: the measures needed to go into effect \"without delay\"; agencies and municipalities needed time to prepare.",
+      "highlight": true,
+      "badge": "69 DAYS LATER"
+    },
+    {
+      "date": "OCT\n23\n2024",
+      "title": "The law's own original effective date",
+      "detail": "Where the normal 90-day clock would have ended."
+    },
+    {
+      "date": "OCT\n2024",
+      "title": "93,229 signatures submitted",
+      "detail": "Raw count filed by the repeal campaign."
+    },
+    {
+      "date": "NOV\n22\n2024",
+      "title": "78,707 signatures verified",
+      "detail": "Certifies the question for the November 3, 2026 ballot."
+    }
+  ],
+  "sources": "Sources: Ballotpedia · Foley Hoag LLP · AP / NBC Boston (Oct 2, 2024)",
+  "svgAsset": "assets/example.svg",
+  "note": ""
+}

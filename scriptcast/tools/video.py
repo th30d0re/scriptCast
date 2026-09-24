@@ -89,6 +89,28 @@ def render(args, parser):
 
 
 
+
+def svg(args, parser):
+    workspace(parser, dependencies=False)
+    if not (VIDEO_DIR / "node_modules" / ".bin" / "tsc").is_file():
+        parser.error(f"Install the video workspace dependencies with: cd {VIDEO_DIR} && npm install")
+    command = ["npm", "run", "--silent", "quiver", "--", args.svg_command]
+    if args.svg_command == "generate":
+        command += [args.prompt, "--model", args.model, "--n", str(args.n)]
+        if args.instructions is not None:
+            command += ["--instructions", args.instructions]
+    elif args.svg_command == "animate":
+        command += [str(args.svg_path.resolve())]
+        if args.prompt is not None:
+            command += ["--prompt", args.prompt]
+    if args.dry_run:
+        command.append("--dry-run")
+    try:
+        return subprocess.run(command, cwd=VIDEO_DIR, check=False).returncode
+    except OSError as exc:
+        parser.error(f"Could not run Quiver CLI: {exc}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -106,7 +128,22 @@ def main(argv: list[str] | None = None) -> int:
     mode = episode.add_mutually_exclusive_group()
     mode.add_argument("--plan-only", action="store_true")
     mode.add_argument("--dry-run", action="store_true")
+    svg_parser = sub.add_parser("svg", help="Generate and animate cached SVG assets")
+    svg_sub = svg_parser.add_subparsers(dest="svg_command", required=True)
+    generate = svg_sub.add_parser("generate")
+    generate.add_argument("prompt")
+    generate.add_argument("--model", default="arrow-2")
+    generate.add_argument("--instructions")
+    generate.add_argument("--n", type=int, choices=range(1, 17), default=1)
+    animate = svg_sub.add_parser("animate")
+    animate.add_argument("svg_path", type=Path)
+    animate.add_argument("--prompt")
+    models = svg_sub.add_parser("models")
+    for command_parser in (generate, animate, models):
+        command_parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
+    if args.command == "svg":
+        return svg(args, parser)
     if args.command == "render":
         return render(args, parser)
     card, out = args.card.resolve(), args.out.resolve()
