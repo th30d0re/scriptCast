@@ -1,16 +1,21 @@
-import {Frame, type BaseProps} from './Frame';
+import {Frame, type BaseProps, computeDensity, getTextLength} from './Frame';
 import {palette as p} from '../theme';
+
 export type TimelineProps = BaseProps & {items: {date: string; title: string; detail: string; highlight?: boolean; badge?: string}[]; note?: string};
+
 export function TimelineCard(props: TimelineProps) {
-  return <Frame {...props}><div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
-    {props.items.map((item, i) => <div key={i} style={{display: 'grid', gridTemplateColumns: '90px 1fr', gap: 14}}>
-      <div style={{fontSize: 20, color: p.mute, whiteSpace: 'pre-line', textAlign: 'right'}}>{item.date}</div>
-      <div style={{borderLeft: `4px solid ${item.highlight ? p.red : p.teal}`, paddingLeft: 14}}>
-        {item.badge && <div style={{color: p.gold, fontSize: 21, fontWeight: 900}}>{item.badge}</div>}
-        <div style={{fontSize: 27, lineHeight: 1.1, fontWeight: 800, color: item.highlight ? p.gold : p.cream}}>{item.title}</div>
-        <div style={{fontSize: 20, lineHeight: 1.2, marginTop: 3, color: item.highlight ? p.cream : p.mute}}>{item.detail}</div>
+  const textLength = getTextLength(props.items) + getTextLength(props.note || '');
+  const scale = computeDensity(props.items.length, textLength);
+
+  return <Frame {...props} scale={scale}><div style={{display: 'flex', flexDirection: 'column', gap: Math.round(14 * scale)}}>
+    {props.items.map((item, i) => <div key={i} style={{display: 'grid', gridTemplateColumns: '110px 1fr', gap: Math.round(18 * scale)}}>
+      <div style={{fontSize: Math.round(32 * scale), color: p.mute, whiteSpace: 'pre-line', textAlign: 'right', fontWeight: 600}}>{item.date}</div>
+      <div style={{borderLeft: `5px solid ${item.highlight ? p.red : p.teal}`, paddingLeft: Math.round(18 * scale)}}>
+        {item.badge && <div style={{color: p.gold, fontSize: Math.round(30 * scale), fontWeight: 900}}>{item.badge}</div>}
+        <div style={{fontSize: Math.round(42 * scale), lineHeight: 1.1, fontWeight: 800, color: item.highlight ? p.gold : p.cream}}>{item.title}</div>
+        <div style={{fontSize: Math.round(32 * scale), lineHeight: 1.2, marginTop: 4, color: item.highlight ? p.cream : p.mute}}>{item.detail}</div>
       </div>
     </div>)}
-    {props.note && <div style={{border: `2px solid ${p.red}`, borderRadius: 12, padding: 10, fontSize: 21, textAlign: 'center'}}>{props.note}</div>}
+    {props.note && <div style={{border: `3px solid ${p.red}`, borderRadius: 12, padding: Math.round(14 * scale), fontSize: Math.round(32 * scale), textAlign: 'center'}}>{props.note}</div>}
   </div></Frame>;
 }

@@ -1,0 +1,21 @@
+{
+  "component": "CompareCard",
+  "headline": "A comparison with hero art",
+  "art": {
+    "src": "assets/example.svg",
+    "size": "hero",
+    "caption": "This is a hero caption"
+  },
+  "items": [
+    {
+      "title": "Left side",
+      "points": ["First point", "Second point"]
+    },
+    {
+      "title": "Right side",
+      "points": ["First point", "Second point"]
+    }
+  ],
+  "verdict": "Overall verdict",
+  "sources": "Sources: Neutral dataset"
+}

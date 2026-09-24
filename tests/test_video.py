@@ -88,3 +88,32 @@ def test_svg_compile_dependency_missing(workspace):
     with pytest.raises(SystemExit) as exc:
         video.main(["svg", "models", "--dry-run"])
     assert exc.value.code == 2
+
+def test_missing_assets(workspace, monkeypatch, capsys):
+    root, card = workspace
+    card.write_text(json.dumps({"component": "TitleCard", "headline": "Shapes", "svgAsset": "assets/missing.svg"}))
+    with pytest.raises(SystemExit) as exc:
+        video.main(["still", str(card), "out.png"])
+    assert "Missing assets" in capsys.readouterr().err
+
+    # With allow missing assets
+    calls = []
+    monkeypatch.setattr(video.subprocess, "run", lambda cmd, **kw: calls.append(cmd) or SimpleNamespace(returncode=0))
+    video.main(["still", str(card), "out.png", "--allow-missing-assets"])
+    assert len(calls) == 1
+
+def test_missing_hero_assets(workspace, monkeypatch, capsys):
+    root, card = workspace
+    card.write_text(json.dumps({"component": "TitleCard", "headline": "Shapes", "art": {"src": "assets/missing.svg"}}))
+    with pytest.raises(SystemExit) as exc:
+        video.main(["still", str(card), "out.png"])
+    assert "Missing assets" in capsys.readouterr().err
+
+    # Create the asset and it should pass
+    public = root / "public"
+    (public / "assets").mkdir(parents=True, exist_ok=True)
+    (public / "assets/missing.svg").touch()
+    calls = []
+    monkeypatch.setattr(video.subprocess, "run", lambda cmd, **kw: calls.append(cmd) or SimpleNamespace(returncode=0))
+    video.main(["still", str(card), "out.png"])
+    assert len(calls) == 1

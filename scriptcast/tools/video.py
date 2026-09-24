@@ -50,6 +50,28 @@ def stage_media(plan):
         clip["src"] = paths[Path(clip["src"])]
 
 
+def check_missing_assets(cards_list, allow_missing, parser):
+    public_dir = VIDEO_DIR / "public"
+    missing = []
+    for card in cards_list:
+        if not isinstance(card, dict): continue
+        srcs = []
+        if "svgAsset" in card and isinstance(card["svgAsset"], str):
+            srcs.append(card["svgAsset"])
+        if "art" in card and isinstance(card["art"], dict) and isinstance(card.get("art", {}).get("src"), str):
+            srcs.append(card["art"]["src"])
+        for src in srcs:
+            if not (public_dir / src).is_file():
+                missing.append((card.get("headline", "<unknown>"), src))
+    if missing:
+        if allow_missing:
+            for title, src in missing:
+                print(f"Warning: Missing asset '{src}' in card '{title}'")
+        else:
+            msg = "\n".join(f"  - {title}: {src}" for title, src in missing)
+            parser.error(f"Missing assets (use --allow-missing-assets to ignore):\n{msg}")
+
+
 def render(args, parser):
     workspace(parser, dependencies=not args.plan_only)
     episode = args.episode_dir.resolve()
@@ -67,7 +89,9 @@ def render(args, parser):
                           parse_transcript(args.script), json.loads(args.specs.read_text()),
                           yaml.safe_load(args.clips.read_text()), cards,
                           audio=str(audio), project_root=args.project_root.resolve())
+
         stage_media(plan)
+        check_missing_assets([c["card"] for c in plan["cards"]], args.allow_missing_assets, parser)
         out = args.out.resolve()
         plan_path = Path(str(out) + ".plan.json")
         plan_path.parent.mkdir(parents=True, exist_ok=True)
@@ -118,11 +142,13 @@ def main(argv: list[str] | None = None) -> int:
     still.add_argument("card", type=Path)
     still.add_argument("out", type=Path)
     still.add_argument("--component", choices=sorted(COMPONENTS))
+    still.add_argument("--allow-missing-assets", action="store_true")
     episode = sub.add_parser("render", help="Assemble episode video from a resolved plan")
     episode.add_argument("episode_dir", type=Path)
     for name in ("script", "specs", "clips", "cards", "out"):
         episode.add_argument(f"--{name}", type=Path, required=True)
     episode.add_argument("--audio", type=Path)
+    episode.add_argument("--allow-missing-assets", action="store_true")
     episode.add_argument("--project-root", type=Path, default=Path.cwd(),
                          help="Root for registry source paths (default: current directory)")
     mode = episode.add_mutually_exclusive_group()
@@ -154,8 +180,11 @@ def main(argv: list[str] | None = None) -> int:
     if not isinstance(props, dict):
         parser.error("Card JSON must be an object")
     component = args.component or props.get("component")
+
+    component = args.component or props.get("component")
     if not isinstance(component, str) or component not in COMPONENTS:
         parser.error("Supply a supported component in JSON or with --component")
+    check_missing_assets([props], args.allow_missing_assets, parser)
     workspace(parser)
     command = ["npx", "--no-install", "remotion", "still", "src/index.ts", component,
                str(out), f"--props={card}"]

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - Unreleased
 
 ### Added
+- Dynamic density scaling for cards, optimizing font sizes and layout for large text content while staying within the safe zone. Added "hero" art slot support across all cards. Added runtime visual overflow guards.
 - Quiver SVG generation, animation, and model-list client with bounded retries, a manifest-backed asset cache, offline checks, and `scriptcast-video svg` dry runs. All four cards render public-relative `svgAsset` artwork inside the safe zone; a hand-written SVG example is included.
 - Episode Remotion assembly and `scriptcast-video render`: script-order archive resolution, card windows, muted excerpts with last-frame holds, per-run media staging, `--plan-only`, and `--dry-run`.
 - Standalone Remotion card workspace with safe-zone layouts, four JSON-driven cards, G-10/G-11 examples, and scriptcast-video still with optional Chrome selection.
@@ -16,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project settings `tail_ms` (400) and `speech_threshold` (0.03), shared by CLI defaults. Explicit CLI flags override saved refit settings, which override project settings on subsequent renders.
 
 ### Fixed
+- Prevented default prop leakage from unrelated examples in card compositions. Fails fast in Python if a card references missing SVG assets, with an --allow-missing-assets override.
 - Preserve the requested speech tail when reloading unchanged WAV segments, including resumed renders.
 
 ## [0.1.0] - 2026-09-17
