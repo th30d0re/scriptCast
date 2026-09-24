@@ -1,0 +1,65 @@
+import json
+from types import SimpleNamespace
+
+import pytest
+
+from scriptcast.tools import video
+
+
+@pytest.fixture
+def workspace(tmp_path, monkeypatch):
+    root = tmp_path / "video"
+    (root / "src").mkdir(parents=True)
+    (root / "src/index.ts").touch()
+    (root / "node_modules/.bin").mkdir(parents=True)
+    (root / "node_modules/.bin/remotion").touch()
+    monkeypatch.setattr(video, "VIDEO_DIR", root)
+    monkeypatch.setattr(video, "DEFAULT_CHROME", tmp_path / "Chrome")
+    monkeypatch.delenv("SCRIPTCAST_CHROME", raising=False)
+    monkeypatch.chdir(tmp_path)
+    card = tmp_path / "card data.json"
+    card.write_text(json.dumps({"component": "TitleCard", "headline": "Shapes", "items": [], "sources": "Example"}))
+    return root, card
+
+
+@pytest.mark.parametrize("browser", ["env", "default", "none"])
+def test_still_command(workspace, monkeypatch, browser):
+    root, card = workspace
+    if browser == "env":
+        monkeypatch.setenv("SCRIPTCAST_CHROME", "/custom browser/Chrome")
+    elif browser == "default":
+        video.DEFAULT_CHROME.touch()
+    calls = []
+    monkeypatch.setattr(video.subprocess, "run", lambda cmd, **kw: calls.append((cmd, kw)) or SimpleNamespace(returncode=7))
+    assert video.main(["still", card.name, "out image.png"]) == 7
+    expected = ["npx", "--no-install", "remotion", "still", "src/index.ts", "TitleCard",
+                str(card.parent / "out image.png"), f"--props={card}"]
+    if browser != "none":
+        expected.append("--browser-executable=" + ("/custom browser/Chrome" if browser == "env" else str(video.DEFAULT_CHROME)))
+    assert calls == [(expected, {"cwd": root, "check": False})]
+
+
+def test_component_override(workspace, monkeypatch):
+    _, card = workspace
+    card.write_text('{"headline": "Shapes"}')
+    calls = []
+    monkeypatch.setattr(video.subprocess, "run", lambda cmd, **kw: calls.append(cmd) or SimpleNamespace(returncode=0))
+    assert video.main(["still", str(card), "out.png", "--component", "CompareCard"]) == 0
+    assert calls[0][5] == "CompareCard"
+
+
+@pytest.mark.parametrize("data", ["bad json", "[]", "{}", '{"component": ["TitleCard"]}'])
+def test_bad_card(workspace, monkeypatch, data):
+    _, card = workspace
+    card.write_text(data)
+    monkeypatch.setattr(video.subprocess, "run", lambda *a, **kw: pytest.fail("must not run"))
+    with pytest.raises(SystemExit) as exc:
+        video.main(["still", str(card), "out.png"])
+    assert exc.value.code == 2
+
+
+def test_missing_dependencies(workspace):
+    root, card = workspace
+    (root / "node_modules/.bin/remotion").unlink()
+    with pytest.raises(SystemExit):
+        video.main(["still", str(card), "out.png"])

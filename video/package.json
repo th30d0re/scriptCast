@@ -1,0 +1,8 @@
+{
+  "name": "scriptcast-video",
+  "private": true,
+  "version": "0.2.0",
+  "scripts": {"check-copy": "tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/check-copy.js"},
+  "dependencies": {"remotion": "4.0.354", "@remotion/cli": "4.0.354", "react": "19.1.0", "react-dom": "19.1.0"},
+  "devDependencies": {"typescript": "5.9.3", "@types/react": "19.1.0"}
+}

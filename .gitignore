@@ -6,3 +6,6 @@ outputs/
 .venv*/
 .pytest_cache/
 .codex/
+video/node_modules/
+video/out/
+video/.remotion/

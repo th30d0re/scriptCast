@@ -40,6 +40,7 @@ Issues = "https://github.com/th30d0re/scriptCast/issues"
 Changelog = "https://github.com/th30d0re/scriptCast/blob/main/CHANGELOG.md"
 
 [project.scripts]
+scriptcast-video = "scriptcast.tools.video:main"
 scriptcast-shotspec = "scriptcast.tools.shotspec:main"
 scriptcast = "scriptcast.__main__:main"
 scriptcast-verify = "scriptcast.tools.verify_render:main"
