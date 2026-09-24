@@ -30,6 +30,10 @@ export function getTextLength(obj: any): number {
   return 0;
 }
 
+// Fitted scale per card, kept for the life of the page so later frames of the
+// same card start at the answer instead of re-running the shrink loop.
+const fittedScale = new Map<string, number>();
+
 export function Frame({headline, sources, svgAsset, art, children}: BaseProps & {children: (scale: number) => ReactNode}) {
   const effectiveArt = art || (svgAsset ? {src: svgAsset, size: 'strip' as const} : undefined);
   
@@ -41,7 +45,8 @@ export function Frame({headline, sources, svgAsset, art, children}: BaseProps & 
   }
 
   const [handle] = useState(() => delayRender());
-  const [scale, setScale] = useState(1);
+  const cacheKey = `${headline}\u0000${sources}`;
+  const [scale, setScale] = useState(() => fittedScale.get(cacheKey) ?? 1);
   const contentRef = useRef<HTMLElement>(null);
 
   // Shrink-to-fit: lower the type scale in 5% steps until every descendant of the
@@ -56,8 +61,9 @@ export function Frame({headline, sources, svgAsset, art, children}: BaseProps & 
       if (scale > 0.5) { setScale(sc => Number((sc - 0.05).toFixed(2))); return; }
       throw new Error(`Overflow detected in card: ${headline} (content bottom ${Math.round(bottom)}px, box bottom ${Math.round(boxBottom)}px, scale ${scale})`);
     }
+    fittedScale.set(cacheKey, scale);
     continueRender(handle);
-  }, [handle, headline, scale]);
+  }, [handle, headline, scale, cacheKey]);
 
   const hero = effectiveArt?.size === 'hero';
   
