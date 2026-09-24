@@ -60,7 +60,7 @@ export function Frame({headline, sources, svgAsset, art, scale = 1.0, children}:
 
       {effectiveArt?.src && <div data-svg-slot style={{
         width: '100%',
-        height: hero ? '40%' : 64,
+        height: hero ? '34%' : 64,
         flexShrink: 0, 
         overflow: 'hidden',
         display: 'flex',

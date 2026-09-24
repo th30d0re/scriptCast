@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "prompt": "Side-by-side flat vector silhouette comparison of two semi-automatic rifles drawn to exactly the same scale. Left: an AR-15 style rifle with pistol grip, detachable box magazine, adjustable collapsible stock and handguard rail. Right: a Ruger Mini-14 style ranch rifle with a traditional one-piece wood-style stock, short forearm and detachable box magazine. Both the same overall length, pointing right, centered in a wide horizontal frame with a thin gap between them. No text, no logos, no brand marks, no people, no hands.",
+    "model": "arrow-2",
+    "request_id": "0785b810-4df3-49b6-a564-179e04fe122b",
+    "date": "2026-09-24T21:47:14.198Z",
+    "endpoint": "/svgs/generations",
+    "hash": "2d7f17ca80c7a925084dd92b042670facaa732eacea5d9e03896041fd4b0ab0e",
+    "request_hash": "2d7f17ca80c7a925084dd92b042670facaa732eacea5d9e03896041fd4b0ab0e",
+    "output_index": 0,
+    "output_count": 1
+  }
+]
