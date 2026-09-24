@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - Unreleased
 
 ### Added
+- Episode Remotion assembly and `scriptcast-video render`: script-order archive resolution, card windows, muted excerpts with last-frame holds, per-run media staging, `--plan-only`, and `--dry-run`.
 - Standalone Remotion card workspace with safe-zone layouts, four JSON-driven cards, G-10/G-11 examples, and scriptcast-video still with optional Chrome selection.
 - `scriptcast-shotspec` resolves Markdown shot lists through script turn order into manifest timing; extracts URL/card citations and validates `[source]`. Manuscript citations and checks are opt-in with `--book PATH` and/or `--repo ROOT`; supports JSON output and `--strict`.
 - `scriptcast-refit` remeasures existing WAVs, backs up the manifest, updates render state, and optionally relays out clips with `--gap-ms`.

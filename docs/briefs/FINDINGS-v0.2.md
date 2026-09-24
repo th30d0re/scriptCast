@@ -454,3 +454,234 @@ positional arguments:
 options:
   -h, --help  show this help message and exit
 ```
+
+## Phase 3b
+
+### Scope and initial decisions
+
+- Implementing episode assembly only. Read the full brief and prior findings; current user instructions supersede the brief's commit/install requirements. No Phase 4, README changes, git commands, network, or writes to TheOriginalPower.
+- Python resolves a pure, data-only plan; CLI handles file reads and per-run media copies. Clip IDs come from parsed script archive turns in order, never timestamps. Card windows retain spec anchor times as explicitly requested.
+- Use rounded absolute frame boundaries and subtract endpoints for sequence lengths; skip windows that round to zero. Background/audio span the episode, including intentional gaps between archive turns/cards.
+- No render attempts are planned because the sandbox Chrome failure is established. HEVC decoding, visual layout, media synchronization, and held-frame rendering remain unverified until the orchestrator renders.
+
+### Implementation and decisions
+
+- Added pure `build_plan(manifest, script_turns, specs, registry, cards, *, audio, project_root)` in `video_plan.py`. The caller loads files and uses the existing transcript parser. Archive entries are paired in order, with count mismatches rejected; missing IDs name the offending ID. Input dictionaries are not mutated.
+- The real manifest has no top-level duration. Use the maximum turn end as its total (explicit `duration_ms` / `total_duration_ms` is accepted and validated when present).
+- Card filename stems ignore case/hyphens; ambiguous normalized names error. Missing cards warn and skip; equal-start/overlapping cards shorten the earlier window, and empty/subframe windows are omitted. Hold windows use spec anchor timing, without silently retiming the supplied specs.
+- `still` and `render` share workspace/browser helpers. `--project-root` defaults to caller cwd. `--audio` overrides single-MP3 discovery. All render modes write `<out>.plan.json` and copy media to unique ignored `video/public/episode/run-*/` directories; no automatic cleanup. Plan-only needs no Node installation; dry-run prints shell-quoted argv and launches no subprocess. Real rendering propagates the child exit code and uses `npx --no-install`, H.264, and the shared Chrome resolution.
+- `Episode` consumes the plan directly as props, with metadata driven by its duration. Core Remotion `Freeze` plus `OffthreadVideo` clamps the source frame at out-point minus one frame; excerpt audio is muted and the single MP3 supplies audio. Navy background spans the full duration. Cards are above footage; no captions. No new dependencies.
+- Layout ambiguity: “safe-zone usable box's width” is 950.4px, whereas the brief also gives a 1080px / 1.5x upscale example. Chose the explicit safe-zone width (1.32x for a 720px source), horizontally and vertically centred in the full frame with `objectFit: contain`. Video is not cropped or restricted to the short safe-zone height.
+- Generated neutral `plan.sample.json` through `build_plan` and then rewrote sample paths to public-relative placeholders. Root imports it, and TypeScript checks the Episode prop structure. Additional compiled Node checks exercise actual TypeScript frame conversion, metadata, source progression, and hold clamping.
+- Eleven new Python cases cover drift/order, trim/hold, purity, missing/overlapping/equal-start/subframe cards, frame boundaries, missing IDs, count mismatch, staging, audio ambiguity/override, plan-only, dry-run argv, and mocked render dispatch. The existing 148 tests remain green.
+- Real plan matched all five expected IDs at turns 0, 9, 14, 19, 23, with start/end values exactly equal to the manifest, and exactly two cards G-10/G-11. Fourteen absent cards produce warnings; no mismatch was observed. Registry source in/out values are preserved as instructed.
+
+### Acceptance output (raw)
+
+`/Users/emmanuel/Documents/Theory/TheOriginalPower/.venv-voice/bin/python -m pytest tests -q` (exit 0)
+
+```text
+........................................................................ [ 45%]
+........................................................................ [ 90%]
+...............                                                          [100%]
+=============================== warnings summary ===============================
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  /Users/emmanuel/Documents/Theory/TheOriginalPower/.venv-voice/lib/python3.11/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  /Users/emmanuel/Documents/Theory/TheOriginalPower/.venv-voice/lib/python3.11/site-packages/misaki/en.py:143: DeprecationWarning: open_text is deprecated. Use files() instead. Refer to https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy for migration advice.
+    with importlib.resources.open_text(data, f"{'gb' if british else 'us'}_gold.json") as r:
+
+tests/test_pronunciation.py::test_reading_follows_part_of_speech[It includes one specific historical record.-record-default]
+  /Users/emmanuel/Documents/Theory/TheOriginalPower/.venv-voice/lib/python3.11/site-packages/misaki/en.py:145: DeprecationWarning: open_text is deprecated. Use files() instead. Refer to https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy for migration advice.
+    with importlib.resources.open_text(data, f"{'gb' if british else 'us'}_silver.json") as r:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+159 passed, 5 warnings in 7.11s
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+```
+
+From `video/`: `npx tsc --noEmit` (exit 0; empty stdout/stderr)
+
+```text
+```
+
+`npm run check-copy` (exit 0)
+
+```text
+
+> scriptcast-video@0.2.0 check-copy
+> tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/check-copy.js
+
+PASS: all G-10/G-11 copy and numbers; four card layouts within safe-zone constants; QR below sources; group-relative bar widths.
+```
+
+`node .remotion/check/scripts/check-episode.js` (exit 0)
+
+```text
+PASS: sample metadata, shared frame boundaries, excerpt progression and last-frame hold.
+```
+
+### Real-data plan check (raw)
+
+Ran `video.main` from `/Users/emmanuel/Documents/Theory/TheOriginalPower` with `PYTHONDONTWRITEBYTECODE=1` and `PYTHONPATH=/Users/emmanuel/Documents/Theory/scriptCast`. Arguments:
+
+```text
+render outputs/chapter135_reply --script Architecting_the_operation/podcasts/chapter135_rebuttal_reply.md --specs Architecting_the_operation/video/specs/chapter135_rebuttal.json --clips Architecting_the_operation/archive/clips.yaml --cards /tmp/scriptcast-phase3b-v1hruta1/cards --out /tmp/scriptcast-phase3b-v1hruta1/episode.mp4 --plan-only
+```
+
+The scratch directory contains copies of only this workspace's g10.json and g11.json. Output and extracted arrays, without eliding card data:
+
+```text
+Skipping non-speaker preamble line 1 in Architecting_the_operation/podcasts/chapter135_rebuttal_reply.md
+wrote /private/tmp/scriptcast-phase3b-v1hruta1/episode.mp4.plan.json
+{
+  "clips": [
+    {
+      "turn_index": 0,
+      "clip_id": "reel_q1",
+      "src": "episode/run-spff4278/001.mp4",
+      "in_ms": 0.0,
+      "out_ms": 14860.0,
+      "start_ms": 0,
+      "end_ms": 14860
+    },
+    {
+      "turn_index": 9,
+      "clip_id": "reel_a1",
+      "src": "episode/run-spff4278/002.mp4",
+      "in_ms": 14840.0,
+      "out_ms": 41520.0,
+      "start_ms": 54980,
+      "end_ms": 81660
+    },
+    {
+      "turn_index": 14,
+      "clip_id": "reel_q2",
+      "src": "episode/run-spff4278/003.mp4",
+      "in_ms": 43140.0,
+      "out_ms": 48940.0,
+      "start_ms": 112140,
+      "end_ms": 117940
+    },
+    {
+      "turn_index": 19,
+      "clip_id": "reel_a2",
+      "src": "episode/run-spff4278/004.mp4",
+      "in_ms": 49200.0,
+      "out_ms": 77500.0,
+      "start_ms": 139070,
+      "end_ms": 167370
+    },
+    {
+      "turn_index": 23,
+      "clip_id": "reel_close",
+      "src": "episode/run-spff4278/005.mp4",
+      "in_ms": 84700.0,
+      "out_ms": 87600.0,
+      "start_ms": 185130,
+      "end_ms": 188030
+    }
+  ],
+  "cards": [
+    {
+      "shot_id": "G-10",
+      "start_ms": 417160,
+      "end_ms": 450160,
+      "card": {
+        "component": "TimelineCard",
+        "headline": "The timeline they don't put in the press release",
+        "items": [
+          {
+            "date": "JUL\n25\n2024",
+            "title": "Chapter 135 signed",
+            "detail": "Original effective date set: October 23, 2024."
+          },
+          {
+            "date": "OCT\n2\n2024",
+            "title": "Emergency preamble signed",
+            "detail": "Law takes effect immediately. A referendum petition can no longer stay it. Stated reasons: the measures needed to go into effect \"without delay\"; agencies and municipalities needed time to prepare.",
+            "highlight": true,
+            "badge": "69 DAYS LATER"
+          },
+          {
+            "date": "OCT\n23\n2024",
+            "title": "The law's own original effective date",
+            "detail": "Where the normal 90-day clock would have ended."
+          },
+          {
+            "date": "OCT\n2024",
+            "title": "93,229 signatures submitted",
+            "detail": "Raw count filed by the repeal campaign."
+          },
+          {
+            "date": "NOV\n22\n2024",
+            "title": "78,707 signatures verified",
+            "detail": "Certifies the question for the November 3, 2026 ballot."
+          }
+        ],
+        "note": "Under Article 48, a certified petition normally stays a law until voters decide. An emergency preamble removes that stay.",
+        "sources": "Sources: Ballotpedia \u00b7 Foley Hoag LLP \u00b7 AP / NBC Boston (Oct 2, 2024)"
+      }
+    },
+    {
+      "shot_id": "G-11",
+      "start_ms": 474350,
+      "end_ms": 498350,
+      "card": {
+        "component": "StatBarsCard",
+        "headline": "Louisiana, 1898: a neutral-sounding cutoff",
+        "lead": "New literacy and property tests, with one exemption: you were excused if you, your father, or your grandfather could vote before January 1, 1867.",
+        "items": [
+          {
+            "label": "Black registered voters",
+            "period": "1897 to 1900",
+            "values": [
+              130344,
+              5320
+            ],
+            "delta": "(\u221296%)",
+            "color": "red"
+          },
+          {
+            "label": "White registered voters",
+            "period": "1897 to 1900",
+            "values": [
+              164088,
+              125437
+            ],
+            "delta": "(\u221224%)",
+            "color": "gold"
+          }
+        ],
+        "quote": "racially neutral on its face",
+        "attribution": "The U.S. Supreme Court struck down grandfather clauses in Guinn v. United States (1915).",
+        "sources": "Sources: BlackPast.org \u00b7 Guinn v. United States, 238 U.S. 347 (1915) \u00b7 registration counts from secondary summaries of Louisiana state registration reports"
+      }
+    }
+  ]
+}
+PASS: 5 clip IDs and manifest turn windows match; 2 cards.
+```
+
+Installed console script smoke test: `/Users/emmanuel/Documents/Theory/TheOriginalPower/.venv-voice/bin/scriptcast-video render --help` succeeded. Also ran that installed executable from the reference project with the same arguments above, changing only `--out` to `/tmp/scriptcast-phase3b-v1hruta1/console.mp4`, again with `PYTHONDONTWRITEBYTECODE=1` and the source workspace on `PYTHONPATH` (exit 0):
+
+```text
+Skipping non-speaker preamble line 1 in Architecting_the_operation/podcasts/chapter135_rebuttal_reply.md
+wrote /private/tmp/scriptcast-phase3b-v1hruta1/console.mp4.plan.json
+```
+
+### Verification limits
+
+- Renders were not run; no Chrome probe was repeated. Visual layout, actual card layering, media playback/synchronization, last-frame appearance, encoded H.264/audio output, and full-episode completion require the orchestrator's render.
+- HEVC decode by Remotion's `OffthreadVideo` is untested. Source media duration/seek accuracy has not been probed; the plan honors registry offsets without guessing adjustments.
+- Installed `scriptcast-video render` WAS smoke-tested for help and real-data plan-only using explicit source `PYTHONPATH`; installed console rendering and wheel-only distribution were not tested.
+- Staged run directories are retained for the orchestrator and are ignored. Plans depend on these directories remaining under this source workspace's public directory. Copy/write interruption recovery and arbitrarily malformed card payloads beyond component selection were not tested.
+- No git commands, README changes, package installation, network requests, manuscript-repository writes, or Phase 4 work occurred. All implementation changes are left uncommitted.
