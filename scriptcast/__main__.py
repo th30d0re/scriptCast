@@ -27,7 +27,7 @@ from scriptcast.models import SegmentResult, Turn, VoiceConfig
 from scriptcast.parser import parse_transcript
 from scriptcast.platform_check import require_apple_silicon
 from scriptcast.post_processor import _measure_speech_duration, process_segment
-from scriptcast.project import current
+from scriptcast.project import DEFAULTS, current
 from scriptcast.pronunciation import speech_text_for
 from scriptcast.render_state import (
     RenderState,
@@ -126,8 +126,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--speech-threshold",
         type=float,
-        default=0.04,
-        help="RMS threshold for speech-end detection (default: 0.04). "
+        default=None,
+        help="RMS threshold for speech-end detection (defaults to project setting). "
              "Lower = looser trim, higher = tighter trim.",
     )
     parser.add_argument(
@@ -199,7 +199,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--tail-ms",
         type=int,
-        default=150,
+        default=None,
         help="Grace period in ms added after detected speech end, so trailing "
              "consonants and breath are not clipped. Capped at the real clip "
              "length. Applies to clip length and scheduling in the ALS, the "
@@ -384,15 +384,15 @@ def _segment_from_wav(
     chunk_index: int,
     speaker_id: str,
     gap_after_ms: int,
-    speech_threshold: float = 0.04,
-    tail_ms: int = 150,
+    speech_threshold: float = DEFAULTS["speech_threshold"],
+    tail_ms: int = DEFAULTS["tail_ms"],
 ) -> SegmentResult:
     info = soundfile.info(wav_path)
     duration_ms = int(info.frames / info.samplerate * 1000)
     audio, sr = soundfile.read(wav_path, dtype="float32")
     if audio.ndim > 1:
         audio = audio.mean(axis=1)
-    speech_duration_ms = _measure_speech_duration(audio, sr, speech_threshold)
+    speech_duration_ms = _measure_speech_duration(audio, sr, speech_threshold, tail_ms)
     checksum = hashlib.sha256(wav_path.read_bytes()).hexdigest()
     return SegmentResult(
         turn_index=turn_index,
@@ -412,8 +412,8 @@ def _load_completed_turn_segments(
     turn: Turn,
     jobs: list[_SpeechJob],
     output_path: Path,
-    speech_threshold: float = 0.04,
-    tail_ms: int = 150,
+    speech_threshold: float = DEFAULTS["speech_threshold"],
+    tail_ms: int = DEFAULTS["tail_ms"],
 ) -> list[SegmentResult] | None:
     if not jobs:
         return []
@@ -507,8 +507,8 @@ async def render_loop(
     gap_ms: int,
     resume: bool = False,
     sample_budget_ms: int | None = None,
-    speech_threshold: float = 0.04,
-    tail_ms: int = 150,
+    speech_threshold: float = DEFAULTS["speech_threshold"],
+    tail_ms: int = DEFAULTS["tail_ms"],
     trim_edges: bool = True,
     regenerate_turn_indices: set[int] | None = None,
     regenerate_turn_ids: set[str] | None = None,
@@ -544,7 +544,7 @@ async def render_loop(
 
         if resume and not force_regenerate:
             existing_segments = _load_completed_turn_segments(
-                turn, jobs, out_dir, speech_threshold
+                turn, jobs, out_dir, speech_threshold, tail_ms
             )
             if existing_segments is not None:
                 for segment in existing_segments:
@@ -899,6 +899,10 @@ def main() -> None:
 
     # Load previous render state for change detection and position preservation
     previous_state = load_render_state_with_migration(episode_out_dir, turns)
+    refit_settings = previous_state.refit_settings if previous_state else None
+    for key in ("tail_ms", "speech_threshold"):
+        if getattr(args, key) is None:
+            setattr(args, key, (refit_settings or {}).get(key, getattr(project, key)))
 
     if args.detect_changes:
         if previous_state is None:
@@ -1096,6 +1100,9 @@ def main() -> None:
                 )
             )
     render_state = RenderState(
+        refit_settings=({"tail_ms": args.tail_ms,
+                         "speech_threshold": args.speech_threshold}
+                        if refit_settings else None),
         schema_version="2.0",
         source_file=str(transcript_path),
         source_hash=compute_source_hash(transcript_path),

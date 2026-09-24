@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - Unreleased
+
+### Added
+- `scriptcast-refit` remeasures existing WAVs, backs up the manifest, updates render state, and optionally relays out clips with `--gap-ms`.
+- Project settings `tail_ms` (400) and `speech_threshold` (0.03), shared by CLI defaults. Explicit CLI flags override saved refit settings, which override project settings on subsequent renders.
+
+### Fixed
+- Preserve the requested speech tail when reloading unchanged WAV segments, including resumed renders.
+
 ## [0.1.0] - 2026-09-17
 
 scriptCast was extracted as a standalone tool from an earlier in-project `voice_pipeline/` with its full history preserved.

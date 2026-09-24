@@ -31,7 +31,8 @@ def test_cwd_fallback(tmp_path, monkeypatch) -> None:
 def test_defaults(tmp_path) -> None:
     project = Project(tmp_path)
     for key, default in DEFAULTS.items():
-        assert project.path(key) == tmp_path / default
+        if isinstance(default, str):
+            assert project.path(key) == tmp_path / default
 
 
 def test_unknown_key_names_it(tmp_path) -> None:
