@@ -7,7 +7,7 @@ export async function main(argv: string[], deps: {client?: QuiverClient; cache?:
   const [command, ...args] = argv;
   if (!['generate', 'animate', 'models'].includes(command)) throw new Error('Expected generate, animate, or models');
   const {values, positionals} = parseArgs({args, allowPositionals: true, options: {
-    'dry-run': {type: 'boolean'}, ...(command === 'generate' ? {model: {type: 'string' as const}, instructions: {type: 'string' as const}, n: {type: 'string' as const}} : {}),
+    'dry-run': {type: 'boolean'}, ...(command === 'generate' ? {model: {type: 'string' as const}, instructions: {type: 'string' as const}, n: {type: 'string' as const}, reference: {type: 'string' as const, multiple: true}} : {}),
     ...(command === 'animate' ? {prompt: {type: 'string' as const}} : {}),
   }});
   if (positionals.length !== (command === 'models' ? 0 : 1)) throw new Error('Expected exactly one prompt or SVG path (none for models)');
@@ -16,7 +16,10 @@ export async function main(argv: string[], deps: {client?: QuiverClient; cache?:
   if (command === 'generate') {
     const n = values.n === undefined ? 1 : Number(values.n);
     if (!Number.isInteger(n) || n < 1 || n > 16) throw new Error('--n must be an integer from 1 to 16');
-    body = {model: typeof values.model === 'string' ? values.model : 'arrow-2', prompt: positionals[0], ...(typeof values.instructions !== 'string' ? {} : {instructions: values.instructions}), n};
+    const referencePaths = (values.reference as string[] | undefined) ?? [];
+    if (referencePaths.length > 14) throw new Error('--reference accepts at most 14 images');
+    const references = await Promise.all(referencePaths.map(async path => ({base64: (await readFile(path)).toString('base64')})));
+    body = {model: typeof values.model === 'string' ? values.model : 'arrow-2', prompt: positionals[0], ...(typeof values.instructions !== 'string' ? {} : {instructions: values.instructions}), ...(references.length ? {references} : {}), n};
     endpoint = GENERATIONS;
   } else if (command === 'animate') {
     body = {model: 'arrow-2', svg_source: {base64: (await readFile(positionals[0])).toString('base64')}, ...(typeof values.prompt !== 'string' ? {} : {prompt: values.prompt})};

@@ -98,6 +98,11 @@ async function check() {
       assert.deepEqual(JSON.parse(lines.join('')), expected);
       assert(!lines.join('').includes(token)); assert(!lines.join('').includes('Authorization'));
     }
+    const refPath = join(dir, 'ref.png');
+    await writeFile(refPath, Buffer.from([137, 80, 78, 71]));
+    const refOut: string[] = [];
+    await main(['generate', 'Circle', '--reference', refPath, '--dry-run'], {print: line => refOut.push(line)});
+    assert.deepEqual(JSON.parse(refOut.join('\n')).body.references, [{base64: Buffer.from([137, 80, 78, 71]).toString('base64')}]);
     await assert.rejects(main(['generate', 'Circle', '--n', '0', '--dry-run']), /--n/);
     console.log('PASS: canonical cache keys, credential-independent hits with zero fetches, SVG/manifest persistence, multi-output and animation caching, sandbox rejection, and exact key-free CLI dry runs.');
   } finally {

@@ -126,6 +126,8 @@ def svg(args, parser):
         command += [args.prompt, "--model", args.model, "--n", str(args.n)]
         if args.instructions is not None:
             command += ["--instructions", args.instructions]
+        for reference in args.reference or []:
+            command += ["--reference", str(reference.resolve())]
     elif args.svg_command == "animate":
         command += [str(args.svg_path.resolve())]
         if args.prompt is not None:
@@ -166,6 +168,8 @@ def main(argv: list[str] | None = None) -> int:
     generate.add_argument("--model", default="arrow-2")
     generate.add_argument("--instructions")
     generate.add_argument("--n", type=int, choices=range(1, 17), default=1)
+    generate.add_argument("--reference", action="append", type=Path,
+                          help="reference image (PNG, JPEG, WebP, GIF, SVG); repeatable, up to 14")
     animate = svg_sub.add_parser("animate")
     animate.add_argument("svg_path", type=Path)
     animate.add_argument("--prompt")
