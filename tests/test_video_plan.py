@@ -134,7 +134,7 @@ def test_dry_run_and_render_argv(cli, monkeypatch, capsys):
     monkeypatch.setattr(video.subprocess, 'run', lambda cmd, **kw: calls.append((cmd, kw)) or SimpleNamespace(returncode=7))
     assert video.main(args + ['--dry-run']) == 0
     expected = ['npx', '--no-install', 'remotion', 'render', 'src/index.ts', 'Episode',
-                str(out).removesuffix('.plan.json'), f'--props={out}', '--codec', 'h264', '--browser-executable=/browser path/chrome']
+                str(out).removesuffix('.plan.json'), f'--props={out}', '--codec', 'h264', '--timeout=120000', '--concurrency=3', '--browser-executable=/browser path/chrome']
     assert shlex.split(capsys.readouterr().out) == expected
     assert calls == []
     assert video.main(args) == 7

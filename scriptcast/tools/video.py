@@ -111,7 +111,8 @@ def render(args, parser):
         print(f"wrote {plan_path}")
         return 0
     command = ["npx", "--no-install", "remotion", "render", "src/index.ts", "Episode",
-               str(out), f"--props={plan_path}", "--codec", "h264", *browser_args()]
+               str(out), f"--props={plan_path}", "--codec", "h264",
+               f"--timeout={args.timeout_ms}", f"--concurrency={args.concurrency}", *browser_args()]
     if args.dry_run:
         print(shlex.join(command))
         return 0
@@ -160,6 +161,9 @@ def main(argv: list[str] | None = None) -> int:
         episode.add_argument(f"--{name}", type=Path, required=True)
     episode.add_argument("--audio", type=Path)
     episode.add_argument("--allow-missing-assets", action="store_true")
+    episode.add_argument("--timeout-ms", type=int, default=120000,
+                         help="per-frame render timeout; raise it on a busy machine (default 120000)")
+    episode.add_argument("--concurrency", type=int, default=3, help="parallel browser tabs (default 3)")
     episode.add_argument("--captions", type=Path, help="captions.json from scriptcast-captions, burned in above the cards")
     episode.add_argument("--persist-cards", action="store_true",
                          help="keep each card on screen until the next card or archive clip starts")
