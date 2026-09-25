@@ -4,6 +4,7 @@ import {StatBarsCard, type StatBarsProps} from './cards/StatBarsCard';
 import {TitleCard, type TitleProps} from './cards/TitleCard';
 import {CompareCard, type CompareProps} from './cards/CompareCard';
 import {FreezeCallout, type FreezeProps} from './cards/FreezeCallout';
+import {PartsCard, type PartsProps} from './cards/PartsCard';
 import {USABLE_BOX} from './safeZone';
 import {palette} from './theme';
 
@@ -11,7 +12,8 @@ export type Card = ({component: 'TimelineCard'} & TimelineProps)
   | ({component: 'StatBarsCard'} & StatBarsProps)
   | ({component: 'TitleCard'} & TitleProps)
   | ({component: 'CompareCard'} & CompareProps)
-  | ({component: 'FreezeCallout'} & FreezeProps);
+  | ({component: 'FreezeCallout'} & FreezeProps)
+  | ({component: 'PartsCard'} & PartsProps);
 type Window = {start_ms: number; end_ms: number};
 type Clip = Window & {turn_index: number; clip_id: string; src: string; in_ms: number; out_ms: number};
 export type EpisodePlan = {fps: number; width: number; height: number; duration_ms: number;
@@ -32,6 +34,7 @@ function CardView({card}: {card: Card}) {
     case 'TitleCard': return <TitleCard {...card} />;
     case 'CompareCard': return <CompareCard {...card} />;
     case 'FreezeCallout': return <FreezeCallout {...card} />;
+    case 'PartsCard': return <PartsCard {...card} />;
   }
 }
 export const clipSourceFrame = (clip: Clip, fps: number, frame: number) => {

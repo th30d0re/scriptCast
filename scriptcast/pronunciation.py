@@ -43,6 +43,7 @@ RESPELLING_ENGINES = frozenset({"omnivoice", "mlx_chatterbox", "elevenlabs", "ml
 _STRESS = str.maketrans("", "", "ˈˌ")
 _MISAKI_VOWELS = set("aeiouæɑɒɔəɛɜɪʊʌᵊᵻAIOWYɚɐ")
 _WORD_RE = re.compile(r"[A-Za-z']+")
+_TOKEN_RE = re.compile(r"[A-Za-z0-9']+")  # "always" readings also cover numbers such as 4473
 
 
 @dataclass(frozen=True)
@@ -185,7 +186,7 @@ def respell(text: str, respellings: dict[str, dict[str, str]] | None = None) -> 
     if respellings is None:
         respellings = load_respellings()
     if not respellings or not any(
-        w.lower() in respellings for w in _WORD_RE.findall(text)
+        w.lower() in respellings for w in _TOKEN_RE.findall(text)
     ):
         return text
 
@@ -197,7 +198,7 @@ def respell(text: str, respellings: dict[str, dict[str, str]] | None = None) -> 
             return match.group(0)
         return spelling[:1].upper() + spelling[1:] if match.group(0)[:1].isupper() else spelling
 
-    text = _WORD_RE.sub(_always, text)
+    text = _TOKEN_RE.sub(_always, text)
 
     out: list[str] = []
     cursor = 0

@@ -120,3 +120,9 @@ def test_always_reading_applies_to_any_context() -> None:
     respellings = {"lead": {"always": "led"}}
     assert respell("Childhood lead exposure.", respellings) == "Childhood led exposure."
     assert respell("Lead poisoning, leaded gas.", respellings) == "Led poisoning, leaded gas."
+
+
+def test_always_reading_covers_numbers() -> None:
+    respellings = {"4473": {"always": "forty-four seventy-three"}}
+    assert respell("Fill out a Form 4473 today.", respellings) == "Fill out a Form forty-four seventy-three today."
+    assert respell("Room 44730 stays.", respellings) == "Room 44730 stays."
