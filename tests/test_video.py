@@ -117,3 +117,12 @@ def test_missing_hero_assets(workspace, monkeypatch, capsys):
     monkeypatch.setattr(video.subprocess, "run", lambda cmd, **kw: calls.append(cmd) or SimpleNamespace(returncode=0))
     video.main(["still", str(card), "out.png"])
     assert len(calls) == 1
+
+
+def test_chunk_ranges_cover_every_frame_once():
+    from scriptcast.tools.video import chunk_ranges
+    ranges = chunk_ranges(0, 99, 3)
+    assert ranges == [(0, 33), (34, 67), (68, 99)] or sum(b - a + 1 for a, b in ranges) == 100
+    assert ranges[0][0] == 0 and ranges[-1][1] == 99
+    assert all(ranges[i][1] + 1 == ranges[i + 1][0] for i in range(len(ranges) - 1))
+    assert chunk_ranges(5, 6, 8) == [(5, 5), (6, 6)]

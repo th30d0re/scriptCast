@@ -136,18 +136,80 @@ def render(args, parser):
     if args.plan_only:
         print(f"wrote {plan_path}")
         return 0
-    command = ["npx", "--no-install", "remotion", "render", "src/index.ts", "Episode",
-               str(out), f"--props={plan_path}", "--codec", "h264",
-               f"--timeout={args.timeout_ms}", f"--concurrency={args.concurrency}", *browser_args()]
+    total = max(1, round(plan["duration_ms"] * plan["fps"] / 1000))
+    first, last = (0, total - 1)
+    if args.frames:
+        first, last = args.frames
+        if not 0 <= first <= last < total:
+            parser.error(f"--frames must fall inside 0-{total - 1}")
+    ranges = chunk_ranges(first, last, args.chunks)
+    base = ["npx", "--no-install", "remotion", "render", "src/index.ts", "Episode"]
+    common = [f"--props={plan_path}", "--codec", "h264", f"--timeout={args.timeout_ms}"]
+    if len(ranges) == 1 and not args.frames:
+        command = [*base, str(out), *common, f"--concurrency={args.concurrency}", *browser_args()]
+        if args.dry_run:
+            print(shlex.join(command))
+            return 0
+        try:
+            return subprocess.run(command, cwd=VIDEO_DIR, check=False).returncode
+        except OSError as exc:
+            parser.error(f"Could not run Remotion: {exc}")
+    return render_chunks(base, common, ranges, out, audio, plan, args)
+
+
+def chunk_ranges(first: int, last: int, chunks: int) -> list[tuple[int, int]]:
+    """Split frames first..last (inclusive) into `chunks` contiguous, near-equal ranges."""
+    count = last - first + 1
+    chunks = max(1, min(chunks, count))
+    size, extra = divmod(count, chunks)
+    ranges, start = [], first
+    for i in range(chunks):
+        end = start + size + (1 if i < extra else 0) - 1
+        ranges.append((start, end))
+        start = end + 1
+    return ranges
+
+
+def render_chunks(base, common, ranges, out, audio, plan, args) -> int:
+    """Render frame ranges in parallel Remotion processes, then join them and add the audio.
+
+    One Remotion process leaves most of a many-core machine idle, so each range gets its own
+    process (muted; the single MP3 is muxed at the end so no audio seams appear at joins).
+    """
+    per = max(2, args.concurrency // len(ranges)) if args.chunk_concurrency is None else args.chunk_concurrency
+    work = out.parent / f".{out.stem}-chunks"
+    commands = []
+    for i, (a, b) in enumerate(ranges):
+        part = work / f"part{i:02d}.mp4"
+        commands.append(([*base, str(part), *common, "--muted", f"--frames={a}-{b}", f"--concurrency={per}", *browser_args()], part))
+    join = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(work / "parts.txt")]
+    if args.frames:
+        mux = [*join, "-c:v", "copy", str(out)]  # a frame subset has no matching audio
+    else:
+        mux = [*join, "-i", str(audio), "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", str(out)]
     if args.dry_run:
-        print(shlex.join(command))
+        for cmd, _ in commands:
+            print(shlex.join(cmd))
+        print(shlex.join(mux))
         return 0
+    work.mkdir(parents=True, exist_ok=True)
+    (work / "parts.txt").write_text("".join(f"file '{part}'\n" for _, part in commands))
     try:
-        return subprocess.run(command, cwd=VIDEO_DIR, check=False).returncode
+        procs = [subprocess.Popen(cmd, cwd=VIDEO_DIR) for cmd, _ in commands]
+        codes = [p.wait() for p in procs]
     except OSError as exc:
-        parser.error(f"Could not run Remotion: {exc}")
-
-
+        print(f"Could not run Remotion: {exc}")
+        return 1
+    if any(codes):
+        print(f"A chunk failed (exit codes {codes}); parts are kept in {work}")
+        return 1
+    code = subprocess.run(mux, check=False).returncode
+    if code == 0:
+        for _, part in commands:
+            part.unlink()
+        (work / "parts.txt").unlink()
+        work.rmdir()
+    return code
 
 
 def svg(args, parser):
@@ -189,7 +251,10 @@ def main(argv: list[str] | None = None) -> int:
     episode.add_argument("--allow-missing-assets", action="store_true")
     episode.add_argument("--timeout-ms", type=int, default=120000,
                          help="per-frame render timeout; raise it on a busy machine (default 120000)")
-    episode.add_argument("--concurrency", type=int, default=8, help="parallel browser tabs (default 8; the tool was set to 3 after load-related timeouts)")
+    episode.add_argument("--concurrency", type=int, default=8, help="total parallel browser tabs (default 8; the tool was set to 3 after load-related timeouts)")
+    episode.add_argument("--chunks", type=int, default=1, help="render this many frame ranges in parallel Remotion processes and join them (tabs are split between them)")
+    episode.add_argument("--chunk-concurrency", type=int, default=None, help="browser tabs per chunk (default: --concurrency divided by --chunks, at least 2)")
+    episode.add_argument("--frames", type=lambda v: tuple(int(x) for x in v.split("-")), default=None, help="render only frames A-B (inclusive), without audio; for testing")
     episode.add_argument("--captions", type=Path, help="captions.json from scriptcast-captions, burned in above the cards")
     episode.add_argument("--persist-cards", action="store_true",
                          help="keep each card on screen until the next card or archive clip starts")
