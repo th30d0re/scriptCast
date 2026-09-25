@@ -189,6 +189,16 @@ def respell(text: str, respellings: dict[str, dict[str, str]] | None = None) -> 
     ):
         return text
 
+    # An "always" reading applies wherever the word appears. It covers words the
+    # lexicon lists with one reading only ("lead", the metal, comes out "leed").
+    def _always(match: re.Match[str]) -> str:
+        spelling = respellings.get(match.group(0).lower(), {}).get("always")
+        if not spelling:
+            return match.group(0)
+        return spelling[:1].upper() + spelling[1:] if match.group(0)[:1].isupper() else spelling
+
+    text = _WORD_RE.sub(_always, text)
+
     out: list[str] = []
     cursor = 0
     for reading in find_heteronyms(text):

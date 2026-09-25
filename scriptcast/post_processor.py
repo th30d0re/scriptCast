@@ -12,6 +12,10 @@ from scriptcast.models import SegmentResult
 _FRAME_MS = 10
 _PAD_MS = 20
 _MIN_THRESHOLD = 0.005
+# Speech decays into its final consonant or vowel below the leading threshold;
+# cutting at the leading threshold clips words like "now" and "clause".
+_TAIL_THRESHOLD = 0.002
+_TAIL_PAD_MS = 80
 
 
 def _trim_edge_silence(audio: numpy.ndarray, sample_rate: int) -> numpy.ndarray:
@@ -38,7 +42,7 @@ def _trim_edge_silence(audio: numpy.ndarray, sample_rate: int) -> numpy.ndarray:
         (
             frame_index
             for frame_index, frame_rms in reversed(list(enumerate(frame_rms_values)))
-            if frame_rms >= _MIN_THRESHOLD
+            if frame_rms >= _TAIL_THRESHOLD
         ),
         None,
     )
@@ -47,7 +51,8 @@ def _trim_edge_silence(audio: numpy.ndarray, sample_rate: int) -> numpy.ndarray:
 
     pad_samples = int(sample_rate * _PAD_MS / 1000)
     start_sample = max(0, first_voiced * frame_size - pad_samples)
-    end_sample = min(len(audio), (last_voiced + 1) * frame_size + pad_samples)
+    tail_pad_samples = int(sample_rate * _TAIL_PAD_MS / 1000)
+    end_sample = min(len(audio), (last_voiced + 1) * frame_size + tail_pad_samples)
     return audio[start_sample:end_sample].astype(audio.dtype, copy=False)
 
 

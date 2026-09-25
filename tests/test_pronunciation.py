@@ -114,3 +114,9 @@ def test_precision_insert_notices_a_new_reference_clip():
     new_voice = replace(VOICE, reference_audio="clean.wav")
     plan = plan_precision_insert([turn], _state([old]), {"host": new_voice})
     assert plan.modified == [turn]
+
+
+def test_always_reading_applies_to_any_context() -> None:
+    respellings = {"lead": {"always": "led"}}
+    assert respell("Childhood lead exposure.", respellings) == "Childhood led exposure."
+    assert respell("Lead poisoning, leaded gas.", respellings) == "Led poisoning, leaded gas."
