@@ -30,8 +30,25 @@ def browser_args():
     return [f"--browser-executable={chrome}"] if chrome else []
 
 
+def _cut_clip(source: Path, target: Path, in_ms: float, out_ms: float) -> bool:
+    """Re-encode just the used excerpt as a short 30 fps H.264 file. Returns False if it cannot."""
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg or out_ms <= in_ms:
+        return False
+    result = subprocess.run(
+        [ffmpeg, "-v", "error", "-y", "-ss", f"{in_ms / 1000:.3f}", "-to", f"{out_ms / 1000:.3f}", "-i", str(source),
+         "-an", "-vf", "fps=30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", str(target)],
+        capture_output=True, check=False)
+    return result.returncode == 0 and target.is_file() and target.stat().st_size > 0
+
+
 def stage_media(plan):
-    """Copy media so the run remains renderable independently of original paths."""
+    """Copy the audio and cut each clip's excerpt so the run is independent of original paths.
+
+    Cutting keeps the render light: Remotion decodes a few seconds of H.264 instead of seeking
+    inside a 90 second HEVC reel, and the staged folder stays small. If ffmpeg is missing or the
+    cut fails, the whole source is copied and the excerpt stays addressed by in/out points.
+    """
     sources = [Path(plan["audio"]), *(Path(c["src"]) for c in plan["clips"])]
     for source in sources:
         if not source.is_file():
@@ -39,20 +56,29 @@ def stage_media(plan):
     parent = VIDEO_DIR / "public" / "episode"
     parent.mkdir(parents=True, exist_ok=True)
     # Staged runs are scratch: Remotion copies the whole public/ folder into every bundle,
-    # so leftovers from earlier renders (about 0.9 GB each) slow renders and fill the disk.
+    # so leftovers from earlier renders slow renders and fill the disk.
     for stale in parent.glob("run-*"):
         if stale.is_dir():
             shutil.rmtree(stale, ignore_errors=True)
     run = Path(tempfile.mkdtemp(prefix="run-", dir=parent))
-    paths = {}
-    for source in sources:
-        if source not in paths:
-            target = run / f"{len(paths):03d}{source.suffix}"
+    audio_source = Path(plan["audio"])
+    audio_target = run / f"000{audio_source.suffix}"
+    shutil.copyfile(audio_source, audio_target)
+    plan["audio"] = audio_target.relative_to(VIDEO_DIR / "public").as_posix()
+    copies = {}
+    for number, clip in enumerate(plan["clips"], start=1):
+        source = Path(clip["src"])
+        cut = run / f"clip{number:03d}.mp4"
+        if _cut_clip(source, cut, clip["in_ms"], clip["out_ms"]):
+            clip["out_ms"] = clip["out_ms"] - clip["in_ms"]
+            clip["in_ms"] = 0
+            clip["src"] = cut.relative_to(VIDEO_DIR / "public").as_posix()
+            continue
+        if source not in copies:
+            target = run / f"{len(copies) + 1:03d}{source.suffix}"
             shutil.copyfile(source, target)
-            paths[source] = target.relative_to(VIDEO_DIR / "public").as_posix()
-    plan["audio"] = paths[Path(plan["audio"])]
-    for clip in plan["clips"]:
-        clip["src"] = paths[Path(clip["src"])]
+            copies[source] = target.relative_to(VIDEO_DIR / "public").as_posix()
+        clip["src"] = copies[source]
 
 
 def check_missing_assets(cards_list, allow_missing, parser):

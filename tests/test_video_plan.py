@@ -102,6 +102,7 @@ def cli(inputs, tmp_path, monkeypatch):
     (root / 'node_modules/.bin').mkdir(parents=True)
     (root / 'node_modules/.bin/remotion').touch()
     monkeypatch.setattr(video, 'VIDEO_DIR', root)
+    monkeypatch.setattr(video, '_cut_clip', lambda *a, **k: False)
     monkeypatch.setenv('SCRIPTCAST_CHROME', '/browser path/chrome')
     for media in ('voice.mp3', 'round.mp4', 'square.mp4'):
         (tmp_path / media).write_bytes(b'synthetic media')
@@ -176,3 +177,25 @@ def test_persist_cards_between_cards_and_last_to_end(inputs):
     inputs['cards']['s2'] = deepcopy(inputs['cards']['s1'])
     persisted = build_plan(**inputs, persist_cards=True)
     assert [(c['shot_id'], c['start_ms'], c['end_ms']) for c in persisted['cards']] == [('S-1', 1033, 2033), ('S-2', 4033, 6033)]
+
+
+def test_clips_are_cut_to_their_excerpt(tmp_path, monkeypatch):
+    root = tmp_path / 'video'
+    root.mkdir()
+    monkeypatch.setattr(video, 'VIDEO_DIR', root)
+    (tmp_path / 'voice.mp3').write_bytes(b'a')
+    (tmp_path / 'reel.mp4').write_bytes(b'v')
+    cuts = []
+
+    def fake_cut(source, target, in_ms, out_ms):
+        cuts.append((source.name, in_ms, out_ms))
+        target.write_bytes(b'cut')
+        return True
+
+    monkeypatch.setattr(video, '_cut_clip', fake_cut)
+    plan = {'audio': str(tmp_path / 'voice.mp3'), 'clips': [
+        {'src': str(tmp_path / 'reel.mp4'), 'in_ms': 14840.0, 'out_ms': 41520.0}]}
+    video.stage_media(plan)
+    assert cuts == [('reel.mp4', 14840.0, 41520.0)]
+    assert plan['clips'][0]['in_ms'] == 0 and plan['clips'][0]['out_ms'] == 26680.0
+    assert plan['clips'][0]['src'].endswith('clip001.mp4')
