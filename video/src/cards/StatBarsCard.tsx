@@ -1,11 +1,11 @@
 import {Frame, type BaseProps} from './Frame';
 import {palette as p} from '../theme';
 
-export type StatBarsProps = BaseProps & {lead?: string; items: {label: string; sublabel?: string; period: string; values: number[]; delta?: string; color: string}[]; quote?: string; attribution?: string};
+export type StatBarsProps = BaseProps & {sharedScale?: boolean; lead?: string; items: {label: string; sublabel?: string; period: string; values: number[]; delta?: string; color: string}[]; quote?: string; attribution?: string};
 
-export function barWidths(values: number[]): number[] {
+export function barWidths(values: number[], max?: number): number[] {
   if (values.some(v => !Number.isFinite(v) || v < 0)) throw new Error('Bar values must be finite and nonnegative');
-  const max = Math.max(0, ...values);
+  max = max ?? Math.max(0, ...values);
   return values.map(v => max === 0 ? 0 : v / max * 100);
 }
 
@@ -20,7 +20,7 @@ export function StatBarsCard(props: StatBarsProps) {
           <span>{group.label}{group.sublabel && <span style={{color: p.mute, marginLeft: 12, fontSize: Math.round(26 * scale)}}>{group.sublabel}</span>}</span>
           <span style={{color: p.mute, fontSize: Math.round(28 * scale)}}>{group.period}</span>
         </div>
-        {barWidths(group.values).map((width, j) => {
+        {barWidths(group.values, props.sharedScale ? Math.max(0, ...props.items.flatMap(i => i.values)) : undefined).map((width, j) => {
           const bg = (group.values.length === 1 || j > 0) ? (p[group.color as keyof typeof p] || group.color) : p.mute;
           return <div key={j} style={{display: 'flex', alignItems: 'center', gap: 12, marginTop: Math.round(8 * scale)}}>
             <div style={{flex: 1, background: p.navy2}}><div data-bar-width={width} style={{width: `${width}%`, height: Math.round(28 * scale), background: bg, borderRadius: 5}} /></div>
