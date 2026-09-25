@@ -38,6 +38,11 @@ def stage_media(plan):
             raise ValueError(f"Missing media: {source}")
     parent = VIDEO_DIR / "public" / "episode"
     parent.mkdir(parents=True, exist_ok=True)
+    # Staged runs are scratch: Remotion copies the whole public/ folder into every bundle,
+    # so leftovers from earlier renders (about 0.9 GB each) slow renders and fill the disk.
+    for stale in parent.glob("run-*"):
+        if stale.is_dir():
+            shutil.rmtree(stale, ignore_errors=True)
     run = Path(tempfile.mkdtemp(prefix="run-", dir=parent))
     paths = {}
     for source in sources:
