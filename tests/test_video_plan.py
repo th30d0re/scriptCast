@@ -7,6 +7,14 @@ from types import SimpleNamespace
 import pytest
 
 from scriptcast.parser import parse_transcript
+
+
+def parse_transcript_text(text):
+    import tempfile
+    with tempfile.NamedTemporaryFile('w', suffix='.md', delete=False) as handle:
+        handle.write(text)
+    return parse_transcript(Path(handle.name))
+
 from scriptcast.tools import video
 from scriptcast.tools.video_plan import build_plan, frame_at
 
@@ -146,3 +154,25 @@ def test_audio_selection(cli, monkeypatch, count):
         video.main(args + ['--plan-only'])
     voice.write_bytes(b'synthetic media')
     assert video.main(args + ['--plan-only', '--audio', str(voice)]) == 0
+
+
+def test_persist_cards_until_next_card_or_clip(inputs):
+    inputs['specs']['shots'] = [{'id': 'S-1', 'anchor': {'turn_index': 1, 'start_ms': 1033}, 'hold': {'script_ms': 100}}]
+    plan = build_plan(**inputs)
+    assert plan['cards'][0]['end_ms'] == 1133
+    persisted = build_plan(**inputs, persist_cards=True)
+    # the next archive clip starts at 2033, so the card stops there instead of covering it
+    assert persisted['cards'][0]['end_ms'] == 2033
+    assert plan['cards'][0]['end_ms'] == 1133
+
+
+def test_persist_cards_between_cards_and_last_to_end(inputs):
+    inputs['manifest']['turns'].append({'turn_index': 3, 'speaker_id': 'host', 'start_ms': 4033, 'end_ms': 6033})
+    inputs['script_turns'] = parse_transcript_text('Archive (00:00)\n[clip:round] A circle.\n\nHost (00:01)\nTwo shapes.\n\nArchive (00:02)\n[clip:square] A square.\n\nHost (00:03)\nDone.\n')
+    inputs['specs']['shots'] = [
+        {'id': 'S-1', 'anchor': {'turn_index': 1, 'start_ms': 1033}, 'hold': {'script_ms': 100}},
+        {'id': 'S-2', 'anchor': {'turn_index': 3, 'start_ms': 4033}, 'hold': {'script_ms': 100}},
+    ]
+    inputs['cards']['s2'] = deepcopy(inputs['cards']['s1'])
+    persisted = build_plan(**inputs, persist_cards=True)
+    assert [(c['shot_id'], c['start_ms'], c['end_ms']) for c in persisted['cards']] == [('S-1', 1033, 2033), ('S-2', 4033, 6033)]

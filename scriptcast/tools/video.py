@@ -90,7 +90,8 @@ def render(args, parser):
         plan = build_plan(json.loads((episode / "episode_manifest.json").read_text()),
                           parse_transcript(args.script), json.loads(args.specs.read_text()),
                           yaml.safe_load(args.clips.read_text()), cards,
-                          audio=str(audio), project_root=args.project_root.resolve())
+                          audio=str(audio), project_root=args.project_root.resolve(),
+                          persist_cards=args.persist_cards)
 
         stage_media(plan)
         check_missing_assets([c["card"] for c in plan["cards"]], args.allow_missing_assets, parser)
@@ -151,6 +152,8 @@ def main(argv: list[str] | None = None) -> int:
         episode.add_argument(f"--{name}", type=Path, required=True)
     episode.add_argument("--audio", type=Path)
     episode.add_argument("--allow-missing-assets", action="store_true")
+    episode.add_argument("--persist-cards", action="store_true",
+                         help="keep each card on screen until the next card or archive clip starts")
     episode.add_argument("--project-root", type=Path, default=Path.cwd(),
                          help="Root for registry source paths (default: current directory)")
     mode = episode.add_mutually_exclusive_group()
