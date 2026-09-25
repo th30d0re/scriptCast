@@ -26,7 +26,7 @@ def _number(value, label: str) -> float:
 
 def build_plan(manifest: dict, script_turns: list, specs: dict, registry: dict,
                cards: dict[str, dict], *, audio: str, project_root: str | Path,
-               persist_cards: bool = False) -> dict:
+               persist_cards: bool = False, captions: list[dict] | None = None) -> dict:
     """Resolve already-loaded inputs without reading/writing files or mutating inputs.
 
     script_turns is parse_transcript's result. cards maps filename stems to JSON.
@@ -120,5 +120,15 @@ def build_plan(manifest: dict, script_turns: list, specs: dict, registry: dict,
                 limits.append(windows[i + 1]["start_ms"])
             limits += [c["start_ms"] for c in clips if c["start_ms"] >= card_window["start_ms"]]
             card_window["end_ms"] = max(card_window["end_ms"], min(limits))
+    caption_list = []
+    for index, item in enumerate(captions or []):
+        text = item.get("text") if isinstance(item, dict) else None
+        if not isinstance(text, str) or not text.strip():
+            raise ValueError(f"caption {index} has no text")
+        start = _number(item.get("start_ms"), f"caption {index} start")
+        end = min(_number(item.get("end_ms"), f"caption {index} end"), duration)
+        if frame_at(end) > frame_at(start):
+            caption_list.append(dict(start_ms=start, end_ms=end, text=text.strip()))
+    caption_list.sort(key=lambda c: c["start_ms"])
     return dict(fps=30, width=1080, height=1920, duration_ms=duration, audio=audio,
-                clips=clips, cards=windows, warnings=warnings)
+                clips=clips, cards=windows, captions=caption_list, warnings=warnings)

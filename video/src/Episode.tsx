@@ -15,7 +15,7 @@ export type Card = ({component: 'TimelineCard'} & TimelineProps)
 type Window = {start_ms: number; end_ms: number};
 type Clip = Window & {turn_index: number; clip_id: string; src: string; in_ms: number; out_ms: number};
 export type EpisodePlan = {fps: number; width: number; height: number; duration_ms: number;
-  audio: string; clips: Clip[]; cards: (Window & {shot_id: string; card: Card})[]; warnings: string[]};
+  audio: string; clips: Clip[]; cards: (Window & {shot_id: string; card: Card})[]; captions?: (Window & {text: string})[]; warnings: string[]};
 export const frameAt = (ms: number, fps: number) => Math.round(ms * fps / 1000);
 export const frameWindow = (window: Window, fps: number) => {
   const from = frameAt(window.start_ms, fps);
@@ -60,6 +60,17 @@ function ClipView({clip, fps}: {clip: Clip; fps: number}) {
     </Sequence>
   </>;
 }
+// Captions sit in the strip between the card area (ends at 60% of the height) and the
+// platform's bottom overlay (starts at 65%). Sides keep the 6% margin.
+export const CAPTION_TOP = 1166;
+export function CaptionView({text}: {text: string}) {
+  return <div style={{position: 'absolute', left: 65, right: 65, top: CAPTION_TOP, height: 84,
+    display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+    <span data-caption style={{fontFamily: 'Helvetica Neue, Helvetica, Arial, sans-serif', fontWeight: 800,
+      fontSize: 50, lineHeight: 1.1, textAlign: 'center', color: palette.cream, background: 'rgba(15,27,51,0.78)',
+      borderRadius: 14, padding: '6px 22px', textShadow: '0 2px 6px rgba(0,0,0,0.6)'}}>{text}</span>
+  </div>;
+}
 export function Episode(plan: EpisodePlan) {
   return <AbsoluteFill style={{backgroundColor: palette.navy}}>
     <Audio src={staticFile(plan.audio)} />
@@ -73,6 +84,12 @@ export function Episode(plan: EpisodePlan) {
       const window = frameWindow(card, plan.fps);
       return window.durationInFrames > 0 && <Sequence key={card.shot_id} {...window}>
         <CardView card={card.card} />
+      </Sequence>;
+    })}
+    {(plan.captions ?? []).map((caption, index) => {
+      const window = frameWindow(caption, plan.fps);
+      return window.durationInFrames > 0 && <Sequence key={`caption-${index}`} {...window}>
+        <CaptionView text={caption.text} />
       </Sequence>;
     })}
   </AbsoluteFill>;

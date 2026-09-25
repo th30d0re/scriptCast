@@ -91,7 +91,8 @@ def render(args, parser):
                           parse_transcript(args.script), json.loads(args.specs.read_text()),
                           yaml.safe_load(args.clips.read_text()), cards,
                           audio=str(audio), project_root=args.project_root.resolve(),
-                          persist_cards=args.persist_cards)
+                          persist_cards=args.persist_cards,
+                          captions=json.loads(args.captions.read_text()) if args.captions else None)
 
         stage_media(plan)
         check_missing_assets([c["card"] for c in plan["cards"]], args.allow_missing_assets, parser)
@@ -154,6 +155,7 @@ def main(argv: list[str] | None = None) -> int:
         episode.add_argument(f"--{name}", type=Path, required=True)
     episode.add_argument("--audio", type=Path)
     episode.add_argument("--allow-missing-assets", action="store_true")
+    episode.add_argument("--captions", type=Path, help="captions.json from scriptcast-captions, burned in above the cards")
     episode.add_argument("--persist-cards", action="store_true",
                          help="keep each card on screen until the next card or archive clip starts")
     episode.add_argument("--project-root", type=Path, default=Path.cwd(),
