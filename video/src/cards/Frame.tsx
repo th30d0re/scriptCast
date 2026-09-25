@@ -3,6 +3,7 @@ import {ReactNode, useLayoutEffect, useRef, useState} from 'react';
 import {USABLE_BOX, WIDTH, HEIGHT} from '../safeZone';
 import {palette as p, fontFamily} from '../theme';
 import {QrCode} from './QrCode';
+import {Reveal, useEnter} from './motion';
 
 export type ArtProp = {src: string; size?: 'strip' | 'hero'; caption?: string};
 export type BaseProps = {headline: string; highlight?: string; sources: string; svgAsset?: string; art?: ArtProp; qr?: boolean; qrUrl?: string};
@@ -66,6 +67,7 @@ export function Frame({headline, highlight, sources, svgAsset, art, qr = true, q
     continueRender(handle);
   }, [handle, headline, scale, cacheKey]);
 
+  const ruleT = useEnter(4, 14);
   const at = highlight ? headline.indexOf(highlight) : -1;
   const headlineParts = at < 0 || !highlight ? [{text: headline, hit: false}] : [
     {text: headline.slice(0, at), hit: false}, {text: highlight, hit: true}, {text: headline.slice(at + highlight.length), hit: false}];
@@ -75,7 +77,7 @@ export function Frame({headline, highlight, sources, svgAsset, art, qr = true, q
     <main style={{position: 'absolute', left: USABLE_BOX.x, top: USABLE_BOX.y, width: USABLE_BOX.width, height: USABLE_BOX.height, boxSizing: 'border-box', padding: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: Math.round(16 * scale)}}>
       <div style={{flexShrink: 0, display: 'flex', flexDirection: 'column', gap: Math.round(12 * scale)}}>
         <h1 style={{margin: 0, fontSize: Math.max(32, Math.round(56 * scale)), lineHeight: 1.08, fontWeight: 800, textAlign: 'center'}}>{headlineParts.map((part, i) => part.hit ? <span key={i} data-highlight style={{borderBottom: `4px solid ${p.gold}`, paddingBottom: 2}}>{part.text}</span> : part.text)}</h1>
-        {!highlight && <div style={{width: 160, height: 4, background: p.gold, alignSelf: 'center'}} />}
+        {!highlight && <div style={{width: Math.round(160 * ruleT), height: 4, background: p.gold, alignSelf: 'center'}} />}
       </div>
 
       {effectiveArt?.src && <div data-svg-slot style={{
@@ -96,10 +98,10 @@ export function Frame({headline, highlight, sources, svgAsset, art, qr = true, q
         {children(scale)}
       </section>
 
-      <footer style={{textAlign: 'center', flexShrink: 0}}>
+      <Reveal delay={22} dur={14} style={{flexShrink: 0}}><footer style={{textAlign: 'center'}}>
         <div style={{fontSize: Math.max(16, Math.round(26 * scale)), lineHeight: 1.2, color: p.mute}}>{sources}</div>
         {qr && (qrUrl ? <div style={{margin: `${Math.round(12 * scale)}px auto 0`, width: 150}}><QrCode url={qrUrl} size={150} /></div> : <div style={{boxSizing: 'border-box', width: 120, height: 120, border: `3px solid ${p.mute}`, borderRadius: 10, margin: `${Math.round(12 * scale)}px auto 0`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: p.mute, fontSize: 30, fontWeight: 700}}>QR</div>)}
-      </footer>
+      </footer></Reveal>
     </main>
   </div>;
 }

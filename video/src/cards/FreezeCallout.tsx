@@ -3,6 +3,7 @@ import {Frame, type BaseProps} from './Frame';
 import {palette as p, fontFamily} from '../theme';
 import {USABLE_BOX, WIDTH, HEIGHT} from '../safeZone';
 import {QrCode} from './QrCode';
+import {Reveal} from './motion';
 
 export type Callout = {shape: 'rect' | 'ellipse'; x: number; y: number; w: number; h: number; label?: string};
 // A still frame from real footage with outlined callouts. Callout boxes are fractions
@@ -46,7 +47,7 @@ export function FreezeCallout(props: FreezeProps) {
   }
   if (props.fullBleed) return <BleedLayout {...props} />;
   return <Frame {...props} qr={props.qr ?? false}>{scale => <>
-    <div style={{flex: 1, minHeight: 0, display: 'flex', justifyContent: 'center'}}>
+    <Reveal delay={8} dur={16} style={{flex: 1, minHeight: 0, display: 'flex', justifyContent: 'center'}}>
       <div style={{height: '100%', aspectRatio: String(props.aspect), position: 'relative'}}>
         <Img src={staticFile(props.image)} alt="" style={{display: 'block', width: '100%', height: '100%'}} />
         {props.callouts.map((c, i) => <div key={i} data-callout style={{
@@ -55,7 +56,7 @@ export function FreezeCallout(props: FreezeProps) {
           borderRadius: c.shape === 'ellipse' ? '50%' : 8, boxShadow: '0 0 0 2px rgba(15,27,51,0.6)',
         }} />)}
       </div>
-    </div>
+    </Reveal>
     {props.caption && <div style={{fontSize: Math.round(30 * scale), textAlign: 'center', color: p.cream, marginTop: Math.round(12 * scale)}}>{props.caption}</div>}
   </>}</Frame>;
 }
