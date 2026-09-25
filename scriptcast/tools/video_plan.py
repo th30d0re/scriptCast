@@ -76,10 +76,16 @@ def build_plan(manifest: dict, script_turns: list, specs: dict, registry: dict,
         out_ms = min(out_ms, in_ms + length)
         clips.append(dict(turn_index=turn["turn_index"], clip_id=clip_id,
                           src=str(root / entry["source"]), in_ms=in_ms, out_ms=out_ms,
-                          start_ms=turn["start_ms"], end_ms=turn["end_ms"]))
+                          start_ms=turn["start_ms"], end_ms=turn["end_ms"], linger=entry.get("linger") == "next"))
     for previous, current in zip(clips, clips[1:]):
         if previous["end_ms"] > current["start_ms"]:
             raise ValueError("Archive clip turns overlap")
+    for index, clip in enumerate(clips):
+        # A clip registered with linger: next keeps its last frame on screen until the next
+        # archive clip begins (or the episode ends), for example across a spoken reaction.
+        if clip.pop("linger"):
+            following = clips[index + 1]["start_ms"] if index + 1 < len(clips) else duration
+            clip["end_ms"] = max(clip["end_ms"], following)
     normalized = {}
     for key, card in cards.items():
         key = card_key(key)

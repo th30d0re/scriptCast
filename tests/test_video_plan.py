@@ -199,3 +199,11 @@ def test_clips_are_cut_to_their_excerpt(tmp_path, monkeypatch):
     assert cuts == [('reel.mp4', 14840.0, 41520.0)]
     assert plan['clips'][0]['in_ms'] == 0 and plan['clips'][0]['out_ms'] == 26680.0
     assert plan['clips'][0]['src'].endswith('clip001.mp4')
+
+
+def test_linger_next_holds_the_last_frame_until_the_next_clip(inputs):
+    inputs['registry']['clips']['round']['linger'] = 'next'
+    plan = build_plan(**inputs)
+    assert plan['clips'][0]['end_ms'] == 2033
+    assert 'linger' not in plan['clips'][0]
+    assert plan['clips'][1]['end_ms'] == 4033
