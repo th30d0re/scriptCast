@@ -14,8 +14,8 @@ export function PartsCard(props: PartsProps) {
   return <Frame {...props}>{scale =>
     <div style={{display: 'flex', flexDirection: 'column', gap: Math.round(14 * scale), flex: 1, justifyContent: 'space-evenly'}}>
       {props.parts.map((part, i) => <div key={i} data-part style={{display: 'flex', alignItems: 'center', gap: Math.round(24 * scale)}}>
-        <div style={{width: Math.round(300 * scale), height: Math.round(150 * scale), flexShrink: 0, boxSizing: 'border-box', padding: Math.round(10 * scale), background: p.cream, borderRadius: 12}}>
-          <Img src={staticFile(part.image)} alt="" style={{display: 'block', width: '100%', height: '100%', objectFit: 'contain'}} />
+        <div style={{width: Math.round(380 * scale), height: Math.round(180 * scale), flexShrink: 0}}>
+          <Img src={staticFile(part.image)} alt="" style={{display: 'block', width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(2) contrast(1.1) drop-shadow(0 0 5px rgba(244,234,210,0.55))'}} />
         </div>
         <div style={{flex: 1}}>
           <div style={{fontSize: Math.round(38 * scale), color: p.gold, fontWeight: 800, lineHeight: 1.1}}>{part.title}</div>
