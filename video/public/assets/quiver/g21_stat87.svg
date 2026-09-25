@@ -6,24 +6,6 @@
     </clipPath>
   </defs>
   <g clip-path="url(#clip0_2075_15684)">
-    <line x1="1.146" x2="79.15" y1="24.43" y2="24.43" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="26.29" y2="26.29" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="28.15" y2="28.15" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="30.02" y2="30.02" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="31.88" y2="31.88" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="33.74" y2="33.74" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="35.61" y2="35.61" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="37.47" y2="37.47" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="39.33" y2="39.33" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="41.2" y2="41.2" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="43.06" y2="43.06" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="44.92" y2="44.92" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="46.79" y2="46.79" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="48.65" y2="48.65" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="50.51" y2="50.51" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="52.38" y2="52.38" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="54.24" y2="54.24" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
-    <line x1="1.146" x2="79.15" y1="56.1" y2="56.1" stroke="#D3D3D3" stroke-dasharray="0.07 1.25" stroke-linecap="round" stroke-width=".1077" />
     <path d="m7.44 46.66c-0.64 0.76-1.56 1.38-2.5 1.61l0.55 0.15-0.22 0.72 0.47 1.02c-0.52 0.62-1.27 0.92-2.09 1.09l-0.11 0.39 0.19 0.48s-0.73 0.92-0.51 1.16c0.21 0.23 1.98 0.15 3.53 0.05 2.68-0.17 8.87-0.09 10 0.09l0.08 0.09 0.15-0.03-0.04 0.05 0.81 0.12 0.95-0.19 0.39 0.14 1.93-0.08 0.13 0.07 1.74-0.41 0.93-0.27-0.26-2.38-0.73-2.04-1.88-0.15-4.06-0.72-4.11-0.14-3.53-0.9-1.81 0.08z" fill="#F1E7C9" />
     <path d="m7.04 48.35 1.7-0.47m-2.81 0.99 0.63-0.24m-1.27 4.42c1.64-1.63 3.38-3 5.13-4.03m-4.14 3.99c1.52-1.4 3.11-2.68 4.71-3.75m-3.7 3.7c1.35-1.19 2.76-2.28 4.17-3.24m-3.15 3.2c1.25-1.07 2.54-2.04 3.81-2.93m-2.72 2.9c1.17-0.95 2.36-1.82 3.54-2.64m-2.33 2.57c1.02-0.82 2.07-1.59 3.1-2.31m-1.77 2.24c0.89-0.71 1.8-1.38 2.71-2m-1.27 1.9c0.78-0.61 1.58-1.19 2.38-1.73m-0.95 1.67c0.77-0.61 1.56-1.18 2.35-1.71m-1.12 1.66c0.68-0.52 1.37-1.01 2.06-1.45m-1.12 1.6c0.57-0.42 1.14-0.81 1.71-1.18m-0.75 1.19 0.9-0.57" opacity=".5" stroke="#fff" stroke-linecap="round" stroke-width=".1154" />
     <path d="m11.83 49.15c0.42 1.24 1.56 2.47 1.94 2.5 0.47 0.02 2.8-1.55 2.8-1.55l-0.93-1.46-1.67 1.18-1.46-1.13-0.68 0.46z" fill="#A35D38" stroke="#231F1F" stroke-width=".2308" />

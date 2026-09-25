@@ -5,8 +5,8 @@ import {palette as p, fontFamily} from '../theme';
 import {QrCode} from './QrCode';
 import {Reveal, useEnter} from './motion';
 
-export type ArtProp = {src: string; size?: 'strip' | 'hero'; caption?: string; animate?: boolean};
-export type BaseProps = {headline: string; highlight?: string; sources: string; svgAsset?: string; art?: ArtProp; qr?: boolean; qrUrl?: string};
+export type ArtProp = {src: string; size?: 'strip' | 'hero'; caption?: string; animate?: boolean; atSeconds?: number};
+export type BaseProps = {headline: string; highlight?: string; sources: string; svgAsset?: string; art?: ArtProp; qr?: boolean; qrUrl?: string; qrs?: {url: string; label: string}[]};
 
 // Type sizes are fixed at their base values; Frame shrinks the content block
 // until it fits (measured in the browser). Kept for callers that pass it through.
@@ -35,7 +35,7 @@ export function getTextLength(obj: any): number {
 // An SVG with CSS keyframes, inlined and driven by the frame counter. Every animation is paused
 // and given a negative delay equal to the card's own elapsed time, so each rendered frame is the
 // same no matter which browser tab draws it. A still (one-frame composition) shows time zero.
-function AnimatedSvg({src}: {src: string}) {
+function AnimatedSvg({src, atSeconds}: {src: string; atSeconds?: number}) {
   const [markup, setMarkup] = useState<string | null>(null);
   const [handle] = useState(() => delayRender());
   const frame = useCurrentFrame();
@@ -43,7 +43,7 @@ function AnimatedSvg({src}: {src: string}) {
   useLayoutEffect(() => {
     fetch(staticFile(src)).then(r => r.text()).then(t => { setMarkup(t); continueRender(handle); }).catch(e => { throw e; });
   }, [src, handle]);
-  const seconds = durationInFrames <= 1 ? 0 : frame / fps;
+  const seconds = atSeconds ?? (durationInFrames <= 1 ? 0 : frame / fps);
   if (!markup) return null;
   const css = `svg * { animation-play-state: paused !important; animation-delay: -${seconds.toFixed(3)}s !important; }`;
   return <div style={{width: '100%', flex: 1, minHeight: 0, display: 'flex'}} data-animated-svg
@@ -54,7 +54,7 @@ function AnimatedSvg({src}: {src: string}) {
 // same card start at the answer instead of re-running the shrink loop.
 const fittedScale = new Map<string, number>();
 
-export function Frame({headline, highlight, sources, svgAsset, art, qr = true, qrUrl, children}: BaseProps & {children: (scale: number) => ReactNode}) {
+export function Frame({headline, highlight, sources, svgAsset, art, qr = true, qrUrl, qrs, children}: BaseProps & {children: (scale: number) => ReactNode}) {
   const effectiveArt = art || (svgAsset ? {src: svgAsset, size: 'strip' as const} : undefined);
   
   if (effectiveArt?.src) {
@@ -109,7 +109,7 @@ export function Frame({headline, highlight, sources, svgAsset, art, qr = true, q
         gap: 8
       }}>
         {effectiveArt.src && (effectiveArt.animate
-          ? <AnimatedSvg src={effectiveArt.src} />
+          ? <AnimatedSvg src={effectiveArt.src} atSeconds={effectiveArt.atSeconds} />
           : <Img src={staticFile(effectiveArt.src)} alt="" style={{display: 'block', width: '100%', flex: 1, minHeight: 0, objectFit: 'contain'}} />)}
         {effectiveArt.caption && hero && <div style={{fontSize: Math.round(26 * scale), color: p.mute, textAlign: 'center', flexShrink: 0}}>{effectiveArt.caption}</div>}
       </div>}
@@ -120,7 +120,8 @@ export function Frame({headline, highlight, sources, svgAsset, art, qr = true, q
 
       <Reveal delay={22} dur={14} style={{flexShrink: 0}}><footer style={{textAlign: 'center'}}>
         <div style={{fontSize: Math.max(16, Math.round(26 * scale)), lineHeight: 1.2, color: p.mute}}>{sources}</div>
-        {qr && (qrUrl ? <div style={{margin: `${Math.round(12 * scale)}px auto 0`, width: 150}}><QrCode url={qrUrl} size={150} /></div> : <div style={{boxSizing: 'border-box', width: 120, height: 120, border: `3px solid ${p.mute}`, borderRadius: 10, margin: `${Math.round(12 * scale)}px auto 0`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: p.mute, fontSize: 30, fontWeight: 700}}>QR</div>)}
+        {qrs && qrs.length > 0 && <div style={{display: 'flex', justifyContent: 'center', gap: Math.round(36 * scale), margin: `${Math.round(12 * scale)}px auto 0`}}>{qrs.map((q, i) => <div key={i} style={{textAlign: 'center'}}><QrCode url={q.url} size={Math.round(140 * Math.max(scale, 0.8))} /><div style={{fontSize: Math.max(18, Math.round(24 * scale)), color: p.cream, fontWeight: 700, marginTop: 6}}>{q.label}</div></div>)}</div>}
+        {!qrs && qr && (qrUrl ? <div style={{margin: `${Math.round(12 * scale)}px auto 0`, width: 150}}><QrCode url={qrUrl} size={150} /></div> : <div style={{boxSizing: 'border-box', width: 120, height: 120, border: `3px solid ${p.mute}`, borderRadius: 10, margin: `${Math.round(12 * scale)}px auto 0`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: p.mute, fontSize: 30, fontWeight: 700}}>QR</div>)}
       </footer></Reveal>
     </main>
   </div>;
