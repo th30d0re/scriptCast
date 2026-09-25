@@ -5,7 +5,7 @@ import {palette as p, fontFamily} from '../theme';
 import {QrCode} from './QrCode';
 
 export type ArtProp = {src: string; size?: 'strip' | 'hero'; caption?: string};
-export type BaseProps = {headline: string; sources: string; svgAsset?: string; art?: ArtProp; qr?: boolean; qrUrl?: string};
+export type BaseProps = {headline: string; highlight?: string; sources: string; svgAsset?: string; art?: ArtProp; qr?: boolean; qrUrl?: string};
 
 // Type sizes are fixed at their base values; Frame shrinks the content block
 // until it fits (measured in the browser). Kept for callers that pass it through.
@@ -35,7 +35,7 @@ export function getTextLength(obj: any): number {
 // same card start at the answer instead of re-running the shrink loop.
 const fittedScale = new Map<string, number>();
 
-export function Frame({headline, sources, svgAsset, art, qr = true, qrUrl, children}: BaseProps & {children: (scale: number) => ReactNode}) {
+export function Frame({headline, highlight, sources, svgAsset, art, qr = true, qrUrl, children}: BaseProps & {children: (scale: number) => ReactNode}) {
   const effectiveArt = art || (svgAsset ? {src: svgAsset, size: 'strip' as const} : undefined);
   
   if (effectiveArt?.src) {
@@ -66,13 +66,16 @@ export function Frame({headline, sources, svgAsset, art, qr = true, qrUrl, child
     continueRender(handle);
   }, [handle, headline, scale, cacheKey]);
 
+  const at = highlight ? headline.indexOf(highlight) : -1;
+  const headlineParts = at < 0 || !highlight ? [{text: headline, hit: false}] : [
+    {text: headline.slice(0, at), hit: false}, {text: highlight, hit: true}, {text: headline.slice(at + highlight.length), hit: false}];
   const hero = effectiveArt?.size === 'hero';
   
   return <div style={{width: WIDTH, height: HEIGHT, background: p.navy, color: p.cream, fontFamily}}>
     <main style={{position: 'absolute', left: USABLE_BOX.x, top: USABLE_BOX.y, width: USABLE_BOX.width, height: USABLE_BOX.height, boxSizing: 'border-box', padding: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: Math.round(16 * scale)}}>
       <div style={{flexShrink: 0, display: 'flex', flexDirection: 'column', gap: Math.round(12 * scale)}}>
-        <h1 style={{margin: 0, fontSize: Math.max(32, Math.round(56 * scale)), lineHeight: 1.08, fontWeight: 800, textAlign: 'center'}}>{headline}</h1>
-        <div style={{width: 160, height: 4, background: p.gold, alignSelf: 'center'}} />
+        <h1 style={{margin: 0, fontSize: Math.max(32, Math.round(56 * scale)), lineHeight: 1.08, fontWeight: 800, textAlign: 'center'}}>{headlineParts.map((part, i) => part.hit ? <span key={i} data-highlight style={{borderBottom: `4px solid ${p.gold}`, paddingBottom: 2}}>{part.text}</span> : part.text)}</h1>
+        {!highlight && <div style={{width: 160, height: 4, background: p.gold, alignSelf: 'center'}} />}
       </div>
 
       {effectiveArt?.src && <div data-svg-slot style={{
