@@ -1,11 +1,11 @@
-import {Img, staticFile, continueRender, delayRender} from 'remotion';
+import {Img, staticFile, continueRender, delayRender, useCurrentFrame, useVideoConfig} from 'remotion';
 import {ReactNode, useLayoutEffect, useRef, useState} from 'react';
 import {USABLE_BOX, WIDTH, HEIGHT} from '../safeZone';
 import {palette as p, fontFamily} from '../theme';
 import {QrCode} from './QrCode';
 import {Reveal, useEnter} from './motion';
 
-export type ArtProp = {src: string; size?: 'strip' | 'hero'; caption?: string};
+export type ArtProp = {src: string; size?: 'strip' | 'hero'; caption?: string; animate?: boolean};
 export type BaseProps = {headline: string; highlight?: string; sources: string; svgAsset?: string; art?: ArtProp; qr?: boolean; qrUrl?: string};
 
 // Type sizes are fixed at their base values; Frame shrinks the content block
@@ -30,6 +30,24 @@ export function getTextLength(obj: any): number {
     return Object.values(obj).reduce((sum: number, v) => sum + getTextLength(v), 0);
   }
   return 0;
+}
+
+// An SVG with CSS keyframes, inlined and driven by the frame counter. Every animation is paused
+// and given a negative delay equal to the card's own elapsed time, so each rendered frame is the
+// same no matter which browser tab draws it. A still (one-frame composition) shows time zero.
+function AnimatedSvg({src}: {src: string}) {
+  const [markup, setMarkup] = useState<string | null>(null);
+  const [handle] = useState(() => delayRender());
+  const frame = useCurrentFrame();
+  const {fps, durationInFrames} = useVideoConfig();
+  useLayoutEffect(() => {
+    fetch(staticFile(src)).then(r => r.text()).then(t => { setMarkup(t); continueRender(handle); }).catch(e => { throw e; });
+  }, [src, handle]);
+  const seconds = durationInFrames <= 1 ? 0 : frame / fps;
+  if (!markup) return null;
+  const css = `svg * { animation-play-state: paused !important; animation-delay: -${seconds.toFixed(3)}s !important; }`;
+  return <div style={{width: '100%', flex: 1, minHeight: 0, display: 'flex'}} data-animated-svg
+    dangerouslySetInnerHTML={{__html: markup.replace('<svg ', `<svg style="width:100%;height:100%" preserveAspectRatio="xMidYMid meet" `).replace(/<\/svg>\s*$/, `<style>${css}</style></svg>`)}} />;
 }
 
 // Fitted scale per card, kept for the life of the page so later frames of the
@@ -90,7 +108,9 @@ export function Frame({headline, highlight, sources, svgAsset, art, qr = true, q
         alignItems: 'center',
         gap: 8
       }}>
-        {effectiveArt.src && <Img src={staticFile(effectiveArt.src)} alt="" style={{display: 'block', width: '100%', flex: 1, minHeight: 0, objectFit: 'contain'}} />}
+        {effectiveArt.src && (effectiveArt.animate
+          ? <AnimatedSvg src={effectiveArt.src} />
+          : <Img src={staticFile(effectiveArt.src)} alt="" style={{display: 'block', width: '100%', flex: 1, minHeight: 0, objectFit: 'contain'}} />)}
         {effectiveArt.caption && hero && <div style={{fontSize: Math.round(26 * scale), color: p.mute, textAlign: 'center', flexShrink: 0}}>{effectiveArt.caption}</div>}
       </div>}
 

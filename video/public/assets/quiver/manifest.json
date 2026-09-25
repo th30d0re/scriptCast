@@ -31,5 +31,38 @@
     "request_hash": "3eae4a4473fc4d4d2698bd2578a3e1273e0f53caca2ba149546471d7325937a1",
     "output_index": 0,
     "output_count": 1
+  },
+  {
+    "prompt": "A judge gavel with its sound block on the left and a classical courthouse with a triangular pediment and six columns on the right, side by side, hand-drawn sketch style redrawn as clean flat vector. Same composition as the reference image.",
+    "model": "arrow-2",
+    "request_id": "eefd489f-5e23-4f1f-890b-5bd66b6d25b0",
+    "date": "2026-09-25T20:14:32.001Z",
+    "endpoint": "/svgs/generations",
+    "hash": "ad193069d27ef659f41e487a0b9e38660931964d74b5bd8039c13aaa14ebe993",
+    "request_hash": "ad193069d27ef659f41e487a0b9e38660931964d74b5bd8039c13aaa14ebe993",
+    "output_index": 0,
+    "output_count": 1
+  },
+  {
+    "prompt": "The gavel lifts and strikes its sound block once, with a small impact burst, while the courthouse columns stay still. Loop gently.",
+    "model": "arrow-2",
+    "request_id": "bdde63e3-2993-4e67-94f7-90be2535bf72",
+    "date": "2026-09-25T20:15:16.073Z",
+    "endpoint": "/svgs/animations",
+    "hash": "22208f7d4066835f840159c489980e7dd93356fc2e21524fc16c75fef0881ea8",
+    "request_hash": "22208f7d4066835f840159c489980e7dd93356fc2e21524fc16c75fef0881ea8",
+    "output_index": 0,
+    "output_count": 1
+  },
+  {
+    "prompt": "A large bold 87 percent number with a rising teal arrow made of stacked rifle silhouettes climbing behind it, three stylized women of different skin tones aiming rifles in profile on the left, a small NSSF-style shield badge at the bottom, and an outline of the state of Massachusetts on the right with an X over it. Redrawn as a clean flat vector. Same composition as the reference image.",
+    "model": "arrow-2",
+    "request_id": "d6749471-7fad-49eb-886f-1c3327f4e326",
+    "date": "2026-09-25T20:16:42.178Z",
+    "endpoint": "/svgs/generations",
+    "hash": "de1e6e9f7d3f3dbc6fb8ee5e27d6207c50f090e8cc5fb301aff8de42635a8a2b",
+    "request_hash": "de1e6e9f7d3f3dbc6fb8ee5e27d6207c50f090e8cc5fb301aff8de42635a8a2b",
+    "output_index": 0,
+    "output_count": 1
   }
 ]
