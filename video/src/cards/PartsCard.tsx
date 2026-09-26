@@ -14,7 +14,7 @@ export function PartsCard(props: PartsProps) {
   }
   return <Frame {...props}>{scale =>
     <div style={{display: 'flex', flexDirection: 'column', gap: Math.round(14 * scale), flex: 1, justifyContent: 'space-evenly'}}>
-      {props.parts.map((part, i) => <Reveal key={i} delay={8 + i * 8}><div data-part style={{display: 'flex', alignItems: 'center', gap: Math.round(24 * scale)}}>
+      {props.parts.map((part, i) => <Reveal key={i} delay={i * 5} dur={8}><div data-part style={{display: 'flex', alignItems: 'center', gap: Math.round(24 * scale)}}>
         <div style={{width: Math.round(380 * scale), height: Math.round(180 * scale), flexShrink: 0}}>
           <Img src={staticFile(part.image)} alt="" style={{display: 'block', width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(2) contrast(1.1) drop-shadow(0 0 5px rgba(244,234,210,0.55))'}} />
         </div>

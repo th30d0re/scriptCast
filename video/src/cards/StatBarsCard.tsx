@@ -11,7 +11,7 @@ export function barWidths(values: number[], max?: number): number[] {
 }
 
 function Grow({width, delay, children}: {width: number; delay: number; children: (w: number) => React.ReactNode}) {
-  return <>{children(width * useEnter(delay, 22))}</>;
+  return <>{children(width * useEnter(delay, 14))}</>;
 }
 
 export function StatBarsCard(props: StatBarsProps) {
@@ -20,7 +20,7 @@ export function StatBarsCard(props: StatBarsProps) {
     <div style={{display: 'flex', flexDirection: 'column', gap: Math.round(12 * scale), minHeight: 0}}>
       {props.lead && <div style={{fontSize: Math.round(32 * scale), lineHeight: 1.2, textAlign: 'center', marginBottom: Math.round(8 * scale)}}>{props.lead}</div>}
       
-      {props.items.map((group, i) => <Reveal key={i} delay={6 + i * 8}><div style={{marginBottom: Math.round(12 * scale)}}>
+      {props.items.map((group, i) => <Reveal key={i} delay={i * 5} dur={8}><div style={{marginBottom: Math.round(12 * scale)}}>
         <div style={{display: 'flex', justifyContent: 'space-between', fontSize: Math.round(32 * scale), fontWeight: 800}}>
           <span>{group.label}{group.sublabel && <span style={{color: p.mute, marginLeft: 12, fontSize: Math.round(26 * scale)}}>{group.sublabel}</span>}</span>
           <span style={{color: p.mute, fontSize: Math.round(28 * scale)}}>{group.period}</span>
@@ -28,7 +28,7 @@ export function StatBarsCard(props: StatBarsProps) {
         {barWidths(group.values, props.sharedScale ? Math.max(0, ...props.items.flatMap(i => i.values)) : undefined).map((width, j) => {
           const bg = (group.values.length === 1 || j > 0) ? (p[group.color as keyof typeof p] || group.color) : p.mute;
           return <div key={j} style={{display: 'flex', alignItems: 'center', gap: 12, marginTop: Math.round(8 * scale)}}>
-            <div style={{flex: 1, background: p.navy2}}><Grow width={width} delay={10 + i * 8}>{w => <div data-bar-width={width} style={{width: `${w}%`, height: Math.round(28 * scale), background: bg, borderRadius: 5}} />}</Grow></div>
+            <div style={{flex: 1, background: p.navy2}}><Grow width={width} delay={4 + i * 5}>{w => <div data-bar-width={width} style={{width: `${w}%`, height: Math.round(28 * scale), background: bg, borderRadius: 5}} />}</Grow></div>
             <span style={{fontSize: Math.round(32 * scale), width: Math.round(130 * scale), textAlign: 'right', fontWeight: 800}}>{group.values[j].toLocaleString('en-US')}</span>
           </div>;
         })}

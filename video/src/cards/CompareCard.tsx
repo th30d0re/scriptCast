@@ -8,7 +8,7 @@ export function CompareCard(props: CompareProps) {
   return <Frame {...props}>{scale => 
     <div style={{display: 'flex', flexDirection: 'column', gap: Math.round(20 * scale), flex: 1, minHeight: 0}}>
       <div style={{display: 'flex', gap: Math.round(20 * scale), flex: 1, minHeight: 0}}>
-        {props.items.map((item, i) => <Reveal key={i} delay={8 + i * 9} style={{flex: 1, minWidth: 0, display: 'flex'}}><div style={{flex: 1, minWidth: 0, background: p.navy2, padding: Math.round(24 * scale), borderRadius: 12, display: 'flex', flexDirection: 'column', gap: Math.round(16 * scale)}}>
+        {props.items.map((item, i) => <Reveal key={i} delay={i * 6} dur={8} style={{flex: 1, minWidth: 0, display: 'flex'}}><div style={{flex: 1, minWidth: 0, background: p.navy2, padding: Math.round(24 * scale), borderRadius: 12, display: 'flex', flexDirection: 'column', gap: Math.round(16 * scale)}}>
           <h2 style={{fontSize: Math.round(40 * scale), color: p.gold, margin: 0, fontWeight: 800, textAlign: 'center'}}>{item.title}</h2>
           <div style={{width: 60, height: 3, background: p.teal, alignSelf: 'center'}} />
           <ul style={{margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: Math.round(16 * scale)}}>

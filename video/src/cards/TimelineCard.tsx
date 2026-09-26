@@ -7,7 +7,7 @@ export type TimelineProps = BaseProps & {items: {date: string; title: string; de
 export function TimelineCard(props: TimelineProps) {
 
   return <Frame {...props}>{scale => <div style={{display: 'flex', flexDirection: 'column', gap: Math.round(14 * scale)}}>
-    {props.items.map((item, i) => <Reveal key={i} delay={8 + i * 8}><div style={{display: 'grid', gridTemplateColumns: '110px 1fr', gap: Math.round(18 * scale)}}>
+    {props.items.map((item, i) => <Reveal key={i} delay={i * 5} dur={8}><div style={{display: 'grid', gridTemplateColumns: '110px 1fr', gap: Math.round(18 * scale)}}>
       <div style={{fontSize: Math.round(32 * scale), color: p.mute, whiteSpace: 'pre-line', textAlign: 'right', fontWeight: 600}}>{item.date}</div>
       <div style={{borderLeft: `5px solid ${item.highlight ? p.red : p.teal}`, paddingLeft: Math.round(18 * scale)}}>
         {item.badge && <div style={{color: p.gold, fontSize: Math.round(30 * scale), fontWeight: 900}}>{item.badge}</div>}

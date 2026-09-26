@@ -47,7 +47,7 @@ export function FreezeCallout(props: FreezeProps) {
   }
   if (props.fullBleed) return <BleedLayout {...props} />;
   return <Frame {...props} qr={props.qr ?? false}>{scale => <>
-    <Reveal delay={8} dur={16} style={{flex: 1, minHeight: 0, display: 'flex', justifyContent: 'center'}}>
+    <Reveal delay={0} dur={8} style={{flex: 1, minHeight: 0, display: 'flex', justifyContent: 'center'}}>
       <div style={{height: '100%', aspectRatio: String(props.aspect), position: 'relative'}}>
         <Img src={staticFile(props.image)} alt="" style={{display: 'block', width: '100%', height: '100%'}} />
         {props.callouts.map((c, i) => <div key={i} data-callout style={{

@@ -85,7 +85,7 @@ export function Frame({headline, highlight, sources, svgAsset, art, qr = true, q
     continueRender(handle);
   }, [handle, headline, scale, cacheKey]);
 
-  const ruleT = useEnter(4, 14);
+  const ruleT = useEnter(0, 8);
   const at = highlight ? headline.indexOf(highlight) : -1;
   const headlineParts = at < 0 || !highlight ? [{text: headline, hit: false}] : [
     {text: headline.slice(0, at), hit: false}, {text: highlight, hit: true}, {text: headline.slice(at + highlight.length), hit: false}];
@@ -118,7 +118,7 @@ export function Frame({headline, highlight, sources, svgAsset, art, qr = true, q
         {children(scale)}
       </section>
 
-      <Reveal delay={22} dur={14} style={{flexShrink: 0}}><footer style={{textAlign: 'center'}}>
+      <Reveal delay={6} dur={8} style={{flexShrink: 0}}><footer style={{textAlign: 'center'}}>
         <div style={{fontSize: Math.max(16, Math.round(26 * scale)), lineHeight: 1.2, color: p.mute}}>{sources}</div>
         {qrs && qrs.length > 0 && <div style={{display: 'flex', justifyContent: 'center', gap: Math.round(36 * scale), margin: `${Math.round(12 * scale)}px auto 0`}}>{qrs.map((q, i) => <div key={i} style={{textAlign: 'center'}}><QrCode url={q.url} size={Math.round(140 * Math.max(scale, 0.8))} /><div style={{fontSize: Math.max(18, Math.round(24 * scale)), color: p.cream, fontWeight: 700, marginTop: 6}}>{q.label}</div></div>)}</div>}
         {!qrs && qr && (qrUrl ? <div style={{margin: `${Math.round(12 * scale)}px auto 0`, width: 150}}><QrCode url={qrUrl} size={150} /></div> : <div style={{boxSizing: 'border-box', width: 120, height: 120, border: `3px solid ${p.mute}`, borderRadius: 10, margin: `${Math.round(12 * scale)}px auto 0`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: p.mute, fontSize: 30, fontWeight: 700}}>QR</div>)}
