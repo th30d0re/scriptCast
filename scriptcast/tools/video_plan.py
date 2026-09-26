@@ -126,6 +126,13 @@ def build_plan(manifest: dict, script_turns: list, specs: dict, registry: dict,
                 limits.append(windows[i + 1]["start_ms"])
             limits += [c["start_ms"] for c in clips if c["start_ms"] >= card_window["start_ms"]]
             card_window["end_ms"] = max(card_window["end_ms"], min(limits))
+        # A card that starts just after a clip ends would leave the frame empty for the gap
+        # between turns; start it as the clip ends instead.
+        for card_window in windows:
+            ended = [c["end_ms"] for c in clips
+                     if c["end_ms"] <= card_window["start_ms"] and card_window["start_ms"] - c["end_ms"] <= 600]
+            if ended:
+                card_window["start_ms"] = max(ended)
     caption_list = []
     for index, item in enumerate(captions or []):
         text = item.get("text") if isinstance(item, dict) else None

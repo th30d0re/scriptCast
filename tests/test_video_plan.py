@@ -179,6 +179,19 @@ def test_persist_cards_between_cards_and_last_to_end(inputs):
     assert [(c['shot_id'], c['start_ms'], c['end_ms']) for c in persisted['cards']] == [('S-1', 1033, 2033), ('S-2', 4033, 6033)]
 
 
+def test_persisted_card_starts_as_the_clip_before_it_ends(inputs):
+    inputs['manifest']['turns'].append({'turn_index': 3, 'speaker_id': 'host', 'start_ms': 4033, 'end_ms': 6033})
+    inputs['script_turns'] = parse_transcript_text('Archive (00:00)\n[clip:round] A circle.\n\nHost (00:01)\nTwo shapes.\n\nArchive (00:02)\n[clip:square] A square.\n\nHost (00:03)\nDone.\n')
+    turns = inputs['manifest']['turns']
+    turns[2]['end_ms'] = 3733  # the clip ends 300 ms before the host turn that owns the card
+    inputs['specs']['shots'] = [{'id': 'S-2', 'anchor': {'turn_index': 3, 'start_ms': 4033}, 'hold': {'script_ms': 100}}]
+    inputs['cards']['s2'] = deepcopy(inputs['cards']['s1'])
+    plan = build_plan(**inputs, persist_cards=True)
+    clip_end = [c for c in plan['clips'] if c['clip_id'] == 'square'][0]['end_ms']
+    assert plan['cards'][0]['start_ms'] == clip_end
+    assert 4033 - clip_end <= 600
+
+
 def test_clips_are_cut_to_their_excerpt(tmp_path, monkeypatch):
     root = tmp_path / 'video'
     root.mkdir()
