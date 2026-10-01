@@ -14,6 +14,8 @@ _SPEAKER_RE = re.compile(
     r"^\s*(?P<display_name>.+?)\s*\((?P<timestamp>\d{1,2}:\d{2})\)\s*$"
 )
 _MARKDOWN_FORMATTING_RE = re.compile(r"\*\*?|\_\_?")
+_HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
+_WHITESPACE_RE = re.compile(r"\s+")
 
 
 def _speaker_id(display_name: str) -> str:
@@ -75,7 +77,10 @@ def parse_transcript(path: Path) -> list[Turn]:
 
         display_name = current_header.group("display_name").strip()
         timestamp_mmss = current_header.group("timestamp")
-        raw_text = "\n".join(current_body_lines).strip()
+        body_text = "\n".join(current_body_lines)
+        raw_text = _WHITESPACE_RE.sub(
+            " ", _HTML_COMMENT_RE.sub(" ", body_text)
+        ).strip()
         clean_text = _clean_text(raw_text)
         speaker_id = _speaker_id(display_name)
         line_end = current_body_last_line or current_header_line
