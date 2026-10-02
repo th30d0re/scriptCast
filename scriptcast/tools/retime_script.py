@@ -5,12 +5,10 @@ references and the join key between a script and its shot list. They are not
 what the renderer uses for spacing, but they have to stay monotonic and honest,
 and hand-maintaining them after every insert is how collisions get introduced.
 
-This tool derives them instead. Every turn's duration comes from the rendered
-manifest when that turn's audio already exists (`turn_id` is a hash of speaker
-and text, so it survives a timestamp change), and from a words-per-second rate
-calibrated on that same manifest when the turn is new or edited. Positions
-accumulate with a fixed inter-turn gap, matching how the renderer lays out the
-timeline.
+This tool derives them instead. Every rendered turn's position and duration
+come from the manifest (`turn_id` is a hash of speaker and text, so it survives
+a timestamp change). New or edited turns are placed after the preceding turn
+and estimated from a words-per-second rate calibrated on that same manifest.
 
 A shot list can be remapped in the same pass: anchors snap to the real turn they
 name, and hold times ride a piecewise-linear old-to-new map.
@@ -73,12 +71,15 @@ def _turn_speech(turn) -> tuple[int, int, int]:
     return words, marks, silence
 
 
-def _load_measured(manifest_path: Path | None) -> dict[str, int]:
+def _load_measured(manifest_path: Path | None) -> dict[str, tuple[int, int]]:
     if manifest_path is None or not manifest_path.exists():
         return {}
     manifest = json.loads(manifest_path.read_text())
     return {
-        t["turn_id"]: int(t["end_ms"]) - int(t["start_ms"])
+        t["turn_id"]: (
+            int(t["start_ms"]),
+            int(t["end_ms"]) - int(t["start_ms"]),
+        )
         for t in manifest.get("turns", [])
         if t.get("end_ms") is not None and t.get("start_ms") is not None
     }
@@ -175,7 +176,10 @@ def _calibrate(turns, measured: dict[str, int]) -> dict[str, tuple[float, float]
 def retime(script: Path, manifest: Path | None, gap_ms: int):
     turns = tokenize_markup(parse_transcript(script))
     measured = _load_measured(manifest)
-    rates = _calibrate(turns, measured)
+    measured_durations = {
+        turn_id: duration for turn_id, (_, duration) in measured.items()
+    }
+    rates = _calibrate(turns, measured_durations)
     if rates:
         _save_known_rates(rates)
     # A speaker with no audio in this episode still has coefficients from the
@@ -195,26 +199,28 @@ def retime(script: Path, manifest: Path | None, gap_ms: int):
     for turn in turns:
         words, marks, silence = _turn_speech(turn)
         if turn.turn_id in measured:
-            duration = measured[turn.turn_id]
+            new_ms, duration = measured[turn.turn_id]
+            cursor = new_ms + duration
         else:
             estimated += 1
             per_word, per_mark = rates.get(turn.speaker_id, fallback)
             duration = int(round(words * per_word + marks * per_mark)) + silence
+            new_ms = cursor
+            cursor += duration + gap_ms
         rows.append(
             {
                 "turn_index": turn.turn_index,
                 "display_name": turn.display_name,
                 "speaker_id": turn.speaker_id,
                 "old": turn.timestamp_mmss,
-                "new": _mmss(cursor),
+                "new": _mmss(new_ms),
                 "old_ms": turn.timestamp_ms,
-                "new_ms": cursor,
+                "new_ms": new_ms,
                 "duration_ms": duration,
                 "source": "measured" if turn.turn_id in measured else "estimated",
                 "line": turn.line_span[0],
             }
         )
-        cursor += duration + gap_ms
 
     return rows, cursor, estimated, rates, fallback
 
