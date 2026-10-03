@@ -81,7 +81,7 @@
 ## Phase C — Job Runner and Verify Overlay
 
 - Last run: —
-- Status: **ready** (Phases A, B, B2 passed)
+- Status: **merged to dev** (847e9a2) 2026-10-03. Codex built and repaired; a Gemini finish pass broke the wiring and was repaired. Real EP03 re-hashed unchanged by the orchestrator. Operator click-through and speaker-whine by ear pending.
 - Checkpoint timing (Precision-insert scope, EP03 clone): —
 
 ### Checklist
