@@ -492,45 +492,57 @@
             <frame id="4:18186" name="Speaker track" x="0" y="0" width="1322" height="20">
               <frame id="4:18187" name="Turn segment" x="0" y="0" width="121.03644561767578" height="20">
                 <text id="4:18188" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:3" name="Waveform" x="26" y="2" width="91.03644561767578" height="16" />
               </frame>
               <frame id="4:18189" name="Turn segment" x="211.81378173828125" y="0" width="78.14488983154297" height="20">
                 <text id="4:18190" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:17" name="Waveform" x="26" y="2" width="48.14488983154297" height="16" />
               </frame>
               <frame id="4:18191" name="Turn segment" x="685.383544921875" y="0" width="88.72088623046875" height="20">
                 <text id="4:18192" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:31" name="Waveform" x="26" y="2" width="58.72088623046875" height="16" />
               </frame>
               <frame id="4:18193" name="Turn segment" x="1056.4249267578125" y="0" width="122.79911041259766" height="20">
                 <text id="4:18194" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:45" name="Waveform" x="26" y="2" width="92.79911041259766" height="16" />
               </frame>
             </frame>
             <frame id="4:18195" name="Speaker track" x="0" y="24" width="1322" height="20">
               <frame id="4:18196" name="Turn segment" x="121.03644561767578" y="0" width="90.77733612060547" height="20">
                 <text id="4:18197" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:59" name="Waveform" x="26" y="2" width="60.77733612060547" height="16" />
               </frame>
               <frame id="4:18198" name="Turn segment" x="487.9648742675781" y="0" width="84.60800170898438" height="20">
                 <text id="4:18199" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:73" name="Waveform" x="26" y="2" width="54.608001708984375" height="16" />
               </frame>
               <frame id="4:18200" name="Turn segment" x="850.19287109375" y="0" width="104.58489227294922" height="20">
                 <text id="4:18201" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:87" name="Waveform" x="26" y="2" width="74.58489227294922" height="16" />
               </frame>
             </frame>
             <frame id="4:18202" name="Speaker track" x="0" y="48" width="1322" height="20">
               <frame id="4:18203" name="Turn segment" x="289.95867919921875" y="0" width="133.08132934570312" height="20">
                 <text id="4:18204" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:101" name="Waveform" x="26" y="2" width="103.08132934570312" height="16" />
               </frame>
               <frame id="4:18205" name="Turn segment" x="572.5728759765625" y="0" width="112.8106689453125" height="20">
                 <text id="4:18206" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:116" name="Waveform" x="26" y="2" width="82.8106689453125" height="16" />
               </frame>
               <frame id="4:18207" name="Turn segment" x="954.7777709960938" y="0" width="101.64710998535156" height="20">
                 <text id="4:18208" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:130" name="Waveform" x="26" y="2" width="71.64710998535156" height="16" />
               </frame>
             </frame>
             <frame id="4:18209" name="Speaker track" x="0" y="72" width="1322" height="20">
               <frame id="4:18210" name="Turn segment" x="423.0400085449219" y="0" width="64.92488861083984" height="20">
                 <text id="4:18211" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:144" name="Waveform" x="26" y="2" width="34.924888610839844" height="16" />
               </frame>
               <frame id="4:18212" name="Turn segment" x="774.1044311523438" y="0" width="76.08844757080078" height="20">
                 <text id="4:18213" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:158" name="Waveform" x="26" y="2" width="46.08844757080078" height="16" />
               </frame>
             </frame>
             <rounded-rectangle id="4:18214" name="Playhead" x="357.8653869628906" y="0" width="1.0576000213623047" height="92" />
@@ -706,8 +718,12 @@
         <text id="4:18358" name="Current turn" x="0" y="0" width="102" height="17" />
         <text id="4:18359" name="Elapsed time" x="0" y="19" width="139" height="16" />
       </frame>
-      <frame id="4:18360" name="Seek track" x="443" y="30" width="608" height="4">
-        <rounded-rectangle id="4:18361" name="Elapsed progress" x="0" y="0" width="180" height="4" />
+      <frame id="4:18360" name="Waveform viewport" x="443" y="14" width="608" height="36">
+        <vector id="30:4" name="Vector" x="-214" y="10" width="414" height="17" />
+        <vector id="30:5" name="Vector" x="200" y="10" width="414" height="17" />
+        <rounded-rectangle id="30:6" name="Rectangle" x="200" y="0" width="2" height="36" />
+        <rounded-rectangle id="30:7" name="Rectangle" x="0" y="0" width="32" height="36" />
+        <rounded-rectangle id="30:8" name="Rectangle" x="576" y="0" width="32" height="36" />
       </frame>
       <text id="4:18362" name="Label" x="1069" y="23.5" width="96" height="17" />
       <text id="4:18363" name="Label" x="1183" y="24" width="99" height="16" />
@@ -2305,19 +2321,15 @@
     </frame>
     <text id="4:19538" name="Label" x="26" y="532" width="1388" height="16" />
   </frame>
-  <frame id="4:20339" name="scriptCast / Timeline block" x="-721" y="7550" width="1456" height="396">
-    <symbol id="4:20338" name="State=Failed" x="744" y="214" width="680" height="150" />
-    <symbol id="4:20337" name="State=Playing" x="32" y="214" width="680" height="150" />
-    <symbol id="4:20336" name="State=Selected" x="744" y="32" width="680" height="150" />
-    <symbol id="4:20335" name="State=Default" x="32" y="32" width="680" height="150" />
-  </frame>
-  <frame id="4:20345" name="scriptCast / Turn row" x="-721" y="8046" width="2016" height="578">
-    <symbol id="4:20344" name="State=Missing audio" x="32" y="396" width="960" height="150" />
-    <symbol id="4:20343" name="State=Failed" x="1024" y="214" width="960" height="150" />
-    <symbol id="4:20342" name="State=Playing" x="32" y="214" width="960" height="150" />
-    <symbol id="4:20341" name="State=Selected" x="1024" y="32" width="960" height="150" />
-    <symbol id="4:20340" name="State=Default" x="32" y="32" width="960" height="150" />
-  </frame>
+  <symbol id="4:20338" name="scriptCast / Timeline block/Failed" x="1492" y="7758" width="680" height="150" />
+  <symbol id="4:20337" name="scriptCast / Timeline block/Playing" x="780" y="7758" width="680" height="150" />
+  <symbol id="4:20336" name="scriptCast / Timeline block/Selected" x="1492" y="7576" width="680" height="150" />
+  <symbol id="4:20335" name="scriptCast / Timeline block/Default" x="780" y="7576" width="680" height="150" />
+  <symbol id="4:20344" name="scriptCast / Turn row/Missing audio" x="780" y="8436" width="960" height="150" />
+  <symbol id="4:20343" name="scriptCast / Turn row/Failed" x="1772" y="8254" width="960" height="150" />
+  <symbol id="4:20342" name="scriptCast / Turn row/Playing" x="780" y="8254" width="960" height="150" />
+  <symbol id="4:20341" name="scriptCast / Turn row/Selected" x="1772" y="8072" width="960" height="150" />
+  <symbol id="4:20340" name="scriptCast / Turn row/Default" x="780" y="8072" width="960" height="150" />
   <frame id="4:20350" name="scriptCast / Speaker badge" x="-721" y="8724" width="1456" height="396">
     <symbol id="4:20349" name="Speaker=Sam" x="744" y="214" width="680" height="150" />
     <symbol id="4:20348" name="Speaker=Jordan" x="32" y="214" width="680" height="150" />
@@ -2449,45 +2461,57 @@
             <frame id="23:70" name="Speaker track" x="0" y="0" width="1322" height="20">
               <frame id="23:71" name="Turn segment" x="0" y="0" width="121.03644561767578" height="20">
                 <text id="23:72" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="23:73" name="Waveform" x="26" y="2" width="91.03644561767578" height="16" />
               </frame>
-              <frame id="23:73" name="Turn segment" x="211.81378173828125" y="0" width="78.14488983154297" height="20">
-                <text id="23:74" name="Turn marker" x="4" y="4" width="17" height="12" />
+              <frame id="27:187" name="Turn segment" x="211.78439331054688" y="0" width="78.13020324707031" height="20">
+                <text id="27:188" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:189" name="Waveform" x="26" y="2" width="48.13020324707031" height="16" />
               </frame>
-              <frame id="23:75" name="Turn segment" x="685.383544921875" y="0" width="88.72088623046875" height="20">
-                <text id="23:76" name="Turn marker" x="4" y="4" width="17" height="12" />
+              <frame id="27:203" name="Turn segment" x="685.3248291015625" y="0" width="88.8384017944336" height="20">
+                <text id="27:204" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:205" name="Waveform" x="26" y="2" width="58.838401794433594" height="16" />
               </frame>
-              <frame id="23:77" name="Turn segment" x="1056.4249267578125" y="0" width="122.79911041259766" height="20">
-                <text id="23:78" name="Turn marker" x="4" y="4" width="17" height="12" />
+              <frame id="27:219" name="Turn segment" x="1056.41015625" y="0" width="122.81379699707031" height="20">
+                <text id="27:220" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:221" name="Waveform" x="26" y="2" width="92.81379699707031" height="16" />
               </frame>
             </frame>
             <frame id="23:79" name="Speaker track" x="0" y="24" width="1322" height="20">
               <frame id="23:80" name="Turn segment" x="121.03644561767578" y="0" width="90.77733612060547" height="20">
                 <text id="23:81" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:235" name="Waveform" x="26" y="2" width="60.77733612060547" height="16" />
               </frame>
-              <frame id="23:82" name="Turn segment" x="487.9648742675781" y="0" width="84.60800170898438" height="20">
-                <text id="23:83" name="Turn marker" x="4" y="4" width="17" height="12" />
+              <frame id="27:249" name="Turn segment" x="487.9501953125" y="0" width="84.60800170898438" height="20">
+                <text id="27:250" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:251" name="Waveform" x="26" y="2" width="54.608001708984375" height="16" />
               </frame>
-              <frame id="23:84" name="Turn segment" x="850.19287109375" y="0" width="104.58489227294922" height="20">
-                <text id="23:85" name="Turn marker" x="4" y="4" width="17" height="12" />
+              <frame id="27:265" name="Turn segment" x="850.17822265625" y="0" width="104.57019805908203" height="20">
+                <text id="27:266" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:267" name="Waveform" x="26" y="2" width="74.57019805908203" height="16" />
               </frame>
             </frame>
             <frame id="23:86" name="Speaker track" x="0" y="48" width="1322" height="20">
               <frame id="23:87" name="Turn segment" x="289.95867919921875" y="0" width="133.08132934570312" height="20">
                 <text id="23:88" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:281" name="Waveform" x="26" y="2" width="103.08132934570312" height="16" />
               </frame>
-              <frame id="23:89" name="Turn segment" x="572.5728759765625" y="0" width="112.8106689453125" height="20">
-                <text id="23:90" name="Turn marker" x="4" y="4" width="17" height="12" />
+              <frame id="27:296" name="Turn segment" x="572.5582275390625" y="0" width="112.7666015625" height="20">
+                <text id="27:297" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:298" name="Waveform" x="26" y="2" width="82.7666015625" height="16" />
               </frame>
-              <frame id="23:91" name="Turn segment" x="954.7777709960938" y="0" width="101.64710998535156" height="20">
-                <text id="23:92" name="Turn marker" x="4" y="4" width="17" height="12" />
+              <frame id="27:312" name="Turn segment" x="954.7484130859375" y="0" width="101.66179656982422" height="20">
+                <text id="27:313" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:314" name="Waveform" x="26" y="2" width="71.66179656982422" height="16" />
               </frame>
             </frame>
             <frame id="23:93" name="Speaker track" x="0" y="72" width="1322" height="20">
               <frame id="23:94" name="Turn segment" x="423.0400085449219" y="0" width="64.92488861083984" height="20">
                 <text id="23:95" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:328" name="Waveform" x="26" y="2" width="34.924888610839844" height="16" />
               </frame>
-              <frame id="23:96" name="Turn segment" x="774.1044311523438" y="0" width="76.08844757080078" height="20">
-                <text id="23:97" name="Turn marker" x="4" y="4" width="17" height="12" />
+              <frame id="27:342" name="Turn segment" x="774.1632080078125" y="0" width="76.01499938964844" height="20">
+                <text id="27:343" name="Turn marker" x="4" y="4" width="17" height="12" />
+                <frame id="27:344" name="Waveform" x="26" y="2" width="46.01499938964844" height="16" />
               </frame>
             </frame>
             <rounded-rectangle id="23:98" name="Playhead" x="357.8653869628906" y="0" width="1.0576000213623047" height="92" />
@@ -2652,8 +2676,12 @@
         <text id="23:231" name="Current turn" x="0" y="0" width="102" height="17" />
         <text id="23:232" name="Elapsed time" x="0" y="19" width="139" height="16" />
       </frame>
-      <frame id="23:233" name="Seek track" x="443" y="30" width="608" height="4">
-        <rounded-rectangle id="23:234" name="Elapsed progress" x="0" y="0" width="180" height="4" />
+      <frame id="23:233" name="Waveform viewport" x="443" y="14" width="608" height="36">
+        <rounded-rectangle id="30:11" name="Rectangle" x="0" y="0" width="32" height="36" />
+        <rounded-rectangle id="30:12" name="Rectangle" x="576" y="0" width="32" height="36" />
+        <vector id="30:13" name="Vector" x="-214" y="10" width="414" height="17" />
+        <vector id="30:14" name="Vector" x="200" y="10" width="414" height="17" />
+        <rounded-rectangle id="30:15" name="Rectangle" x="200" y="0" width="2" height="36" />
       </frame>
       <text id="23:235" name="Label" x="1069" y="23.5" width="96" height="17" />
       <text id="23:236" name="Label" x="1183" y="24" width="99" height="16" />

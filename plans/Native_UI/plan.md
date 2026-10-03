@@ -412,6 +412,14 @@ C0. (Added 2026-10-03.) Generalise `file:Dev/Tools/scriptCast/ui/src/cli.rs` fro
 16. Create `file:Dev/Tools/scriptCast/ui/tests/checkpoints.rs` — on a temp copy of the fixture episode: `create` for RegenerateTurns writes `checkpoint.json` plus clones of manifest, render state, `TURN_INDEX.csv`, the `.als` and exactly that turn's WAVs; for Verify only `stress.json`; versions increase v01, v02; `.asd` files are skipped; modify a WAV then `restore` brings back the original bytes and leaves a `pre-restore` checkpoint holding the modified bytes; `create` into a read-only `_backups` returns an error and touches nothing else; `list` ignores folders without a valid `checkpoint.json`.
 17. Update `file:Dev/Tools/scriptCast/ui/SPEC.md` — replace "render, verify, repair, mix" with the five presets; record mix as deferred and why; record the bin-dir decision; record checkpoints and Restore as the one exception to read-only, and OpenDyslexic as the UI font; point to `ui/design/DESIGN.md` as the visual spec.
 
+**Phase B3 — Waveforms and speaker-label fix (operator request 2026-10-03; after Phase C merges)**
+
+B3.1. Remove the coloured bar drawn before speaker names in the timeline lanes (`timeline.rs`) and the table's Speaker column (`table.rs`). Figma shows the name alone, in the speaker colour (`ui/design/screens/03d-waveforms/timeline.png`, screen 02/03 tables).
+B3.2. `ui/src/waveform.rs`: per-segment peak envelopes (max abs per bucket, e.g. 1 bucket per 10 ms) computed on a background thread at episode open from the processed WAVs, cached in memory. No files are written.
+B3.3. Timeline turn blocks draw their waveform as vertical bars in the speaker colour after the turn number (Figma nodes `27:3`…, screen `03d-waveforms/timeline.png`). Static, so no extra repaint cost.
+B3.4. Playback bar: replace the seek track with the "Waveform viewport" (Figma `4:18360`): 36 high, `bg/surface` fill, 1 px border, radius 3; the playing turn's waveform scrolls under a fixed 2 px playhead at the centre, with 32 px fades at both ends (`03d-waveforms/playback-bar.png`). Click or drag seeks. **On built-in MacBook speakers** (`audio::is_builtin_speakers`), keep the plain seek track instead: the scrolling waveform needs fast redraws, and fast redraws cause audible coil whine through the speakers (operator, 2026-10-03: absent in headphones).
+B3.5. Tests: envelope of a fixture WAV (length, peak position), the seek-track fallback choice by device name, and capture evidence of both bar variants.
+
 **Phase D — Inline editing (operator request 2026-10-03; after Phase C)**
 
 D1. Modify `file:Dev/Tools/scriptCast/scriptcast/tools/export_session.py` (pending operator approval; read-only, writes nothing):
@@ -547,3 +555,6 @@ Phase A rows completed 2026-10-03; Phase B and C rows are filled as those phases
 | D5. `tests/script_edit.rs` | | | |
 | D6. `SPEC.md` | | | |
 | D4b. Settings toggle: side panel (B) or table row (A) | | | Operator decision 2026-10-03 |
+| B3.1 Speaker-name bars removed | | | |
+| B3.2–B3.4 Waveforms (timeline blocks, playback viewport, speaker fallback) | | | |
+| B3.5 Tests | | | |

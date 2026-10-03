@@ -3,7 +3,7 @@
 ## Design snapshot
 
 - Captured 2026-10-02 from Figma file `8mO8UiLLEMNEutFSkjalPD` into `ui/design/` (screens 01–06, Workspace state sheet, flow notes, tokens, 21 icons). Agent screens 07–08 excluded by the operator.
-- Figma MCP calls used this month: 15 (5 on 2026-10-03 for the inline-edit A/B; the operator upgraded the plan) (1 Workspace state, 2 metadata, 7 frames). Loops make none.
+- Figma MCP calls used this month: 19 (the operator upgraded the Figma plan on 2026-10-03) (5 on 2026-10-03 for the inline-edit A/B; the operator upgraded the plan) (1 Workspace state, 2 metadata, 7 frames). Loops make none.
 
 ## Operator decisions
 
@@ -115,3 +115,7 @@
 ## Phase E — Read-along word highlighting
 
 - Requested 2026-10-03 (shown in Figma Alternative B). Planned after D; needs per-word timings from Python (captions.py alignment).
+
+## Phase B3 — Waveforms and speaker-label fix
+
+- Requested 2026-10-03: bars before speaker names do not match Figma; waveform in timeline blocks and a scrolling waveform playback bar, falling back to the plain seek track on MacBook speakers (coil whine). Figma captured to `ui/design/screens/03d-waveforms/`. Runs after Phase C merges (Phase C is editing table.rs and main.rs).
