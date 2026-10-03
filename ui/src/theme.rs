@@ -66,6 +66,7 @@ pub const SEEK_TRACK_HEIGHT: f32 = 4.0;
 pub const PROGRESS_HEIGHT: f32 = 3.0;
 pub const STATUS_BAR_HEIGHT: f32 = 26.0;
 pub const BUTTON_HEIGHT: f32 = 30.0;
+pub const CLI_POPOVER_WIDTH: f32 = 360.0;
 pub const BUTTON_PAD_X: f32 = 11.0;
 pub const BUTTON_ICON: f32 = 16.0;
 pub const BUTTON_ICON_GAP: f32 = 7.0;

@@ -8,6 +8,8 @@ use eframe::egui::{self, Align, Layout, Rect, Sense, Ui, UiBuilder, pos2, vec2};
 use inspector::InspectorMode;
 use scriptcast_ui::{
     audio::{self, AudioOut},
+    cli::{self, ExportCommand},
+    daw::{self, DawEvent, DawTask},
     episode::{Episode, LoadError, VerificationState as V, overview_section_count},
     theme as t,
 };
@@ -52,6 +54,8 @@ struct RecentEpisode {
 #[derive(Serialize, Deserialize)]
 #[serde(default)]
 struct Preferences {
+    /// Folder containing scriptcast-export; None (or empty) uses discovery.
+    cli_dir: Option<PathBuf>,
     last_episode: Option<PathBuf>,
     recent: Vec<RecentEpisode>,
     /// Play the next visible turn when the current one finishes (screen 03).
@@ -63,6 +67,7 @@ struct Preferences {
 impl Default for Preferences {
     fn default() -> Self {
         Self {
+            cli_dir: None,
             last_episode: None,
             recent: Vec::new(),
             auto_advance: true,
@@ -193,6 +198,10 @@ fn neighbour_targets(visible: &[usize], current: Option<usize>) -> (Option<usize
 }
 #[derive(Default)]
 struct Browser {
+    export_command: Option<Result<ExportCommand, String>>,
+    live_task: Option<DawTask>,
+    logic_task: Option<DawTask>,
+    daw_notice: Option<Result<String, String>>,
     episode: Option<Episode>,
     pending: Option<PendingLoad>,
     error: Option<(PathBuf, String)>,
@@ -308,6 +317,7 @@ impl Browser {
         }
     }
     fn reload(&mut self, ctx: &egui::Context) {
+        self.export_command = None;
         if let Some(e) = &self.episode {
             self.open(e.dir.clone(), ctx);
         }
@@ -331,6 +341,8 @@ impl Browser {
         }
     }
     fn accept_episode(&mut self, episode: Episode, ctx: &egui::Context) {
+        self.export_command = None;
+        self.daw_notice = None;
         // Reloading replaces the WAV paths under any playing player; stop first.
         self.stop_audio();
         self.missing_audio_card = false;
@@ -738,9 +750,7 @@ impl Browser {
                     && cap.quiet_since.elapsed() >= capture::QUIET
             };
             if ready {
-                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
-                    egui::UserData::default(),
-                ));
+                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::default()));
                 cap.phase = capture::Phase::Requested;
                 cap.requested_at = Instant::now();
             }
@@ -750,9 +760,7 @@ impl Browser {
             // The screenshot action is only drained on frames the OS reports
             // as visible (eframe glow_integration.rs); a request issued before
             // the window became visible would wait forever, so re-request.
-            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
-                egui::UserData::default(),
-            ));
+            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::default()));
             cap.requested_at = Instant::now();
         }
         ctx.request_repaint_after(capture::TICK);
@@ -848,6 +856,87 @@ impl Browser {
                 .max_rect(remaining)
                 .layout(Layout::right_to_left(Align::Center)),
         );
+        actions.spacing_mut().item_spacing.x = t::SPACE_8;
+        // This row is laid out right-to-left: CLI, Logic, Live, Reload, Open.
+        let settings = t::secondary_button(&mut actions, "CLI…", None, true);
+        egui::Popup::menu(&settings).show(|ui| {
+            ui.set_max_width(t::CLI_POPOVER_WIDTH);
+            ui.label(t::heading("CLI folder", t::SECTION_TITLE));
+            ui.label(t::text(
+                self.preferences
+                    .cli_dir
+                    .as_deref()
+                    .filter(|path| !path.as_os_str().is_empty())
+                    .map_or_else(
+                        || "Unset — search PATH, then dev checkout".into(),
+                        |p| p.display().to_string(),
+                    ),
+                t::SECONDARY,
+                t::TEXT_MUTED,
+            ));
+            if t::secondary_button(ui, "Choose folder…", None, true).clicked()
+                && let Some(path) = rfd::FileDialog::new()
+                    .set_title("Folder containing scriptcast-export")
+                    .pick_folder()
+            {
+                self.preferences.cli_dir = Some(path);
+                self.export_command = None;
+            }
+            if t::secondary_button(ui, "Clear", None, self.preferences.cli_dir.is_some()).clicked()
+            {
+                self.preferences.cli_dir = None;
+                self.export_command = None;
+            }
+        });
+        let export = self
+            .export_command
+            .get_or_insert_with(|| cli::resolve_export(self.preferences.cli_dir.as_deref()))
+            .clone();
+        let logic_reason = if self.logic_task.is_some() {
+            Some("Preparing for Logic…".into())
+        } else {
+            daw::logic_disabled_reason(self.episode.as_ref(), &export)
+        };
+        let source = match &export {
+            Ok(command) => command.description(),
+            Err(error) => error.clone(),
+        };
+        let logic_hint = if self.episode.as_ref().is_some_and(daw::fcpxml_is_fresh) {
+            format!("Open existing fresh FCPXML; no export needed.\n{source}")
+        } else {
+            format!("Export FCPXML, then open in Logic.\n{source}")
+        };
+        let logic_hint = logic_reason.as_ref().map_or(logic_hint.clone(), |reason| {
+            format!("{reason}\n{logic_hint}")
+        });
+        let logic = t::secondary_button(
+            &mut actions,
+            if self.logic_task.is_some() {
+                "Preparing for Logic…"
+            } else {
+                "Open in Logic"
+            },
+            None,
+            logic_reason.is_none(),
+        )
+        .on_hover_text(&logic_hint)
+        .on_disabled_hover_text(&logic_hint)
+        .clicked();
+        let live_reason = if self.live_task.is_some() {
+            Some("Opening in Live…".into())
+        } else {
+            daw::live_disabled_reason(self.episode.as_ref())
+        };
+        let live_hint = live_reason.clone().unwrap_or_else(|| {
+            self.episode
+                .as_ref()
+                .and_then(daw::live_target)
+                .map_or_else(String::new, |p| format!("Open {} in Live", p.display()))
+        });
+        let live = t::secondary_button(&mut actions, "Open in Live", None, live_reason.is_none())
+            .on_hover_text(&live_hint)
+            .on_disabled_hover_text(&live_hint)
+            .clicked();
         reload |= t::secondary_button(
             &mut actions,
             "Reload",
@@ -901,6 +990,23 @@ impl Browser {
                 format!("{metadata}\n\nWarnings:\n{warnings}")
             });
         let ctx = ui.ctx().clone();
+        if live && let Some(path) = self.episode.as_ref().and_then(daw::live_target) {
+            self.daw_notice = Some(Ok(format!("Opening {} in Live", daw::filename(&path))));
+            self.live_task = Some(DawTask::live(path, ctx.clone()));
+        }
+        if logic && let Some(episode) = &self.episode {
+            self.daw_notice = Some(Ok(if daw::fcpxml_is_fresh(episode) {
+                "Opening in Logic…".into()
+            } else {
+                format!("Writing {}…", daw::filename(&daw::fcpxml_path(episode)))
+            }));
+            self.logic_task = Some(DawTask::logic(
+                episode,
+                export,
+                daw::logic_command,
+                ctx.clone(),
+            ));
+        }
         if reload {
             self.reload(&ctx);
         }
@@ -1101,7 +1207,12 @@ impl Browser {
             + t::SPACE_6
             + t::SPACE_12;
         if self.preferences.recent.is_empty() {
-            height += t::wrapped_height(ui, "No recent episodes yet.", t::font(t::BODY), t::EMPTY_RIGHT);
+            height += t::wrapped_height(
+                ui,
+                "No recent episodes yet.",
+                t::font(t::BODY),
+                t::EMPTY_RIGHT,
+            );
         } else {
             let rows = self.preferences.recent.len() as f32;
             height += rows * t::EPISODE_HEADER_HEIGHT + (rows - 1.0) * t::SPACE_6;
@@ -1271,7 +1382,11 @@ impl Browser {
             .selected_text(t::text(current_device.clone(), t::SECONDARY, t::TEXT_MUTED))
             .show_ui(&mut options, |ui| {
                 if self.device_list.is_empty() {
-                    ui.label(t::text("No output devices found", t::SECONDARY, t::TEXT_MUTED));
+                    ui.label(t::text(
+                        "No output devices found",
+                        t::SECONDARY,
+                        t::TEXT_MUTED,
+                    ));
                 }
                 for name in &self.device_list {
                     if ui
@@ -1335,7 +1450,11 @@ impl Browser {
     }
     fn status(&self, ui: &mut Ui) {
         let rect = view::inset(ui.max_rect(), t::SPACE_20, 0.0);
-        let status = if let Some(turn) = self.transport.turn() {
+        let status = if let Some(notice) = &self.daw_notice {
+            match notice {
+                Ok(message) | Err(message) => message.clone(),
+            }
+        } else if let Some(turn) = self.transport.turn() {
             let index = self
                 .episode
                 .as_ref()
@@ -1389,7 +1508,38 @@ impl Browser {
             rect.min,
             pos2(row.min_rect().left() - t::SPACE_20, rect.bottom()),
         );
-        view::line(ui, left, &status, t::font(t::CAPTION), t::TEXT_MUTED);
+        let color = if self.daw_notice.as_ref().is_some_and(Result::is_err) {
+            t::STATUS_FAILED
+        } else {
+            t::TEXT_MUTED
+        };
+        view::line(
+            ui,
+            left,
+            &status.replace('\n', " · "),
+            t::font(t::CAPTION),
+            color,
+        );
+        ui.interact(left, ui.id().with("status_details"), Sense::hover())
+            .on_hover_text(&status);
+    }
+    fn poll_daw(&mut self) {
+        for task in [&mut self.live_task, &mut self.logic_task] {
+            while let Some(pending) = task.as_ref() {
+                match pending.receiver.try_recv() {
+                    Ok(DawEvent::Progress(message)) => self.daw_notice = Some(Ok(message)),
+                    Ok(DawEvent::Finished(result)) => {
+                        self.daw_notice = Some(result);
+                        *task = None;
+                    }
+                    Err(mpsc::TryRecvError::Empty) => break,
+                    Err(mpsc::TryRecvError::Disconnected) => {
+                        self.daw_notice = Some(Err("DAW task stopped unexpectedly".into()));
+                        *task = None;
+                    }
+                }
+            }
+        }
     }
     /// File name of the selected turn's first missing WAV, for the Missing
     /// audio card; `None` when nothing is missing.
@@ -1585,10 +1735,8 @@ impl Browser {
                     let width = InspectorMode::SelectedTurn
                         .width()
                         .min(review.width() / 2.0);
-                    let inspector = Rect::from_min_max(
-                        pos2(review.right() - width, review.top()),
-                        review.max,
-                    );
+                    let inspector =
+                        Rect::from_min_max(pos2(review.right() - width, review.top()), review.max);
                     (
                         Rect::from_min_max(review.min, pos2(inspector.left(), review.bottom())),
                         Some(inspector),
@@ -1651,6 +1799,7 @@ impl Browser {
 impl eframe::App for Browser {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.poll_load(ctx);
+        self.poll_daw();
         self.poll_audio(ctx);
         self.capture_logic(ctx);
     }
@@ -1829,6 +1978,41 @@ fn main() -> eframe::Result {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn cli_folder_preferences_round_trip_and_old_preferences_still_load() {
+        let old: Preferences = serde_json::from_str("{}").unwrap();
+        assert!(old.cli_dir.is_none());
+        let preferences = Preferences {
+            cli_dir: Some(PathBuf::from("/tmp/scriptcast-b2/my cli folder")),
+            ..Preferences::default()
+        };
+        let saved = serde_json::to_string(&preferences).unwrap();
+        let restored: Preferences = serde_json::from_str(&saved).unwrap();
+        assert_eq!(restored.cli_dir, preferences.cli_dir);
+    }
+
+    #[test]
+    fn daw_progress_completion_and_worker_loss_update_status() {
+        let mut app = Browser::default();
+        let (sender, receiver) = mpsc::channel();
+        app.logic_task = Some(DawTask { receiver });
+        sender.send(DawEvent::Progress("Writing episode.fcpxml…".into())).unwrap();
+        app.poll_daw();
+        assert!(app.logic_task.is_some());
+        assert_eq!(app.daw_notice, Some(Ok("Writing episode.fcpxml…".into())));
+        sender.send(DawEvent::Finished(Err("export failed".into()))).unwrap();
+        app.poll_daw();
+        assert!(app.logic_task.is_none());
+        assert_eq!(app.daw_notice, Some(Err("export failed".into())));
+
+        let (sender, receiver) = mpsc::channel();
+        app.logic_task = Some(DawTask { receiver });
+        drop(sender);
+        app.poll_daw();
+        assert!(app.logic_task.is_none());
+        assert_eq!(app.daw_notice, Some(Err("DAW task stopped unexpectedly".into())));
+    }
+
     fn fixture() -> Episode {
         Episode::load(
             &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/episode_small"),
@@ -2072,11 +2256,7 @@ mod tests {
     fn inspector_renders_headlessly_in_all_transport_states() {
         let ctx = egui::Context::default();
         t::apply(&ctx);
-        for transport in [
-            Transport::Idle,
-            Transport::Playing(0),
-            Transport::Paused(0),
-        ] {
+        for transport in [Transport::Idle, Transport::Playing(0), Transport::Paused(0)] {
             let mut app = Browser::default();
             app.accept_episode(fixture(), &ctx);
             app.select(0);

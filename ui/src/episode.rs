@@ -61,6 +61,8 @@ pub struct SegmentEntry {
 #[derive(Clone, Debug, Deserialize)]
 pub struct RenderState {
     #[serde(default)]
+    pub als_path: Option<PathBuf>,
+    #[serde(default)]
     pub schema_version: String,
     #[serde(default)]
     pub source_file: String,
@@ -123,6 +125,7 @@ pub struct Turn {
 #[derive(Debug)]
 pub struct Episode {
     pub dir: PathBuf,
+    pub als_path: Option<PathBuf>,
     pub project_root: Option<PathBuf>,
     pub script_path: Option<PathBuf>,
     pub script_in_sync: Option<bool>,
@@ -385,6 +388,7 @@ impl Episode {
             .ok();
         Ok(Self {
             dir,
+            als_path: state.as_ref().and_then(|s| s.als_path.clone()),
             project_root,
             script_path,
             script_in_sync,
