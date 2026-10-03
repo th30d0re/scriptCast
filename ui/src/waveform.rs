@@ -74,6 +74,29 @@ pub fn bars(env: &Envelope, n: usize) -> Vec<f32> {
     res
 }
 
+/// Seconds covered by one [`Envelope`] peak bucket (see [`envelope`]).
+pub const BUCKET_SECS: f32 = 0.01;
+
+/// Max peak in `[t0, t1)` seconds, or `None` when that range is outside the turn.
+pub fn peak_in_range(env: &Envelope, t0: f32, t1: f32, dur_sec: f32) -> Option<f32> {
+    if t1 <= 0.0 || t0 >= dur_sec || env.peaks.is_empty() {
+        return None;
+    }
+    let start = ((t0.max(0.0) / BUCKET_SECS) as usize).min(env.peaks.len());
+    let end = ((t1.min(dur_sec) / BUCKET_SECS).ceil() as usize)
+        .max(start + 1)
+        .min(env.peaks.len());
+    if start >= end {
+        return None;
+    }
+    Some(
+        env.peaks[start..end]
+            .iter()
+            .copied()
+            .fold(0.0_f32, f32::max),
+    )
+}
+
 pub struct Waveforms {
     receiver: Receiver<(usize, Envelope)>,
     envelopes: HashMap<usize, Envelope>,
@@ -178,6 +201,17 @@ mod tests {
         assert_eq!(b.len(), 2);
         assert_eq!(b[0], 0.9);
         assert_eq!(b[1], 0.5);
+    }
+
+    #[test]
+    fn test_peak_in_range() {
+        let env = Envelope {
+            peaks: vec![0.1, 0.9, 0.2, 0.5],
+        };
+        assert_eq!(peak_in_range(&env, -1.0, -0.1, 0.04), None);
+        assert_eq!(peak_in_range(&env, 0.04, 0.05, 0.04), None);
+        assert_eq!(peak_in_range(&env, 0.0, 0.02, 0.04), Some(0.9));
+        assert_eq!(peak_in_range(&env, 0.02, 0.04, 0.04), Some(0.5));
     }
 
     #[test]
