@@ -61,14 +61,15 @@
 ## Phase B2 — Open in DAW
 
 - Requested 2026-10-03 by the operator: "Open in Live" and "Open in Logic". Operator approved a small Python change (`scriptcast-export`).
-- Status: **Python part in progress** (B2.1–B2.3 dispatched to Codex in worktree `Dev/Tools/scriptCast-worktrees/export-fcpxml`, branch `py/export-fcpxml`; brief `briefs/export-fcpxml.md`); UI part (B2.4–B2.5) waits for Phase B to merge.
+- Status: **Python part merged to dev**; UI part (B2.4–B2.5) waits for Phase B to merge.
+- Follow-ups: the render path's own `--fcpxml` still declares stereo (it does not set `audio_channels`); `--logic` AppleScript exporter is non-functional on Logic 12.4 — candidates for a later cleanup.
 
 ### Checklist
 
 | # | Check | Result | Notes |
 |---|---|---|---|
-| 1 | `scriptcast-export --fcpxml` writes 392 assets for EP03 to `--out`, mono channels, EP03 untouched | ⬜ | |
-| 2 | Python tests for export + generator green; full suite run reported | ⬜ | |
+| 1 | `scriptcast-export --fcpxml` writes 392 assets for EP03 to `--out`, mono channels, EP03 untouched | ✅ | max offset error 16.67 ms (accepted 30 fps rounding, operator-visible in --help) |
+| 2 | Python tests for export + generator green; full suite run reported | ✅ | 28 targeted; full 213 passed / 11 failed = dev's pre-existing pronunciation failures |
 | 3 | Open in Live opens EP03's `.als` in Live 12 (operator) | ⬜ | |
 | 4 | Open in Logic imports the FCPXML with clips at the right times (operator) | ⬜ | |
 | 5 | Buttons disabled with tooltip when the `.als` is missing or the CLI is unavailable | ⬜ | |
