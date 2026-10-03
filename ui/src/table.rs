@@ -178,17 +178,9 @@ pub fn show(
                     t::TEXT_MUTED,
                 );
                 let colour = t::speaker_colour(speaker.colour_idx);
-                ui.painter().rect_filled(
-                    Rect::from_min_size(
-                        pos2(cells[2].left(), cells[2].center().y - t::SPACE_6),
-                        vec2(t::SPACE_2, t::SPACE_12),
-                    ),
-                    0,
-                    colour,
-                );
                 view::line(
                     ui,
-                    Rect::from_min_max(cells[2].min + vec2(t::SPACE_6, 0.0), cells[2].max),
+                    cells[2],
                     &speaker.name,
                     t::font(t::SPEAKER_LABEL),
                     colour,
