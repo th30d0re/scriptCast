@@ -24,6 +24,13 @@ impl InspectorMode {
             Self::Jobs => t::INSPECTOR_WIDTH_JOB_RUNNER,
         }
     }
+    /// Width for the review row: a persisted override, else this mode's default,
+    /// clamped between `INSPECTOR_MIN` and `INSPECTOR_MAX_FRACTION` of the row.
+    pub fn panel_width(self, custom: Option<f32>, row_width: f32) -> f32 {
+        let desired = custom.unwrap_or_else(|| self.width());
+        let max = (row_width * t::INSPECTOR_MAX_FRACTION).max(t::INSPECTOR_MIN);
+        desired.clamp(t::INSPECTOR_MIN, max).min(row_width)
+    }
     fn title(self) -> &'static str {
         match self {
             Self::SelectedTurn => "Selected turn",

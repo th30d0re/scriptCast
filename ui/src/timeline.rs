@@ -232,6 +232,11 @@ pub fn show(
         tick += step;
     }
     let lanes = Rect::from_min_max(pos2(content.left(), ruler.bottom()), content.right_bottom());
+    // Extra timeline height spreads across speaker lanes up to TIMELINE_LANE_MAX.
+    let lane_count = episode.speakers.len().max(1) as f32;
+    let lane_gaps = (lane_count - 1.0) * t::TIMELINE_LANE_GAP;
+    let even = ((lanes.height() - lane_gaps) / lane_count).max(0.0);
+    let lane_height = even.clamp(t::TIMELINE_LANE_HEIGHT, t::TIMELINE_LANE_MAX);
     let mut lane_ui = view::region(ui, "lanes", lanes, t::BG_WINDOW);
     lane_ui.spacing_mut().item_spacing.y = t::TIMELINE_LANE_GAP;
     let mut clicked = None;
@@ -240,10 +245,8 @@ pub fn show(
         .auto_shrink([false, false])
         .show(&mut lane_ui, |ui| {
             for (speaker_idx, speaker) in episode.speakers.iter().enumerate() {
-                let (lane, _) = ui.allocate_exact_size(
-                    vec2(ui.available_width(), t::TIMELINE_LANE_HEIGHT),
-                    Sense::hover(),
-                );
+                let (lane, _) =
+                    ui.allocate_exact_size(vec2(ui.available_width(), lane_height), Sense::hover());
                 let colour = t::speaker_colour(speaker.colour_idx);
                 let label = Rect::from_min_size(lane.min, vec2(label_width, lane.height()));
                 view::line(ui, label, &speaker.name, t::font(t::SPEAKER_LABEL), colour);

@@ -69,6 +69,12 @@ struct Preferences {
     /// Output device choice, persisted by name; a gone device falls back to
     /// the default output with a notice.
     output_device: Option<String>,
+    /// Timeline pane height; `None` uses `t::TIMELINE_HEIGHT`.
+    #[serde(default)]
+    timeline_height: Option<f32>,
+    /// Inspector pane width for every mode; `None` uses each mode's default.
+    #[serde(default)]
+    inspector_width: Option<f32>,
 }
 fn default_true() -> bool {
     true
@@ -82,6 +88,8 @@ impl Default for Preferences {
             auto_advance: true,
             gapless: true,
             output_device: None,
+            timeline_height: None,
+            inspector_width: None,
         }
     }
 }
@@ -266,6 +274,10 @@ impl Browser {
         };
         if cli.no_gapless {
             preferences.gapless = false;
+        }
+        if let Some((timeline_height, inspector_width)) = cli.layout {
+            preferences.timeline_height = Some(timeline_height);
+            preferences.inspector_width = Some(inspector_width);
         }
         let muted = cli.effective_muted();
         let (audio, audio_notice) = match AudioOut::open(preferences.output_device.as_deref()) {
@@ -1998,8 +2010,13 @@ impl Browser {
         self.playback(&mut view::region(ui, "playback", playback, t::BG_RAISED));
         self.status(&mut view::region(ui, "status", status, t::BG_WINDOW));
         if self.episode.is_some() {
-            let timeline =
-                Rect::from_min_size(workspace.min, vec2(workspace.width(), t::TIMELINE_HEIGHT));
+            let timeline_max = (workspace.height() * t::TIMELINE_MAX_FRACTION).max(t::TIMELINE_MIN);
+            let timeline_h = self
+                .preferences
+                .timeline_height
+                .unwrap_or(t::TIMELINE_HEIGHT)
+                .clamp(t::TIMELINE_MIN, timeline_max);
+            let timeline = Rect::from_min_size(workspace.min, vec2(workspace.width(), timeline_h));
             let filter = Rect::from_min_size(
                 timeline.left_bottom(),
                 vec2(workspace.width(), t::FILTER_BAR_HEIGHT),
@@ -2032,14 +2049,29 @@ impl Browser {
             if let Some(i) = clicked {
                 self.multi_select(i, ctx.input(|i| i.modifiers));
             }
-            // The Selected turn inspector takes the right 376 px of the review
-            // row whenever a turn is selected.
+            let h_split = view::splitter_horizontal(
+                ui,
+                "timeline_splitter",
+                timeline.bottom(),
+                workspace.left(),
+                workspace.right(),
+            );
+            if h_split.reset {
+                self.preferences.timeline_height = None;
+            } else if h_split.drag_delta != 0.0 {
+                let next = (timeline_h + h_split.drag_delta).clamp(t::TIMELINE_MIN, timeline_max);
+                self.preferences.timeline_height = Some(next);
+            }
+            // The inspector takes the right side of the review row whenever a
+            // turn is selected (or Jobs mode is open); width is resizable.
+            // The inspector takes the right of the review row whenever a turn is
+            // selected: its mode's default width, or the operator's dragged width.
             let mode = self.jobs.mode.unwrap_or(InspectorMode::SelectedTurn);
             let (table_rect, inspector_rect) = match selected_turn.is_some()
                 || mode == InspectorMode::Jobs
             {
                 true => {
-                    let width = mode.width().min(review.width() / 2.0);
+                    let width = mode.panel_width(self.preferences.inspector_width, review.width());
                     let inspector =
                         Rect::from_min_max(pos2(review.right() - width, review.top()), review.max);
                     (
@@ -2118,6 +2150,26 @@ impl Browser {
                         }
                         None => {}
                     }
+                }
+            }
+            if let Some(inspector) = inspector_rect {
+                let width = inspector.width();
+                let max_w = (review.width() * t::INSPECTOR_MAX_FRACTION).max(t::INSPECTOR_MIN);
+                let v_split = view::splitter_vertical(
+                    ui,
+                    "inspector_splitter",
+                    inspector.left(),
+                    review.top(),
+                    review.bottom(),
+                );
+                if v_split.reset {
+                    self.preferences.inspector_width = None;
+                } else if v_split.drag_delta != 0.0 {
+                    // Inspector is on the right: drag left widens it.
+                    let next = (width - v_split.drag_delta)
+                        .clamp(t::INSPECTOR_MIN, max_w)
+                        .min(review.width());
+                    self.preferences.inspector_width = Some(next);
                 }
             }
         } else {
@@ -2323,13 +2375,19 @@ mod tests {
     fn cli_folder_preferences_round_trip_and_old_preferences_still_load() {
         let old: Preferences = serde_json::from_str("{}").unwrap();
         assert!(old.cli_dir.is_none());
+        assert!(old.timeline_height.is_none());
+        assert!(old.inspector_width.is_none());
         let preferences = Preferences {
             cli_dir: Some(PathBuf::from("/tmp/scriptcast-b2/my cli folder")),
+            timeline_height: Some(420.0),
+            inspector_width: Some(480.0),
             ..Preferences::default()
         };
         let saved = serde_json::to_string(&preferences).unwrap();
         let restored: Preferences = serde_json::from_str(&saved).unwrap();
         assert_eq!(restored.cli_dir, preferences.cli_dir);
+        assert_eq!(restored.timeline_height, Some(420.0));
+        assert_eq!(restored.inspector_width, Some(480.0));
     }
 
     #[test]

@@ -38,14 +38,21 @@ pub const RADIUS_DIALOG: f32 = 12.0;
 pub const TITLE_BAR_HEIGHT: f32 = 38.0;
 pub const EPISODE_HEADER_HEIGHT: f32 = 76.0;
 pub const TIMELINE_HEIGHT: f32 = 188.0;
+pub const TIMELINE_MIN: f32 = 140.0;
+/// Timeline may grow to this fraction of the workspace height.
+pub const TIMELINE_MAX_FRACTION: f32 = 0.7;
 pub const TIMELINE_OVERVIEW_HEIGHT: f32 = 17.0;
 pub const TIMELINE_VISIBLE_RANGE_HEIGHT: f32 = 21.0;
 pub const TIMELINE_RULER_HEIGHT: f32 = 18.0;
 pub const TIMELINE_LANE_HEIGHT: f32 = 20.0;
+/// Cap when the timeline is tall: extra space spreads across lanes up to this.
+pub const TIMELINE_LANE_MAX: f32 = 48.0;
 pub const TIMELINE_LANE_GAP: f32 = 4.0;
 pub const TIMELINE_LANE_LABEL_WIDTH: f32 = 66.0;
 pub const TIMELINE_LANES_TO_LABEL_GAP: f32 = 12.0;
 pub const TIMELINE_RULER_LEFT_PAD: f32 = 80.0;
+/// Drag hit thickness for pane splitters (centred on the boundary).
+pub const SPLITTER_HIT: f32 = 6.0;
 pub const WAVE_BAR: f32 = 1.5;
 pub const WAVE_GAP: f32 = 1.5;
 pub const WAVE_MIN: f32 = 1.0;
@@ -68,6 +75,9 @@ pub const TABLE_COL_GAP: f32 = 12.0;
 pub const INSPECTOR_WIDTH_SELECTED_TURN: f32 = 376.0;
 pub const INSPECTOR_WIDTH_VERIFICATION: f32 = 436.0;
 pub const INSPECTOR_WIDTH_JOB_RUNNER: f32 = 510.0;
+pub const INSPECTOR_MIN: f32 = 320.0;
+/// Inspector may grow to this fraction of the review row width.
+pub const INSPECTOR_MAX_FRACTION: f32 = 0.6;
 pub const INSPECTOR_HEADING_HEIGHT: f32 = 39.0;
 pub const PLAYBACK_BAR_HEIGHT: f32 = 64.0;
 pub const PLAYBACK_CURRENT_AUDIO_WIDTH: f32 = 226.0;
