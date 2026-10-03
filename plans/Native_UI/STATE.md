@@ -119,3 +119,5 @@
 ## Phase B3 — Waveforms and speaker-label fix
 
 - Requested 2026-10-03: bars before speaker names do not match Figma; waveform in timeline blocks and a scrolling waveform playback bar, falling back to the plain seek track on MacBook speakers (coil whine). Figma captured to `ui/design/screens/03d-waveforms/`. Runs after Phase C merges (Phase C is editing table.rs and main.rs).
+- Speaker whine: SOLVED 2026-10-03. Cause: rodio resampled the 48 kHz WAVs to the speakers' 44.1 kHz with a cheap interpolator (simulated: a 15.3 kHz tone 17.5 dB stronger than proper conversion). Fix: open the output at 48 kHz (`d0`…, merged `0.3.2-48k`); operator confirmed by ear. Repaint rate and the gaps were not the cause, so B3 drops the speakers-only waveform fallback and the 250 ms speaker tick.
+- Gemini works well on tight, pseudocode-level chunks (B3 chunks 1–3), with the orchestrator checking each; it tends to delete comments and skip cargo fmt.
