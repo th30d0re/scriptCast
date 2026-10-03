@@ -413,11 +413,11 @@ Phase A rows completed 2026-10-03; Phase B and C rows are filled as those phases
 | 8. `main.rs` browser window (screens 01, 02 + Empty/Loading/Error) | Done; split into `timeline.rs`, `table.rs`, `view.rs`, `capture.rs`; `--screenshot/--fresh/--size/--select` added | Yes | Self-capture added because UI control was declined; egui 0.36 API differences in findings |
 | 9. `audio.rs` | Done | Yes | Devices via cpal + `DeviceSinkBuilder::from_device` (rodio `speakers` is behind `experimental`); wall-clock position (`get_pos` resets per segment); seek within current segment only |
 | 10. `main.rs` playback (screen 03 + Missing audio/Unavailable device) | Done; `inspector.rs` with `InspectorMode`; capture flags `--play/--at/--mute/--simulate-device-loss` | Yes | FIRST WORDS vs TRANSCRIPT labelling; auto-advance skips missing-audio turns; state cards drop Figma specimen captions |
-| B2.1 `scriptcast-export --fcpxml` | | | |
-| B2.2 FCPXML mono channel fix | | | |
-| B2.3 Python tests | | | |
-| B2.4 `daw.rs` + Open in Live / Open in Logic | | | |
-| B2.5 UI tests | | | |
+| B2.1 `scriptcast-export --fcpxml` | Done (Codex) | Yes | Accepted the generator's 1/30 s frame rounding (≤16.7 ms); documented in --help |
+| B2.2 FCPXML mono channel fix | Done via `SegmentResult.audio_channels` (default 2) | No | Render path's own --fcpxml still declares stereo (follow-up) |
+| B2.3 Python tests | 28 targeted; full suite 213 pass / 11 pre-existing failures | No | |
+| B2.4 `daw.rs` + Open in Live / Open in Logic | Done + `cli.rs` resolver + CLI… popover | Yes | Export cwd is the episode dir (brief), not the project root; dev-checkout fallback because scriptcast-export is not installed |
+| B2.5 UI tests | 16 in `tests/daw_cli.rs` incl. real export on a fixture copy with a no-op opener | No | |
 | 11. `runner.rs` presets + job | | | |
 | 12. `checkpoint.rs` create / list / restore | | | |
 | 13. `episode.rs` voices path + stress join | | | |

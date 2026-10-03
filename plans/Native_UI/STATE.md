@@ -63,7 +63,7 @@
 ## Phase B2 — Open in DAW
 
 - Requested 2026-10-03 by the operator: "Open in Live" and "Open in Logic". Operator approved a small Python change (`scriptcast-export`).
-- Status: **Python part merged to dev**; UI part (B2.4–B2.5) waits for Phase B to merge.
+- Status: **merged to dev** (UI part by Codex; operator checks 3–4 pending). Header shows Open / Reload / Open in Live / Open in Logic / CLI….
 - Follow-ups: the render path's own `--fcpxml` still declares stereo (it does not set `audio_channels`); `--logic` AppleScript exporter is non-functional on Logic 12.4 — candidates for a later cleanup.
 
 ### Checklist
@@ -74,7 +74,7 @@
 | 2 | Python tests for export + generator green; full suite run reported | ✅ | 28 targeted; full 213 passed / 11 failed = dev's pre-existing pronunciation failures |
 | 3 | Open in Live opens EP03's `.als` in Live 12 (operator) | ⬜ | |
 | 4 | Open in Logic imports the FCPXML with clips at the right times (operator) | ⬜ | |
-| 5 | Buttons disabled with tooltip when the `.als` is missing or the CLI is unavailable | ⬜ | |
+| 5 | Buttons disabled with tooltip when the `.als` is missing or the CLI is unavailable | ✅ | unit-tested disabled reasons; export source (Folder/PATH/DevCheckout) shown in tooltip |
 
 ## Phase C — Job Runner and Verify Overlay
 
