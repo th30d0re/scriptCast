@@ -70,6 +70,7 @@ pub struct Cli {
     pub confirm: Option<String>,
     pub run: Option<String>,
     pub running_screenshot: Option<PathBuf>,
+    pub no_gapless: bool,
 }
 
 impl Cli {
@@ -89,6 +90,7 @@ impl Cli {
             confirm: None,
             run: None,
             running_screenshot: None,
+            no_gapless: false,
         };
         let mut positional_only = false;
         let mut args = args.into_iter();
@@ -147,6 +149,7 @@ impl Cli {
                 "--play" => cli.play = true,
                 "--mute" => cli.mute = true,
                 "--simulate-device-loss" => cli.simulate_device_loss = true,
+                "--no-gapless" => cli.no_gapless = true,
                 "--running-screenshot" => {
                     cli.running_screenshot = Some(PathBuf::from(
                         args.next().ok_or("--running-screenshot needs a path")?,

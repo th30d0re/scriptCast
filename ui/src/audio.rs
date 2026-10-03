@@ -12,6 +12,7 @@ use rodio::{
     ChannelCount, Decoder, DeviceSinkBuilder, MixerDeviceSink, Player, SampleRate, Source, cpal,
 };
 use std::{
+    collections::VecDeque,
     fmt,
     fs::File,
     io::BufReader,
@@ -19,6 +20,34 @@ use std::{
     sync::mpsc::{self, Receiver, Sender},
     time::{Duration, Instant},
 };
+
+/// Turns appended to one player, in order, with their durations. Pure
+/// bookkeeping, so gapless boundaries can be tested without a device.
+#[derive(Default)]
+pub struct TurnQueue {
+    entries: VecDeque<(usize, Duration)>,
+}
+
+impl TurnQueue {
+    pub fn push(&mut self, turn: usize, duration: Duration) {
+        self.entries.push_back((turn, duration));
+    }
+    pub fn clear(&mut self) {
+        self.entries.clear();
+    }
+    pub fn current(&self, mut elapsed: Duration) -> Option<(usize, Duration, usize)> {
+        if self.entries.is_empty() {
+            return None;
+        }
+        for (i, &(turn, dur)) in self.entries.iter().enumerate() {
+            if elapsed < dur || (elapsed == dur && i == self.entries.len() - 1) {
+                return Some((turn, elapsed.min(dur), i));
+            }
+            elapsed -= dur;
+        }
+        None
+    }
+}
 
 /// Stream info of one decoded WAV, for the inspector's FILE field.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -66,11 +95,10 @@ pub struct AudioOut {
     device_name: String,
     notice: Option<String>,
     player: Option<Player>,
-    playing: Option<usize>,
-    duration: Duration,
+    queue: TurnQueue,
+    fallback_duration: Duration,
     /// Manifest timing for the current turn; used by `duration()` only when a
     /// decoder could not report a segment duration. Set before `play()`.
-    fallback_duration: Duration,
     muted: bool,
     base: Duration,
     started: Instant,
@@ -140,8 +168,7 @@ impl AudioOut {
             device_name,
             notice,
             player: None,
-            playing: None,
-            duration: Duration::ZERO,
+            queue: TurnQueue::default(),
             fallback_duration: Duration::ZERO,
             muted: false,
             base: Duration::ZERO,
@@ -212,24 +239,88 @@ impl AudioOut {
             player.set_volume(0.0);
         }
         player.play();
-        self.duration = if decoded {
+        let dur = if decoded {
             total
         } else {
             self.fallback_duration
         };
+        self.queue.clear();
+        self.queue.push(turn, dur);
         self.player = Some(player);
-        self.playing = Some(turn);
         self.base = Duration::ZERO;
         self.started = Instant::now();
         self.paused_at = None;
         Ok(())
     }
 
+    /// Append `turn`'s segments behind the current audio in the same player,
+    /// so auto-advance has no gap. No-op when nothing is playing.
+    pub fn queue_next(&mut self, turn: usize, wavs: &[PathBuf]) -> Result<(), String> {
+        let Some(player) = &self.player else {
+            return Ok(());
+        };
+        if wavs.is_empty() {
+            return Err(format!("turn {turn} has no audio segments"));
+        }
+        let mut total = Duration::ZERO;
+        let mut decoded = true;
+        for path in wavs {
+            let file = File::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
+            let source = Decoder::new(BufReader::new(file))
+                .map_err(|e| format!("{}: {e}", path.display()))?;
+            match source.total_duration() {
+                Some(d) => total += d,
+                None => decoded = false,
+            }
+            player.append(source);
+        }
+        let dur = if decoded {
+            total
+        } else {
+            self.fallback_duration
+        };
+        self.queue.push(turn, dur);
+        Ok(())
+    }
+
+    pub fn queued_after_current(&self) -> bool {
+        self.queue.entries.len() > 1
+    }
+
+    /// Drop turns whose audio has finished and rebase the wall clock onto the
+    /// turn now playing. Called once per frame.
+    pub fn sync_queue(&mut self) {
+        if self.player.is_none() {
+            return;
+        }
+        let elapsed = match self.paused_at {
+            Some(at) => at,
+            None => self.base + self.started.elapsed(),
+        };
+        if let Some((_, _, finished_count)) = self.queue.current(elapsed)
+            && finished_count > 0
+        {
+            let mut dropped_duration = Duration::ZERO;
+            for _ in 0..finished_count {
+                if let Some((_, dur)) = self.queue.entries.pop_front() {
+                    dropped_duration += dur;
+                }
+            }
+            if let Some(at) = self.paused_at.as_mut() {
+                *at = at.saturating_sub(dropped_duration);
+            } else {
+                self.base = elapsed.saturating_sub(dropped_duration);
+                self.started = Instant::now();
+            }
+        }
+    }
+
     pub fn pause(&mut self) {
+        let pos = self.position();
         if let Some(player) = &self.player
             && self.paused_at.is_none()
         {
-            self.paused_at = Some(self.position());
+            self.paused_at = Some(pos);
             player.pause();
         }
     }
@@ -244,43 +335,55 @@ impl AudioOut {
         if let Some(player) = self.player.take() {
             player.stop();
         }
-        self.playing = None;
+        self.queue.clear();
         self.paused_at = None;
         self.base = Duration::ZERO;
-        self.duration = Duration::ZERO;
     }
     pub fn is_paused(&self) -> bool {
         self.player.as_ref().is_some_and(Player::is_paused)
     }
-    /// True when a turn was started and its queue has drained.
+    /// True when a turn was started and the whole player queue has drained.
     pub fn is_finished(&self) -> bool {
-        self.playing.is_some() && self.player.as_ref().is_some_and(Player::empty)
+        !self.queue.entries.is_empty() && self.player.as_ref().is_some_and(Player::empty)
     }
-    /// The turn index currently loaded, `None` once it has finished.
+    /// The turn whose audio is playing now (it follows gapless boundaries),
+    /// `None` once everything has finished.
     pub fn playing(&self) -> Option<usize> {
         if self.is_finished() {
             None
         } else {
-            self.playing
+            let elapsed = match self.paused_at {
+                Some(at) => at,
+                None => self.base + self.started.elapsed(),
+            };
+            self.queue.current(elapsed).map(|(turn, _, _)| turn)
         }
     }
-    /// Tracked position within the current turn (wall clock, clamped to
-    /// `duration()`); `Player::get_pos()` is per-segment and not used.
+    /// Tracked position within the current turn (wall clock); `Player::get_pos()`
+    /// is per-segment and not used.
     pub fn position(&self) -> Duration {
         if self.player.is_none() {
             return Duration::ZERO;
         }
-        let position = match self.paused_at {
+        let elapsed = match self.paused_at {
             Some(at) => at,
             None => self.base + self.started.elapsed(),
         };
-        position.min(self.duration)
+        if let Some((_, offset, _)) = self.queue.current(elapsed) {
+            offset
+        } else {
+            self.duration()
+        }
     }
-    /// Total duration of the current turn: the sum of decoded segment
-    /// durations, or the manifest timing set with `set_fallback_duration`
-    /// when a decoder could not report one.
+    /// Duration of the current turn: the sum of decoded segment durations, or
+    /// the manifest timing set with `set_fallback_duration` when a decoder
+    /// could not report one.
     pub fn duration(&self) -> Duration {
-        self.duration
+        self.queue
+            .entries
+            .front()
+            .map(|&(_, dur)| dur)
+            .unwrap_or(Duration::ZERO)
     }
     /// Seek within the currently playing segment. No-op on failure (rodio
     /// seeks only the current source; multi-segment turns cannot seek past
@@ -359,6 +462,28 @@ mod tests {
         eprintln!("rodio get_pos() across the two segments (ms): {raw:?}");
         assert!(audio.playing().is_none());
         assert!(audio.position() <= duration);
+    }
+
+    #[test]
+    fn test_turn_queue() {
+        let mut q = TurnQueue::default();
+        assert_eq!(q.current(Duration::from_secs(0)), None);
+
+        q.push(1, Duration::from_secs(10));
+        q.push(2, Duration::from_secs(5));
+
+        // before first boundary
+        assert_eq!(
+            q.current(Duration::from_secs(5)),
+            Some((1, Duration::from_secs(5), 0))
+        );
+        // exactly at boundary
+        assert_eq!(
+            q.current(Duration::from_secs(10)),
+            Some((2, Duration::from_secs(0), 1))
+        );
+        // past the last turn (returns None);
+        assert_eq!(q.current(Duration::from_secs(16)), None);
     }
 
     #[test]

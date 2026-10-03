@@ -243,13 +243,7 @@ pub fn show(
                 );
                 let colour = t::speaker_colour(speaker.colour_idx);
                 let label = Rect::from_min_size(lane.min, vec2(label_width, lane.height()));
-                view::line(
-                    ui,
-                    label,
-                    &speaker.name,
-                    t::font(t::SPEAKER_LABEL),
-                    colour,
-                );
+                view::line(ui, label, &speaker.name, t::font(t::SPEAKER_LABEL), colour);
                 ui.interact(
                     label,
                     ui.id().with(("speaker", speaker_idx)),
