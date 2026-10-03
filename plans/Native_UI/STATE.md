@@ -3,7 +3,7 @@
 ## Design snapshot
 
 - Captured 2026-10-02 from Figma file `8mO8UiLLEMNEutFSkjalPD` into `ui/design/` (screens 01–06, Workspace state sheet, flow notes, tokens, 21 icons). Agent screens 07–08 excluded by the operator.
-- Figma MCP calls used this month: 10 of ~20 (1 Workspace state, 2 metadata, 7 frames). Loops make none.
+- Figma MCP calls used this month: 15 (5 on 2026-10-03 for the inline-edit A/B; the operator upgraded the plan) (1 Workspace state, 2 metadata, 7 frames). Loops make none.
 
 ## Operator decisions
 
@@ -12,8 +12,8 @@
 | 1 | Checkpoint before audio replacement | Decided 2026-10-02 | In scope: `checkpoint.rs` clones affected files into `<episode>/_backups/ui/`, with Restore (plan steps 12, 14, 16) |
 | 2 | Where the Job runner opens | No preference 2026-10-02 | Plan default: "Jobs" button in the filter bar + ⌘J; revisit after Phase C |
 | 3 | Fonts | Decided 2026-10-02 | OpenDyslexic Regular/Bold + OpenDyslexicMono instead of Inter / IBM Plex Mono; copied from the operator's files into `ui/assets/fonts/` |
-| 4 | Inline editing location | Plan default 2026-10-03 (operator was unsure: "selected turn or directly in the timeline") | Selected turn inspector; double-click a row or timeline block to edit there; timeline shows Edited markers |
-| 5 | Python read-only modes for editing (`scriptcast-export --turns-json/--changes-json`) | **Pending operator approval** | Needed by Phase D so the UI never re-implements the markdown parser |
+| 4 | Inline editing location | Decided 2026-10-03 after a Figma A/B | Both, toggled in Settings; default Side panel (Alternative B). Table row (Alternative A) kept as an option |
+| 5 | Python read-only modes for editing (`scriptcast-export --turns-json/--changes-json`) | Approved 2026-10-03 | Needed by Phase D so the UI never re-implements the markdown parser |
 
 ## Phase A — Episode Browser
 
@@ -110,4 +110,8 @@
 ## Phase D — Inline Editing
 
 - Requested 2026-10-03 by the operator ("the ability to edit the words and re-render"). Plan: `plan.md` Flow 6 and steps D1–D6.
-- Status: **planned; starts after Phase C** (needs its runner, confirmation dialog and checkpoints). D1 waits on operator decision 5.
+- Status: **planned; starts after Phase C** (needs its runner, confirmation dialog and checkpoints). D1 approved. Figma captured: `screens/03b-alt-a-inline-row-edit/`, `screens/03c-alt-b-side-panel-edit/` (Figma calls this month: 15).
+
+## Phase E — Read-along word highlighting
+
+- Requested 2026-10-03 (shown in Figma Alternative B). Planned after D; needs per-word timings from Python (captions.py alignment).

@@ -218,6 +218,8 @@ sequenceDiagram
 
 ## Flow 6: Edit a Turn's Words and Re-render (Phase D)
 
+**Operator decision (2026-10-03, Figma A/B):** both layouts ship, behind a Settings choice "Edit transcripts in": **Side panel** (default; Alternative B, `ui/design/screens/03c-alt-b-side-panel-edit/`: Turn view / Edit tabs in the inspector) or **Table row** (Alternative A, `ui/design/screens/03b-alt-a-inline-row-edit/`: an editor opens under the selected row). Both share one draft model and one Save path; only the view differs. The operator prefers B because read-along word highlighting (Phase E) will occupy the row under the playing turn.
+
 **Trigger:** Edit in the Selected turn inspector, the E key with a turn selected, or a double-click on a table row or timeline block (which selects the turn and opens its editor). Editing happens in the inspector, not inside the timeline: a 2-second turn is about 35 px wide on the default zoom, too narrow for text in OpenDyslexic. The timeline shows which turns are edited.
 
 1. When an episode opens and its script exists, the UI runs `scriptcast-export <episode> --turns-json` on a background thread. The output gives each script turn's index, turn_id, speaker, `line_span`, and body text exactly as written. The Selected turn inspector then shows the full TEXT instead of FIRST WORDS. Without it, the inspector keeps first words and says why ("Full text unavailable: <reason>").
@@ -262,6 +264,8 @@ sequenceDiagram
 ```
 
 **Artifact Output Structure:** the script is modified in place (one turn's body lines); `<episode>/_backups/ui/vNN-<time>-script-edit/` holds `checkpoint.json` and `external/<script file name>`; the re-render writes what Precision insert writes, behind its own `vNN-<time>-precision-insert/` checkpoint.
+
+**Phase E (planned, operator request 2026-10-03): read-along word highlighting.** While a turn plays, a row under it shows the turn's words with the current word highlighted (Alternative B's "Read-along transcript"). Word times come from a Python per-word alignment, building on `scriptcast/tools/captions.py` (Whisper word timestamps aligned to script words, `captions.py:1-6`), emitted per turn relative to the turn start. Needs its own brief and approval for that Python output.
 
 **Out of scope for Phase D:** changing a turn's speaker or timestamp, adding, deleting or reordering turns (the operator does these in the script; Precision insert already handles them), live preview of an edit before synthesis, and agent-assisted edits (Flow 0).
 
@@ -434,6 +438,7 @@ D4. Modify `file:Dev/Tools/scriptCast/ui/src/inspector.rs`, `table.rs`, `timelin
     - after the job, reload and reselect.
 
     There is no Figma frame for edit mode: build it from existing tokens and record it in `ui/design/DESIGN.md` under "Selected turn — edit mode (not in Figma)".
+D4b. Settings popover: "Edit transcripts in: Side panel / Table row" (persisted, default Side panel). Side panel follows Alternative B (tabs Turn view / Edit, TRANSCRIPT field 120 high, "Unsaved draft" with the alert-circle icon in danger colour, Save draft / Cancel, footnote "Audio remains unchanged…"). Table row follows Alternative A (editor block under the selected row: "Inline transcript edit" + Draft badge, "Turn NNN · Speaker", field, footnote, Cancel / Save draft). One `Draft { turn, text, original }` in app state drives both; switching the setting mid-draft keeps the draft.
 D5. Create `file:Dev/Tools/scriptCast/ui/tests/script_edit.rs`:
     - splice keeps every byte outside the body, on LF and CRLF fixtures;
     - leading and trailing blank lines are kept;
@@ -541,3 +546,4 @@ Phase A rows completed 2026-10-03; Phase B and C rows are filled as those phases
 | D4. Inspector edit mode, markers, re-render | | | |
 | D5. `tests/script_edit.rs` | | | |
 | D6. `SPEC.md` | | | |
+| D4b. Settings toggle: side panel (B) or table row (A) | | | Operator decision 2026-10-03 |
