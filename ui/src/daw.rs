@@ -35,7 +35,11 @@ pub fn logic_command(path: &Path) -> Command {
 
 fn open_command(bundle: &str, path: &Path) -> Command {
     let mut command = Command::new("/usr/bin/open");
-    command.args(["-b", bundle]).arg(path).stdin(Stdio::null());
+    command
+        .args(["-b", bundle])
+        .arg(path)
+        .env("PATH", crate::cli::login_path())
+        .stdin(Stdio::null());
     command
 }
 

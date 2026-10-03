@@ -1,5 +1,6 @@
 mod capture;
 mod inspector;
+mod jobs;
 mod table;
 mod timeline;
 mod view;
@@ -29,11 +30,23 @@ const STORAGE_KEY: &str = "scriptcast_browser";
 const LOAD_NOTICE_DELAY: Duration = Duration::from_millis(150);
 /// Repaint cadence while audio is playing; no repaints are requested when idle.
 const REPLAY_TICK: Duration = Duration::from_millis(50);
+/// Reduce rendering bursts while playing through built-in MacBook speakers.
+const SPEAKER_REPLAY_TICK: Duration = Duration::from_millis(250);
+
+fn playback_tick(device: &str) -> Duration {
+    if audio::is_builtin_speakers(device) {
+        SPEAKER_REPLAY_TICK
+    } else {
+        REPLAY_TICK
+    }
+}
 
 // Empty-workspace copy, factored out so the content height measurement in
 // `empty_left_height`/`empty_right_height` cannot drift from what is rendered.
 const HERO_TITLE_TEXT: &str = "Your episode starts here.";
-const HERO_BODY_TEXT: &str = "Open an episode directory containing rendered audio and metadata. scriptCast loads the timeline, speakers, turns, and verification results in one local workspace.";
+const HERO_BODY_TEXT: &str = "Open an episode directory containing rendered audio and metadata. \
+    scriptCast loads the timeline, speakers, turns, and verification results in one local workspace.";
+
 const DIR_LIST_TITLE: &str = "Expected directory contents";
 const DIR_LIST: [&str; 4] = [
     "episode/",
@@ -54,7 +67,7 @@ struct RecentEpisode {
 #[derive(Serialize, Deserialize)]
 #[serde(default)]
 struct Preferences {
-    /// Folder containing scriptcast-export; None (or empty) uses discovery.
+    /// Folder with scriptCast commands; None (or empty) uses discovery.
     cli_dir: Option<PathBuf>,
     last_episode: Option<PathBuf>,
     recent: Vec<RecentEpisode>,
@@ -198,6 +211,7 @@ fn neighbour_targets(visible: &[usize], current: Option<usize>) -> (Option<usize
 }
 #[derive(Default)]
 struct Browser {
+    jobs: jobs::Jobs,
     export_command: Option<Result<ExportCommand, String>>,
     live_task: Option<DawTask>,
     logic_task: Option<DawTask>,
@@ -265,6 +279,14 @@ impl Browser {
             ),
         };
         let mut app = Self {
+            jobs: jobs::Jobs {
+                login: Some(cli::start_login_path()),
+                mode: cli.inspector,
+                auto_confirm: cli.confirm.clone(),
+                auto_run: cli.run.clone(),
+                running_screenshot: cli.running_screenshot.clone(),
+                ..Default::default()
+            },
             preferences,
             persist: cli.persist(),
             capture: cli.screenshot.clone().map(|path| {
@@ -287,6 +309,9 @@ impl Browser {
         app
     }
     fn open(&mut self, path: PathBuf, ctx: &egui::Context) {
+        if self.jobs.busy() {
+            return;
+        }
         let (sender, receiver) = mpsc::channel();
         let worker_path = path.clone();
         let canceled = Arc::new(AtomicBool::new(false));
@@ -395,6 +420,9 @@ impl Browser {
         )));
         self.episode = Some(episode);
         self.error = None;
+        self.jobs.selected.clear();
+        self.refresh_checkpoints();
+        self.refresh_commands(ctx);
         // Reset virtual scroll on a new episode; preserve/reveal selection on reload.
         self.scroll_to = self.selected.or(Some(0));
         if let Some(want) = self.pending_select.take() {
@@ -416,6 +444,8 @@ impl Browser {
         if let Some(e) = &self.episode
             && let Some(turn) = e.turns.get(index)
         {
+            self.jobs.selected.clear();
+            self.jobs.selected.insert(index);
             self.selected = Some(index);
             self.scroll_to = Some(index);
             self.timeline.reveal(turn.start_ms, turn.end_ms, e.total_ms);
@@ -619,6 +649,12 @@ impl Browser {
     }
     /// Device-error poll, natural-finish detection and the playing-only
     /// repaint cadence. Runs in `logic`, before any capture handling.
+    fn output_name(&self) -> &str {
+        match &self.audio {
+            Some(Ok(audio)) => audio.device_name(),
+            _ => "",
+        }
+    }
     fn poll_audio(&mut self, ctx: &egui::Context) {
         let device_error = match self.audio.as_mut() {
             Some(Ok(audio)) => audio.take_device_error(),
@@ -634,15 +670,32 @@ impl Browser {
             }
         }
         if matches!(self.transport, Transport::Playing(_)) {
-            ctx.request_repaint_after(REPLAY_TICK);
+            ctx.request_repaint_after(playback_tick(self.output_name()));
         }
     }
     fn capture_logic(&mut self, ctx: &egui::Context) {
+        if self.capture.is_some()
+            && self.pending.is_none()
+            && let Some((path, error)) = &self.error
+        {
+            capture::fail(&format!("could not open {}: {error}", path.display()));
+        }
         if let Some(message) = self.select_error.take() {
             if self.capture.is_some() {
                 capture::fail(&message);
             }
             eprintln!("scriptcast-ui: {message}");
+        }
+        if self.jobs.busy()
+            || self.jobs.auto_run.is_some()
+            || self.jobs.auto_confirm.is_some()
+            || self.pending.is_some()
+        {
+            if let Some(cap) = &mut self.capture {
+                cap.deadline = Instant::now() + capture::TIMEOUT;
+            }
+            ctx.request_repaint_after(capture::TICK);
+            return;
         }
         let Some(cap) = &mut self.capture else {
             return;
@@ -657,7 +710,11 @@ impl Browser {
         let mut received = None;
         ctx.input(|input| {
             for event in &input.events {
-                if let egui::Event::Screenshot { image, .. } = event {
+                if let egui::Event::Screenshot {
+                    image, user_data, ..
+                } = event
+                    && user_data.data.is_none()
+                {
                     received = Some(Arc::clone(image));
                 }
             }
@@ -707,6 +764,17 @@ impl Browser {
         }
     }
     fn capture_settle(&mut self, ctx: &egui::Context) {
+        if self.jobs.busy()
+            || self.jobs.auto_run.is_some()
+            || self.jobs.auto_confirm.is_some()
+            || self.pending.is_some()
+        {
+            if let Some(cap) = &mut self.capture {
+                cap.deadline = Instant::now() + capture::TIMEOUT;
+            }
+            ctx.request_repaint_after(capture::TICK);
+            return;
+        }
         let Some(cap) = &mut self.capture else {
             return;
         };
@@ -766,8 +834,14 @@ impl Browser {
         ctx.request_repaint_after(capture::TICK);
     }
     fn shortcuts(&mut self, ctx: &egui::Context) {
+        if self.jobs.confirmation.is_some() || self.jobs.restore.is_some() {
+            return;
+        }
         if ctx.text_edit_focused() {
             return;
+        }
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::J)) {
+            self.jobs.mode = Some(InspectorMode::Jobs);
         }
         let (open, reload, search, up, down, escape, space) = ctx.input_mut(|i| {
             (
@@ -858,13 +932,17 @@ impl Browser {
         );
         actions.spacing_mut().item_spacing.x = t::SPACE_8;
         // This row is laid out right-to-left: Settings, Logic, Live, Reload, Open.
-        let settings = t::icon_button(&mut actions, "settings-16-text", true)
-            .on_hover_text("Settings");
+        let settings =
+            t::icon_button(&mut actions, "settings-16-text", true).on_hover_text("Settings");
+        if self.jobs.configure {
+            egui::Popup::open_id(ui.ctx(), egui::Popup::default_response_id(&settings));
+            self.jobs.configure = false;
+        }
         egui::Popup::menu(&settings).show(|ui| {
             ui.set_max_width(t::CLI_POPOVER_WIDTH);
             ui.label(t::heading("Settings", t::SECTION_TITLE));
             ui.label(t::text(
-                "Folder with the scriptcast-export command",
+                "Folder with scriptCast commands",
                 t::SECONDARY,
                 t::TEXT_PRIMARY,
             ));
@@ -874,7 +952,7 @@ impl Browser {
                     .as_deref()
                     .filter(|path| !path.as_os_str().is_empty())
                     .map_or_else(
-                        || "Unset — search PATH, then dev checkout".into(),
+                        || "Unset — project virtualenvs, login PATH, then checkout".into(),
                         |p| p.display().to_string(),
                     ),
                 t::SECONDARY,
@@ -882,21 +960,23 @@ impl Browser {
             ));
             if t::secondary_button(ui, "Choose folder…", None, true).clicked()
                 && let Some(path) = rfd::FileDialog::new()
-                    .set_title("Folder containing scriptcast-export")
+                    .set_title("Folder with scriptCast commands")
                     .pick_folder()
             {
                 self.preferences.cli_dir = Some(path);
                 self.export_command = None;
+                self.refresh_commands(ui.ctx());
             }
             if t::secondary_button(ui, "Clear", None, self.preferences.cli_dir.is_some()).clicked()
             {
                 self.preferences.cli_dir = None;
                 self.export_command = None;
+                self.refresh_commands(ui.ctx());
             }
         });
         let export = self
             .export_command
-            .get_or_insert_with(|| cli::resolve_export(self.preferences.cli_dir.as_deref()))
+            .get_or_insert_with(|| Err("Resolving CLI commands…".into()))
             .clone();
         let logic_reason = if self.logic_task.is_some() {
             Some("Preparing for Logic…".into())
@@ -1140,7 +1220,18 @@ impl Browser {
                 egui::Image::new(t::icon("list-15-text-muted"))
                     .fit_to_exact_size(egui::Vec2::splat(t::TEXT_15)),
             );
-            ui.label(t::text("Turn view", t::SECONDARY, t::TEXT_MUTED));
+            if t::secondary_button(ui, "Jobs", None, true)
+                .on_hover_text("Job runner · Cmd+J")
+                .clicked()
+            {
+                self.jobs.mode = Some(InspectorMode::Jobs);
+            }
+            if t::secondary_button(ui, "Verification", None, self.selected.is_some()).clicked() {
+                self.jobs.mode = Some(InspectorMode::Verification);
+            }
+            if t::secondary_button(ui, "Selected", None, self.selected.is_some()).clicked() {
+                self.jobs.mode = Some(InspectorMode::SelectedTurn);
+            }
         });
         if response.changed()
             || old_speaker != self.filters.speaker
@@ -1223,7 +1314,10 @@ impl Browser {
             let rows = self.preferences.recent.len() as f32;
             height += rows * t::EPISODE_HEADER_HEIGHT + (rows - 1.0) * t::SPACE_6;
         }
-        height + t::SPACE_6 + t::SPACE_16 + t::wrapped_height(ui, LOCAL_FILES_NOTE, t::font(t::CAPTION), t::EMPTY_RIGHT)
+        height
+            + t::SPACE_6
+            + t::SPACE_16
+            + t::wrapped_height(ui, LOCAL_FILES_NOTE, t::font(t::CAPTION), t::EMPTY_RIGHT)
     }
     /// Right column of the empty workspace. Returns (open-directory clicked,
     /// selected recent path).
@@ -1317,9 +1411,7 @@ impl Browser {
             }
             Transport::Idle => (
                 0,
-                self.selected_media
-                    .as_ref()
-                    .and_then(|(_, m)| m.duration),
+                self.selected_media.as_ref().and_then(|(_, m)| m.duration),
             ),
         };
         let mut bar = ui.new_child(
@@ -1395,10 +1487,7 @@ impl Browser {
                     ));
                 }
                 for name in &self.device_list {
-                    if ui
-                        .selectable_label(*name == current_device, name)
-                        .clicked()
-                    {
+                    if ui.selectable_label(*name == current_device, name).clicked() {
                         chosen_device = Some(name.clone());
                     }
                 }
@@ -1456,7 +1545,11 @@ impl Browser {
     }
     fn status(&self, ui: &mut Ui) {
         let rect = view::inset(ui.max_rect(), t::SPACE_20, 0.0);
-        let status = if let Some(notice) = &self.daw_notice {
+        let status = if self.jobs.confirmation.is_some() || self.jobs.restore.is_some() {
+            "Awaiting confirmation · no job has started".into()
+        } else if let Some(notice) = &self.jobs.notice {
+            notice.clone()
+        } else if let Some(notice) = &self.daw_notice {
             match notice {
                 Ok(message) | Err(message) => message.clone(),
             }
@@ -1595,49 +1688,84 @@ impl Browser {
         let mut dismiss = false;
         let mut cancel = false;
         let mut chosen_device: Option<String> = None;
-        egui::Window::new("Workspace state").id(egui::Id::new("workspace_state"))
-            .title_bar(false).resizable(false).collapsible(false).anchor(egui::Align2::CENTER_CENTER,egui::Vec2::ZERO)
-            .fixed_size(vec2(t::STATE_CARD_WIDTH,0.0))
-            .frame(egui::Frame::new().fill(t::BG_SURFACE).stroke(egui::Stroke::new(t::BORDER,t::BORDER_DEFAULT)).corner_radius(t::RADIUS_CARD as u8).inner_margin(t::SPACE_16))
-            .show(ctx,|ui| {
-                ui.spacing_mut().item_spacing.y=t::SPACE_18;
-                if let Some(path)=&loading {
-                    ui.horizontal(|ui| { ui.add(egui::Image::new(t::icon("loader-circle-22-accent")).fit_to_exact_size(egui::Vec2::splat(t::SPACE_22))); ui.label(t::heading(format!("Loading {}…",path.file_name().unwrap_or_default().to_string_lossy()),t::STATE_TITLE)); });
-                    ui.label(t::text("Reading turn metadata, audio paths and verification results.",t::TEXT_13,t::TEXT_MUTED));
-                    let (bar,_)=ui.allocate_exact_size(vec2(ui.available_width(),t::PROGRESS_HEIGHT),Sense::hover());
-                    ui.painter().rect_filled(bar,0,t::BG_CONTROL);
-                    let phase=(ui.input(|i| i.time)*0.6).fract() as f32;
-                    let width=bar.width()/4.0;
-                    ui.painter().rect_filled(Rect::from_min_size(pos2(bar.left()+(bar.width()-width)*phase,bar.top()),vec2(width,bar.height())),0,t::ACCENT);
-                    cancel=t::secondary_button(ui,"Cancel",None,true).clicked();
-                    ui.label(t::text("Your files remain local. Cancel keeps the current episode open.",t::SECONDARY,t::TEXT_MUTED));
+        egui::Window::new("Workspace state")
+            .id(egui::Id::new("workspace_state"))
+            .title_bar(false)
+            .resizable(false)
+            .collapsible(false)
+            .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
+            .fixed_size(vec2(t::STATE_CARD_WIDTH, 0.0))
+            .frame(
+                egui::Frame::new()
+                    .fill(t::BG_SURFACE)
+                    .stroke(egui::Stroke::new(t::BORDER, t::BORDER_DEFAULT))
+                    .corner_radius(t::RADIUS_CARD as u8)
+                    .inner_margin(t::SPACE_16),
+            )
+            .show(ctx, |ui| {
+                ui.spacing_mut().item_spacing.y = t::SPACE_18;
+                if let Some(path) = &loading {
+                    let title = format!("Loading {}…", path.file_name().unwrap_or_default().to_string_lossy());
+                    state_heading(ui, "loader-circle-22-accent", title);
+                    ui.label(t::text(
+                        "Reading turn metadata, audio paths and verification results.",
+                        t::TEXT_13, t::TEXT_MUTED,
+                    ));
+                    let (bar, _) = ui.allocate_exact_size(
+                        vec2(ui.available_width(), t::PROGRESS_HEIGHT), Sense::hover(),
+                    );
+                    ui.painter().rect_filled(bar, 0, t::BG_CONTROL);
+                    let phase = (ui.input(|i| i.time) * 0.6).fract() as f32;
+                    let width = bar.width() / 4.0;
+                    let progress = Rect::from_min_size(
+                        pos2(bar.left() + (bar.width() - width) * phase, bar.top()),
+                        vec2(width, bar.height()),
+                    );
+                    ui.painter().rect_filled(progress, 0, t::ACCENT);
+                    cancel = t::secondary_button(ui, "Cancel", None, true).clicked();
+                    ui.label(t::text(
+                        "Your files remain local. Cancel keeps the current episode open.",
+                        t::SECONDARY, t::TEXT_MUTED,
+                    ));
                     ctx.request_repaint_after(Duration::from_millis(50));
-                } else if let Some((path,error))=&self.error {
-                    ui.horizontal(|ui| { ui.add(egui::Image::new(t::icon("circle-alert-22-danger")).fit_to_exact_size(egui::Vec2::splat(t::SPACE_22))); ui.label(t::heading("Couldn’t open this episode",t::STATE_TITLE)); });
-                    ui.label(t::text("Turn metadata could not be read. Choose a rendered episode directory or fix the metadata and try again.",t::TEXT_13,t::TEXT_MUTED));
-                    ui.label(t::text(error,t::SECONDARY,t::STATUS_FAILED));
+                } else if let Some((path, error)) = &self.error {
+                    state_heading(ui, "circle-alert-22-danger", "Couldn’t open this episode");
+                    ui.label(t::text(
+                        "Turn metadata could not be read. Choose a rendered episode directory \
+                         or fix the metadata and try again.",
+                        t::TEXT_13, t::TEXT_MUTED,
+                    ));
+                    ui.label(t::text(error, t::SECONDARY, t::STATUS_FAILED));
                     ui.horizontal(|ui| {
-                        choose=t::primary_button(ui,"Choose directory",None,true).clicked();
-                        if t::secondary_button(ui,"Try again",None,true).clicked() { retry=Some(path.clone()); }
-                        dismiss=t::secondary_button(ui,"Dismiss",None,true).clicked();
+                        choose = t::primary_button(ui, "Choose directory", None, true).clicked();
+                        if t::secondary_button(ui, "Try again", None, true).clicked() {
+                            retry = Some(path.clone());
+                        }
+                        dismiss = t::secondary_button(ui, "Dismiss", None, true).clicked();
                     });
-                    ui.label(t::text(if self.episode.is_some() { "The current episode is still open. A malformed directory does not erase it." } else { "Choose a directory containing episode_manifest.json." },t::SECONDARY,t::TEXT_MUTED));
+                    let hint = if self.episode.is_some() {
+                        "The current episode is still open. A malformed directory does not erase it."
+                    } else {
+                        "Choose a directory containing episode_manifest.json."
+                    };
+                    ui.label(t::text(hint, t::SECONDARY, t::TEXT_MUTED));
                 } else if let Some((message, position)) = &device {
-                    ui.horizontal(|ui| { ui.add(egui::Image::new(t::icon("headphones-22-accent")).fit_to_exact_size(egui::Vec2::splat(t::SPACE_22))); ui.label(t::heading("Audio output unavailable",t::STATE_TITLE)).on_hover_text(message.as_str()); });
+                    state_heading(ui, "headphones-22-accent", "Audio output unavailable")
+                        .on_hover_text(message);
                     let body = match position {
                         Some(position) => format!(
-                            "The selected device was disconnected. Playback is paused at {}; your selection is unchanged. Choose another output to resume.",
+                            "The selected device was disconnected. Playback is paused at {}; \
+                             your selection is unchanged. Choose another output to resume.",
                             view::time(position.as_millis() as u64)
                         ),
-                        None => "The selected device was disconnected. Choose another output to continue."
-                            .to_owned(),
+                        None => "The selected device was disconnected. Choose another output to continue.".to_owned(),
                     };
-                    ui.label(t::text(body,t::TEXT_13,t::TEXT_MUTED));
+                    ui.label(t::text(body, t::TEXT_13, t::TEXT_MUTED));
                     ui.horizontal(|ui| {
-                        let button = t::primary_button(ui,"Choose output",None,true);
+                        let button = t::primary_button(ui, "Choose output", None, true);
                         egui::Popup::menu(&button).show(|ui| {
                             if self.device_list.is_empty() {
-                                ui.label(t::text("No output devices found",t::SECONDARY,t::TEXT_MUTED));
+                                ui.label(t::text("No output devices found", t::SECONDARY, t::TEXT_MUTED));
                             }
                             for name in &self.device_list {
                                 if ui.selectable_label(false, name).clicked() {
@@ -1645,18 +1773,27 @@ impl Browser {
                                 }
                             }
                         });
-                        if button.clicked() {
-                            self.device_list = AudioOut::outputs();
-                        }
-                        dismiss=t::secondary_button(ui,"Dismiss",None,true).clicked();
+                        if button.clicked() { self.device_list = AudioOut::outputs(); }
+                        dismiss = t::secondary_button(ui, "Dismiss", None, true).clicked();
                     });
                 } else if let Some((index, file)) = &missing {
-                    ui.horizontal(|ui| { ui.add(egui::Image::new(t::icon("volume-x-22-danger")).fit_to_exact_size(egui::Vec2::splat(t::SPACE_22))); ui.label(t::heading(format!("Audio missing · Turn {index:03}"),t::STATE_TITLE)); });
-                    ui.label(t::text(format!("{file} was not found. Transcript and verification history are available. Restore the file or regenerate the selected turn."),t::TEXT_13,t::TEXT_MUTED));
+                    state_heading(ui, "volume-x-22-danger", format!("Audio missing · Turn {index:03}"));
+                    ui.label(t::text(
+                        format!("{file} was not found. Transcript and verification history are available. \
+                                 Restore the file or regenerate the selected turn."),
+                        t::TEXT_13, t::TEXT_MUTED,
+                    ));
                     ui.horizontal(|ui| {
-                        // Phase C enables regeneration; shown disabled for now.
-                        t::primary_button(ui,"Regenerate selected",None,false);
-                        dismiss=t::secondary_button(ui,"Dismiss",None,true).clicked();
+                        let preset = scriptcast_ui::runner::Preset::RegenerateTurns(self.selected_turns());
+                        let spec = self.spec(&preset);
+                        let reason = spec.as_ref().err().cloned().unwrap_or_default();
+                        if t::primary_button(ui, "Regenerate selected", None, spec.is_ok())
+                            .on_disabled_hover_text(reason).clicked()
+                        {
+                            self.request_job(preset, None, ctx);
+                            dismiss = true;
+                        }
+                        dismiss |= t::secondary_button(ui, "Dismiss", None, true).clicked();
                     });
                 }
             });
@@ -1732,15 +1869,16 @@ impl Browser {
                 playing,
             );
             if let Some(i) = clicked {
-                self.select(i);
+                self.multi_select(i, ctx.input(|i| i.modifiers));
             }
             // The Selected turn inspector takes the right 376 px of the review
             // row whenever a turn is selected.
-            let (table_rect, inspector_rect) = match selected_turn {
-                Some(_) => {
-                    let width = InspectorMode::SelectedTurn
-                        .width()
-                        .min(review.width() / 2.0);
+            let mode = self.jobs.mode.unwrap_or(InspectorMode::SelectedTurn);
+            let (table_rect, inspector_rect) = match selected_turn.is_some()
+                || mode == InspectorMode::Jobs
+            {
+                true => {
+                    let width = mode.width().min(review.width() / 2.0);
                     let inspector =
                         Rect::from_min_max(pos2(review.right() - width, review.top()), review.max);
                     (
@@ -1748,8 +1886,9 @@ impl Browser {
                         Some(inspector),
                     )
                 }
-                None => (review, None),
+                false => (review, None),
             };
+            let on_builtin_speakers = audio::is_builtin_speakers(self.output_name());
             let clicked = table::show(
                 &mut view::region(ui, "table", table_rect, t::BG_SURFACE),
                 self.episode.as_ref().unwrap(),
@@ -1758,59 +1897,88 @@ impl Browser {
                 self.transport.turn(),
                 self.scroll_to.take(),
                 self.filters.failed_only,
+                &self.jobs.selected,
+                !on_builtin_speakers,
             );
             if let Some(i) = clicked {
-                self.select(i);
+                self.multi_select(i, ctx.input(|i| i.modifiers));
             }
-            if let (Some(turn), Some(rect)) = (selected_turn, inspector_rect) {
-                let (can_previous, can_next) = neighbour_targets(&visible, Some(turn));
-                let (can_previous, can_next) = (can_previous.is_some(), can_next.is_some());
-                let file_line = self
-                    .selected_media
-                    .as_ref()
-                    .map(|(_, m)| m.file_line.clone())
-                    .unwrap_or_default();
-                let action = inspector::show(
-                    &mut view::region(ui, "inspector", rect, t::BG_SURFACE),
-                    InspectorMode::SelectedTurn,
-                    self.episode.as_ref().unwrap(),
-                    turn,
-                    self.transport,
-                    self.audio_position(),
-                    self.preferences.auto_advance,
-                    can_previous,
-                    can_next,
-                    &file_line,
-                );
-                match action {
-                    Some(inspector::Action::Previous) => {
-                        if let Some(t) = neighbour_targets(&visible, Some(turn)).0 {
-                            self.select(t);
+            if let Some(rect) = inspector_rect
+                && mode == InspectorMode::Jobs
+            {
+                self.jobs_panel(&mut view::region(
+                    ui,
+                    "jobs",
+                    view::inset(rect, t::SPACE_12, 0.0),
+                    t::BG_SURFACE,
+                ));
+            } else if let (Some(turn), Some(rect)) = (selected_turn, inspector_rect) {
+                if mode == InspectorMode::Verification {
+                    self.verification_panel(
+                        &mut view::region(
+                            ui,
+                            "verification",
+                            view::inset(rect, t::SPACE_16, 0.0),
+                            t::BG_SURFACE,
+                        ),
+                        turn,
+                    );
+                } else {
+                    let (can_previous, can_next) = neighbour_targets(&visible, Some(turn));
+                    let (can_previous, can_next) = (can_previous.is_some(), can_next.is_some());
+                    let file_line = self
+                        .selected_media
+                        .as_ref()
+                        .map(|(_, m)| m.file_line.clone())
+                        .unwrap_or_default();
+                    let action = inspector::show(
+                        &mut view::region(ui, "inspector", rect, t::BG_SURFACE),
+                        InspectorMode::SelectedTurn,
+                        self.episode.as_ref().unwrap(),
+                        turn,
+                        self.transport,
+                        self.audio_position(),
+                        self.preferences.auto_advance,
+                        can_previous,
+                        can_next,
+                        &file_line,
+                    );
+                    match action {
+                        Some(inspector::Action::Previous) => {
+                            if let Some(t) = neighbour_targets(&visible, Some(turn)).0 {
+                                self.select(t);
+                            }
                         }
-                    }
-                    Some(inspector::Action::Next) => {
-                        if let Some(t) = neighbour_targets(&visible, Some(turn)).1 {
-                            self.select(t);
+                        Some(inspector::Action::Next) => {
+                            if let Some(t) = neighbour_targets(&visible, Some(turn)).1 {
+                                self.select(t);
+                            }
                         }
+                        Some(inspector::Action::Review) => {
+                            self.jobs.mode = Some(InspectorMode::Verification)
+                        }
+                        None => {}
                     }
-                    None => {}
                 }
             }
         } else {
             self.empty(&mut view::region(ui, "empty", workspace, t::BG_WINDOW));
         }
         self.workspace_card(&ctx);
+        self.confirmation_dialog(&ctx);
     }
 }
 impl eframe::App for Browser {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.poll_load(ctx);
+        self.poll_jobs(ctx);
         self.poll_daw();
         self.poll_audio(ctx);
         self.capture_logic(ctx);
     }
     fn ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
         self.show(ui);
+        self.running_capture(ui.ctx());
         self.capture_settle(ui.ctx());
     }
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
@@ -1825,16 +1993,24 @@ impl eframe::App for Browser {
 /// Content height of the guidance column; mirrors `empty_left` item for item.
 /// Item spacing is applied after each widget with the spacing in effect when
 /// that widget was added, so the gap after the field label is still SPACE_20.
+fn state_heading(ui: &mut Ui, icon: &str, title: impl Into<String>) -> egui::Response {
+    ui.horizontal(|ui| {
+        ui.add(egui::Image::new(t::icon(icon)).fit_to_exact_size(egui::Vec2::splat(t::SPACE_22)));
+        ui.label(t::heading(title, t::STATE_TITLE))
+    })
+    .inner
+}
 fn empty_left_height(ui: &Ui) -> f32 {
     let mut height = t::HERO_ICON;
-    height += t::SPACE_20
-        + t::wrapped_height(ui, HERO_TITLE_TEXT, t::bold(t::HERO_TITLE), t::EMPTY_LEFT);
-    height += t::SPACE_20
-        + t::wrapped_height(ui, HERO_BODY_TEXT, t::font(t::TEXT_14), t::EMPTY_LEFT);
+    height +=
+        t::SPACE_20 + t::wrapped_height(ui, HERO_TITLE_TEXT, t::bold(t::HERO_TITLE), t::EMPTY_LEFT);
+    height +=
+        t::SPACE_20 + t::wrapped_height(ui, HERO_BODY_TEXT, t::font(t::TEXT_14), t::EMPTY_LEFT);
     height += t::SPACE_20 + t::BUTTON_HEIGHT;
     height += t::SPACE_20 + t::SPACE_16 + t::line_height(ui, t::bold(t::FIELD_LABEL));
     let lines = DIR_LIST.len() as f32;
-    height += t::SPACE_20 + t::line_height(ui, t::mono(t::BODY)) * lines + t::SPACE_7 * (lines - 1.0);
+    height +=
+        t::SPACE_20 + t::line_height(ui, t::mono(t::BODY)) * lines + t::SPACE_7 * (lines - 1.0);
     height
 }
 /// Left column of the empty workspace. Returns true when Open Episode was clicked.
@@ -1848,8 +2024,8 @@ fn empty_left(ui: &mut Ui) -> bool {
     ui.label(t::heading(HERO_TITLE_TEXT, t::HERO_TITLE));
     ui.label(t::text(HERO_BODY_TEXT, t::TEXT_14, t::TEXT_MUTED));
     ui.horizontal(|ui| {
-        open |= t::primary_button(ui, "Open Episode", Some("folder-open-16-on-accent"), true)
-            .clicked();
+        open |=
+            t::primary_button(ui, "Open Episode", Some("folder-open-16-on-accent"), true).clicked();
         ui.label(t::text("Cmd+O", t::BODY, t::TEXT_MUTED));
     });
     ui.add_space(t::SPACE_16);
@@ -2002,11 +2178,15 @@ mod tests {
         let mut app = Browser::default();
         let (sender, receiver) = mpsc::channel();
         app.logic_task = Some(DawTask { receiver });
-        sender.send(DawEvent::Progress("Writing episode.fcpxml…".into())).unwrap();
+        sender
+            .send(DawEvent::Progress("Writing episode.fcpxml…".into()))
+            .unwrap();
         app.poll_daw();
         assert!(app.logic_task.is_some());
         assert_eq!(app.daw_notice, Some(Ok("Writing episode.fcpxml…".into())));
-        sender.send(DawEvent::Finished(Err("export failed".into()))).unwrap();
+        sender
+            .send(DawEvent::Finished(Err("export failed".into())))
+            .unwrap();
         app.poll_daw();
         assert!(app.logic_task.is_none());
         assert_eq!(app.daw_notice, Some(Err("export failed".into())));
@@ -2016,7 +2196,10 @@ mod tests {
         drop(sender);
         app.poll_daw();
         assert!(app.logic_task.is_none());
-        assert_eq!(app.daw_notice, Some(Err("DAW task stopped unexpectedly".into())));
+        assert_eq!(
+            app.daw_notice,
+            Some(Err("DAW task stopped unexpectedly".into()))
+        );
     }
 
     fn fixture() -> Episode {
@@ -2217,7 +2400,11 @@ mod tests {
             .collect();
         assert_eq!(visible, [0, 2]);
         assert_eq!(advance_target(&e, &visible, 0), Some(2));
-        assert_eq!(advance_target(&e, &visible, 2), None, "end of the list stops");
+        assert_eq!(
+            advance_target(&e, &visible, 2),
+            None,
+            "end of the list stops"
+        );
         assert_eq!(
             advance_target(&e, &visible, 1),
             None,
@@ -2296,12 +2483,83 @@ mod tests {
         t::apply(&ctx);
         let app = Browser::default();
         let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
-            let workspace =
-                t::WINDOW_SIZE[1] - t::EPISODE_HEADER_HEIGHT - t::PLAYBACK_BAR_HEIGHT - t::STATUS_BAR_HEIGHT;
+            let workspace = t::WINDOW_SIZE[1]
+                - t::EPISODE_HEADER_HEIGHT
+                - t::PLAYBACK_BAR_HEIGHT
+                - t::STATUS_BAR_HEIGHT;
             let available = workspace - t::SPACE_20 * 2.0;
             assert!(empty_left_height(ui) <= available);
             assert!(app.empty_right_height(ui) <= available);
         });
         output.textures_delta.clear();
+    }
+}
+
+#[cfg(test)]
+mod speaker_redraw_tests {
+    use super::*;
+
+    #[test]
+    fn only_builtin_speakers_use_the_slow_tick() {
+        for name in ["MacBook Pro Speakers", "mAcBoOk Air SpEaKeRs"] {
+            assert_eq!(playback_tick(name), Duration::from_millis(250));
+        }
+        for name in [
+            "Headphones",
+            "AirPods",
+            "External DAC",
+            "",
+            "MacBook Microphone",
+        ] {
+            assert_eq!(playback_tick(name), Duration::from_millis(50));
+        }
+    }
+
+    #[test]
+    fn builtin_auto_advance_scroll_settles_without_repaint_bursts() {
+        let ctx = egui::Context::default();
+        t::apply(&ctx);
+        let mut episode = Episode::load(
+            &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/episode_small"),
+        )
+        .unwrap();
+        episode.turns = (0..100).map(|_| episode.turns[0].clone()).collect();
+        let visible: Vec<_> = (0..episode.turns.len()).collect();
+        let on_builtin = audio::is_builtin_speakers("MacBook Pro Speakers");
+        for frame in 0..10 {
+            let mut output = ctx.run_ui(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(egui::Pos2::ZERO, t::WINDOW_SIZE.into())),
+                    time: Some(frame as f64 * 0.25),
+                    // Isolate our cadence from egui's predicted-frame subtraction.
+                    predicted_dt: 0.0,
+                    ..Default::default()
+                },
+                |ui| {
+                    ctx.request_repaint_after(playback_tick("MacBook Pro Speakers"));
+                    table::show(
+                        ui,
+                        &episode,
+                        &visible,
+                        Some(80),
+                        Some(80),
+                        (frame == 5).then_some(80),
+                        false,
+                        &Default::default(),
+                        !on_builtin,
+                    );
+                },
+            );
+            if frame > 6 {
+                assert!(
+                    output.viewport_output[&egui::ViewportId::ROOT].repaint_delay
+                        >= SPEAKER_REPLAY_TICK,
+                    "selection reveal must not keep requesting immediate frames: {:?}, causes {:?}",
+                    output.viewport_output[&egui::ViewportId::ROOT].repaint_delay,
+                    ctx.repaint_causes()
+                );
+            }
+            output.textures_delta.clear();
+        }
     }
 }
