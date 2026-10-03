@@ -208,3 +208,50 @@ Additional checks:
 ## Left undone / review boundary
 
 The single unresolved acceptance item is the incompatible EP03 expected verification count. No report was regenerated and no stale result was assigned to a different turn. All other requested nonvisual checks pass. The orchestrator still needs to assess screenshots, live clicking/scrolling, native window appearance, and idle CPU; none were tested or claimed here. Audio playback, jobs and later inspectors remain Phases B/C. No git commit or other git write was performed.
+
+## Screenshot flags
+
+Follow-up (2026-10-02): self-screenshot flags `--screenshot`, `--size`, `--fresh`, `--select` so the orchestrator can verify visuals without macOS Screen Recording permission. New module `ui/src/capture.rs` (flags + capture state machine), wiring in `ui/src/main.rs`.
+
+### API used (checked against egui/eframe 0.36.2 sources, not memory)
+
+- `ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::default()))` — `UserData` is a mandatory payload (`egui/src/viewport.rs:1199`); `UserData::default()` carries nothing.
+- Reply arrives as `egui::Event::Screenshot { viewport_id, user_data, image: Arc<ColorImage> }` in a later frame's `RawInput.events` (`egui/src/data/input/event.rs:181`), read in `App::logic` via `ctx.input(|i| &i.events)`.
+- Default glow backend path: egui-winit turns the command into `ActionRequested::Screenshot` (`egui-winit-0.36.2/src/lib.rs:1940`), and after the next frame is painted `painter.read_screen_rgba(window.inner_size())` pushes the event (`eframe-0.36.2/src/native/glow_integration.rs:806-818`). The image is in **physical pixels**, so a 1440×900 pt window captures at 2880×1800 on a 2× Retina display — full pixel density with no extra work.
+- Encoding: `image` 0.25 with `default-features = false, features = ["png"]`, `RgbaImage::from_raw` + `save_with_format(ImageFormat::Png)` from `ColorImage.pixels` via `Color32::to_array()`. Chosen over the `png` crate because `image` 0.25.10 + `png` 0.18.1 were already in the lockfile (via `egui_extras`/`arboard`): the `Cargo.lock` diff is exactly one dependency edge, zero new packages.
+
+### Frame and settle logic
+
+State machine `Loading → Settling → Requested`, driven from `App::logic` (deadline, event pickup, load-finish transition) and the end of `App::ui` (frame counting):
+
+- **Loading**: wait until `self.pending` is none. A load error or an unsatisfiable `--select` fails immediately (exit 1, message on stderr).
+- **Settling**: count painted frames; require `frames >= 3` **and** `ctx.has_requested_repaint() == false` at the end of the frame (catches scroll-into-view and selection reveals) **and** a 500 ms quiet window since the last frame that requested a repaint. The quiet window covers asynchronously loading icons: `egui_extras` loaders call `ctx.request_repaint()` on completion (`loaders/image_loader.rs:128`), which resets the quiet clock.
+- **Requested**: send the screenshot command, keep ticking; the event is written to PNG, `screenshot: <path> <W>x<H>` is printed to stdout, and the process exits 0 via `std::process::exit`.
+- While any capture is pending the app requests a repaint every 50 ms, so the 20 s deadline and the settle condition are always re-evaluated; exceeding the deadline fails (exit 1, includes the phase it was stuck in). Usage errors exit 2 with the help text. If the window is closed before the capture arrives, `main` reports it and exits 1. A capture run therefore cannot hang.
+
+Persistence rules: `--screenshot` implies `--fresh` unless an episode dir is given, and never writes state either way. Implemented as `Cli::effective_fresh()` / `Cli::persist()`; when not persisting, `Browser::new` skips storage reads, `save()` writes nothing, `NativeOptions.persist_window = false` (otherwise restored geometry would override `--size`), and `App::persist_egui_memory()` returns false. With no flags, every code path is identical to before (persist defaults true, argument-then-remembered episode order unchanged).
+
+`--select N` matches the **manifest** turn index (`Turn.index == turn_index`, `episode.rs:361`), applied once in `accept_episode` through the existing `select()` (so it is also scrolled into view and revealed on the timeline). An unknown turn is a hard failure in capture mode, a one-line stderr warning otherwise.
+
+### Measured results (this machine, 2× Retina)
+
+```
+./target/release/scriptcast-ui --screenshot /tmp/sc-empty.png      → exit 0, 2880x1800, 352,266 bytes, ~1.9 s
+./target/release/scriptcast-ui --screenshot /tmp/sc-ep03.png …/ATO_EP03_five_levels
+                                                                  → exit 0, 2880x1800, 952,396 bytes, ~1.0 s
+./target/release/scriptcast-ui --screenshot /tmp/sc-ep03-sel.png --select 3 …/ATO_EP03_five_levels
+                                                                  → exit 0, 2880x1800, 949,269 bytes, ~1.0 s
+```
+
+Failure probes (all fast, none hung): nonexistent episode dir → exit 1; `--select 9999` on EP03 → exit 1 (`episode has no manifest turn 9999 (392 turns loaded)`); unwritable output path → exit 1; unknown option → exit 2 + usage; `--help` → exit 0.
+
+Acceptance suite after the change: `cargo build --release` clean; `cargo test` 18 bin tests (13 new for argument parsing + a PNG round-trip) + 15 loader tests + 1 font test, all pass; `cargo clippy --all-targets -- -D warnings` clean; the colour-literal scan outside `theme.rs` still prints nothing (tests use named `Color32::RED`).
+
+### Limitations
+
+- The capture is the app's own window content only (that is the point); the OS title bar is not included — sizes are the *inner* size.
+- Pixel dimensions are points × display backing scale: 2880×1800 here, 1440×900 on a 1× display. `--size` is in points accordingly.
+- `--size` below `WINDOW_MIN` (1024×640) is clamped by the min-size constraint.
+- Requires a GUI session (a window must be created); behaviour with an occluded or minimized window was not tested.
+- The 500 ms quiet window is a heuristic: an image that took longer than that to load *and* had not yet requested a repaint could be missed. All icons are tiny embedded files loading in milliseconds, so this is theoretical here; the 20 s deadline bounds the opposite failure.
+- Visual judgement of the captures is the orchestrator's job; only exit codes, dimensions and non-empty bytes were verified here.

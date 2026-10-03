@@ -1,3 +1,4 @@
+mod capture;
 mod table;
 mod timeline;
 mod view;
@@ -85,19 +86,33 @@ struct Browser {
     overview: Vec<Option<usize>>,
     scroll_to: Option<usize>,
     focus_search: bool,
+    persist: bool,
+    capture: Option<capture::Capture>,
+    pending_select: Option<usize>,
+    select_error: Option<String>,
 }
 impl Browser {
-    fn new(cc: &eframe::CreationContext<'_>, argument: Option<PathBuf>) -> Self {
+    fn new(cc: &eframe::CreationContext<'_>, cli: &capture::Cli) -> Self {
         t::apply(&cc.egui_ctx);
-        let preferences = cc
-            .storage
-            .and_then(|s| eframe::get_value(s, STORAGE_KEY))
-            .unwrap_or_default();
+        let preferences = if cli.effective_fresh() {
+            Preferences::default()
+        } else {
+            cc.storage
+                .and_then(|s| eframe::get_value(s, STORAGE_KEY))
+                .unwrap_or_default()
+        };
         let mut app = Self {
             preferences,
+            persist: cli.persist(),
+            capture: cli.screenshot.clone().map(capture::Capture::new),
+            pending_select: cli.select,
             ..Self::default()
         };
-        if let Some(path) = argument.or_else(|| app.preferences.last_episode.clone()) {
+        if let Some(path) = cli
+            .episode
+            .clone()
+            .or_else(|| app.preferences.last_episode.clone())
+        {
             app.open(path, &cc.egui_ctx);
         }
         app
@@ -206,6 +221,19 @@ impl Browser {
         self.error = None;
         // Reset virtual scroll on a new episode; preserve/reveal selection on reload.
         self.scroll_to = self.selected.or(Some(0));
+        if let Some(want) = self.pending_select.take() {
+            let episode = self.episode.as_ref().expect("just accepted");
+            let position = episode.turns.iter().position(|turn| turn.index == want);
+            let count = episode.turns.len();
+            match position {
+                Some(position) => self.select(position),
+                None => {
+                    self.select_error = Some(format!(
+                        "episode has no manifest turn {want} ({count} turns loaded)"
+                    ));
+                }
+            }
+        }
     }
     fn select(&mut self, index: usize) {
         if let Some(e) = &self.episode
@@ -215,6 +243,80 @@ impl Browser {
             self.scroll_to = Some(index);
             self.timeline.reveal(turn.start_ms, turn.end_ms, e.total_ms);
         }
+    }
+    fn capture_logic(&mut self, ctx: &egui::Context) {
+        if let Some(message) = self.select_error.take() {
+            if self.capture.is_some() {
+                capture::fail(&message);
+            }
+            eprintln!("scriptcast-ui: {message}");
+        }
+        let Some(cap) = &mut self.capture else {
+            return;
+        };
+        if Instant::now() >= cap.deadline {
+            capture::fail(&format!(
+                "timed out after {} s while {}",
+                capture::TIMEOUT.as_secs(),
+                cap.phase.describe(cap.frames)
+            ));
+        }
+        let mut received = None;
+        ctx.input(|input| {
+            for event in &input.events {
+                if let egui::Event::Screenshot { image, .. } = event {
+                    received = Some(Arc::clone(image));
+                }
+            }
+        });
+        if let Some(image) = received {
+            match capture::write_png(&cap.path, &image) {
+                Ok(()) => {
+                    println!(
+                        "screenshot: {} {}x{}",
+                        cap.path.display(),
+                        image.width(),
+                        image.height()
+                    );
+                    std::process::exit(0);
+                }
+                Err(message) => capture::fail(&message),
+            }
+        }
+        if cap.phase == capture::Phase::Loading && self.pending.is_none() {
+            if let Some((path, error)) = &self.error {
+                capture::fail(&format!("could not open {}: {error}", path.display()));
+            }
+            if self.pending_select.is_some() {
+                capture::fail("--select needs an episode, but none was loaded");
+            }
+            cap.phase = capture::Phase::Settling;
+            cap.quiet_since = Instant::now();
+        }
+    }
+    fn capture_settle(&mut self, ctx: &egui::Context) {
+        let Some(cap) = &mut self.capture else {
+            return;
+        };
+        // Requests made during this frame (scroll reveals, finished icon loads)
+        // mean the UI is still moving; only an idle frame advances the clock.
+        let repaint_pending = ctx.has_requested_repaint();
+        if cap.phase == capture::Phase::Settling {
+            cap.frames += 1;
+            if repaint_pending {
+                cap.quiet_since = Instant::now();
+            }
+            if cap.frames >= capture::MIN_FRAMES
+                && !repaint_pending
+                && cap.quiet_since.elapsed() >= capture::QUIET
+            {
+                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
+                    egui::UserData::default(),
+                ));
+                cap.phase = capture::Phase::Requested;
+            }
+        }
+        ctx.request_repaint_after(capture::TICK);
     }
     fn shortcuts(&mut self, ctx: &egui::Context) {
         if ctx.text_edit_focused() {
@@ -793,12 +895,19 @@ impl Browser {
 impl eframe::App for Browser {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.poll_load(ctx);
+        self.capture_logic(ctx);
     }
     fn ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
         self.show(ui);
+        self.capture_settle(ui.ctx());
     }
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
-        eframe::set_value(storage, STORAGE_KEY, &self.preferences);
+        if self.persist {
+            eframe::set_value(storage, STORAGE_KEY, &self.preferences);
+        }
+    }
+    fn persist_egui_memory(&self) -> bool {
+        self.persist
     }
 }
 fn now() -> u64 {
@@ -815,20 +924,39 @@ fn opened_when(timestamp: u64) -> String {
     }
 }
 fn main() -> eframe::Result {
-    let argument = std::env::args_os().nth(1).map(PathBuf::from);
+    let cli = match capture::Cli::parse(std::env::args_os().skip(1)) {
+        Ok(cli) => cli,
+        Err(message) => {
+            eprintln!("scriptcast-ui: {message}\n\n{}", capture::USAGE);
+            std::process::exit(2);
+        }
+    };
+    if cli.help {
+        println!("{}", capture::USAGE);
+        std::process::exit(0);
+    }
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("scriptCast — Episode workspace")
-            .with_inner_size(t::WINDOW_SIZE)
+            .with_inner_size(cli.size)
             .with_min_inner_size(t::WINDOW_MIN)
             .with_decorations(true),
+        persist_window: cli.persist(),
         ..Default::default()
     };
-    eframe::run_native(
+    let capturing = cli.screenshot.is_some();
+    let result = eframe::run_native(
         "scriptcast-ui",
         options,
-        Box::new(move |cc| Ok(Box::new(Browser::new(cc, argument)))),
-    )
+        Box::new(move |cc| Ok(Box::new(Browser::new(cc, &cli)))),
+    );
+    if capturing {
+        // A finished capture exits the process itself; reaching this point
+        // means the window closed before the screenshot arrived.
+        eprintln!("scriptcast-ui: window closed before the screenshot was captured");
+        std::process::exit(1);
+    }
+    result
 }
 
 #[cfg(test)]
