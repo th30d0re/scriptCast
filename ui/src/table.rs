@@ -93,7 +93,6 @@ pub fn show(
     scroll_to: Option<usize>,
     failed_only: bool,
     multi: &std::collections::BTreeSet<usize>,
-    animated_scroll: bool,
 ) -> Option<usize> {
     let area = ui.max_rect();
     let widths = ColumnWidths::measure(ui, episode);
@@ -118,7 +117,6 @@ pub fn show(
     body_ui.spacing_mut().item_spacing.y = 0.0;
     let mut scroll = egui::ScrollArea::vertical()
         .id_salt("turn_rows")
-        .animated(animated_scroll)
         .auto_shrink([false, false]);
     if let Some(position) = scroll_to.and_then(|idx| visible.iter().position(|v| *v == idx)) {
         scroll = scroll.vertical_scroll_offset(

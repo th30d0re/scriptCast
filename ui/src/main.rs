@@ -5,7 +5,7 @@ mod table;
 mod timeline;
 mod view;
 
-use eframe::egui::{self, Align, Layout, Rect, Sense, Ui, UiBuilder, pos2, vec2};
+use eframe::egui::{self, Align, Layout, Rect, Sense, StrokeKind, Ui, UiBuilder, pos2, vec2};
 use inspector::InspectorMode;
 use scriptcast_ui::{
     audio::{self, AudioOut},
@@ -13,6 +13,7 @@ use scriptcast_ui::{
     daw::{self, DawEvent, DawTask},
     episode::{Episode, LoadError, VerificationState as V, overview_section_count},
     theme as t,
+    waveform::{self, Waveforms},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -30,16 +31,6 @@ const STORAGE_KEY: &str = "scriptcast_browser";
 const LOAD_NOTICE_DELAY: Duration = Duration::from_millis(150);
 /// Repaint cadence while audio is playing; no repaints are requested when idle.
 const REPLAY_TICK: Duration = Duration::from_millis(50);
-/// Reduce rendering bursts while playing through built-in MacBook speakers.
-const SPEAKER_REPLAY_TICK: Duration = Duration::from_millis(250);
-
-fn playback_tick(device: &str) -> Duration {
-    if audio::is_builtin_speakers(device) {
-        SPEAKER_REPLAY_TICK
-    } else {
-        REPLAY_TICK
-    }
-}
 
 // Empty-workspace copy, factored out so the content height measurement in
 // `empty_left_height`/`empty_right_height` cannot drift from what is rendered.
@@ -247,6 +238,7 @@ struct Browser {
     device_error: Option<String>,
     /// The Unavailable device card is hidden (but the error stays active).
     device_card_dismissed: bool,
+    waveforms: Option<Waveforms>,
     /// Show the Missing audio card for the selected turn.
     missing_audio_card: bool,
     /// Transient playback/open notices, shown in the status bar.
@@ -381,6 +373,8 @@ impl Browser {
         self.stop_audio();
         self.missing_audio_card = false;
         self.selected_media = None;
+        self.waveforms = None; // Drop old ones before starting new
+        self.waveforms = Some(Waveforms::start(&episode, ctx.clone()));
         let same = self
             .episode
             .as_ref()
@@ -658,12 +652,6 @@ impl Browser {
     }
     /// Device-error poll, natural-finish detection and the playing-only
     /// repaint cadence. Runs in `logic`, before any capture handling.
-    fn output_name(&self) -> &str {
-        match &self.audio {
-            Some(Ok(audio)) => audio.device_name(),
-            _ => "",
-        }
-    }
     fn poll_audio(&mut self, ctx: &egui::Context) {
         let device_error = match self.audio.as_mut() {
             Some(Ok(audio)) => {
@@ -728,7 +716,7 @@ impl Browser {
             }
         }
         if matches!(self.transport, Transport::Playing(_)) {
-            ctx.request_repaint_after(playback_tick(self.output_name()));
+            ctx.request_repaint_after(REPLAY_TICK);
         }
     }
     fn capture_logic(&mut self, ctx: &egui::Context) {
@@ -1597,25 +1585,92 @@ impl Browser {
         let track = Rect::from_min_max(
             pos2(
                 remaining.left(),
-                remaining.center().y - t::SEEK_TRACK_HEIGHT / 2.0,
+                remaining.center().y - t::WAVE_VIEWPORT_HEIGHT / 2.0,
             ),
             pos2(
                 (options.min_rect().left() - t::SPACE_18).max(remaining.left()),
-                remaining.center().y + t::SEEK_TRACK_HEIGHT / 2.0,
+                remaining.center().y + t::WAVE_VIEWPORT_HEIGHT / 2.0,
             ),
         );
-        bar.painter()
-            .rect_filled(track, t::RADIUS_SEEK_TRACK, t::BG_CONTROL);
-        if let Some(duration) = duration_ms.filter(|d| !d.is_zero()) {
-            let fraction = (position_ms as f32 / duration.as_millis() as f32).clamp(0.0, 1.0);
-            if fraction > 0.0 {
-                let elapsed = Rect::from_min_max(
-                    track.min,
-                    pos2(track.left() + track.width() * fraction, track.bottom()),
-                );
-                bar.painter()
-                    .rect_filled(elapsed, t::RADIUS_SEEK_TRACK, t::ACCENT);
+        bar.painter().rect(
+            track,
+            t::RADIUS_WAVE_VIEWPORT,
+            t::BG_SURFACE,
+            egui::Stroke::new(t::BORDER, t::BORDER_DEFAULT),
+            StrokeKind::Inside,
+        );
+        let centre_x = track.center().x;
+        let pos_sec = position_ms as f32 / 1000.0;
+        let turn_idx = playing_turn.or(self.selected);
+        let envelope = turn_idx.and_then(|i| self.waveforms.as_ref().and_then(|w| w.get(i)));
+        let mut seek_to = None;
+        if let Some(env) = envelope {
+            let dur_sec = duration_ms.map(|d| d.as_secs_f32()).unwrap_or(0.0);
+            let window_start = pos_sec - t::WAVE_VIEWPORT_SECONDS / 2.0;
+            let bar_space = t::WAVE_BAR + t::WAVE_GAP;
+            let n = (track.width() / bar_space) as usize;
+            let max_h = track.height() * t::WAVE_VIEWPORT_FILL;
+            let painter = bar.painter().with_clip_rect(track);
+            if n > 0 && track.width() > 0.0 {
+                for i in 0..n {
+                    let t0 = window_start + (i as f32) * t::WAVE_VIEWPORT_SECONDS / n as f32;
+                    let t1 = window_start + ((i + 1) as f32) * t::WAVE_VIEWPORT_SECONDS / n as f32;
+                    let Some(peak) = waveform::peak_in_range(env, t0, t1, dur_sec) else {
+                        continue;
+                    };
+                    let h = (peak * max_h).max(t::WAVE_MIN);
+                    let x = track.left() + i as f32 * bar_space;
+                    let y = track.center().y - h / 2.0;
+                    let colour = if x + t::WAVE_BAR / 2.0 < centre_x {
+                        t::ACCENT
+                    } else {
+                        t::TEXT_MUTED
+                    };
+                    painter.rect_filled(
+                        Rect::from_min_size(pos2(x, y), vec2(t::WAVE_BAR, h)),
+                        0.0,
+                        colour,
+                    );
+                }
             }
+            let playhead = Rect::from_center_size(
+                pos2(centre_x, track.center().y),
+                vec2(t::WAVE_PLAYHEAD, track.height()),
+            );
+            painter.rect_filled(playhead, 0.0, t::TEXT_PRIMARY);
+            let clear = egui::Color32::TRANSPARENT;
+            let fade = t::WAVE_FADE.min(track.width() / 2.0);
+            let mut mesh = egui::Mesh::default();
+            let left_inner = track.left() + fade;
+            mesh.colored_vertex(pos2(track.left(), track.top()), t::BG_SURFACE);
+            mesh.colored_vertex(pos2(left_inner, track.top()), clear);
+            mesh.colored_vertex(pos2(track.left(), track.bottom()), t::BG_SURFACE);
+            mesh.colored_vertex(pos2(left_inner, track.bottom()), clear);
+            mesh.add_triangle(0, 1, 2);
+            mesh.add_triangle(1, 2, 3);
+            let right_inner = track.right() - fade;
+            let base = 4;
+            mesh.colored_vertex(pos2(track.right(), track.top()), t::BG_SURFACE);
+            mesh.colored_vertex(pos2(right_inner, track.top()), clear);
+            mesh.colored_vertex(pos2(track.right(), track.bottom()), t::BG_SURFACE);
+            mesh.colored_vertex(pos2(right_inner, track.bottom()), clear);
+            mesh.add_triangle(base, base + 1, base + 2);
+            mesh.add_triangle(base + 1, base + 2, base + 3);
+            painter.add(egui::Shape::mesh(mesh));
+        }
+        let response = bar.interact(
+            track,
+            bar.id().with("wave_viewport"),
+            Sense::click_and_drag(),
+        );
+        if (response.clicked() || response.dragged())
+            && let Some(pointer) = response.interact_pointer_pos()
+            && track.width() > 0.0
+            && let Some(duration) = duration_ms.filter(|d| !d.is_zero())
+        {
+            let delta_sec = (pointer.x - centre_x) / track.width() * t::WAVE_VIEWPORT_SECONDS;
+            let new_sec = (pos_sec + delta_sec).clamp(0.0, duration.as_secs_f32());
+            seek_to = Some(Duration::from_secs_f32(new_sec));
         }
         if play_clicked {
             self.play_selected();
@@ -1625,6 +1680,24 @@ impl Browser {
         }
         if let Some(name) = chosen_device {
             self.choose_device(name);
+        }
+        if let Some(pos) = seek_to {
+            match self.transport {
+                Transport::Playing(_) | Transport::Paused(_) => {
+                    if let Some(Ok(audio)) = self.audio.as_mut() {
+                        audio.seek(pos);
+                    }
+                }
+                Transport::Idle if live => {
+                    self.play_selected();
+                    if matches!(self.transport, Transport::Playing(_))
+                        && let Some(Ok(audio)) = self.audio.as_mut()
+                    {
+                        audio.seek(pos);
+                    }
+                }
+                Transport::Idle => {}
+            }
         }
     }
     fn status(&self, ui: &mut Ui) {
@@ -1905,6 +1978,9 @@ impl Browser {
 impl Browser {
     fn show(&mut self, ui: &mut Ui) {
         let ctx = ui.ctx().clone();
+        if let Some(w) = self.waveforms.as_mut() {
+            w.poll();
+        }
         self.shortcuts(&ctx);
         let rect = ui.max_rect();
         ui.painter().rect_filled(rect, 0, t::BG_WINDOW);
@@ -1951,6 +2027,7 @@ impl Browser {
                 &matches,
                 self.selected,
                 playing,
+                self.waveforms.as_ref(),
             );
             if let Some(i) = clicked {
                 self.multi_select(i, ctx.input(|i| i.modifiers));
@@ -1972,7 +2049,6 @@ impl Browser {
                 }
                 false => (review, None),
             };
-            let on_builtin_speakers = audio::is_builtin_speakers(self.output_name());
             let clicked = table::show(
                 &mut view::region(ui, "table", table_rect, t::BG_SURFACE),
                 self.episode.as_ref().unwrap(),
@@ -1982,7 +2058,6 @@ impl Browser {
                 self.scroll_to.take(),
                 self.filters.failed_only,
                 &self.jobs.selected,
-                !on_builtin_speakers,
             );
             if let Some(i) = clicked {
                 self.multi_select(i, ctx.input(|i| i.modifiers));
@@ -2576,74 +2651,5 @@ mod tests {
             assert!(app.empty_right_height(ui) <= available);
         });
         output.textures_delta.clear();
-    }
-}
-
-#[cfg(test)]
-mod speaker_redraw_tests {
-    use super::*;
-
-    #[test]
-    fn only_builtin_speakers_use_the_slow_tick() {
-        for name in ["MacBook Pro Speakers", "mAcBoOk Air SpEaKeRs"] {
-            assert_eq!(playback_tick(name), Duration::from_millis(250));
-        }
-        for name in [
-            "Headphones",
-            "AirPods",
-            "External DAC",
-            "",
-            "MacBook Microphone",
-        ] {
-            assert_eq!(playback_tick(name), Duration::from_millis(50));
-        }
-    }
-
-    #[test]
-    fn builtin_auto_advance_scroll_settles_without_repaint_bursts() {
-        let ctx = egui::Context::default();
-        t::apply(&ctx);
-        let mut episode = Episode::load(
-            &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/episode_small"),
-        )
-        .unwrap();
-        episode.turns = (0..100).map(|_| episode.turns[0].clone()).collect();
-        let visible: Vec<_> = (0..episode.turns.len()).collect();
-        let on_builtin = audio::is_builtin_speakers("MacBook Pro Speakers");
-        for frame in 0..10 {
-            let mut output = ctx.run_ui(
-                egui::RawInput {
-                    screen_rect: Some(Rect::from_min_size(egui::Pos2::ZERO, t::WINDOW_SIZE.into())),
-                    time: Some(frame as f64 * 0.25),
-                    // Isolate our cadence from egui's predicted-frame subtraction.
-                    predicted_dt: 0.0,
-                    ..Default::default()
-                },
-                |ui| {
-                    ctx.request_repaint_after(playback_tick("MacBook Pro Speakers"));
-                    table::show(
-                        ui,
-                        &episode,
-                        &visible,
-                        Some(80),
-                        Some(80),
-                        (frame == 5).then_some(80),
-                        false,
-                        &Default::default(),
-                        !on_builtin,
-                    );
-                },
-            );
-            if frame > 6 {
-                assert!(
-                    output.viewport_output[&egui::ViewportId::ROOT].repaint_delay
-                        >= SPEAKER_REPLAY_TICK,
-                    "selection reveal must not keep requesting immediate frames: {:?}, causes {:?}",
-                    output.viewport_output[&egui::ViewportId::ROOT].repaint_delay,
-                    ctx.repaint_causes()
-                );
-            }
-            output.textures_delta.clear();
-        }
     }
 }
