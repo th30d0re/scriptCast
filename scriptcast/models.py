@@ -46,6 +46,7 @@ class SegmentResult:
     sample_rate: int
     gap_after_ms: int
     checksum: str
+    audio_channels: int = 2
 
 
 @dataclass

@@ -62,7 +62,7 @@ def _build_asset(resource_id: int, segment: SegmentResult, project_root: Path) -
             "hasVideo": "0",
             "hasAudio": "1",
             "audioSources": "1",
-            "audioChannels": "2",
+            "audioChannels": str(segment.audio_channels),
             "audioRate": str(segment.sample_rate),
         },
     )
