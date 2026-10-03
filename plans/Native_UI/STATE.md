@@ -15,29 +15,32 @@
 
 ## Phase A — Episode Browser
 
-- Last run: —
-- Status: **not started** (ready)
-- Verifier: —
+- Last run: 2026-10-03 ~00:30 local
+- Status: **passed** — merged to `dev` at `8da185f` (fast-forward from `ui/phase-a`)
+- Implementer: Codex (gpt-6-astra, high) for steps 1–8; Kimi for the self-capture flags and visual round 1 (Codex usage limit hit 2026-10-02 23:40, resets 01:41)
+- Verifier: orchestrator. Live UI control of the app was declined by the operator, so visuals were checked with the app's own `--screenshot` capture.
+- Visual rounds: 1 (seven text-fitting and layout fixes, all resolved)
+- Evidence: `evidence/phaseA-01.png`, `evidence/phaseA-02-select4.png`, `evidence/phaseA-findings.md`
 
 ### Checklist
 
 | # | Check | Result | Notes |
 |---|---|---|---|
-| 1 | Files from plan.md steps 1-8 exist; `ui/target/` ignored; OpenDyslexic fonts embedded and rendering | ⬜ | FONT_SCALE: |
-| 2 | cargo build --release / test / clippy -D warnings green | ⬜ | |
-| 3 | Loader tests cover all plan.md step 6 cases | ⬜ | |
-| 4 | No hex colour literals outside theme.rs | ⬜ | |
-| 5 | EP03: real header, 4 real speaker lanes, timeline end matches manifest, Not verified vs Failed correct | ⬜ | |
-| 6 | Search, speaker filter, Failed only, segment click-to-select work | ⬜ | |
-| 7 | Error state on a bad directory; current episode stays open | ⬜ | |
-| 8 | Design fidelity vs screens 01, 02 | ⬜ | |
-| 9 | EP03 load < 50 ms; smooth scroll; idle CPU ~0% | ⬜ | |
-| 10 | No Python changes; EP03 directory untouched; no Figma calls | ⬜ | |
+| 1 | Files from plan.md steps 1-8 exist; `ui/target/` ignored; OpenDyslexic fonts embedded and rendering | ✅ | FONT_SCALE: 1.0. CFF OTFs render in epaint 0.36.2; font test checks glyph atlas UVs differ from the replacement glyph |
+| 2 | cargo build --release / test / clippy -D warnings green | ✅ | 40 tests + 1 ignored (EP03) |
+| 3 | Loader tests cover all plan.md step 6 cases | ✅ | plus malformed CSV, cancellation, stale stress IDs, nullable `repetition` |
+| 4 | No hex colour literals outside theme.rs | ✅ | grep empty |
+| 5 | EP03: real header, 4 real speaker lanes, timeline end matches manifest, Not verified vs Failed correct | ✅ | 13 Passed / 0 Failed / 379 Not verified; 5 stress.json turn_ids are stale (report predates the 2026-09-18 re-render) and surface as a header warning |
+| 6 | Search, speaker filter, Failed only, segment click-to-select work | ⚠️ | Selection verified via `--select`; search/filter logic unit-tested (`filters_intersect_and_never_manufacture_verification`); not live-clicked (no UI control) |
+| 7 | Error state on a bad directory; current episode stays open | ⚠️ | Unit-tested (`failed_open_keeps_episode_and_recent_history`); not captured |
+| 8 | Design fidelity vs screens 01, 02 | ✅ | After round 1. Intentional differences: OpenDyslexic (wider), real data, 0-based turn numbers (the CLI index), "Cmd+O"/"Cmd+F" text (font lacks ⌘), native title bar |
+| 9 | EP03 load < 50 ms; smooth scroll; idle CPU ~0% | ✅ | 9.6 ms; idle 0.0% CPU, ~117 MB RSS; scroll smoothness not live-tested |
+| 10 | No Python changes; EP03 directory untouched; no Figma calls | ✅ | EP03 hashes unchanged |
 
 ## Phase B — Playback
 
 - Last run: —
-- Status: **blocked on Phase A**
+- Status: **ready** (Phase A passed)
 
 ### Checklist
 

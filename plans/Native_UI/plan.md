@@ -386,18 +386,18 @@ No file under `scriptcast/` or `tests/` (Python) changes in any phase.
 
 ## Section 5: Plan Audit
 
-Implementation has not started. This table is scaffolded now and must be completed after implementation; every Implementation Step appears as a row.
+Phase A rows completed 2026-10-03; Phase B and C rows are filled as those phases land.
 
 | Plan Step | Actual Outcome | Deviation (Yes/No) | Notes |
 |---|---|---|---|
-| 1. `.gitignore` `ui/target/` | | | |
-| 2. `Cargo.toml` features, egui_extras, toml, sha2, release profile | | | |
-| 3. `theme.rs` tokens, fonts, icons, buttons | | | |
-| 4. `episode.rs` loader + model | | | |
-| 5. Fixture episode | | | |
-| 6. `tests/episode_load.rs` | | | |
-| 7. `lib.rs` | | | |
-| 8. `main.rs` browser window (screens 01, 02 + Empty/Loading/Error) | | | |
+| 1. `.gitignore` `ui/target/` | Added | No | |
+| 2. `Cargo.toml` features, egui_extras, toml, sha2, release profile | Done; plus `image` (png) and `chrono` | Yes | `image` for self-capture PNGs, `chrono` for local date formatting (visual round 1) |
+| 3. `theme.rs` tokens, fonts, icons, buttons | Done; FONT_SCALE 1.0; text-measuring helpers added | Yes | Text boxes size to measured OpenDyslexic width with the token as minimum (font ~45% wider than Inter) |
+| 4. `episode.rs` loader + model | Done; cancellable background load; stale stress IDs reported | Yes | `repetition` is `Option<String>` (verify_render.py:92-121), not a flag |
+| 5. Fixture episode | Done; 4 WAVs (turn 2 has two segments) | No | |
+| 6. `tests/episode_load.rs` | Done + ignored EP03 test | Yes | EP03 expectation corrected to 13/0/379/0 by the orchestrator (brief said 18/374) |
+| 7. `lib.rs` | Done | No | |
+| 8. `main.rs` browser window (screens 01, 02 + Empty/Loading/Error) | Done; split into `timeline.rs`, `table.rs`, `view.rs`, `capture.rs`; `--screenshot/--fresh/--size/--select` added | Yes | Self-capture added because UI control was declined; egui 0.36 API differences in findings |
 | 9. `audio.rs` | | | |
 | 10. `main.rs` playback (screen 03 + Missing audio/Unavailable device) | | | |
 | 11. `runner.rs` presets + job | | | |
