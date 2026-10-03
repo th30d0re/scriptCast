@@ -40,7 +40,8 @@
 ## Phase B — Playback
 
 - Last run: —
-- Status: **ready** (Phase A passed)
+- Status: **in progress** — dispatched 2026-10-03 to Kimi (operator's choice) in worktree `Dev/Tools/scriptCast-worktrees/phase-b`, branch `ui/phase-b`; brief `briefs/phase-b.md`; findings `evidence/phaseB-findings.md`
+- Font note: UI face switched to OpenDyslexic 3 at `4616e98` (operator request), OpenDyslexic 0.99 kept as symbol fallback; mono face for every time/number/file readout
 
 ### Checklist
 
