@@ -39,24 +39,26 @@
 
 ## Phase B — Playback
 
-- Last run: —
-- Status: **in progress** — dispatched 2026-10-03 to Kimi (operator's choice) in worktree `Dev/Tools/scriptCast-worktrees/phase-b`, branch `ui/phase-b`; brief `briefs/phase-b.md`; findings `evidence/phaseB-findings.md`
-- Font note: UI face switched to OpenDyslexic 3 at `4616e98` (operator request), OpenDyslexic 0.99 kept as symbol fallback; mono face for every time/number/file readout
+- Last run: 2026-10-03 ~11:40 local
+- Status: **passed (operator ear checks pending)** — merged to `dev` at `6259d3e`
+- Implementer: Kimi (09:54–11:14; its weekly quota ended while finalising findings, after acceptance had passed). Orchestrator completed the findings and fixed the state-card copy.
+- Evidence: `evidence/phaseB-playing.png`, `phaseB-sel.png`, `phaseB-device-lost.png`, `phaseB-missing-audio.png`, `evidence/phaseB-findings.md`
+- API discoveries: rodio 0.22's `speakers` module requires the `experimental` feature (devices via cpal + `DeviceSinkBuilder::from_device` instead); `Player::get_pos()` resets per appended segment (position is wall-clock); `try_seek` only seeks within the current segment.
 
 ### Checklist
 
 | # | Check | Result | Notes |
 |---|---|---|---|
-| 1 | audio.rs exists; build/test/clippy green | ⬜ | |
-| 2 | Space play/pause, Esc stop (by ear) | ⬜ | |
-| 3 | Switching turns while playing: no overlap (by ear) | ⬜ | |
-| 4 | Multi-segment turn plays in order; time and seek advance (by ear) | ⬜ | |
-| 5 | Auto-advance follows the active filter (by ear) | ⬜ | |
-| 6 | Space in the search box does not play | ⬜ | |
-| 7 | Missing WAV: Missing audio row, other turns still play | ⬜ | |
-| 8 | Device menu works; lost device pauses and shows Unavailable device (by ear) | ⬜ | |
-| 9 | Design fidelity vs screen 03 | ⬜ | |
-| 10 | Idle CPU ~0% when not playing | ⬜ | |
+| 1 | audio.rs exists; build/test/clippy green | ✅ | 49 tests + 2 ignored |
+| 2 | Space play/pause, Esc stop (by ear) | ⬜ | operator |
+| 3 | Switching turns while playing: no overlap (by ear) | ⬜ | operator |
+| 4 | Fixture two-segment turn plays both chunks in order; time and seek advance | ✅ | muted ignored test passes (400 ms); EP03 capture shows 00:04.829 / 00:08.359 and progress |
+| 5 | Auto-advance follows the active filter | ⚠️ | unit-tested (next visible turn, end of list, skips missing audio); by-ear pending |
+| 6 | Space in the search box does not play | ⚠️ | shortcut suppression unit-tested; not live-typed |
+| 7 | Missing WAV: Missing audio row + state, other turns still play | ✅ | capture on fixture copy |
+| 8 | Device menu works; lost device pauses and shows Unavailable device | ⚠️ | simulated loss captured (paused at 00:02.05, selection kept); real unplug pending (operator) |
+| 9 | Design fidelity vs screen 03 | ✅ | after removing specimen captions/notes from state cards |
+| 10 | Idle CPU ~0% when not playing | ✅ | repaint only while playing (code review); Phase A idle 0.0% |
 
 ## Phase B2 — Open in DAW
 

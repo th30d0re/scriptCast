@@ -411,8 +411,8 @@ Phase A rows completed 2026-10-03; Phase B and C rows are filled as those phases
 | 6. `tests/episode_load.rs` | Done + ignored EP03 test | Yes | EP03 expectation corrected to 13/0/379/0 by the orchestrator (brief said 18/374) |
 | 7. `lib.rs` | Done | No | |
 | 8. `main.rs` browser window (screens 01, 02 + Empty/Loading/Error) | Done; split into `timeline.rs`, `table.rs`, `view.rs`, `capture.rs`; `--screenshot/--fresh/--size/--select` added | Yes | Self-capture added because UI control was declined; egui 0.36 API differences in findings |
-| 9. `audio.rs` | | | |
-| 10. `main.rs` playback (screen 03 + Missing audio/Unavailable device) | | | |
+| 9. `audio.rs` | Done | Yes | Devices via cpal + `DeviceSinkBuilder::from_device` (rodio `speakers` is behind `experimental`); wall-clock position (`get_pos` resets per segment); seek within current segment only |
+| 10. `main.rs` playback (screen 03 + Missing audio/Unavailable device) | Done; `inspector.rs` with `InspectorMode`; capture flags `--play/--at/--mute/--simulate-device-loss` | Yes | FIRST WORDS vs TRANSCRIPT labelling; auto-advance skips missing-audio turns; state cards drop Figma specimen captions |
 | B2.1 `scriptcast-export --fcpxml` | | | |
 | B2.2 FCPXML mono channel fix | | | |
 | B2.3 Python tests | | | |
