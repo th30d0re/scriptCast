@@ -1446,7 +1446,6 @@ impl Browser {
             .show(ctx,|ui| {
                 ui.spacing_mut().item_spacing.y=t::SPACE_18;
                 if let Some(path)=&loading {
-                    ui.label(t::heading("Workspace state / Loading",t::TEXT_13));
                     ui.horizontal(|ui| { ui.add(egui::Image::new(t::icon("loader-circle-22-accent")).fit_to_exact_size(egui::Vec2::splat(t::SPACE_22))); ui.label(t::heading(format!("Loading {}…",path.file_name().unwrap_or_default().to_string_lossy()),t::STATE_TITLE)); });
                     ui.label(t::text("Reading turn metadata, audio paths and verification results.",t::TEXT_13,t::TEXT_MUTED));
                     let (bar,_)=ui.allocate_exact_size(vec2(ui.available_width(),t::PROGRESS_HEIGHT),Sense::hover());
@@ -1458,7 +1457,6 @@ impl Browser {
                     ui.label(t::text("Your files remain local. Cancel keeps the current episode open.",t::SECONDARY,t::TEXT_MUTED));
                     ctx.request_repaint_after(Duration::from_millis(50));
                 } else if let Some((path,error))=&self.error {
-                    ui.label(t::heading("Workspace state / Error",t::TEXT_13));
                     ui.horizontal(|ui| { ui.add(egui::Image::new(t::icon("circle-alert-22-danger")).fit_to_exact_size(egui::Vec2::splat(t::SPACE_22))); ui.label(t::heading("Couldn’t open this episode",t::STATE_TITLE)); });
                     ui.label(t::text("Turn metadata could not be read. Choose a rendered episode directory or fix the metadata and try again.",t::TEXT_13,t::TEXT_MUTED));
                     ui.label(t::text(error,t::SECONDARY,t::STATUS_FAILED));
@@ -1469,17 +1467,14 @@ impl Browser {
                     });
                     ui.label(t::text(if self.episode.is_some() { "The current episode is still open. A malformed directory does not erase it." } else { "Choose a directory containing episode_manifest.json." },t::SECONDARY,t::TEXT_MUTED));
                 } else if let Some((message, position)) = &device {
-                    ui.label(t::heading("Workspace state / Unavailable device",t::TEXT_13));
-                    ui.horizontal(|ui| { ui.add(egui::Image::new(t::icon("headphones-22-accent")).fit_to_exact_size(egui::Vec2::splat(t::SPACE_22))); ui.label(t::heading("Audio output unavailable",t::STATE_TITLE)); });
+                    ui.horizontal(|ui| { ui.add(egui::Image::new(t::icon("headphones-22-accent")).fit_to_exact_size(egui::Vec2::splat(t::SPACE_22))); ui.label(t::heading("Audio output unavailable",t::STATE_TITLE)).on_hover_text(message.as_str()); });
                     let body = match position {
                         Some(position) => format!(
-                            "The selected device was disconnected ({}). Playback is paused at {}; your selection is unchanged. Choose another output to resume.",
-                            message,
+                            "The selected device was disconnected. Playback is paused at {}; your selection is unchanged. Choose another output to resume.",
                             view::time(position.as_millis() as u64)
                         ),
-                        None => format!(
-                            "The selected device was disconnected ({message}). Choose another output to continue."
-                        ),
+                        None => "The selected device was disconnected. Choose another output to continue."
+                            .to_owned(),
                     };
                     ui.label(t::text(body,t::TEXT_13,t::TEXT_MUTED));
                     ui.horizontal(|ui| {
@@ -1499,9 +1494,7 @@ impl Browser {
                         }
                         dismiss=t::secondary_button(ui,"Dismiss",None,true).clicked();
                     });
-                    ui.label(t::text("Device errors affect playback, not browsing or CLI jobs.",t::SECONDARY,t::TEXT_MUTED));
                 } else if let Some((index, file)) = &missing {
-                    ui.label(t::heading("Workspace state / Missing audio",t::TEXT_13));
                     ui.horizontal(|ui| { ui.add(egui::Image::new(t::icon("volume-x-22-danger")).fit_to_exact_size(egui::Vec2::splat(t::SPACE_22))); ui.label(t::heading(format!("Audio missing · Turn {index:03}"),t::STATE_TITLE)); });
                     ui.label(t::text(format!("{file} was not found. Transcript and verification history are available. Restore the file or regenerate the selected turn."),t::TEXT_13,t::TEXT_MUTED));
                     ui.horizontal(|ui| {
@@ -1509,7 +1502,6 @@ impl Browser {
                         t::primary_button(ui,"Regenerate selected",None,false);
                         dismiss=t::secondary_button(ui,"Dismiss",None,true).clicked();
                     });
-                    ui.label(t::text("Keep metadata and all unaffected turns inspectable.",t::SECONDARY,t::TEXT_MUTED));
                 }
             });
         if cancel {

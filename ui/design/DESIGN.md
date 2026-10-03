@@ -69,7 +69,7 @@ Plan step numbers refer to `plans/Native_UI/plan.md` Section 4.
 
 **Confirmation dialog (screen 06).** Scrim `bg/scrim` over the workspace; dialog 540 wide, `bg/raised`, 1 px border, radius 12, padding 24, gap 18, `shadow.dialog`. Shield-check icon 26 + title 20/600; 13 muted description; scope box (`bg/window`, radius 5, padding 14) with EPISODE and AFFECTED TURNS fields; `status/failed` warning row with triangle-alert 16; command disclosure box (`bg/surface`, border, radius 5, padding 12) with the command in mono 11; actions right-aligned: Cancel (secondary), "Confirm · <preset>" (primary).
 
-**Workspace states (component sheet).** Card 680 wide, `bg/surface`, border, radius 8, padding 16. Icon 22 + title 18/600, body 13 muted, recovery button(s), footnote 11 muted. Loading adds a 3 px progress bar and Cancel.
+**Workspace states (component sheet).** Card 680 wide, `bg/surface`, border, radius 8, padding 16. Icon 22 + title 18/600, body 13 muted, recovery button(s). Loading adds a 3 px progress bar and Cancel. **Do not render** the sheet's caption line ("Workspace state / …", 13/600) or its 11 px footnote: both are designer annotations on the specimen, not app copy.
 
 **Empty workspace (screen 01).** Two columns centred, gap 64, 1×350 divider. Left (410): folder-open 42, "Your episode starts here." 30/600, 14 muted body, Open Episode (primary, folder-open 16 on-accent) + "⌘O", EXPECTED DIRECTORY CONTENTS list in mono 12. Right (386): "Recent episodes" + "Open directory ↗"; rows with name 14/500, "<when> · <n> turns · <duration>" 12 muted, path mono 10 subtle; footer "● Local files  Nothing uploaded. No connection required."
 

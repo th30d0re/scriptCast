@@ -48,12 +48,28 @@ It climbs through segment 1 (~0→200 ms), **resets to ~20 ms at the segment bou
 
 ## Acceptance output summary
 
-(filled at the end)
+(Filled by the orchestrator: Kimi's weekly quota ended while it was finalising this file, after its last acceptance run had passed.)
+
+Re-run by the orchestrator on 2026-10-03 after merging `dev` (font alignment, scriptcast-export) into `ui/phase-b`:
+- `cargo build --release`: green.
+- `cargo test`: 4 lib + 29 bin + 15 loader + 1 font pass. 2 ignored: the EP03 load test and the audio test.
+- `cargo clippy --all-targets -- -D warnings`: green.
+- Colour grep outside `theme.rs`: empty.
+- `cargo test --release -- --ignored fixture_two_segment`: passes (muted). Both chunks play in order and `duration()` = 400 ms.
+- All four briefed captures exit 0 at 2880×1800: playing, selected, device lost, and missing audio.
 
 ## PNG paths and sizes
 
-(filled at the end)
+Downscaled to 1440×900 and saved in `plans/Native_UI/evidence/`:
+- `phaseB-playing.png`: EP03, `--select 0 --play --at 4620`, muted.
+- `phaseB-sel.png`: EP03, `--select 4`.
+- `phaseB-device-lost.png`: EP03, `--simulate-device-loss`.
+- `phaseB-missing-audio.png`: a fixture copy with `turn_2_1.wav` removed.
 
-## Left undone
+## Left undone / orchestrator changes
 
-(filled at the end)
+- **Orchestrator fix after review:** the workspace-state cards showed the Figma specimen caption ("Workspace state / …") and the designer's footnotes. Both were removed (DESIGN.md has been corrected). The raw device error moved from the body text into a tooltip on the card title.
+- **Operator legs, not yet done:** audible playback, a real headphone unplug, and the device menu with real devices.
+- **Known limits, from the findings above:**
+  - seeking works only within the current segment, which matters for multi-segment turns;
+  - position is wall-clock.
