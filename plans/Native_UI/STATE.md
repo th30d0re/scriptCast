@@ -12,6 +12,8 @@
 | 1 | Checkpoint before audio replacement | Decided 2026-10-02 | In scope: `checkpoint.rs` clones affected files into `<episode>/_backups/ui/`, with Restore (plan steps 12, 14, 16) |
 | 2 | Where the Job runner opens | No preference 2026-10-02 | Plan default: "Jobs" button in the filter bar + ⌘J; revisit after Phase C |
 | 3 | Fonts | Decided 2026-10-02 | OpenDyslexic Regular/Bold + OpenDyslexicMono instead of Inter / IBM Plex Mono; copied from the operator's files into `ui/assets/fonts/` |
+| 4 | Inline editing location | Plan default 2026-10-03 (operator was unsure: "selected turn or directly in the timeline") | Selected turn inspector; double-click a row or timeline block to edit there; timeline shows Edited markers |
+| 5 | Python read-only modes for editing (`scriptcast-export --turns-json/--changes-json`) | **Pending operator approval** | Needed by Phase D so the UI never re-implements the markdown parser |
 
 ## Phase A — Episode Browser
 
@@ -40,7 +42,7 @@
 ## Phase B — Playback
 
 - Last run: 2026-10-03 ~11:40 local
-- Status: **passed (operator ear checks pending)** — merged to `dev` at `6259d3e`
+- Status: **passed** — merged to `dev` at `6259d3e`. Operator listened on EP03 on 2026-10-03: "It's sounding really good."
 - Implementer: Kimi (09:54–11:14; its weekly quota ended while finalising findings, after acceptance had passed). Orchestrator completed the findings and fixed the state-card copy.
 - Evidence: `evidence/phaseB-playing.png`, `phaseB-sel.png`, `phaseB-device-lost.png`, `phaseB-missing-audio.png`, `evidence/phaseB-findings.md`
 - API discoveries: rodio 0.22's `speakers` module requires the `experimental` feature (devices via cpal + `DeviceSinkBuilder::from_device` instead); `Player::get_pos()` resets per appended segment (position is wall-clock); `try_seek` only seeks within the current segment.
@@ -50,8 +52,8 @@
 | # | Check | Result | Notes |
 |---|---|---|---|
 | 1 | audio.rs exists; build/test/clippy green | ✅ | 49 tests + 2 ignored |
-| 2 | Space play/pause, Esc stop (by ear) | ⬜ | operator |
-| 3 | Switching turns while playing: no overlap (by ear) | ⬜ | operator |
+| 2 | Space play/pause, Esc stop (by ear) | ✅ | operator, 2026-10-03 |
+| 3 | Switching turns while playing: no overlap (by ear) | ✅ | operator, 2026-10-03 |
 | 4 | Fixture two-segment turn plays both chunks in order; time and seek advance | ✅ | muted ignored test passes (400 ms); EP03 capture shows 00:04.829 / 00:08.359 and progress |
 | 5 | Auto-advance follows the active filter | ⚠️ | unit-tested (next visible turn, end of list, skips missing audio); by-ear pending |
 | 6 | Space in the search box does not play | ⚠️ | shortcut suppression unit-tested; not live-typed |
@@ -63,7 +65,7 @@
 ## Phase B2 — Open in DAW
 
 - Requested 2026-10-03 by the operator: "Open in Live" and "Open in Logic". Operator approved a small Python change (`scriptcast-export`).
-- Status: **merged to dev** (UI part by Codex; operator checks 3–4 pending). Header shows Open / Reload / Open in Live / Open in Logic / CLI….
+- Status: **passed** — merged to dev (UI part by Codex). Operator, 2026-10-03: "all the buttons work." Header shows Open / Reload / Open in Live / Open in Logic / a settings gear (the B2 "CLI…" button, renamed after the operator found the label confusing).
 - Follow-ups: the render path's own `--fcpxml` still declares stereo (it does not set `audio_channels`); `--logic` AppleScript exporter is non-functional on Logic 12.4 — candidates for a later cleanup.
 
 ### Checklist
@@ -72,14 +74,14 @@
 |---|---|---|---|
 | 1 | `scriptcast-export --fcpxml` writes 392 assets for EP03 to `--out`, mono channels, EP03 untouched | ✅ | max offset error 16.67 ms (accepted 30 fps rounding, operator-visible in --help) |
 | 2 | Python tests for export + generator green; full suite run reported | ✅ | 28 targeted; full 213 passed / 11 failed = dev's pre-existing pronunciation failures |
-| 3 | Open in Live opens EP03's `.als` in Live 12 (operator) | ⬜ | |
-| 4 | Open in Logic imports the FCPXML with clips at the right times (operator) | ⬜ | |
+| 3 | Open in Live opens EP03's `.als` in Live 12 (operator) | ✅ | operator, 2026-10-03 |
+| 4 | Open in Logic imports the FCPXML with clips at the right times (operator) | ✅ | operator, 2026-10-03 ("all the buttons work"); exact clip timing not separately reported |
 | 5 | Buttons disabled with tooltip when the `.als` is missing or the CLI is unavailable | ✅ | unit-tested disabled reasons; export source (Folder/PATH/DevCheckout) shown in tooltip |
 
 ## Phase C — Job Runner and Verify Overlay
 
 - Last run: —
-- Status: **blocked on Phase B**
+- Status: **ready** (Phases A, B, B2 passed)
 - Checkpoint timing (Precision-insert scope, EP03 clone): —
 
 ### Checklist
@@ -104,3 +106,8 @@
 ## Blockers
 
 - None recorded. Phase A is ready to start.
+
+## Phase D — Inline Editing
+
+- Requested 2026-10-03 by the operator ("the ability to edit the words and re-render"). Plan: `plan.md` Flow 6 and steps D1–D6.
+- Status: **planned; starts after Phase C** (needs its runner, confirmation dialog and checkpoints). D1 waits on operator decision 5.

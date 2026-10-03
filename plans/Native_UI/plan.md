@@ -12,7 +12,7 @@ Loops: See [loop.md](loop.md) for implementer/verifier prompts.
 
 ### Summary
 
-scriptCast renders a markdown podcast script into per-turn speech, verifies it with Whisper, repairs failed turns, and exports DAW sessions — all as a set of Python CLIs (`file:Dev/Tools/scriptCast/pyproject.toml:42-54`). Today the only way to see a rendered episode is to read `episode_manifest.json`, `TURN_INDEX.csv` and `stress.json` by hand, open the Ableton set, or scroll terminal output from `scriptcast-verify`. Finding turn 212, hearing it, and re-rendering it is a multi-tool round trip. This epic adds a native desktop window, written in Rust with egui, that opens an episode output directory instantly, shows every turn on a speaker-coloured timeline and in a searchable table, plays any turn's processed WAV with one key, overlays the verifier's results per turn, and launches the existing CLIs (detect changes, precision insert, regenerate selected turns, verify, repair) with their output streamed live into the window. The UI is a thin front-end: it reads the files the Python tools write and shells out to the Python tools; it never reimplements synthesis, verification or export, and the only files it ever writes itself are reversible checkpoints: before any job that replaces audio or verification output, it clones the files that job can change into the episode's `_backups/ui/` folder, and it can restore them later. The interface is set in OpenDyslexic. Delivery is three phases: Phase A is a read-only episode browser (loader, header, timeline, virtualised table, error states); Phase B adds per-turn playback with keyboard navigation; Phase C adds the job runner with safe command presets, checkpoints and restore, and the verify-results overlay.
+scriptCast renders a markdown podcast script into per-turn speech, verifies it with Whisper, repairs failed turns, and exports DAW sessions — all as a set of Python CLIs (`file:Dev/Tools/scriptCast/pyproject.toml:42-54`). Today the only way to see a rendered episode is to read `episode_manifest.json`, `TURN_INDEX.csv` and `stress.json` by hand, open the Ableton set, or scroll terminal output from `scriptcast-verify`. Finding turn 212, hearing it, and re-rendering it is a multi-tool round trip. This epic adds a native desktop window, written in Rust with egui, that opens an episode output directory instantly, shows every turn on a speaker-coloured timeline and in a searchable table, plays any turn's processed WAV with one key, overlays the verifier's results per turn, and launches the existing CLIs (detect changes, precision insert, regenerate selected turns, verify, repair) with their output streamed live into the window. The UI is a thin front-end: it reads the files the Python tools write and shells out to the Python tools; it never reimplements synthesis, verification or export, and the only files it ever writes itself are reversible checkpoints: before any job that replaces audio or verification output, it clones the files that job can change into the episode's `_backups/ui/` folder, and it can restore them later. The interface is set in OpenDyslexic. Delivery is three phases: Phase A is a read-only episode browser (loader, header, timeline, virtualised table, error states); Phase B adds per-turn playback with keyboard navigation; Phase C adds the job runner with safe command presets, checkpoints and restore, and the verify-results overlay. Phase D (operator request 2026-10-03) adds inline editing of a turn's words in the Selected turn panel, saved into the script, and a confirmed re-render of the edited turns through Phase C's Precision insert.
 
 ### Context & Problem
 
@@ -30,7 +30,8 @@ scriptCast renders a markdown podcast script into per-turn speech, verifies it w
 - Phase A adds `ui/` with a theme built from the design tokens, a manifest/render-state/CSV/stress loader, project-root discovery, and a read-only window matching design screens 01–02: empty workspace with recent episodes, header, overview strip plus speaker-lane timeline, virtualised turn table with speaker filter, search and verification column, and the Empty, Loading and Error workspace states.
 - Phase B adds `audio.rs`: Space plays or pauses the selected turn's WAV through rodio, Esc stops, Up and Down move the selection, auto-advance is optional, a seek track shows progress, the output device is selectable, and a Selected turn inspector appears (screen 03).
 - Phase C adds `runner.rs` and `checkpoint.rs` with the Verification and Job runner inspectors and the confirmation dialog (screens 04–06): fixed command presets built from the episode's own metadata, a live log, Cancel, confirmation showing the exact command for anything that synthesizes or overwrites, a checkpoint saved before each such job with a Checkpoints list and Restore, automatic reload after a job, and failed-turn markers from `stress.json`.
-- No Python file changes in any phase.
+- Phase D adds `script.rs` and an edit mode in the Selected turn inspector: the turn's full text, an editor for its body, Save into the script (hash-checked, atomic, with a checkpoint of the script first), Edited markers on the table and timeline, and "Re-render edited turns", which runs Phase C's Precision insert through the confirmation dialog.
+- No Python file changes except two operator-approved, read-only additions to `scriptcast-export`: `--fcpxml` (B2, approved 2026-10-03) and `--turns-json` / `--changes-json` (D, pending approval).
 
 ---
 
@@ -215,6 +216,55 @@ sequenceDiagram
 7. Checkpoint cannot be written (disk full, permission): the job does not start; the error names the path. Episode files are untouched.
 8. Restore fails partway: the `pre-restore` checkpoint taken first holds the state from before the restore; the error names it so the operator can restore it.
 
+## Flow 6: Edit a Turn's Words and Re-render (Phase D)
+
+**Trigger:** Edit in the Selected turn inspector, the E key with a turn selected, or a double-click on a table row or timeline block (which selects the turn and opens its editor). Editing happens in the inspector, not inside the timeline: a 2-second turn is about 35 px wide on the default zoom, too narrow for text in OpenDyslexic. The timeline shows which turns are edited.
+
+1. When an episode opens and its script exists, the UI runs `scriptcast-export <episode> --turns-json` on a background thread. The output gives each script turn's index, turn_id, speaker, `line_span`, and body text exactly as written. The Selected turn inspector then shows the full TEXT instead of FIRST WORDS. Without it, the inspector keeps first words and says why ("Full text unavailable: <reason>").
+2. Edit opens a multi-line editor holding the turn's body as written: markdown emphasis, `[tags]` and HTML comments included. The speaker and timestamp header line is not editable. Playback keeps working; shortcuts are ignored while the editor has focus.
+3. Save (⌘S or ⌘Return) runs four steps:
+   1. Re-hashes the script and refuses if it no longer matches the hash read in step 1 ("The script changed on disk. Reload to edit.").
+   2. Saves a `script-edit` checkpoint holding a copy of the script.
+   3. Replaces only that turn's body lines, keeping its leading and trailing blank lines, every other byte, the line endings and the file mode.
+   4. Writes via a temp file in the same folder and a rename.
+
+   Esc cancels with nothing written.
+4. After a save the UI re-reads `--turns-json` and `--changes-json`. Every script turn that differs from the last render shows "Edited" in the Verification column and a dashed accent outline on its timeline block, including turns edited outside the UI. Playing an edited turn plays the old take, and the inspector says "Audio is from before this edit".
+5. "Re-render edited turns" (inspector, and the Precision insert preset in the Job runner) opens Phase C's confirmation dialog. It lists:
+   - the turns `--changes-json` reports as modified, inserted or deleted, with numbers and speakers;
+   - the engines involved;
+   - that later turns move, because Precision insert recomputes positions;
+   - the exact command.
+
+   On Confirm, Phase C saves an audio checkpoint, runs `scriptcast <script> --precision-insert`, reloads, reselects the edited turn and scrolls to it.
+6. Undo: the Checkpoints list holds both kinds. Restoring a `script-edit` checkpoint puts the script back. Restoring the Precision insert checkpoint puts the audio back. Each restore takes its own `pre-restore` checkpoint first.
+
+```mermaid
+sequenceDiagram
+    participant Operator
+    participant Inspector as "Selected turn inspector"
+    participant ScriptRs as "script.rs"
+    participant Export as "scriptcast-export"
+    participant Checkpoint as "checkpoint.rs"
+    participant Runner as "runner.rs"
+    Operator->>Inspector: Edit, type, Save
+    Inspector->>ScriptRs: save(turn, text)
+    ScriptRs->>ScriptRs: hash matches the loaded script?
+    ScriptRs->>Checkpoint: create script-edit checkpoint
+    ScriptRs->>ScriptRs: splice body lines, temp file + rename
+    ScriptRs->>Export: --turns-json, --changes-json
+    Export-->>Inspector: edited turns marked
+    Operator->>Inspector: Re-render edited turns
+    Inspector->>Runner: PrecisionInsert (confirmation dialog)
+    Runner->>Checkpoint: audio checkpoint
+    Runner->>Runner: scriptcast --precision-insert
+    Runner-->>Inspector: reload, reselect turn
+```
+
+**Artifact Output Structure:** the script is modified in place (one turn's body lines); `<episode>/_backups/ui/vNN-<time>-script-edit/` holds `checkpoint.json` and `external/<script file name>`; the re-render writes what Precision insert writes, behind its own `vNN-<time>-precision-insert/` checkpoint.
+
+**Out of scope for Phase D:** changing a turn's speaker or timestamp, adding, deleting or reordering turns (the operator does these in the script; Precision insert already handles them), live preview of an edit before synthesis, and agent-assisted edits (Flow 0).
+
 ### Artifact Output Structure
 
 ```
@@ -237,7 +287,8 @@ Dev/Tools/scriptCast/
     │   ├── episode.rs              # (A) Episode model + loader + project root + colours; (C) stress overlay
     │   ├── audio.rs                # (B) rodio playback
     │   ├── runner.rs               # (C) JobSpec presets, spawn, line streaming, cancel
-    │   └── checkpoint.rs           # (C) clone-on-write checkpoints in _backups/ui/, list, restore
+    │   ├── checkpoint.rs           # (C) clone-on-write checkpoints in _backups/ui/, list, restore; (D) external files
+    │   └── script.rs               # (D) turns JSON, body splice, hash-checked atomic save
     └── tests/
         ├── fixtures/
         │   ├── scriptcast.toml     # (A) fixture project root
@@ -245,7 +296,8 @@ Dev/Tools/scriptCast/
         │   └── episode_small/      # (A) 3-turn manifest, render_state, TURN_INDEX.csv, stress.json, 3 short WAVs
         ├── episode_load.rs         # (A) loader tests
         ├── runner_presets.rs       # (C) argv construction tests
-        └── checkpoints.rs          # (C) create / list / restore round-trip on a temp copy of the fixture
+        ├── checkpoints.rs          # (C) create / list / restore round-trip on a temp copy of the fixture
+        └── script_edit.rs          # (D) splice, hash refusal, byte preservation, checkpoint first
 ```
 
 ---
@@ -327,6 +379,16 @@ B2.5. Tests — argv construction for both buttons, the FCPXML staleness rule (m
 
 
 
+**Phase C — Job runner, checkpoints, verify overlay**
+
+C0. (Added 2026-10-03.) Generalise `file:Dev/Tools/scriptCast/ui/src/cli.rs` from `scriptcast-export` to every command the UI runs (`scriptcast`, `scriptcast-verify`, `scriptcast-repair`, `scriptcast-export`), resolving each command separately in this order:
+    1. the Settings folder (`preferences.cli_dir`, the gear popover; this is the plan's "bin-dir" setting);
+    2. the project's virtualenvs, `<project_root>/.venv*/bin/<command>`, alphabetical, first match (EP03's project has `.venv-voice/bin/` with an editable install of the operator's scriptCast);
+    3. the login-shell `PATH`;
+    4. the dev checkout as `python -m <module>` with `PYTHONPATH`. The module comes from `[project.scripts]` in that checkout's `pyproject.toml`; the interpreter is the first project venv's `bin/python` that exists, else `python3` on the login-shell `PATH`.
+
+    The login-shell `PATH` is read once at startup on a background thread: `$SHELL -lc 'printf %s "$PATH"'`, 2 s timeout, falling back to the process `PATH`. It is passed to every child process. This fixes a defect: an app opened from Finder or the Dock inherits launchd's `/usr/bin:/bin:/usr/sbin:/sbin`, so `python3` is Xcode's 3.9 without `soundfile`, and Open in Logic's export fails. Tooltips and the Job runner name the source chosen for each command. For example, `scriptcast-export` falls through to the dev checkout because the operator's install predates it.
+
 11. Create `file:Dev/Tools/scriptCast/ui/src/runner.rs` — `Preset { DetectChanges, PrecisionInsert, RegenerateTurns(Vec<usize>), Verify, Repair(Option<Vec<usize>>) }`. `JobSpec { program: PathBuf, args: Vec<OsString>, cwd: PathBuf, synthesizes: bool, overwrites: Vec<PathBuf> }` built by `JobSpec::from_preset(preset, &Episode, bin_dir: Option<&Path>) -> Result<JobSpec, String>`:
     - DetectChanges: `scriptcast --transcript <script> --episode-id <id> --out-dir <episode_dir.parent> --detect-changes`
     - PrecisionInsert: same with `--precision-insert` (synthesizes)
@@ -346,6 +408,44 @@ B2.5. Tests — argv construction for both buttons, the FCPXML staleness rule (m
 16. Create `file:Dev/Tools/scriptCast/ui/tests/checkpoints.rs` — on a temp copy of the fixture episode: `create` for RegenerateTurns writes `checkpoint.json` plus clones of manifest, render state, `TURN_INDEX.csv`, the `.als` and exactly that turn's WAVs; for Verify only `stress.json`; versions increase v01, v02; `.asd` files are skipped; modify a WAV then `restore` brings back the original bytes and leaves a `pre-restore` checkpoint holding the modified bytes; `create` into a read-only `_backups` returns an error and touches nothing else; `list` ignores folders without a valid `checkpoint.json`.
 17. Update `file:Dev/Tools/scriptCast/ui/SPEC.md` — replace "render, verify, repair, mix" with the five presets; record mix as deferred and why; record the bin-dir decision; record checkpoints and Restore as the one exception to read-only, and OpenDyslexic as the UI font; point to `ui/design/DESIGN.md` as the visual spec.
 
+**Phase D — Inline editing (operator request 2026-10-03; after Phase C)**
+
+D1. Modify `file:Dev/Tools/scriptCast/scriptcast/tools/export_session.py` (pending operator approval; read-only, writes nothing):
+    - `--turns-json` prints `{script_path, script_sha256, turns: [{index, turn_id, speaker_id, display_name, header_line, body_start, body_end, body}]}` from `parse_transcript` (`file:Dev/Tools/scriptCast/scriptcast/parser.py:63`) plus the raw lines of each `line_span`. `body` is the turn's lines exactly as in the file, without the header and without leading or trailing blank lines; `body_start..=body_end` are their 1-based line numbers.
+    - `--changes-json` prints `{inserted: [index], modified: [index], deleted: [turn_id], unchanged: n}` from `plan_precision_insert` (`file:Dev/Tools/scriptCast/scriptcast/render_state.py:259`) with the project's voices. A text edit changes `turn_id` (`parser.py:41-58`), so an edited turn arrives as inserted, with its old id in `deleted`.
+    - Python tests cover both modes on a temp project.
+D2. Create `file:Dev/Tools/scriptCast/ui/src/script.rs`. The UI never parses markdown itself.
+    - `ScriptTurns` deserialises D1's output.
+    - `splice(original: &[u8], turn: &ScriptTurn, new_body: &str) -> Vec<u8>` replaces lines `body_start..=body_end` and keeps the file's line ending (LF or CRLF) and every other byte. An empty body is refused, because deleting a turn is out of scope.
+    - `save(episode, turn, new_body, loaded_sha256) -> Result<Checkpoint, String>`:
+      1. hashes the script and refuses on mismatch;
+      2. calls `checkpoint::create_external(episode, "script-edit", &[script_path], turns)`;
+      3. writes a temp file in the script's folder with the original mode;
+      4. renames it over the script.
+    - `edited_turns(changes, manifest_len, script_len) -> Option<Vec<usize>>` maps changed script indices to table rows only when the two counts match. Otherwise it returns `None`, and the UI shows one banner instead of per-row markers: "Turns were added or removed since render. Re-render to sync."
+D3. Modify `file:Dev/Tools/scriptCast/ui/src/checkpoint.rs` — `create_external` stores absolute files outside the episode under `external/` and records `{path, stored_as}` in `checkpoint.json`. `restore` puts them back through the same temp-file-and-rename path. `list` shows the kind (audio or script-edit).
+D4. Modify `file:Dev/Tools/scriptCast/ui/src/inspector.rs`, `table.rs`, `timeline.rs` and `main.rs`:
+    - the TEXT block (full text, or first words with a reason);
+    - Edit, the E key and double-click to edit;
+    - the editor uses the search field's tokens with OpenDyslexic at BODY size, grows to its content up to the inspector height, and offers Save, Cancel and an unsaved-changes guard when the selection changes;
+    - the "Edited" verification label (accent) and the dashed accent outline on timeline blocks;
+    - "Audio is from before this edit";
+    - "Re-render edited turns" opens the PrecisionInsert confirmation with D1's change list;
+    - after the job, reload and reselect.
+
+    There is no Figma frame for edit mode: build it from existing tokens and record it in `ui/design/DESIGN.md` under "Selected turn — edit mode (not in Figma)".
+D5. Create `file:Dev/Tools/scriptCast/ui/tests/script_edit.rs`:
+    - splice keeps every byte outside the body, on LF and CRLF fixtures;
+    - leading and trailing blank lines are kept;
+    - a hash mismatch refuses and writes nothing;
+    - the checkpoint is created before the write, and restoring it brings back the original bytes;
+    - an empty body is refused;
+    - the file mode is preserved;
+    - `edited_turns` returns `None` when the counts differ.
+
+    Run the integration test on a temp copy of the fixture project: real `--turns-json` and `--changes-json`, edit turn 1, save, and `--changes-json` reports it.
+D6. Update `file:Dev/Tools/scriptCast/ui/SPEC.md`. Inline editing moves from "v2 ideas" to Phase D. The non-goal becomes: "the UI writes the script only to replace one turn's body, after a checkpoint".
+
 ### Data Flow Summary
 
 ```mermaid
@@ -363,6 +463,10 @@ flowchart LR
     checkpointStore --> backupsDir["episode/_backups/ui/vNN"]
     backupsDir --> checkpointStore
     jobRunner --> pythonClis["scriptcast / scriptcast-verify / scriptcast-repair"]
+    scriptFile["Script (.md)"] --> scriptEdit["script.rs (D)"]
+    scriptEdit --> scriptFile
+    scriptEdit --> checkpointStore
+    exportCli["scriptcast-export --turns-json / --changes-json (D)"] --> scriptEdit
     pythonClis --> episodeDir
     pythonClis --> logPane["Log pane"]
 ```
@@ -391,7 +495,12 @@ flowchart LR
 | `ui/src/checkpoint.rs` | New (C) — checkpoints in `_backups/ui/`, list, restore |
 | `ui/tests/checkpoints.rs` | New (C) — create/list/restore tests |
 | `ui/tests/runner_presets.rs` | New (C) — argv and process tests |
-| `ui/SPEC.md` | Mod (C) — presets, mix deferred, checkpoints, font |
+| `ui/src/cli.rs` | New (B2) — export resolver; Mod (C0) — every command, project venvs, login-shell PATH |
+| `ui/SPEC.md` | Mod (C) — presets, mix deferred, checkpoints, font; Mod (D) — inline editing |
+| `scriptcast/tools/export_session.py` | Mod (D1) — `--turns-json`, `--changes-json` (pending approval) |
+| `ui/src/script.rs` | New (D) — turns JSON, splice, hash-checked atomic save |
+| `ui/src/inspector.rs`, `table.rs`, `timeline.rs` | Mod (D) — TEXT, editor, Edited markers |
+| `ui/tests/script_edit.rs` | New (D) |
 
 No file under `scriptcast/` or `tests/` (Python) changes in Phases A, B or C. Phase B2 is the one operator-approved exception (2026-10-03): `scriptcast-export`, the FCPXML channel fix and their tests.
 
@@ -416,8 +525,9 @@ Phase A rows completed 2026-10-03; Phase B and C rows are filled as those phases
 | B2.1 `scriptcast-export --fcpxml` | Done (Codex) | Yes | Accepted the generator's 1/30 s frame rounding (≤16.7 ms); documented in --help |
 | B2.2 FCPXML mono channel fix | Done via `SegmentResult.audio_channels` (default 2) | No | Render path's own --fcpxml still declares stereo (follow-up) |
 | B2.3 Python tests | 28 targeted; full suite 213 pass / 11 pre-existing failures | No | |
-| B2.4 `daw.rs` + Open in Live / Open in Logic | Done + `cli.rs` resolver + CLI… popover | Yes | Export cwd is the episode dir (brief), not the project root; dev-checkout fallback because scriptcast-export is not installed |
+| B2.4 `daw.rs` + Open in Live / Open in Logic | Done + `cli.rs` resolver + CLI… popover (renamed to a settings gear 2026-10-03) | Yes | Export cwd is the episode dir (brief), not the project root; dev-checkout fallback because scriptcast-export is not installed |
 | B2.5 UI tests | 16 in `tests/daw_cli.rs` incl. real export on a fixture copy with a no-op opener | No | |
+| C0. `cli.rs` per-command resolution + login-shell PATH | | | |
 | 11. `runner.rs` presets + job | | | |
 | 12. `checkpoint.rs` create / list / restore | | | |
 | 13. `episode.rs` voices path + stress join | | | |
@@ -425,3 +535,9 @@ Phase A rows completed 2026-10-03; Phase B and C rows are filled as those phases
 | 15. `tests/runner_presets.rs` | | | |
 | 16. `tests/checkpoints.rs` | | | |
 | 17. `SPEC.md` update | | | Planned deviations from SPEC.md: mix removed from v1 (needs `--config` and `--asr`); checkpoints are an exception to read-only. |
+| D1. `scriptcast-export --turns-json / --changes-json` | | | Pending operator approval |
+| D2. `script.rs` | | | |
+| D3. `checkpoint.rs` external files | | | |
+| D4. Inspector edit mode, markers, re-render | | | |
+| D5. `tests/script_edit.rs` | | | |
+| D6. `SPEC.md` | | | |

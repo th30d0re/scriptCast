@@ -83,7 +83,7 @@ Rules:
 
 - Waveform per turn.
 - Stale-turn detection against the script hash, mirroring `--detect-changes`.
-- Inline script editing with regenerate for a single turn.
+- Inline script editing with regenerate for a single turn: now planned as Phase D (`plans/Native_UI/plan.md`, Flow 6).
 - Verify and repair results overlaid on turns, from `stress.json`.
 - Drag to retime gaps.
 - Editor for `voices.yaml` and `pronunciations.yaml`.

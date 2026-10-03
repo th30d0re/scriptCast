@@ -49,6 +49,11 @@ Pattern name: **Read-Only File Front-End + Preset Subprocess Runner**
 | Open in Live | `open -b com.ableton.live <episode_id>.als` | Every rendered episode already has its `.als`; Live 12 Suite is installed (`com.ableton.live` 12.2.7). Bundle-id launch avoids hardcoding an app name or version |
 | Open in Logic | Generate/refresh `<episode_id>.fcpxml` with a new `scriptcast-export` command, then `open -b com.apple.logic10 <fcpxml>` | Logic Pro 12.4 declares `.fcpxml` (`com.apple.finalcutpro.xml`) as a Viewer document type, so it imports it directly. The existing `--logic` AppleScript exporter cannot work: Logic's scripting dictionary is Standard Suite only (`sdef`), with no project/track/import terms. FCPXML is otherwise only written at the end of a full render (`__main__.py:1039-1042`), hence the standalone command |
 | Job runner entry point | "Jobs" button at the right of the filter bar + ⌘J | No design screen shows it; operator had no preference (2026-10-02), so the plan default stands and can change after Phase C review |
+| Where inline editing happens (D) | The Selected turn inspector; double-click on a row or timeline block opens it there | Timeline blocks are too narrow for editable text at OpenDyslexic widths (a 2 s turn is about 35 px at default zoom). The timeline shows Edited markers instead |
+| How the UI reads full turn text and line spans (D) | `scriptcast-export --turns-json` (Python's `parse_transcript`), never a Rust markdown parser | One parser stays the source of truth. A Rust copy would drift on emphasis, tags and HTML comments (`parser.py:31-38`) |
+| How an edit is written (D) | Hash-check, `script-edit` checkpoint, splice only that turn's body lines, temp file + rename | The script is the operator's source of truth, and it is edited outside the UI too (EP03's script was modified at 12:53 on 2026-10-03 while the app was open) |
+| How edits re-render (D) | Phase C's Precision insert after its confirmation dialog | `--precision-insert` synthesizes only new or modified turns (`__main__.py:959-985`). `--regenerate-turns` needs an in-sync script, and an edit breaks the sync by definition |
+| How commands are found (C0) | Per command: Settings folder → `<project>/.venv*/bin` → login-shell `PATH` → dev checkout `-m` | No scriptcast command is on any `PATH` (measured 2026-10-03). The operator's install is `TheOriginalPower/.venv-voice/bin/` (editable, from `Documents/Theory/scriptCast`). Finder-launched apps get launchd's minimal `PATH` |
 
 ## Architecture Validation Notes
 
@@ -91,6 +96,10 @@ Pattern name: **Read-Only File Front-End + Preset Subprocess Runner**
 | Checkpoints accumulate | Size shown at the foot of the Checkpoints list; the app never deletes them; the operator prunes in Finder |
 | Text overflows in OpenDyslexic | Fixed-width columns ellipsize; content-sized controls grow; `FONT_SCALE` reduces all text if heights clip |
 | Turn indices in stress.json drift from the manifest after a re-render | Join by `turn_id`; stale entries simply match nothing |
+| App opened from Finder or the Dock: `PATH` is `/usr/bin:/bin:/usr/sbin:/sbin`, so `python3` is Xcode's 3.9 with no `soundfile` (measured 2026-10-03) | C0: login-shell `PATH` read at startup; project venv interpreter preferred for module fallback |
+| Script changed on disk between loading the text and Save (D) | Save refuses with "The script changed on disk. Reload to edit."; nothing is written |
+| Turns added or removed in the script since render (D) | Script and manifest indices no longer align; the UI shows one banner instead of per-row Edited markers, and Re-render still runs Precision insert, which handles inserts and deletes |
+| Edited turn played before re-render (D) | Plays the old take; the inspector says "Audio is from before this edit" |
 
 ## Data Model
 
