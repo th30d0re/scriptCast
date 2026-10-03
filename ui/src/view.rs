@@ -56,7 +56,11 @@ fn splitter(
     if active {
         ui.ctx().set_cursor_icon(cursor);
     }
-    let colour = if active { t::ACCENT } else { t::BORDER_DEFAULT };
+    let colour = if active {
+        t::accent()
+    } else {
+        t::BORDER_DEFAULT
+    };
     let line = if horizontal_bar {
         [
             pos2(hit.left(), hit.center().y),

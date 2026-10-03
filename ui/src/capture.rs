@@ -73,6 +73,8 @@ pub struct Cli {
     pub no_gapless: bool,
     /// Hidden capture aid: `(timeline_height, inspector_width)` in points.
     pub layout: Option<(f32, f32)>,
+    /// Hidden capture aid: open the Settings window.
+    pub settings: bool,
 }
 
 impl Cli {
@@ -94,6 +96,7 @@ impl Cli {
             running_screenshot: None,
             no_gapless: false,
             layout: None,
+            settings: false,
         };
         let mut positional_only = false;
         let mut args = args.into_iter();
@@ -153,6 +156,7 @@ impl Cli {
                 "--mute" => cli.mute = true,
                 "--simulate-device-loss" => cli.simulate_device_loss = true,
                 "--no-gapless" => cli.no_gapless = true,
+                "--settings" => cli.settings = true,
                 "--running-screenshot" => {
                     cli.running_screenshot = Some(PathBuf::from(
                         args.next().ok_or("--running-screenshot needs a path")?,
@@ -373,6 +377,12 @@ mod tests {
         assert_eq!(cli.layout, Some((420.0, 480.0)));
         assert!(parse(&["--layout", "x480"]).is_err());
         assert!(parse(&["--layout"]).is_err());
+    }
+    #[test]
+    fn settings_flag_opens_hidden_capture_aid() {
+        let cli = parse(&["--settings"]).unwrap();
+        assert!(cli.settings);
+        assert!(!parse(&[] as &[&str]).unwrap().settings);
     }
     #[test]
     fn positional_episode_dir_still_works() {

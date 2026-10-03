@@ -163,7 +163,7 @@ pub fn show(
                     },
                     t::mono(t::NUMERIC),
                     if active || playing_row {
-                        t::ACCENT
+                        t::accent()
                     } else {
                         t::TEXT_MUTED
                     },

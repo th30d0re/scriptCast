@@ -186,7 +186,7 @@ pub fn show(
     painter.rect_stroke(
         visible,
         t::RADIUS_OVERVIEW_SECTION,
-        Stroke::new(t::BORDER, t::ACCENT),
+        Stroke::new(t::BORDER, t::accent()),
         StrokeKind::Inside,
     );
     // The lane label column and everything right of it (ruler, tracks) follow
@@ -232,12 +232,17 @@ pub fn show(
         tick += step;
     }
     let lanes = Rect::from_min_max(pos2(content.left(), ruler.bottom()), content.right_bottom());
-    // Extra timeline height spreads across speaker lanes up to TIMELINE_LANE_MAX.
+    // Extra timeline height spreads across speaker lanes up to 2× TIMELINE_LANE_MAX;
+    // beyond that, lanes stay top-aligned and the track column fills to the bottom.
     let lane_count = episode.speakers.len().max(1) as f32;
     let lane_gaps = (lane_count - 1.0) * t::TIMELINE_LANE_GAP;
     let even = ((lanes.height() - lane_gaps) / lane_count).max(0.0);
-    let lane_height = even.clamp(t::TIMELINE_LANE_HEIGHT, t::TIMELINE_LANE_MAX);
+    let lane_height = even.clamp(t::TIMELINE_LANE_HEIGHT, t::TIMELINE_LANE_MAX * 2.0);
     let mut lane_ui = view::region(ui, "lanes", lanes, t::BG_WINDOW);
+    let track_column = Rect::from_min_max(pos2(ruler.left(), lanes.top()), lanes.right_bottom());
+    lane_ui
+        .painter()
+        .rect_filled(track_column, 0, t::BG_SURFACE);
     lane_ui.spacing_mut().item_spacing.y = t::TIMELINE_LANE_GAP;
     let mut clicked = None;
     egui::ScrollArea::vertical()
@@ -257,7 +262,6 @@ pub fn show(
                 )
                 .on_hover_text(&speaker.name);
                 let track = Rect::from_min_max(pos2(ruler.left(), lane.top()), lane.right_bottom());
-                ui.painter().rect_filled(track, 0, t::BG_SURFACE);
                 for (idx, turn) in episode.turns.iter().enumerate().filter(|(_, turn)| {
                     turn.speaker_idx == speaker_idx
                         && turn.end_ms as f64 > view.start
@@ -301,7 +305,7 @@ pub fn show(
                         Stroke::new(
                             if active { t::SPACE_2 } else { t::BORDER },
                             if active {
-                                t::ACCENT
+                                t::accent()
                             } else {
                                 colour.gamma_multiply(opacity)
                             },

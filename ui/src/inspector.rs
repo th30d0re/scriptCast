@@ -154,7 +154,7 @@ pub fn show(
             ui.label(t::text(
                 status_sentence(turn.index, transport, position, auto_advance),
                 t::BODY,
-                t::ACCENT,
+                t::accent(),
             ));
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = t::SPACE_8;
