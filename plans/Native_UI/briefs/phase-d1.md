@@ -5,6 +5,7 @@ Your working directory is a git worktree of scriptCast on branch `ui/phase-d`, c
 ## Prohibitions (read first)
 
 - **No git writes.** The orchestrator commits.
+- **Never start other agent CLIs** (`codex`, `kimi`, `agy`, `gemini`, `cursor-agent`, `claude`). Do the work yourself.
 - **Write only inside this worktree**, plus `~/.cargo`, `ui/target/` and `/tmp/scriptcast-d/`. Put scratch files in `/tmp/scriptcast-d/`, never in the worktree.
 - **The real project is read-only:** `/Users/emmanuel/Documents/Theory/TheOriginalPower/`. That includes its scripts.
   - Tests and live checks must copy what they need into `/tmp/scriptcast-d/`: `cp -cR` the EP03 output folder, `cp` the script and `scriptcast.toml`, and copy the voices file the toml points at.
