@@ -317,7 +317,15 @@ Every UI step builds to the design snapshot in `file:Dev/Tools/scriptCast/ui/des
 9. Create `file:Dev/Tools/scriptCast/ui/src/audio.rs` — `AudioOut { _sink: MixerDeviceSink, player: Option<Player>, playing: Option<usize>, device_name: String }`. `AudioOut::open(device: Option<&str>) -> Result<Self, String>` opens the named output (via `rodio::speakers::available_outputs()` and `SpeakersBuilder::new().device(..)?.default_config()?.open_mixer()`) or the default sink. `outputs() -> Vec<String>`. `play(turn_idx, &[PathBuf]) -> Result<(), String>` stops any current player, creates a new `Player` on the mixer, appends each segment decoded from `BufReader<File>`. `pause()`, `resume()`, `stop()`, `is_paused()`, `is_finished()` (`Player::empty`), `position() -> Duration` (`Player::get_pos`), `playing() -> Option<usize>`.
 10. Modify `file:Dev/Tools/scriptCast/ui/src/main.rs` — build to screen 03: hold `Result<AudioOut, String>`; Space plays the selected turn or toggles pause; Esc stops; Up/Down move within visible rows and scroll into view; selecting while playing switches immediately; Play/Pause and Stop buttons; current-audio block with `mm:ss.mmm / mm:ss.mmm`; seek track with elapsed fill; auto-advance checkbox (persisted) moves to the next visible turn at the end; output device menu (persisted choice; falls back to default with a notice if the saved device is gone); playhead on the timeline; playing row with ▶; Selected turn inspector (376) with TRANSCRIPT (first words from `TURN_INDEX.csv`; full text deferred), AUDIO, FILE, Previous / Next / Review failure, shortcut list; while playing `ctx.request_repaint_after(50 ms)`, otherwise idle. Workspace states: Missing audio (row error + "Regenerate selected" recovery, which stays disabled until Phase C) and Unavailable device (pause, keep position and selection, "Choose output"). Shortcuts are ignored while a text field has focus.
 
-**Phase C — Job runner and verify overlay**
+**Phase B2 — Open in DAW (operator request 2026-10-03; lands right after Phase B)**
+
+B2.1. Create `file:Dev/Tools/scriptCast/scriptcast/tools/export_session.py` — `scriptcast-export <episode_dir> --fcpxml [--out PATH]`: builds `SegmentResult`s and `position_map[(turn_id, chunk_index)] = start_ms` from `episode_manifest.json` (no synthesis, no engine imports), reads each WAV's channel count, calls `generate_fcpxml` (`file:Dev/Tools/scriptCast/scriptcast/fcpxml_generator.py:104`), writes `<episode_dir>/<episode_id>.fcpxml` (or `--out`) via temp file + `os.replace`; exits 1 and writes nothing if a WAV is missing. Register the console script in `pyproject.toml`. Brief: `briefs/export-fcpxml.md`.
+B2.2. Fix `file:Dev/Tools/scriptCast/scriptcast/fcpxml_generator.py:65` — `audioChannels` is hardcoded to `"2"`; every scriptCast WAV is mono. Use the real channel count, keeping `"2"` as the default for callers that pass none.
+B2.3. Create `file:Dev/Tools/scriptCast/tests/test_export_session.py` — asset count, offsets equal manifest `start_ms`, channels, default and `--out` paths, missing-WAV and invalid-manifest failures, no extra files; plus a mono test in `tests/test_fcpxml_generator.py`.
+B2.4. Create `file:Dev/Tools/scriptCast/ui/src/daw.rs` and wire header buttons — "Open in Live" and "Open in Logic" (secondary buttons after Reload, disabled at 45% with a tooltip when unavailable). Live: `open -b com.ableton.live <episode>/<episode_id>.als` (the render's own set; `render_state.als_path` when present). Logic: if `<episode_id>.fcpxml` exists and is newer than `episode_manifest.json`, `open -b com.apple.logic10 <fcpxml>`; otherwise run `scriptcast-export <episode> --fcpxml` on a background thread (stdin null, cwd project root, persisted bin-dir setting shared with Phase C; empty means `PATH`), then open the result. Status bar reports progress and errors (app not installed, export failed with the last stderr lines). The UI itself writes nothing; the `.fcpxml` is a derived file written by the CLI, so no checkpoint is taken for it.
+B2.5. Tests — argv construction for both buttons, the FCPXML staleness rule (missing, older than manifest, newer), and disabled states.
+
+
 
 11. Create `file:Dev/Tools/scriptCast/ui/src/runner.rs` — `Preset { DetectChanges, PrecisionInsert, RegenerateTurns(Vec<usize>), Verify, Repair(Option<Vec<usize>>) }`. `JobSpec { program: PathBuf, args: Vec<OsString>, cwd: PathBuf, synthesizes: bool, overwrites: Vec<PathBuf> }` built by `JobSpec::from_preset(preset, &Episode, bin_dir: Option<&Path>) -> Result<JobSpec, String>`:
     - DetectChanges: `scriptcast --transcript <script> --episode-id <id> --out-dir <episode_dir.parent> --detect-changes`
@@ -374,13 +382,18 @@ flowchart LR
 | `ui/tests/fixtures/scriptcast.toml`, `script.md` | New (A) — fixture project root and script |
 | `ui/tests/episode_load.rs` | New (A) — loader tests |
 | `ui/src/audio.rs` | New (B) — rodio playback |
+| `scriptcast/tools/export_session.py` | New (B2) — `scriptcast-export --fcpxml` (operator-approved Python change) |
+| `scriptcast/fcpxml_generator.py` | Mod (B2) — real `audioChannels` |
+| `pyproject.toml` | Mod (B2) — `scriptcast-export` console script |
+| `tests/test_export_session.py` | New (B2) |
+| `ui/src/daw.rs` | New (B2) — Open in Live / Open in Logic |
 | `ui/src/runner.rs` | New (C) — presets, spawn, streaming, cancel |
 | `ui/src/checkpoint.rs` | New (C) — checkpoints in `_backups/ui/`, list, restore |
 | `ui/tests/checkpoints.rs` | New (C) — create/list/restore tests |
 | `ui/tests/runner_presets.rs` | New (C) — argv and process tests |
 | `ui/SPEC.md` | Mod (C) — presets, mix deferred, checkpoints, font |
 
-No file under `scriptcast/` or `tests/` (Python) changes in any phase.
+No file under `scriptcast/` or `tests/` (Python) changes in Phases A, B or C. Phase B2 is the one operator-approved exception (2026-10-03): `scriptcast-export`, the FCPXML channel fix and their tests.
 
 ---
 
@@ -400,6 +413,11 @@ Phase A rows completed 2026-10-03; Phase B and C rows are filled as those phases
 | 8. `main.rs` browser window (screens 01, 02 + Empty/Loading/Error) | Done; split into `timeline.rs`, `table.rs`, `view.rs`, `capture.rs`; `--screenshot/--fresh/--size/--select` added | Yes | Self-capture added because UI control was declined; egui 0.36 API differences in findings |
 | 9. `audio.rs` | | | |
 | 10. `main.rs` playback (screen 03 + Missing audio/Unavailable device) | | | |
+| B2.1 `scriptcast-export --fcpxml` | | | |
+| B2.2 FCPXML mono channel fix | | | |
+| B2.3 Python tests | | | |
+| B2.4 `daw.rs` + Open in Live / Open in Logic | | | |
+| B2.5 UI tests | | | |
 | 11. `runner.rs` presets + job | | | |
 | 12. `checkpoint.rs` create / list / restore | | | |
 | 13. `episode.rs` voices path + stress join | | | |

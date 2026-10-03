@@ -73,6 +73,10 @@ Plan step numbers refer to `plans/Native_UI/plan.md` Section 4.
 
 **Empty workspace (screen 01).** Two columns centred, gap 64, 1×350 divider. Left (410): folder-open 42, "Your episode starts here." 30/600, 14 muted body, Open Episode (primary, folder-open 16 on-accent) + "⌘O", EXPECTED DIRECTORY CONTENTS list in mono 12. Right (386): "Recent episodes" + "Open directory ↗"; rows with name 14/500, "<when> · <n> turns · <duration>" 12 muted, path mono 10 subtle; footer "● Local files  Nothing uploaded. No connection required."
 
+## Open in Live / Open in Logic (operator request, not in Figma)
+
+Two secondary buttons in the episode header, after Reload, in the same style (height 30, radius 5, Semi Bold 12, no icon): "Open in Live" and "Open in Logic". Disabled at 45% with a tooltip naming the reason (no `.als` in the episode; Logic export command unavailable). While Logic's FCPXML is being generated, the button label reads "Preparing for Logic…" and the status bar shows progress; errors appear in the status bar in `status/failed`.
+
 ## Keyboard
 
 ⌘O open episode · ⌘J jobs · ⌘F focus search · ↑ ↓ select previous/next visible turn · Space play/pause · Esc stop playback (and close a dialog) · ⌘R reload. Shortcuts are ignored while a text field has focus.
