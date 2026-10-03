@@ -105,6 +105,7 @@ pub struct AudioOut {
     paused_at: Option<Duration>,
     error_tx: Sender<String>,
     error_rx: Receiver<String>,
+    stream_rate: u32,
 }
 
 impl AudioOut {
@@ -146,22 +147,60 @@ impl AudioOut {
         let (error_tx, error_rx) = mpsc::channel();
         // Same filter as rodio's examples/error_callback.rs: only actionable
         // losses reach the app; transient errors are logged, not fatal.
-        let callback_tx = error_tx.clone();
-        let on_error = move |err: cpal::StreamError| {
-            if matches!(
-                err,
-                cpal::StreamError::DeviceNotAvailable | cpal::StreamError::StreamInvalidated
-            ) {
-                let _ = callback_tx.send(err.to_string());
-            } else {
-                eprintln!("scriptcast-ui: audio stream error: {err}");
+        let make_on_error = || {
+            let callback_tx = error_tx.clone();
+            move |err: cpal::StreamError| {
+                if matches!(
+                    err,
+                    cpal::StreamError::DeviceNotAvailable | cpal::StreamError::StreamInvalidated
+                ) {
+                    let _ = callback_tx.send(err.to_string());
+                } else {
+                    eprintln!("scriptcast-ui: audio stream error: {err}");
+                }
             }
         };
-        let mut sink = DeviceSinkBuilder::from_device(selected)
-            .map_err(|e| e.to_string())?
-            .with_error_callback(on_error)
-            .open_sink_or_fallback()
-            .map_err(|e| e.to_string())?;
+
+        let mut sink = None;
+        let want_rate = 48_000;
+
+        if let Ok(configs) = selected.supported_output_configs() {
+            let configs: Vec<_> = configs.collect();
+            let ranges: Vec<_> = configs
+                .iter()
+                .map(|r| (r.channels(), r.min_sample_rate(), r.max_sample_rate()))
+                .collect();
+            let default_channels = selected
+                .default_output_config()
+                .map(|c| c.channels())
+                .unwrap_or(2);
+
+            if let Some(idx) = pick_rate(&ranges, default_channels, want_rate) {
+                let config = configs[idx].with_sample_rate(want_rate);
+                if let Ok(builder) = DeviceSinkBuilder::from_device(selected.clone())
+                    && let Ok(s) = builder
+                        .with_supported_config(&config)
+                        .with_error_callback(make_on_error())
+                        .open_sink_or_fallback()
+                {
+                    sink = Some(s);
+                }
+            }
+        }
+
+        if sink.is_none() {
+            sink = Some(
+                DeviceSinkBuilder::from_device(selected.clone())
+                    .map_err(|e| e.to_string())?
+                    .with_error_callback(make_on_error())
+                    .open_sink_or_fallback()
+                    .map_err(|e| e.to_string())?,
+            );
+        }
+
+        let mut sink = sink.unwrap();
+        // What actually opened: open_sink_or_fallback may silently pick another config.
+        let actual_rate = sink.config().sample_rate().get();
         sink.log_on_drop(false);
         Ok(Self {
             sink,
@@ -176,6 +215,7 @@ impl AudioOut {
             paused_at: None,
             error_tx,
             error_rx,
+            stream_rate: actual_rate,
         })
     }
 
@@ -205,6 +245,9 @@ impl AudioOut {
         self.notice.take()
     }
 
+    pub fn stream_rate(&self) -> u32 {
+        self.stream_rate
+    }
     pub fn device_name(&self) -> &str {
         &self.device_name
     }
@@ -465,6 +508,26 @@ mod tests {
     }
 
     #[test]
+    fn test_pick_rate() {
+        let want = 48_000;
+
+        // Match on the default channel count
+        let ranges = [(2, 44100, 44100), (2, 48000, 96000), (1, 48000, 48000)];
+        assert_eq!(super::pick_rate(&ranges, 2, want), Some(1));
+
+        // Match only on another channel count
+        let ranges = [(2, 44100, 44100), (1, 44100, 96000)];
+        assert_eq!(super::pick_rate(&ranges, 2, want), Some(1));
+
+        // No range containing 48 000
+        let ranges = [(2, 44100, 44100), (1, 96000, 96000)];
+        assert_eq!(super::pick_rate(&ranges, 2, want), None);
+
+        // Empty list
+        let ranges: [(u16, u32, u32); 0] = [];
+        assert_eq!(super::pick_rate(&ranges, 2, want), None);
+    }
+    #[test]
     fn test_turn_queue() {
         let mut q = TurnQueue::default();
         assert_eq!(q.current(Duration::from_secs(0)), None);
@@ -532,4 +595,17 @@ mod phase_c_tests {
         assert!(!is_builtin_speakers("External DAC"));
         assert!(!is_builtin_speakers(""));
     }
+}
+
+/// Pick the config range to open at `want` Hz: the first range whose
+/// min..=max contains `want`, preferring the device's default channel count.
+fn pick_rate(ranges: &[(u16, u32, u32)], default_channels: u16, want: u32) -> Option<usize> {
+    ranges
+        .iter()
+        .position(|&(c, min, max)| c == default_channels && want >= min && want <= max)
+        .or_else(|| {
+            ranges
+                .iter()
+                .position(|&(_, min, max)| want >= min && want <= max)
+        })
 }

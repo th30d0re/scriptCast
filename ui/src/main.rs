@@ -1564,7 +1564,19 @@ impl Browser {
                     }
                 }
             });
-        if combo.response.clicked() {
+
+        let mut response = combo.response;
+        if let Some(Ok(audio)) = &self.audio {
+            let khz = audio.stream_rate() as f64 / 1000.0;
+            let tip = if khz.fract() == 0.0 {
+                format!("Output at {} kHz", khz as u64)
+            } else {
+                format!("Output at {:.1} kHz", khz)
+            };
+            response = response.on_hover_text(tip);
+        }
+
+        if response.clicked() {
             self.device_list = AudioOut::outputs();
         }
         options.add_enabled_ui(live, |ui| {
