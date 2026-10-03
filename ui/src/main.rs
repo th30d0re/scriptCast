@@ -13,6 +13,7 @@ use scriptcast_ui::{
     daw::{self, DawEvent, DawTask},
     episode::{Episode, LoadError, VerificationState as V, overview_section_count},
     theme as t,
+    waveform::Waveforms,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -247,6 +248,7 @@ struct Browser {
     device_error: Option<String>,
     /// The Unavailable device card is hidden (but the error stays active).
     device_card_dismissed: bool,
+    waveforms: Option<Waveforms>,
     /// Show the Missing audio card for the selected turn.
     missing_audio_card: bool,
     /// Transient playback/open notices, shown in the status bar.
@@ -381,6 +383,8 @@ impl Browser {
         self.stop_audio();
         self.missing_audio_card = false;
         self.selected_media = None;
+        self.waveforms = None; // Drop old ones before starting new
+        self.waveforms = Some(Waveforms::start(&episode, ctx.clone()));
         let same = self
             .episode
             .as_ref()
@@ -1905,6 +1909,9 @@ impl Browser {
 impl Browser {
     fn show(&mut self, ui: &mut Ui) {
         let ctx = ui.ctx().clone();
+        if let Some(w) = self.waveforms.as_mut() {
+            w.poll();
+        }
         self.shortcuts(&ctx);
         let rect = ui.max_rect();
         ui.painter().rect_filled(rect, 0, t::BG_WINDOW);
@@ -1951,6 +1958,7 @@ impl Browser {
                 &matches,
                 self.selected,
                 playing,
+                self.waveforms.as_ref(),
             );
             if let Some(i) = clicked {
                 self.multi_select(i, ctx.input(|i| i.modifiers));

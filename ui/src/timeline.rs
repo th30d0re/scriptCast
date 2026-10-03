@@ -3,6 +3,7 @@ use eframe::egui::{self, Rect, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
 use scriptcast_ui::{
     episode::{Episode, VerificationState},
     theme as t,
+    waveform::{self, Waveforms},
 };
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -64,6 +65,7 @@ fn zoom_button(ui: &mut Ui, label: &str) -> egui::Response {
     response.on_hover_cursor(egui::CursorIcon::PointingHand)
 }
 
+#[expect(clippy::too_many_arguments)]
 pub fn show(
     ui: &mut Ui,
     episode: &Episode,
@@ -72,6 +74,7 @@ pub fn show(
     matches: &[bool],
     selected: Option<usize>,
     playing: Option<(usize, u64)>,
+    waveforms: Option<&Waveforms>,
 ) -> Option<usize> {
     let rect = ui.max_rect();
     let content = view::inset(rect, t::SPACE_20, t::SPACE_10);
@@ -303,17 +306,46 @@ pub fn show(
                         StrokeKind::Inside,
                     );
                     if block.width() > t::SPACE_8 {
+                        let label_str = format!("{:03}", turn.index);
+                        let label_colour = if active && failed {
+                            t::STATUS_FAILED
+                        } else {
+                            colour.gamma_multiply(opacity)
+                        };
+                        let inner = block.shrink2(vec2(t::SPACE_4, 0.0));
                         view::line(
                             ui,
-                            block.shrink2(vec2(t::SPACE_4, 0.0)),
-                            &format!("{:03}", turn.index),
+                            inner,
+                            &label_str,
                             t::mono(t::SEGMENT_LABEL),
-                            if active && failed {
-                                t::STATUS_FAILED
-                            } else {
-                                colour.gamma_multiply(opacity)
-                            },
+                            label_colour,
                         );
+
+                        let label_width = t::text_width(ui, &label_str, t::mono(t::SEGMENT_LABEL));
+                        let gap = t::SPACE_4;
+                        if inner.width() > label_width + gap {
+                            let wave_rect = Rect::from_min_max(
+                                pos2(inner.left() + label_width + gap, inner.top()),
+                                inner.right_bottom(),
+                            );
+                            if let Some(env) = waveforms.and_then(|w| w.get(idx)) {
+                                let bar_space = t::WAVE_BAR + t::WAVE_GAP;
+                                let n = (wave_rect.width() / bar_space) as usize;
+                                if n > 0 {
+                                    let bar_heights = waveform::bars(env, n);
+                                    for (i, &peak) in bar_heights.iter().enumerate() {
+                                        let h = (peak * wave_rect.height()).max(t::WAVE_MIN);
+                                        let x = wave_rect.left() + i as f32 * bar_space;
+                                        let y = wave_rect.center().y - h / 2.0;
+                                        ui.painter().rect_filled(
+                                            Rect::from_min_size(pos2(x, y), vec2(t::WAVE_BAR, h)),
+                                            0.0,
+                                            label_colour,
+                                        );
+                                    }
+                                }
+                            }
+                        }
                     }
                     let response = ui
                         .interact(block, ui.id().with(("turn", idx)), Sense::click())

@@ -5,3 +5,4 @@ pub mod daw;
 pub mod episode;
 pub mod runner;
 pub mod theme;
+pub mod waveform;
