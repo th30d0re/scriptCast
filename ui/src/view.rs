@@ -1,5 +1,8 @@
 use eframe::egui::{self, Color32, FontId, Rect, Ui, UiBuilder, pos2, vec2};
-use scriptcast_ui::{episode::Speaker, theme as t};
+use scriptcast_ui::{
+    episode::{Speaker, VerificationState},
+    theme as t,
+};
 
 pub fn region(ui: &mut Ui, id: &str, rect: Rect, fill: Color32) -> Ui {
     ui.painter().rect_filled(rect, 0, fill);
@@ -52,4 +55,30 @@ pub fn speaker_label_width(ui: &Ui, speakers: &[Speaker]) -> f32 {
             t::font(t::SPEAKER_LABEL),
         ))
     })
+}
+/// Verification column / inspector label and colour for a state. Never
+/// manufactures a result: turns without a `stress.json` entry are NotVerified.
+pub fn verification_label(state: VerificationState) -> (&'static str, Color32) {
+    match state {
+        VerificationState::Passed => ("✓  Passed", t::STATUS_PASSED),
+        VerificationState::Failed => ("×  Failed", t::STATUS_FAILED),
+        VerificationState::NotVerified => ("Not verified", t::TEXT_SUBTLE),
+        VerificationState::MissingAudio => ("Missing audio", t::STATUS_FAILED),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn time_formats_mm_ss_mmm() {
+        assert_eq!(super::time(0), "00:00.000");
+        assert_eq!(super::time(4_620), "00:04.620");
+        assert_eq!(super::time(9_060), "00:09.060");
+        assert_eq!(super::time(90_060), "01:30.060");
+        assert_eq!(super::time(3_861_350), "64:21.350");
+        // sub-millisecond precision is truncated, and minutes are not padded
+        // beyond two digits
+        assert_eq!(super::time(999), "00:00.999");
+        assert_eq!(super::time(7_200_000), "120:00.000");
+    }
 }

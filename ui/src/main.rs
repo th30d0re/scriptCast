@@ -1,10 +1,13 @@
 mod capture;
+mod inspector;
 mod table;
 mod timeline;
 mod view;
 
 use eframe::egui::{self, Align, Layout, Rect, Sense, Ui, UiBuilder, pos2, vec2};
+use inspector::InspectorMode;
 use scriptcast_ui::{
+    audio::{self, AudioOut},
     episode::{Episode, LoadError, VerificationState as V, overview_section_count},
     theme as t,
 };
@@ -22,6 +25,8 @@ use timeline::TimelineView;
 
 const STORAGE_KEY: &str = "scriptcast_browser";
 const LOAD_NOTICE_DELAY: Duration = Duration::from_millis(150);
+/// Repaint cadence while audio is playing; no repaints are requested when idle.
+const REPLAY_TICK: Duration = Duration::from_millis(50);
 
 // Empty-workspace copy, factored out so the content height measurement in
 // `empty_left_height`/`empty_right_height` cannot drift from what is rendered.
@@ -44,10 +49,26 @@ struct RecentEpisode {
     turns: usize,
     total_ms: u64,
 }
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
+#[serde(default)]
 struct Preferences {
     last_episode: Option<PathBuf>,
     recent: Vec<RecentEpisode>,
+    /// Play the next visible turn when the current one finishes (screen 03).
+    auto_advance: bool,
+    /// Output device choice, persisted by name; a gone device falls back to
+    /// the default output with a notice.
+    output_device: Option<String>,
+}
+impl Default for Preferences {
+    fn default() -> Self {
+        Self {
+            last_episode: None,
+            recent: Vec::new(),
+            auto_advance: true,
+            output_device: None,
+        }
+    }
 }
 struct PendingLoad {
     path: PathBuf,
@@ -86,6 +107,90 @@ impl Filters {
             .collect()
     }
 }
+
+/// Playback state of the transport. `AudioOut` mirrors it; the transition
+/// functions below are pure and unit-tested without audio hardware.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum Transport {
+    #[default]
+    Idle,
+    Playing(usize),
+    Paused(usize),
+}
+impl Transport {
+    fn turn(self) -> Option<usize> {
+        match self {
+            Self::Idle => None,
+            Self::Playing(t) | Self::Paused(t) => Some(t),
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SpaceAction {
+    Play(usize),
+    Pause,
+    Resume,
+    /// The selected turn has no audio; the caller shows the Missing audio state.
+    Missing(usize),
+    Nothing,
+}
+/// Space: play the selection, toggle pause on the playing turn, or switch to
+/// the newly selected turn. A missing-audio turn never starts playing.
+fn space_action(
+    transport: Transport,
+    selected: Option<usize>,
+    playable: impl Fn(usize) -> bool,
+) -> (Transport, SpaceAction) {
+    let Some(turn) = selected else {
+        return (transport, SpaceAction::Nothing);
+    };
+    if !playable(turn) {
+        return (Transport::Idle, SpaceAction::Missing(turn));
+    }
+    match transport {
+        Transport::Idle => (Transport::Playing(turn), SpaceAction::Play(turn)),
+        Transport::Playing(t) if t == turn => (Transport::Paused(t), SpaceAction::Pause),
+        Transport::Playing(_) => (Transport::Playing(turn), SpaceAction::Play(turn)),
+        Transport::Paused(t) if t == turn => (Transport::Playing(t), SpaceAction::Resume),
+        Transport::Paused(_) => (Transport::Playing(turn), SpaceAction::Play(turn)),
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum EscAction {
+    Stop,
+    Nothing,
+}
+/// Esc stops playback; with nothing playing it leaves the transport alone.
+fn esc_action(transport: Transport) -> (Transport, EscAction) {
+    if transport.turn().is_some() {
+        (Transport::Idle, EscAction::Stop)
+    } else {
+        (transport, EscAction::Nothing)
+    }
+}
+/// Auto-advance target: the next visible turn after `current` that has audio
+/// (a missing-audio turn cannot play, so it is skipped). `None` at the end of
+/// the visible list — playback stops there — or when `current` is not visible.
+fn advance_target(episode: &Episode, visible: &[usize], current: usize) -> Option<usize> {
+    visible
+        .iter()
+        .skip_while(|i| **i != current)
+        .skip(1)
+        .find(|i| episode.turns[**i].verification != V::MissingAudio)
+        .copied()
+}
+/// Previous/next visible turn relative to the selection, for the inspector's
+/// buttons; with no visible selection, Previous wraps to the last visible turn
+/// and Next to the first (matching Up/Down).
+fn neighbour_targets(visible: &[usize], current: Option<usize>) -> (Option<usize>, Option<usize>) {
+    match current.and_then(|c| visible.iter().position(|i| *i == c)) {
+        Some(pos) => (
+            pos.checked_sub(1).map(|p| visible[p]),
+            visible.get(pos + 1).copied(),
+        ),
+        None => (visible.last().copied(), visible.first().copied()),
+    }
+}
 #[derive(Default)]
 struct Browser {
     episode: Option<Episode>,
@@ -102,6 +207,31 @@ struct Browser {
     capture: Option<capture::Capture>,
     pending_select: Option<usize>,
     select_error: Option<String>,
+    /// The audio output; `None` only in headless tests, `Some(Err)` when no
+    /// output device could be opened.
+    audio: Option<Result<AudioOut, String>>,
+    transport: Transport,
+    muted: bool,
+    /// Last output-device loss from the stream error callback. While set, the
+    /// transport is paused and playback controls stay disabled until a working
+    /// output is chosen.
+    device_error: Option<String>,
+    /// The Unavailable device card is hidden (but the error stays active).
+    device_card_dismissed: bool,
+    /// Show the Missing audio card for the selected turn.
+    missing_audio_card: bool,
+    /// Transient playback/open notices, shown in the status bar.
+    audio_notice: Option<String>,
+    /// Cached `AudioOut::outputs()`; refreshed at startup, on device errors
+    /// and whenever a device menu opens.
+    device_list: Vec<String>,
+    /// Probe cache for the inspector FILE field and the idle duration, keyed
+    /// by turn id so it is recomputed only when the selection changes.
+    selected_media: Option<(String, SelectedMedia)>,
+}
+struct SelectedMedia {
+    file_line: String,
+    duration: Option<Duration>,
 }
 impl Browser {
     fn new(cc: &eframe::CreationContext<'_>, cli: &capture::Cli) -> Self {
@@ -113,11 +243,29 @@ impl Browser {
                 .and_then(|s| eframe::get_value(s, STORAGE_KEY))
                 .unwrap_or_default()
         };
+        let muted = cli.effective_muted();
+        let (audio, audio_notice) = match AudioOut::open(preferences.output_device.as_deref()) {
+            Ok(mut audio) => {
+                audio.set_muted(muted);
+                let notice = audio.take_notice();
+                (Some(Ok(audio)), notice)
+            }
+            Err(message) => (
+                Some(Err(message.clone())),
+                Some(format!("Audio output unavailable: {message}")),
+            ),
+        };
         let mut app = Self {
             preferences,
             persist: cli.persist(),
-            capture: cli.screenshot.clone().map(capture::Capture::new),
+            capture: cli.screenshot.clone().map(|path| {
+                capture::Capture::new(path, cli.play, cli.at, cli.simulate_device_loss)
+            }),
             pending_select: cli.select,
+            audio,
+            audio_notice,
+            muted,
+            device_list: AudioOut::outputs(),
             ..Self::default()
         };
         if let Some(path) = cli
@@ -183,6 +331,10 @@ impl Browser {
         }
     }
     fn accept_episode(&mut self, episode: Episode, ctx: &egui::Context) {
+        // Reloading replaces the WAV paths under any playing player; stop first.
+        self.stop_audio();
+        self.missing_audio_card = false;
+        self.selected_media = None;
         let same = self
             .episode
             .as_ref()
@@ -248,12 +400,229 @@ impl Browser {
         }
     }
     fn select(&mut self, index: usize) {
+        let mut switch = false;
         if let Some(e) = &self.episode
             && let Some(turn) = e.turns.get(index)
         {
             self.selected = Some(index);
             self.scroll_to = Some(index);
             self.timeline.reveal(turn.start_ms, turn.end_ms, e.total_ms);
+            switch = self.transport.turn().is_some_and(|t| t != index);
+        }
+        // Selecting a different turn while playing switches playback
+        // immediately; a turn with missing audio stops playback instead.
+        if switch {
+            let playable = self
+                .episode
+                .as_ref()
+                .and_then(|e| e.turns.get(index))
+                .is_some_and(|turn| turn.verification != V::MissingAudio);
+            if playable {
+                self.start_audio(index);
+            } else {
+                self.stop_audio();
+            }
+        }
+    }
+    /// Space / the Play-Pause button.
+    fn play_selected(&mut self) {
+        // A lost device must be replaced through the device menu first;
+        // resuming a dead stream would look like playback but stay silent.
+        if self.device_error.is_some() {
+            return;
+        }
+        let Some(e) = &self.episode else {
+            return;
+        };
+        let playable = |i: usize| {
+            e.turns
+                .get(i)
+                .is_some_and(|t| t.verification != V::MissingAudio)
+        };
+        let (_, action) = space_action(self.transport, self.selected, playable);
+        match action {
+            SpaceAction::Play(i) => self.start_audio(i),
+            SpaceAction::Pause => {
+                if let Some(Ok(audio)) = self.audio.as_mut() {
+                    audio.pause();
+                }
+                if let Some(t) = self.transport.turn() {
+                    self.transport = Transport::Paused(t);
+                }
+            }
+            SpaceAction::Resume => {
+                if let Some(Ok(audio)) = self.audio.as_mut() {
+                    audio.resume();
+                }
+                if let Some(t) = self.transport.turn() {
+                    self.transport = Transport::Playing(t);
+                }
+            }
+            SpaceAction::Missing(_) => {
+                self.stop_audio();
+                self.missing_audio_card = true;
+            }
+            SpaceAction::Nothing => {}
+        }
+    }
+    /// Start playback of turn `idx` (a playable turn) on the audio output.
+    fn start_audio(&mut self, idx: usize) {
+        let target = self
+            .episode
+            .as_ref()
+            .and_then(|e| e.turns.get(idx))
+            .map(|turn| {
+                (
+                    turn.wav_paths.clone(),
+                    Duration::from_millis(turn.end_ms.saturating_sub(turn.start_ms)),
+                )
+            });
+        let Some((wavs, fallback)) = target else {
+            return;
+        };
+        match self.audio.as_mut() {
+            Some(Ok(audio)) => {
+                audio.set_fallback_duration(fallback);
+                match audio.play(idx, &wavs) {
+                    Ok(()) => {
+                        self.transport = Transport::Playing(idx);
+                        self.audio_notice = None;
+                    }
+                    Err(message) => {
+                        self.transport = Transport::Idle;
+                        self.audio_notice = Some(message);
+                    }
+                }
+            }
+            Some(Err(message)) => {
+                let message = message.clone();
+                self.audio_notice = Some(format!("Audio output unavailable: {message}"));
+            }
+            None => {}
+        }
+    }
+    fn stop_audio(&mut self) {
+        self.transport = Transport::Idle;
+        if let Some(Ok(audio)) = self.audio.as_mut() {
+            audio.stop();
+        }
+    }
+    /// Natural end of the playing turn: with auto-advance, select and play the
+    /// next visible turn with audio; otherwise (or at the list end) stop.
+    fn on_playback_finished(&mut self, turn: usize) {
+        self.stop_audio();
+        if !self.preferences.auto_advance {
+            return;
+        }
+        let visible = self.visible_indices();
+        let next = self
+            .episode
+            .as_ref()
+            .and_then(|e| advance_target(e, &visible, turn));
+        if let Some(next) = next {
+            self.select(next);
+            self.start_audio(next);
+        }
+    }
+    /// The stream error callback reported the output device as gone: pause at
+    /// the current position, keep the selection, show the recovery state.
+    fn on_device_error(&mut self, message: String) {
+        if let Some(Ok(audio)) = self.audio.as_mut() {
+            audio.pause();
+        }
+        if let Some(t) = self.transport.turn() {
+            self.transport = Transport::Paused(t);
+        }
+        self.device_list = AudioOut::outputs();
+        self.device_card_dismissed = false;
+        self.audio_notice = Some(format!("Output device lost: {message}"));
+        self.device_error = Some(message);
+    }
+    /// Open a (possibly new) output device by name. A turn that was playing or
+    /// paused resumes from its tracked position on the new device.
+    fn choose_device(&mut self, name: String) {
+        let resume = self.transport.turn().map(|t| (t, self.audio_position()));
+        match AudioOut::open(Some(&name)) {
+            Ok(mut audio) => {
+                audio.set_muted(self.muted);
+                if let Some(notice) = audio.take_notice() {
+                    self.audio_notice = Some(notice);
+                }
+                self.audio = Some(Ok(audio));
+                self.device_error = None;
+                self.preferences.output_device = Some(name);
+                if let Some((turn, position)) = resume {
+                    self.start_audio(turn);
+                    if matches!(self.transport, Transport::Playing(_))
+                        && !position.is_zero()
+                        && let Some(Ok(audio)) = self.audio.as_mut()
+                    {
+                        audio.seek(position);
+                    }
+                }
+            }
+            Err(message) => {
+                self.audio_notice = Some(format!("Audio output unavailable: {message}"));
+                self.audio = Some(Err(message));
+            }
+        }
+    }
+    fn audio_position(&self) -> Duration {
+        self.audio
+            .as_ref()
+            .and_then(|r| r.as_ref().ok())
+            .map_or(Duration::ZERO, AudioOut::position)
+    }
+    fn visible_indices(&self) -> Vec<usize> {
+        match &self.episode {
+            Some(e) => self
+                .filters
+                .matches(e)
+                .iter()
+                .enumerate()
+                .filter_map(|(i, v)| v.then_some(i))
+                .collect(),
+            None => Vec::new(),
+        }
+    }
+    /// Refresh the inspector FILE field / idle duration probe cache when the
+    /// selection moved to a different turn.
+    fn refresh_selected_media(&mut self) {
+        let current = self
+            .selected
+            .and_then(|i| self.episode.as_ref()?.turns.get(i))
+            .map(|turn| (turn.id.clone(), turn.wav_paths.clone()));
+        let stale = match (&self.selected_media, &current) {
+            (Some((cached, _)), Some((id, _))) => cached != id,
+            (None, Some(_)) => true,
+            (Some(_), None) => {
+                self.selected_media = None;
+                false
+            }
+            (None, None) => false,
+        };
+        if stale && let Some((id, wavs)) = current {
+            self.selected_media = Some((id, probe_turn(&wavs)));
+        }
+    }
+    /// Device-error poll, natural-finish detection and the playing-only
+    /// repaint cadence. Runs in `logic`, before any capture handling.
+    fn poll_audio(&mut self, ctx: &egui::Context) {
+        let device_error = match self.audio.as_mut() {
+            Some(Ok(audio)) => audio.take_device_error(),
+            _ => None,
+        };
+        if let Some(message) = device_error {
+            self.on_device_error(message);
+        }
+        if let Transport::Playing(turn) = self.transport {
+            let finished = matches!(&self.audio, Some(Ok(audio)) if audio.is_finished());
+            if finished {
+                self.on_playback_finished(turn);
+            }
+        }
+        if matches!(self.transport, Transport::Playing(_)) {
+            ctx.request_repaint_after(REPLAY_TICK);
         }
     }
     fn capture_logic(&mut self, ctx: &egui::Context) {
@@ -304,6 +673,25 @@ impl Browser {
             }
             cap.phase = capture::Phase::Settling;
             cap.quiet_since = Instant::now();
+            // Copy the flags out so the play calls can take `&mut self`.
+            let (play, at, simulate_loss) = (cap.play, cap.at, cap.simulate_device_loss);
+            if play {
+                // Play the selected turn, seek, then optionally inject the
+                // device loss through the same channel real errors use.
+                self.play_selected();
+                if matches!(self.transport, Transport::Playing(_))
+                    && let Some(Ok(audio)) = self.audio.as_mut()
+                {
+                    if at > Duration::ZERO {
+                        audio.seek(at);
+                    }
+                    if simulate_loss {
+                        audio.simulate_device_loss_for_capture(
+                            "simulated output device loss (cpal StreamError::DeviceNotAvailable)",
+                        );
+                    }
+                }
+            }
         }
     }
     fn capture_settle(&mut self, ctx: &egui::Context) {
@@ -318,15 +706,54 @@ impl Browser {
             if repaint_pending {
                 cap.quiet_since = Instant::now();
             }
-            if cap.frames >= capture::MIN_FRAMES
-                && !repaint_pending
-                && cap.quiet_since.elapsed() >= capture::QUIET
-            {
+            // While playing, the 50 ms progress repaint never goes quiet, so
+            // play runs use the position/card condition instead of the quiet
+            // window (icon loads finish well inside the 200 ms audio advance).
+            // Terminal states (Missing audio or Unavailable device card) must
+            // still be captured; a turn that never started is a failure, not
+            // a picture. Field-wise borrows keep `cap` usable throughout.
+            let ready = if cap.play {
+                if cap.frames < capture::MIN_FRAMES {
+                    false
+                } else if self.device_error.is_some() || self.missing_audio_card {
+                    true
+                } else {
+                    match (self.transport, &self.audio) {
+                        (Transport::Playing(_), Some(Ok(audio))) => {
+                            cap.play_started = true;
+                            audio.position() >= cap.at + Duration::from_millis(200)
+                        }
+                        _ if cap.play_started => true,
+                        _ => capture::fail(&format!(
+                            "--play could not start playback: {}",
+                            self.audio_notice
+                                .as_deref()
+                                .unwrap_or("no audio output is available")
+                        )),
+                    }
+                }
+            } else {
+                cap.frames >= capture::MIN_FRAMES
+                    && !repaint_pending
+                    && cap.quiet_since.elapsed() >= capture::QUIET
+            };
+            if ready {
                 ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
                     egui::UserData::default(),
                 ));
                 cap.phase = capture::Phase::Requested;
+                cap.requested_at = Instant::now();
             }
+        } else if cap.phase == capture::Phase::Requested
+            && cap.requested_at.elapsed() >= Duration::from_secs(1)
+        {
+            // The screenshot action is only drained on frames the OS reports
+            // as visible (eframe glow_integration.rs); a request issued before
+            // the window became visible would wait forever, so re-request.
+            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
+                egui::UserData::default(),
+            ));
+            cap.requested_at = Instant::now();
         }
         ctx.request_repaint_after(capture::TICK);
     }
@@ -334,7 +761,7 @@ impl Browser {
         if ctx.text_edit_focused() {
             return;
         }
-        let (open, reload, search, up, down, escape) = ctx.input_mut(|i| {
+        let (open, reload, search, up, down, escape, space) = ctx.input_mut(|i| {
             (
                 i.consume_key(egui::Modifiers::COMMAND, egui::Key::O),
                 i.consume_key(egui::Modifiers::COMMAND, egui::Key::R),
@@ -342,6 +769,7 @@ impl Browser {
                 i.consume_key(egui::Modifiers::NONE, egui::Key::ArrowUp),
                 i.consume_key(egui::Modifiers::NONE, egui::Key::ArrowDown),
                 i.consume_key(egui::Modifiers::NONE, egui::Key::Escape),
+                i.consume_key(egui::Modifiers::NONE, egui::Key::Space),
             )
         });
         if open {
@@ -356,6 +784,14 @@ impl Browser {
         if escape {
             self.pending = None;
             self.error = None;
+            self.missing_audio_card = false;
+            self.device_card_dismissed = true;
+            if esc_action(self.transport).1 == EscAction::Stop {
+                self.stop_audio();
+            }
+        }
+        if space {
+            self.play_selected();
         }
         if (up || down)
             && let Some(e) = &self.episode
@@ -377,7 +813,8 @@ impl Browser {
                     None if up => visible.len() - 1,
                     None => 0,
                 };
-                self.select(visible[next]);
+                let next = visible[next];
+                self.select(next);
             }
         }
     }
@@ -731,63 +1168,137 @@ impl Browser {
         ui.label(t::text(LOCAL_FILES_NOTE, t::CAPTION, t::TEXT_MUTED));
         (open, path)
     }
-    fn playback(&self, ui: &mut Ui) {
+    fn playback(&mut self, ui: &mut Ui) {
         let rect = ui.max_rect();
         ui.painter().line_segment(
             [rect.left_top(), rect.right_top()],
             egui::Stroke::new(t::BORDER, t::BORDER_DEFAULT),
         );
-        let mut ui = ui.new_child(
+        self.refresh_selected_media();
+        let audio_ok = matches!(&self.audio, Some(Ok(_)));
+        // The bar (except the device menu) is disabled at 45% when nothing is
+        // selected or there is no usable audio; a lost device disables it too.
+        let live = self.episode.is_some()
+            && self.selected.is_some()
+            && audio_ok
+            && self.device_error.is_none();
+        let playing_turn = self.transport.turn();
+        let shown = playing_turn.or(self.selected).and_then(|i| {
+            let e = self.episode.as_ref()?;
+            let turn = e.turns.get(i)?;
+            Some((turn.index, e.speakers[turn.speaker_idx].name.clone()))
+        });
+        let (position_ms, duration_ms) = match self.transport {
+            Transport::Playing(_) | Transport::Paused(_) => {
+                let audio = self.audio.as_ref().and_then(|r| r.as_ref().ok());
+                let position = audio.map_or(0, |a| a.position().as_millis() as u64);
+                let duration = audio
+                    .map(|a| a.duration())
+                    .filter(|d| !d.is_zero())
+                    .or_else(|| self.selected_media.as_ref().and_then(|(_, m)| m.duration));
+                (position, duration)
+            }
+            Transport::Idle => (
+                0,
+                self.selected_media
+                    .as_ref()
+                    .and_then(|(_, m)| m.duration),
+            ),
+        };
+        let mut bar = ui.new_child(
             UiBuilder::new()
                 .max_rect(view::inset(rect, t::SPACE_20, 0.0))
                 .layout(Layout::left_to_right(Align::Center)),
         );
-        ui.spacing_mut().item_spacing.x = t::SPACE_18;
-        ui.horizontal(|ui| {
+        bar.spacing_mut().item_spacing.x = t::SPACE_18;
+        let mut play_clicked = false;
+        let mut stop_clicked = false;
+        let mut chosen_device: Option<String> = None;
+        bar.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = t::SPACE_7;
-            t::primary_button(ui, "Play", Some("play-16-on-accent"), false);
-            t::secondary_button(ui, "Stop", Some("square-16-text"), false);
+            let playing = matches!(self.transport, Transport::Playing(_));
+            let (label, icon) = if playing {
+                ("Pause", "pause-16-on-accent")
+            } else {
+                ("Play", "play-16-on-accent")
+            };
+            play_clicked = t::primary_button(ui, label, Some(icon), live).clicked();
+            stop_clicked =
+                t::secondary_button(ui, "Stop", Some("square-16-text"), playing_turn.is_some())
+                    .clicked();
         });
-        let label = self
-            .selected
-            .and_then(|i| {
-                self.episode.as_ref()?.turns.get(i).map(|turn| {
-                    (
-                        turn,
-                        &self.episode.as_ref().unwrap().speakers[turn.speaker_idx],
-                    )
-                })
-            })
-            .map(|(turn, speaker)| format!("Turn {:03} · {}", turn.index, speaker.name))
-            .unwrap_or_else(|| "Select a turn to audition".into());
-        let position = "00:00.000 / —";
+        let (label, position) = match &shown {
+            Some((index, name)) => (
+                format!("Turn {index:03} · {name}"),
+                format!(
+                    "{} / {}",
+                    view::time(position_ms),
+                    duration_ms.map_or("—".into(), |d| view::time(d.as_millis() as u64))
+                ),
+            ),
+            None => ("Select a turn to audition".into(), "00:00.000 / —".into()),
+        };
         let current_width = t::PLAYBACK_CURRENT_AUDIO_WIDTH
-            .max(t::text_width(&ui, label.as_str(), t::font(t::BODY)))
-            .max(t::text_width(&ui, position, t::mono(t::NUMERIC)));
-        let (current, _) = ui.allocate_exact_size(
+            .max(t::text_width(&bar, label.as_str(), t::font(t::BODY)))
+            .max(t::text_width(&bar, position.as_str(), t::mono(t::NUMERIC)));
+        let (current, _) = bar.allocate_exact_size(
             vec2(current_width, t::BUTTON_HEIGHT + t::SPACE_12),
             Sense::hover(),
         );
         let top = Rect::from_min_size(current.min, vec2(current.width(), current.height() / 2.0));
-        view::line(&ui, top, &label, t::font(t::BODY), t::TEXT_PRIMARY);
+        view::line(&bar, top, &label, t::font(t::BODY), t::TEXT_PRIMARY);
         view::line(
-            &ui,
+            &bar,
             top.translate(vec2(0.0, top.height())),
-            position,
+            &position,
             t::mono(t::NUMERIC),
             t::TEXT_MUTED,
         );
-        let remaining = ui.available_rect_before_wrap();
-        let mut options = ui.new_child(
+        let remaining = bar.available_rect_before_wrap();
+        let mut options = bar.new_child(
             UiBuilder::new()
                 .max_rect(remaining)
                 .layout(Layout::right_to_left(Align::Center)),
         );
-        options.add_enabled_ui(false, |ui| {
-            ui.label(t::text("Output unavailable", t::SECONDARY, t::TEXT_MUTED));
+        options.spacing_mut().item_spacing.x = t::SPACE_18;
+        // The output device menu stays enabled even when the rest of the bar
+        // is disabled, so a lost device can be recovered from here too.
+        let current_device = match &self.audio {
+            Some(Ok(audio)) => audio.device_name().to_string(),
+            Some(Err(_)) | None => "No output".to_string(),
+        };
+        let combo = egui::ComboBox::from_id_salt("output_device")
+            .selected_text(t::text(current_device.clone(), t::SECONDARY, t::TEXT_MUTED))
+            .show_ui(&mut options, |ui| {
+                if self.device_list.is_empty() {
+                    ui.label(t::text("No output devices found", t::SECONDARY, t::TEXT_MUTED));
+                }
+                for name in &self.device_list {
+                    if ui
+                        .selectable_label(*name == current_device, name)
+                        .clicked()
+                    {
+                        chosen_device = Some(name.clone());
+                    }
+                }
+            });
+        if combo.response.clicked() {
+            self.device_list = AudioOut::outputs();
+        }
+        options.add_enabled_ui(live, |ui| {
             ui.label(t::text("Space  Play / pause", t::SECONDARY, t::TEXT_SUBTLE));
-            let mut auto = false;
-            ui.checkbox(&mut auto, "Auto-advance");
+            let mut auto = self.preferences.auto_advance;
+            if ui
+                .checkbox(
+                    &mut auto,
+                    egui::RichText::new("Auto-advance")
+                        .font(t::font(t::BODY))
+                        .color(t::TEXT_MUTED),
+                )
+                .changed()
+            {
+                self.preferences.auto_advance = auto;
+            }
         });
         let track = Rect::from_min_max(
             pos2(
@@ -799,17 +1310,54 @@ impl Browser {
                 remaining.center().y + t::SEEK_TRACK_HEIGHT / 2.0,
             ),
         );
-        ui.painter()
+        bar.painter()
             .rect_filled(track, t::RADIUS_SEEK_TRACK, t::BG_CONTROL);
+        if let Some(duration) = duration_ms.filter(|d| !d.is_zero()) {
+            let fraction = (position_ms as f32 / duration.as_millis() as f32).clamp(0.0, 1.0);
+            if fraction > 0.0 {
+                let elapsed = Rect::from_min_max(
+                    track.min,
+                    pos2(track.left() + track.width() * fraction, track.bottom()),
+                );
+                bar.painter()
+                    .rect_filled(elapsed, t::RADIUS_SEEK_TRACK, t::ACCENT);
+            }
+        }
+        if play_clicked {
+            self.play_selected();
+        }
+        if stop_clicked {
+            self.stop_audio();
+        }
+        if let Some(name) = chosen_device {
+            self.choose_device(name);
+        }
     }
     fn status(&self, ui: &mut Ui) {
         let rect = view::inset(ui.max_rect(), t::SPACE_20, 0.0);
-        let status = if self.pending.is_some() {
+        let status = if let Some(turn) = self.transport.turn() {
+            let index = self
+                .episode
+                .as_ref()
+                .and_then(|e| e.turns.get(turn))
+                .map(|t| t.index)
+                .unwrap_or(turn);
+            let verb = match self.transport {
+                Transport::Playing(_) => "Playing",
+                Transport::Paused(_) => "Paused",
+                Transport::Idle => unreachable!(),
+            };
+            format!("{verb} turn {index:03} · selected in timeline and table")
+        } else if self.pending.is_some() {
             "Loading episode…".into()
         } else if self.error.is_some() {
             "Couldn’t open episode · see error details".into()
+        } else if self.episode.is_some() && self.device_error.is_some() {
+            self.audio_notice
+                .clone()
+                .unwrap_or_else(|| "Output device lost".into())
         } else if let Some(e) = &self.episode {
-            format!(
+            let ready = format!(
                 "Ready · {} turns · {} passed · {} failed · {} not verified · {} missing audio{}",
                 e.turns.len(),
                 e.count(V::Passed),
@@ -821,7 +1369,13 @@ impl Browser {
                 } else {
                     ""
                 }
-            )
+            );
+            match &self.audio_notice {
+                Some(notice) => format!("{ready} · {notice}"),
+                None => ready,
+            }
+        } else if let Some(notice) = &self.audio_notice {
+            notice.clone()
         } else {
             "No episode open".into()
         };
@@ -837,19 +1391,54 @@ impl Browser {
         );
         view::line(ui, left, &status, t::font(t::CAPTION), t::TEXT_MUTED);
     }
+    /// File name of the selected turn's first missing WAV, for the Missing
+    /// audio card; `None` when nothing is missing.
+    fn missing_file_name(&self, turn_idx: usize) -> Option<String> {
+        let turn = self.episode.as_ref()?.turns.get(turn_idx)?;
+        turn.wav_paths.iter().find(|p| !p.is_file()).map(|p| {
+            p.file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| p.display().to_string())
+        })
+    }
     fn workspace_card(&mut self, ctx: &egui::Context) {
         let loading = self
             .pending
             .as_ref()
             .filter(|p| p.started.elapsed() >= LOAD_NOTICE_DELAY)
             .map(|p| p.path.clone());
-        if loading.is_none() && self.error.is_none() {
+        // Missing audio: only while the selected turn still lacks its WAV.
+        let missing = if self.missing_audio_card {
+            self.selected
+                .filter(|i| {
+                    self.episode
+                        .as_ref()
+                        .and_then(|e| e.turns.get(*i))
+                        .is_some_and(|t| t.verification == V::MissingAudio)
+                })
+                .and_then(|i| {
+                    let e = self.episode.as_ref()?;
+                    Some((e.turns[i].index, self.missing_file_name(i)?))
+                })
+        } else {
+            None
+        };
+        let device = self
+            .device_error
+            .as_ref()
+            .filter(|_| !self.device_card_dismissed)
+            .map(|message| {
+                let position = self.transport.turn().map(|_| self.audio_position());
+                (message.clone(), position)
+            });
+        if loading.is_none() && self.error.is_none() && missing.is_none() && device.is_none() {
             return;
         }
         let mut choose = false;
         let mut retry = None;
         let mut dismiss = false;
         let mut cancel = false;
+        let mut chosen_device: Option<String> = None;
         egui::Window::new("Workspace state").id(egui::Id::new("workspace_state"))
             .title_bar(false).resizable(false).collapsible(false).anchor(egui::Align2::CENTER_CENTER,egui::Vec2::ZERO)
             .fixed_size(vec2(t::STATE_CARD_WIDTH,0.0))
@@ -879,6 +1468,48 @@ impl Browser {
                         dismiss=t::secondary_button(ui,"Dismiss",None,true).clicked();
                     });
                     ui.label(t::text(if self.episode.is_some() { "The current episode is still open. A malformed directory does not erase it." } else { "Choose a directory containing episode_manifest.json." },t::SECONDARY,t::TEXT_MUTED));
+                } else if let Some((message, position)) = &device {
+                    ui.label(t::heading("Workspace state / Unavailable device",t::TEXT_13));
+                    ui.horizontal(|ui| { ui.add(egui::Image::new(t::icon("headphones-22-accent")).fit_to_exact_size(egui::Vec2::splat(t::SPACE_22))); ui.label(t::heading("Audio output unavailable",t::STATE_TITLE)); });
+                    let body = match position {
+                        Some(position) => format!(
+                            "The selected device was disconnected ({}). Playback is paused at {}; your selection is unchanged. Choose another output to resume.",
+                            message,
+                            view::time(position.as_millis() as u64)
+                        ),
+                        None => format!(
+                            "The selected device was disconnected ({message}). Choose another output to continue."
+                        ),
+                    };
+                    ui.label(t::text(body,t::TEXT_13,t::TEXT_MUTED));
+                    ui.horizontal(|ui| {
+                        let button = t::primary_button(ui,"Choose output",None,true);
+                        egui::Popup::menu(&button).show(|ui| {
+                            if self.device_list.is_empty() {
+                                ui.label(t::text("No output devices found",t::SECONDARY,t::TEXT_MUTED));
+                            }
+                            for name in &self.device_list {
+                                if ui.selectable_label(false, name).clicked() {
+                                    chosen_device = Some(name.clone());
+                                }
+                            }
+                        });
+                        if button.clicked() {
+                            self.device_list = AudioOut::outputs();
+                        }
+                        dismiss=t::secondary_button(ui,"Dismiss",None,true).clicked();
+                    });
+                    ui.label(t::text("Device errors affect playback, not browsing or CLI jobs.",t::SECONDARY,t::TEXT_MUTED));
+                } else if let Some((index, file)) = &missing {
+                    ui.label(t::heading("Workspace state / Missing audio",t::TEXT_13));
+                    ui.horizontal(|ui| { ui.add(egui::Image::new(t::icon("volume-x-22-danger")).fit_to_exact_size(egui::Vec2::splat(t::SPACE_22))); ui.label(t::heading(format!("Audio missing · Turn {index:03}"),t::STATE_TITLE)); });
+                    ui.label(t::text(format!("{file} was not found. Transcript and verification history are available. Restore the file or regenerate the selected turn."),t::TEXT_13,t::TEXT_MUTED));
+                    ui.horizontal(|ui| {
+                        // Phase C enables regeneration; shown disabled for now.
+                        t::primary_button(ui,"Regenerate selected",None,false);
+                        dismiss=t::secondary_button(ui,"Dismiss",None,true).clicked();
+                    });
+                    ui.label(t::text("Keep metadata and all unaffected turns inspectable.",t::SECONDARY,t::TEXT_MUTED));
                 }
             });
         if cancel {
@@ -886,12 +1517,19 @@ impl Browser {
         }
         if dismiss {
             self.error = None;
+            self.missing_audio_card = false;
+            if device.is_some() {
+                self.device_card_dismissed = true;
+            }
         }
         if choose {
             self.pick(ctx);
         }
         if let Some(path) = retry {
             self.open(path, ctx);
+        }
+        if let Some(name) = chosen_device {
+            self.choose_device(name);
         }
     }
 }
@@ -921,36 +1559,96 @@ impl Browser {
                 timeline.left_bottom(),
                 vec2(workspace.width(), t::FILTER_BAR_HEIGHT),
             );
-            let table = Rect::from_min_max(filter.left_bottom(), workspace.max);
+            let review = Rect::from_min_max(filter.left_bottom(), workspace.max);
             self.filter_bar(&mut view::region(ui, "filters", filter, t::BG_RAISED));
-            let e = self.episode.as_ref().unwrap();
-            let matches = self.filters.matches(e);
-            let visible = matches
-                .iter()
-                .enumerate()
-                .filter_map(|(i, v)| v.then_some(i))
-                .collect::<Vec<_>>();
+            let visible = self.visible_indices();
+            let (matches, playing, selected_turn) = {
+                let e = self.episode.as_ref().unwrap();
+                let playing = self.transport.turn().and_then(|turn| {
+                    let start = e.turns.get(turn)?.start_ms;
+                    Some((turn, start + self.audio_position().as_millis() as u64))
+                });
+                (
+                    self.filters.matches(e),
+                    playing,
+                    self.selected.filter(|i| e.turns.get(*i).is_some()),
+                )
+            };
             let clicked = timeline::show(
                 &mut view::region(ui, "timeline", timeline, t::BG_WINDOW),
-                e,
+                self.episode.as_ref().unwrap(),
                 &self.overview,
                 &mut self.timeline,
                 &matches,
                 self.selected,
+                playing,
             );
             if let Some(i) = clicked {
                 self.select(i);
             }
+            // The Selected turn inspector takes the right 376 px of the review
+            // row whenever a turn is selected.
+            let (table_rect, inspector_rect) = match selected_turn {
+                Some(_) => {
+                    let width = InspectorMode::SelectedTurn
+                        .width()
+                        .min(review.width() / 2.0);
+                    let inspector = Rect::from_min_max(
+                        pos2(review.right() - width, review.top()),
+                        review.max,
+                    );
+                    (
+                        Rect::from_min_max(review.min, pos2(inspector.left(), review.bottom())),
+                        Some(inspector),
+                    )
+                }
+                None => (review, None),
+            };
             let clicked = table::show(
-                &mut view::region(ui, "table", table, t::BG_SURFACE),
+                &mut view::region(ui, "table", table_rect, t::BG_SURFACE),
                 self.episode.as_ref().unwrap(),
                 &visible,
                 self.selected,
+                self.transport.turn(),
                 self.scroll_to.take(),
                 self.filters.failed_only,
             );
             if let Some(i) = clicked {
                 self.select(i);
+            }
+            if let (Some(turn), Some(rect)) = (selected_turn, inspector_rect) {
+                let (can_previous, can_next) = neighbour_targets(&visible, Some(turn));
+                let (can_previous, can_next) = (can_previous.is_some(), can_next.is_some());
+                let file_line = self
+                    .selected_media
+                    .as_ref()
+                    .map(|(_, m)| m.file_line.clone())
+                    .unwrap_or_default();
+                let action = inspector::show(
+                    &mut view::region(ui, "inspector", rect, t::BG_SURFACE),
+                    InspectorMode::SelectedTurn,
+                    self.episode.as_ref().unwrap(),
+                    turn,
+                    self.transport,
+                    self.audio_position(),
+                    self.preferences.auto_advance,
+                    can_previous,
+                    can_next,
+                    &file_line,
+                );
+                match action {
+                    Some(inspector::Action::Previous) => {
+                        if let Some(t) = neighbour_targets(&visible, Some(turn)).0 {
+                            self.select(t);
+                        }
+                    }
+                    Some(inspector::Action::Next) => {
+                        if let Some(t) = neighbour_targets(&visible, Some(turn)).1 {
+                            self.select(t);
+                        }
+                    }
+                    None => {}
+                }
             }
         } else {
             self.empty(&mut view::region(ui, "empty", workspace, t::BG_WINDOW));
@@ -961,6 +1659,7 @@ impl Browser {
 impl eframe::App for Browser {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.poll_load(ctx);
+        self.poll_audio(ctx);
         self.capture_logic(ctx);
     }
     fn ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
@@ -1017,6 +1716,51 @@ fn empty_left(ui: &mut Ui) -> bool {
         );
     }
     open
+}
+/// Inspector FILE field content and probed total duration for one turn: WAV
+/// names plus channel layout and sample rate decoded from the first readable
+/// segment. Missing or undecodable files are named, never invented.
+fn probe_turn(wavs: &[PathBuf]) -> SelectedMedia {
+    let names: Vec<String> = wavs
+        .iter()
+        .map(|p| {
+            p.file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| p.display().to_string())
+        })
+        .collect();
+    if names.is_empty() {
+        return SelectedMedia {
+            file_line: "no audio segments".into(),
+            duration: None,
+        };
+    }
+    let mut duration = Some(Duration::ZERO);
+    let mut info = None;
+    let mut missing = false;
+    for path in wavs {
+        match audio::probe(path) {
+            Some(probed) => {
+                info = info.or(Some(probed));
+                duration = duration.and_then(|total| probed.duration.map(|d| total + d));
+            }
+            None => {
+                missing = true;
+                duration = None;
+            }
+        }
+    }
+    let suffix = if missing {
+        "file missing".to_string()
+    } else if let Some(info) = info {
+        info.to_string()
+    } else {
+        "unreadable".to_string()
+    };
+    SelectedMedia {
+        file_line: format!("{} · {suffix}", names.join(" + ")),
+        duration,
+    }
 }
 fn now() -> u64 {
     SystemTime::now()
@@ -1161,9 +1905,12 @@ mod tests {
         t::apply(&ctx);
         let mut app = Browser::default();
         for size in [t::WINDOW_SIZE, t::WINDOW_MIN] {
-            for state in 0..4 {
+            for state in 0..6 {
                 app.pending = None;
                 app.error = None;
+                app.transport = Transport::Idle;
+                app.missing_audio_card = false;
+                app.device_error = None;
                 if state == 0 {
                     app.episode = None;
                 } else {
@@ -1186,6 +1933,22 @@ mod tests {
                         "episode_manifest.json: invalid JSON at line 1".into(),
                     ));
                 }
+                if state == 4 {
+                    // Missing audio card for the selected turn: point a WAV at
+                    // a nonexistent path so the card's real-file lookup runs.
+                    app.select(1);
+                    let turn = &mut app.episode.as_mut().unwrap().turns[1];
+                    turn.wav_paths[0] = PathBuf::from("/nonexistent/turn_2_0.wav");
+                    turn.verification = V::MissingAudio;
+                    app.missing_audio_card = true;
+                }
+                if state == 5 {
+                    // Unavailable device card with a paused transport.
+                    app.select(0);
+                    app.transport = Transport::Paused(0);
+                    app.device_error = Some("simulated loss".into());
+                    app.device_list = vec!["Test Speaker".into()];
+                }
                 let mut output = ctx.run_ui(
                     egui::RawInput {
                         screen_rect: Some(Rect::from_min_size(egui::Pos2::ZERO, size.into())),
@@ -1197,6 +1960,144 @@ mod tests {
                 output.textures_delta.clear();
                 drop(sender);
             }
+        }
+    }
+    #[test]
+    fn space_and_esc_drive_the_transport_state_machine() {
+        use SpaceAction as A;
+        let all_playable = |_| true;
+        // No selection: Space does nothing.
+        assert_eq!(
+            space_action(Transport::Idle, None, all_playable),
+            (Transport::Idle, A::Nothing)
+        );
+        // Idle + selection: play it.
+        assert_eq!(
+            space_action(Transport::Idle, Some(4), all_playable),
+            (Transport::Playing(4), A::Play(4))
+        );
+        // Playing the selected turn: pause; paused: resume.
+        assert_eq!(
+            space_action(Transport::Playing(4), Some(4), all_playable),
+            (Transport::Paused(4), A::Pause)
+        );
+        assert_eq!(
+            space_action(Transport::Paused(4), Some(4), all_playable),
+            (Transport::Playing(4), A::Resume)
+        );
+        // A different selection switches immediately, from playing or paused.
+        assert_eq!(
+            space_action(Transport::Playing(4), Some(7), all_playable),
+            (Transport::Playing(7), A::Play(7))
+        );
+        assert_eq!(
+            space_action(Transport::Paused(4), Some(7), all_playable),
+            (Transport::Playing(7), A::Play(7))
+        );
+        // A missing-audio turn never starts; the caller shows the card.
+        let missing_two = |i: usize| i != 2;
+        assert_eq!(
+            space_action(Transport::Idle, Some(2), missing_two),
+            (Transport::Idle, A::Missing(2))
+        );
+        assert_eq!(
+            space_action(Transport::Playing(1), Some(2), missing_two),
+            (Transport::Idle, A::Missing(2))
+        );
+        // Esc stops anything playing and is a no-op when idle.
+        assert_eq!(
+            esc_action(Transport::Playing(4)),
+            (Transport::Idle, EscAction::Stop)
+        );
+        assert_eq!(
+            esc_action(Transport::Paused(4)),
+            (Transport::Idle, EscAction::Stop)
+        );
+        assert_eq!(
+            esc_action(Transport::Idle),
+            (Transport::Idle, EscAction::Nothing)
+        );
+    }
+    #[test]
+    fn auto_advance_targets_next_visible_turn_and_stops_at_the_end() {
+        let mut e = fixture();
+        // Speaker filter leaves turns 1 and 3 (indices 0 and 2) visible:
+        // the next visible turn under the filter after 0 is 2, not 1.
+        let filters = Filters {
+            speaker: Some(0),
+            ..Filters::default()
+        };
+        let visible: Vec<usize> = filters
+            .matches(&e)
+            .iter()
+            .enumerate()
+            .filter_map(|(i, v)| v.then_some(i))
+            .collect();
+        assert_eq!(visible, [0, 2]);
+        assert_eq!(advance_target(&e, &visible, 0), Some(2));
+        assert_eq!(advance_target(&e, &visible, 2), None, "end of the list stops");
+        assert_eq!(
+            advance_target(&e, &visible, 1),
+            None,
+            "a turn filtered out mid-play has no advance target"
+        );
+        // A missing-audio turn cannot play and is skipped over.
+        e.turns[1].verification = V::MissingAudio;
+        let all: Vec<usize> = (0..e.turns.len()).collect();
+        assert_eq!(advance_target(&e, &all, 0), Some(2));
+        // All remaining turns missing: stop.
+        e.turns[2].verification = V::MissingAudio;
+        assert_eq!(advance_target(&e, &all, 0), None);
+    }
+    #[test]
+    fn inspector_labels_transcript_only_with_real_expected_text() {
+        let e = fixture();
+        // Turn 1 has a passed stress.json entry: TRANSCRIPT with its text.
+        assert_eq!(
+            inspector::transcript_field(&e.turns[0]),
+            ("Transcript", "Hello, world.")
+        );
+        // Turn 2's failed entry also carries expected text.
+        assert_eq!(
+            inspector::transcript_field(&e.turns[1]),
+            ("Transcript", "Two chunks in order.")
+        );
+        // Turn 3 has no entry: FIRST WORDS from TURN_INDEX.csv, never
+        // labelled a transcript.
+        assert_eq!(
+            inspector::transcript_field(&e.turns[2]),
+            ("First words", "Not checked yet.")
+        );
+        // An entry with empty expected text falls back to first words too.
+        let mut hollow = e.turns[0].clone();
+        hollow.verify.as_mut().unwrap().expected = "  ".into();
+        assert_eq!(
+            inspector::transcript_field(&hollow),
+            ("First words", "Hello, world.")
+        );
+    }
+    #[test]
+    fn inspector_renders_headlessly_in_all_transport_states() {
+        let ctx = egui::Context::default();
+        t::apply(&ctx);
+        for transport in [
+            Transport::Idle,
+            Transport::Playing(0),
+            Transport::Paused(0),
+        ] {
+            let mut app = Browser::default();
+            app.accept_episode(fixture(), &ctx);
+            app.select(0);
+            app.transport = transport;
+            let mut output = ctx.run_ui(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(egui::Pos2::ZERO, t::WINDOW_SIZE.into())),
+                    ..Default::default()
+                },
+                |ui| app.show(ui),
+            );
+            assert!(!output.shapes.is_empty());
+            output.textures_delta.clear();
         }
     }
     #[test]

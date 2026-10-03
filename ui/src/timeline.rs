@@ -71,6 +71,7 @@ pub fn show(
     view: &mut TimelineView,
     matches: &[bool],
     selected: Option<usize>,
+    playing: Option<(usize, u64)>,
 ) -> Option<usize> {
     let rect = ui.max_rect();
     let content = view::inset(rect, t::SPACE_20, t::SPACE_10);
@@ -282,7 +283,8 @@ pub fn show(
                     if block.width() <= 0.0 {
                         continue;
                     }
-                    let active = selected == Some(idx);
+                    // The playing segment wears the selected style (screen 03).
+                    let active = selected == Some(idx) || playing.is_some_and(|(t, _)| t == idx);
                     let failed = turn.verification == VerificationState::Failed;
                     let opacity = if matches[idx] {
                         1.0
@@ -343,6 +345,18 @@ pub fn show(
                 }
             }
         });
+    // Playhead: 1 px TEXT_PRIMARY across the speaker lanes at the playing
+    // position (episode time = turn start + playback position).
+    if let Some((_, ms)) = playing {
+        let ms = ms as f64;
+        if ms >= view.start && ms <= view.end {
+            let x = x_at(ms).clamp(ruler.left(), ruler.right());
+            ui.painter().line_segment(
+                [pos2(x, lanes.top()), pos2(x, lanes.bottom())],
+                Stroke::new(t::BORDER, t::TEXT_PRIMARY),
+            );
+        }
+    }
     clicked
 }
 

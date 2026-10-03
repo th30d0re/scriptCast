@@ -31,11 +31,24 @@ Options:
   --size WxH         inner window size in points (default: 1440x900)
   --fresh            ignore persisted state and do not save state on exit
   --select N         select manifest turn N after loading, scrolled into view
+  --play             after --select, start playback of the selected turn
+                     (requires --select)
+  --at MS            after --play starts, seek the player to MS milliseconds
+                     (requires --play)
+  --mute             play at volume 0; --screenshot together with --play always
+                     implies --mute, so a capture run never makes sound
+  --simulate-device-loss
+                     after --play, inject an output-device error through the
+                     same channel the real error callback uses, to capture the
+                     Unavailable device state (requires --play)
   -h, --help         print this help
 
 --screenshot implies --fresh unless EPISODE_DIR is given; either way a
-screenshot run never writes persisted state. A saved screenshot exits 0;
-any failure (including a 20 s timeout) exits non-zero.";
+screenshot run never writes persisted state. With --play the capture waits
+until the playback position has advanced at least 200 ms past --at (or until
+the Missing audio / Unavailable device state is showing), then photographs the
+window while playing. A saved screenshot exits 0; any failure (including a
+20 s timeout) exits non-zero.";
 
 #[derive(Clone, Debug)]
 pub struct Cli {
@@ -44,6 +57,10 @@ pub struct Cli {
     pub size: [f32; 2],
     pub fresh: bool,
     pub select: Option<usize>,
+    pub play: bool,
+    pub at: Option<u64>,
+    pub mute: bool,
+    pub simulate_device_loss: bool,
     pub help: bool,
 }
 
@@ -55,6 +72,10 @@ impl Cli {
             size: t::WINDOW_SIZE,
             fresh: false,
             select: None,
+            play: false,
+            at: None,
+            mute: false,
+            simulate_device_loss: false,
             help: false,
         };
         let mut positional_only = false;
@@ -75,6 +96,9 @@ impl Cli {
                 "--" => positional_only = true,
                 "-h" | "--help" => cli.help = true,
                 "--fresh" => cli.fresh = true,
+                "--play" => cli.play = true,
+                "--mute" => cli.mute = true,
+                "--simulate-device-loss" => cli.simulate_device_loss = true,
                 "--screenshot" => {
                     let value = args
                         .next()
@@ -93,8 +117,23 @@ impl Cli {
                         .ok_or_else(|| "--select needs a turn number".to_string())?;
                     cli.select = Some(parse_select(&value.to_string_lossy())?);
                 }
+                "--at" => {
+                    let value = args
+                        .next()
+                        .ok_or_else(|| "--at needs a millisecond value".to_string())?;
+                    cli.at = Some(parse_at(&value.to_string_lossy())?);
+                }
                 other => return Err(format!("unknown option {other}")),
             }
+        }
+        if cli.play && cli.select.is_none() {
+            return Err("--play needs --select (there is no default turn to play)".into());
+        }
+        if cli.at.is_some() && !cli.play {
+            return Err("--at needs --play".into());
+        }
+        if cli.simulate_device_loss && !cli.play {
+            return Err("--simulate-device-loss needs --play".into());
         }
         Ok(cli)
     }
@@ -105,6 +144,10 @@ impl Cli {
     /// Fresh runs and every screenshot run leave persisted state untouched.
     pub fn persist(&self) -> bool {
         !self.effective_fresh() && self.screenshot.is_none()
+    }
+    /// A capture that plays is always muted; --mute mutes any run.
+    pub fn effective_muted(&self) -> bool {
+        self.mute || (self.screenshot.is_some() && self.play)
     }
 }
 
@@ -122,6 +165,11 @@ fn parse_size(text: &str) -> Result<[f32; 2], String> {
 fn parse_select(text: &str) -> Result<usize, String> {
     text.parse::<usize>()
         .map_err(|_| format!("--select expects a manifest turn number, got {text}"))
+}
+
+fn parse_at(text: &str) -> Result<u64, String> {
+    text.parse::<u64>()
+        .map_err(|_| format!("--at expects milliseconds, got {text}"))
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -149,9 +197,24 @@ pub struct Capture {
     pub frames: usize,
     pub quiet_since: Instant,
     pub deadline: Instant,
+    /// --play: start the selected turn when the load settles.
+    pub play: bool,
+    /// --at: seek target; the capture fires once position is ≥ at + 200 ms.
+    pub at: Duration,
+    /// --simulate-device-loss: inject a device error right after starting.
+    pub simulate_device_loss: bool,
+    /// Set once playback has actually been observed in the Playing state, so a
+    /// turn that played to completion (transport back to Idle) still counts as
+    /// ready instead of looking like a failed start.
+    pub play_started: bool,
+    /// When the screenshot was last requested. eframe only drains the
+    /// screenshot action on a frame the OS reports as visible; a request made
+    /// before the window is visible can sit in the queue forever, so the
+    /// command is re-sent while no event arrives.
+    pub requested_at: Instant,
 }
 impl Capture {
-    pub fn new(path: PathBuf) -> Self {
+    pub fn new(path: PathBuf, play: bool, at: Option<u64>, simulate_device_loss: bool) -> Self {
         let now = Instant::now();
         Self {
             path,
@@ -159,6 +222,11 @@ impl Capture {
             frames: 0,
             quiet_since: now,
             deadline: now + TIMEOUT,
+            play,
+            at: Duration::from_millis(at.unwrap_or(0)),
+            simulate_device_loss,
+            play_started: false,
+            requested_at: now,
         }
     }
 }
@@ -259,6 +327,30 @@ mod tests {
         assert_eq!(parse(&["--select", "391"]).unwrap().select, Some(391));
         assert!(parse(&["--select", "-1"]).is_err());
         assert!(parse(&["--select", "three"]).is_err());
+    }
+    #[test]
+    fn play_flags_parse_and_validate_combinations() {
+        let cli = parse(&["/tmp/ep", "--select", "4", "--play", "--at", "4620"]).unwrap();
+        assert!(cli.play);
+        assert_eq!(cli.at, Some(4620));
+        assert!(!cli.mute && !cli.simulate_device_loss);
+        assert!(parse(&["--play", "/tmp/ep"]).is_err(), "--play needs --select");
+        assert!(parse(&["--at", "100", "/tmp/ep"]).is_err(), "--at needs --play");
+        assert!(
+            parse(&["--simulate-device-loss", "/tmp/ep"]).is_err(),
+            "--simulate-device-loss needs --play"
+        );
+        assert!(parse(&["--play", "--select", "1", "--at", "x", "/tmp/e"]).is_err());
+        assert!(parse(&["--play", "--select", "1", "--at", "-5", "/tmp/e"]).is_err());
+    }
+    #[test]
+    fn screenshot_with_play_is_always_muted() {
+        let cli = parse(&["/tmp/e", "--select", "0", "--play", "--screenshot", "/tmp/o.png"]).unwrap();
+        assert!(cli.effective_muted(), "capture + play must imply mute");
+        let cli = parse(&["/tmp/e", "--select", "0", "--play"]).unwrap();
+        assert!(!cli.effective_muted(), "plain --play is audible");
+        let cli = parse(&["/tmp/e", "--mute"]).unwrap();
+        assert!(cli.effective_muted());
     }
     #[test]
     fn missing_values_and_unknown_options_fail() {

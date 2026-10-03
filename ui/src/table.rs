@@ -36,7 +36,13 @@ impl ColumnWidths {
         .map(|label| t::text_width(ui, label, t::font(t::SECONDARY)))
         .fold(header("Verification"), f32::max);
         Self {
-            turn: t::fit_text_width(header("Turn").max(mono(format!("{max_index:03}"))), t::TABLE_COL_TURN),
+            // The playing row prefixes the number with "▶" (design screen 03).
+            turn: t::fit_text_width(
+                header("Turn")
+                    .max(mono(format!("{max_index:03}")))
+                    .max(mono(format!("▶{max_index:03}"))),
+                t::TABLE_COL_TURN,
+            ),
             time: t::fit_text_width(
                 header("Time").max(mono(view::time(episode.total_ms))),
                 t::TABLE_COL_TIME,
@@ -82,6 +88,7 @@ pub fn show(
     episode: &Episode,
     visible: &[usize],
     selected: Option<usize>,
+    playing: Option<usize>,
     scroll_to: Option<usize>,
     failed_only: bool,
 ) -> Option<usize> {
@@ -143,12 +150,21 @@ pub fn show(
                 );
                 view::rule(ui, rect);
                 let cells = columns(rect, &widths);
+                let playing_row = playing == Some(idx);
                 view::line(
                     ui,
                     cells[0],
-                    &format!("{:03}", turn.index),
+                    &if playing_row {
+                        format!("▶{:03}", turn.index)
+                    } else {
+                        format!("{:03}", turn.index)
+                    },
                     t::mono(t::NUMERIC),
-                    if active { t::ACCENT } else { t::TEXT_MUTED },
+                    if active || playing_row {
+                        t::ACCENT
+                    } else {
+                        t::TEXT_MUTED
+                    },
                 );
                 view::line(
                     ui,
@@ -187,12 +203,7 @@ pub fn show(
                     t::mono(t::NUMERIC),
                     t::TEXT_MUTED,
                 );
-                let (label, colour) = match turn.verification {
-                    V::Passed => ("✓  Passed", t::STATUS_PASSED),
-                    V::Failed => ("×  Failed", t::STATUS_FAILED),
-                    V::NotVerified => ("Not verified", t::TEXT_SUBTLE),
-                    V::MissingAudio => ("Missing audio", t::STATUS_FAILED),
-                };
+                let (label, colour) = view::verification_label(turn.verification);
                 view::line(ui, cells[5], label, t::font(t::SECONDARY), colour);
                 let response = response.on_hover_text(format!(
                     "Turn {:03} · {}\n{}\n{}",
