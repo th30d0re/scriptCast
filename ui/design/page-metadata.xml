@@ -1,0 +1,2377 @@
+<canvas id="0:1" name="Page 1" x="0" y="0" width="0" height="0">
+  <frame id="4:17810" name="01 · No episode open" x="-721" y="3550" width="1440" height="900">
+    <frame id="4:17811" name="Window title bar" x="0" y="0" width="1440" height="38">
+      <frame id="4:17812" name="Window controls" x="16" y="13.5" width="49" height="11">
+        <ellipse id="4:17813" name="Window control" x="0" y="0" width="11" height="11" />
+        <ellipse id="4:17814" name="Window control" x="19" y="0" width="11" height="11" />
+        <ellipse id="4:17815" name="Window control" x="38" y="0" width="11" height="11" />
+      </frame>
+      <text id="4:17816" name="Window title" x="601.5" y="10.5" width="188" height="17" />
+      <text id="4:17817" name="Label" x="1326" y="11" width="98" height="16" />
+    </frame>
+    <frame id="4:17818" name="Episode header" x="0" y="38" width="1440" height="76">
+      <frame id="4:17819" name="Brand" x="20" y="25" width="121" height="26">
+        <frame id="4:20069" name="audio-lines" x="0" y="2" width="22" height="22" />
+        <text id="4:17821" name="Application name" x="30" y="0" width="91" height="26" />
+      </frame>
+      <rounded-rectangle id="4:17822" name="Header divider" x="163" y="23" width="1" height="30" />
+      <frame id="4:17823" name="Episode identity" x="186" y="16.5" width="1028" height="43">
+        <frame id="4:17824" name="Episode name" x="0" y="0" width="123" height="22">
+          <text id="4:17825" name="Label" x="0" y="0" width="123" height="22" />
+        </frame>
+        <text id="4:17826" name="Episode metadata" x="0" y="27" width="228" height="16" />
+      </frame>
+      <frame id="4:17827" name="Action" x="1236" y="23" width="77" height="30">
+        <frame id="4:20072" name="folder-open" x="11" y="7" width="16" height="16" />
+        <text id="4:17829" name="Action label" x="34" y="7.5" width="32" height="15" />
+      </frame>
+      <frame id="4:17830" name="Action" x="1335" y="23" width="85" height="30">
+        <frame id="4:20075" name="rotate-cw" x="11" y="7" width="16" height="16" />
+        <text id="4:17832" name="Action label" x="34" y="7.5" width="40" height="15" />
+      </frame>
+    </frame>
+    <frame id="4:17833" name="Review workspace" x="0" y="114" width="1440" height="640">
+      <frame id="4:17834" name="Empty workspace" x="0" y="0" width="1440" height="640">
+        <frame id="4:17835" name="Open episode guidance" x="257.5" y="140.5" width="410" height="359">
+          <frame id="4:20078" name="folder-open" x="0" y="0" width="42" height="42" />
+          <text id="4:17837" name="Empty state title" x="0" y="62" width="410" height="44" />
+          <text id="4:17838" name="Directory explanation" x="0" y="126" width="410" height="60" />
+          <frame id="4:17839" name="Open actions" x="0" y="206" width="160" height="30">
+            <frame id="4:17840" name="Action" x="0" y="0" width="126" height="30">
+              <frame id="4:20081" name="folder-open" x="11" y="7" width="16" height="16" />
+              <text id="4:17842" name="Action label" x="34" y="7.5" width="81" height="15" />
+            </frame>
+            <text id="4:17843" name="Label" x="138" y="6.5" width="22" height="17" />
+          </frame>
+          <frame id="4:17844" name="Expected directory contents" x="0" y="256" width="410" height="103">
+            <text id="4:17845" name="Label" x="0" y="16" width="171" height="15" />
+            <text id="4:17846" name="Label" x="0" y="38" width="58" height="17" />
+            <text id="4:17847" name="Label" x="0" y="62" width="245" height="17" />
+            <text id="4:17848" name="Label" x="0" y="86" width="281" height="17" />
+          </frame>
+        </frame>
+        <rounded-rectangle id="4:17849" name="Content divider" x="731.5" y="145" width="1" height="350" />
+        <frame id="4:17850" name="Recent episodes" x="796.5" y="135.5" width="386" height="369">
+          <frame id="4:17851" name="Recent heading" x="0" y="0" width="386" height="31">
+            <text id="4:17852" name="Label" x="0" y="0" width="105" height="19" />
+            <text id="4:17853" name="Label" x="294" y="0" width="92" height="16" />
+          </frame>
+          <frame id="4:17854" name="Recent episode" x="0" y="39" width="386" height="92">
+            <text id="4:17855" name="Recent episode name" x="0" y="15" width="146" height="20" />
+            <text id="4:17856" name="Recent metadata" x="0" y="40" width="179" height="17" />
+            <text id="4:17857" name="Directory path" x="0" y="62" width="114" height="15" />
+          </frame>
+          <frame id="4:17858" name="Recent episode" x="0" y="139" width="386" height="92">
+            <text id="4:17859" name="Recent episode name" x="0" y="15" width="181" height="20" />
+            <text id="4:17860" name="Recent metadata" x="0" y="40" width="201" height="17" />
+            <text id="4:17861" name="Directory path" x="0" y="62" width="114" height="15" />
+          </frame>
+          <frame id="4:17862" name="Recent episode" x="0" y="239" width="386" height="92">
+            <text id="4:17863" name="Recent episode name" x="0" y="15" width="199" height="20" />
+            <text id="4:17864" name="Recent metadata" x="0" y="40" width="183" height="17" />
+            <text id="4:17865" name="Directory path" x="0" y="62" width="114" height="15" />
+          </frame>
+          <frame id="4:17866" name="Local privacy" x="0" y="339" width="298" height="30">
+            <text id="4:17867" name="Status badge" x="0" y="14" width="66" height="13" />
+            <text id="4:17868" name="Label" x="74" y="14" width="224" height="16" />
+          </frame>
+        </frame>
+      </frame>
+    </frame>
+    <frame id="4:17869" name="Playback controls" x="0" y="754" width="1440" height="64">
+      <frame id="4:17870" name="Transport" x="20" y="17" width="150" height="30">
+        <frame id="4:17871" name="Action" x="0" y="0" width="70" height="30">
+          <frame id="4:20084" name="play" x="11" y="7" width="16" height="16" />
+          <text id="4:17873" name="Action label" x="34" y="7.5" width="25" height="15" />
+        </frame>
+        <frame id="4:17874" name="Action" x="77" y="0" width="73" height="30">
+          <frame id="4:20087" name="square" x="11" y="7" width="16" height="16" />
+          <text id="4:17876" name="Action label" x="34" y="7.5" width="28" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:17877" name="Current audio" x="188" y="14.5" width="226" height="35">
+        <text id="4:17878" name="Current turn" x="0" y="0" width="137" height="17" />
+        <text id="4:17879" name="Elapsed time" x="0" y="19" width="86" height="16" />
+      </frame>
+      <frame id="4:17880" name="Seek track" x="432" y="30" width="608" height="4">
+        <rounded-rectangle id="4:17881" name="Elapsed progress" x="0" y="0" width="1" height="4" />
+      </frame>
+      <text id="4:17882" name="Label" x="1058" y="23.5" width="96" height="17" />
+      <text id="4:17883" name="Label" x="1172" y="24" width="102" height="16" />
+      <text id="4:17884" name="Label" x="1292" y="24" width="128" height="16" />
+    </frame>
+    <frame id="4:17885" name="Application status" x="0" y="818" width="1440" height="26">
+      <text id="4:17886" name="Label" x="20" y="5.5" width="149" height="15" />
+      <text id="4:17887" name="Label" x="1193" y="5.5" width="227" height="15" />
+    </frame>
+    <frame id="4:17888" name="Workshop annotation" x="0" y="844" width="1440" height="56">
+      <text id="4:17889" name="Frame number" x="20" y="13.5" width="24" height="29" />
+      <frame id="4:17890" name="Workshop note" x="64" y="10.5" width="1242" height="35">
+        <text id="4:17891" name="Screen purpose" x="0" y="0" width="147" height="17" />
+        <text id="4:17892" name="Design rationale" x="0" y="19" width="1242" height="16" />
+      </frame>
+      <text id="4:17893" name="Label" x="1326" y="20.5" width="94" height="15" />
+    </frame>
+  </frame>
+  <frame id="4:17895" name="02 · Episode browser — idle" x="839" y="3550" width="1440" height="900">
+    <frame id="4:17896" name="Window title bar" x="0" y="0" width="1440" height="38">
+      <frame id="4:17897" name="Window controls" x="16" y="13.5" width="49" height="11">
+        <ellipse id="4:17898" name="Window control" x="0" y="0" width="11" height="11" />
+        <ellipse id="4:17899" name="Window control" x="19" y="0" width="11" height="11" />
+        <ellipse id="4:17900" name="Window control" x="38" y="0" width="11" height="11" />
+      </frame>
+      <text id="4:17901" name="Window title" x="596" y="10.5" width="199" height="17" />
+      <text id="4:17902" name="Label" x="1326" y="11" width="98" height="16" />
+    </frame>
+    <frame id="4:17903" name="Episode header" x="0" y="38" width="1440" height="76">
+      <frame id="4:17904" name="Brand" x="20" y="25" width="121" height="26">
+        <frame id="4:20090" name="audio-lines" x="0" y="2" width="22" height="22" />
+        <text id="4:17906" name="Application name" x="30" y="0" width="91" height="26" />
+      </frame>
+      <rounded-rectangle id="4:17907" name="Header divider" x="163" y="23" width="1" height="30" />
+      <frame id="4:17908" name="Episode identity" x="186" y="16.5" width="1028" height="43">
+        <frame id="4:17909" name="Episode name" x="0" y="0" width="159" height="22">
+          <text id="4:17910" name="Label" x="0" y="0" width="159" height="22" />
+        </frame>
+        <text id="4:17911" name="Episode metadata" x="0" y="27" width="423" height="16" />
+      </frame>
+      <frame id="4:17912" name="Action" x="1236" y="23" width="77" height="30">
+        <frame id="4:20093" name="folder-open" x="11" y="7" width="16" height="16" />
+        <text id="4:17914" name="Action label" x="34" y="7.5" width="32" height="15" />
+      </frame>
+      <frame id="4:17915" name="Action" x="1335" y="23" width="85" height="30">
+        <frame id="4:20096" name="rotate-cw" x="11" y="7" width="16" height="16" />
+        <text id="4:17917" name="Action label" x="34" y="7.5" width="40" height="15" />
+      </frame>
+    </frame>
+    <frame id="4:17918" name="Review workspace" x="0" y="114" width="1440" height="640">
+      <frame id="4:17919" name="Episode timeline" x="0" y="0" width="1440" height="188">
+        <frame id="4:17920" name="Timeline heading" x="20" y="10" width="1400" height="17">
+          <frame id="4:17921" name="Timeline identity" x="0" y="0" width="174" height="17">
+            <text id="4:17922" name="Label" x="0" y="0" width="50" height="17" />
+            <text id="4:17923" name="Label" x="62" y="0" width="112" height="16" />
+          </frame>
+          <frame id="4:17924" name="Zoom controls" x="1271" y="0.5" width="129" height="16">
+            <text id="4:17925" name="Label" x="0" y="0" width="57" height="16" />
+            <text id="4:17926" name="Label" x="71" y="0" width="58" height="16" />
+          </frame>
+        </frame>
+        <frame id="4:17927" name="Episode overview" x="20" y="33" width="1400" height="17">
+          <rounded-rectangle id="4:17928" name="Overview section" x="0" y="0" width="114.83333587646484" height="17" />
+          <rounded-rectangle id="4:17929" name="Overview section" x="116.83333587646484" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:17930" name="Overview section" x="233.66665649414062" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:17931" name="Overview section" x="350.5" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:17932" name="Overview section" x="467.33331298828125" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:17933" name="Overview section" x="584.1666259765625" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:17934" name="Overview section" x="700.9999389648438" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:17935" name="Overview section" x="817.833251953125" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:17936" name="Overview section" x="934.6665649414062" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:17937" name="Overview section" x="1051.4998779296875" y="0" width="114.83333587646484" height="17" />
+          <rounded-rectangle id="4:17938" name="Overview section" x="1168.333251953125" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:17939" name="Overview section" x="1285.1666259765625" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:17940" name="Visible range" x="0" y="-2" width="68" height="21" />
+        </frame>
+        <frame id="4:17941" name="Time ruler" x="20" y="56" width="1400" height="18">
+          <text id="4:17942" name="Time marker" x="80" y="0" width="30" height="15" />
+          <text id="4:17943" name="Time marker" x="295" y="0" width="30" height="15" />
+          <text id="4:17944" name="Time marker" x="510" y="0" width="30" height="15" />
+          <text id="4:17945" name="Time marker" x="725" y="0" width="30" height="15" />
+          <text id="4:17946" name="Time marker" x="940" y="0" width="30" height="15" />
+          <text id="4:17947" name="Time marker" x="1155" y="0" width="30" height="15" />
+          <text id="4:17948" name="Time marker" x="1370" y="0" width="30" height="15" />
+        </frame>
+        <frame id="4:17949" name="Speaker lanes" x="20" y="80" width="1400" height="92">
+          <frame id="4:17950" name="Speaker labels" x="0" y="0" width="66" height="92">
+            <frame id="4:17951" name="Lane label" x="0" y="0" width="38" height="20">
+              <text id="4:17952" name="Speaker badge" x="0" y="2.5" width="38" height="15" />
+            </frame>
+            <frame id="4:17953" name="Lane label" x="0" y="24" width="43" height="20">
+              <text id="4:17954" name="Speaker badge" x="0" y="2.5" width="43" height="15" />
+            </frame>
+            <frame id="4:17955" name="Lane label" x="0" y="48" width="52" height="20">
+              <text id="4:17956" name="Speaker badge" x="0" y="2.5" width="52" height="15" />
+            </frame>
+            <frame id="4:17957" name="Lane label" x="0" y="72" width="38" height="20">
+              <text id="4:17958" name="Speaker badge" x="0" y="2.5" width="38" height="15" />
+            </frame>
+          </frame>
+          <frame id="4:17959" name="Audio tracks" x="78" y="0" width="1322" height="92">
+            <frame id="4:17960" name="Speaker track" x="0" y="0" width="1322" height="20">
+              <frame id="4:17961" name="Turn segment" x="0" y="0" width="121.03644561767578" height="20">
+                <text id="4:17962" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:17963" name="Turn segment" x="211.81378173828125" y="0" width="78.14488983154297" height="20">
+                <text id="4:17964" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:17965" name="Turn segment" x="685.383544921875" y="0" width="88.72088623046875" height="20">
+                <text id="4:17966" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:17967" name="Turn segment" x="1056.4249267578125" y="0" width="122.79911041259766" height="20">
+                <text id="4:17968" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:17969" name="Speaker track" x="0" y="24" width="1322" height="20">
+              <frame id="4:17970" name="Turn segment" x="121.03644561767578" y="0" width="90.77733612060547" height="20">
+                <text id="4:17971" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:17972" name="Turn segment" x="487.9648742675781" y="0" width="84.60800170898438" height="20">
+                <text id="4:17973" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:17974" name="Turn segment" x="850.19287109375" y="0" width="104.58489227294922" height="20">
+                <text id="4:17975" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:17976" name="Speaker track" x="0" y="48" width="1322" height="20">
+              <frame id="4:17977" name="Turn segment" x="289.95867919921875" y="0" width="133.08132934570312" height="20">
+                <text id="4:17978" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:17979" name="Turn segment" x="572.5728759765625" y="0" width="112.8106689453125" height="20">
+                <text id="4:17980" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:17981" name="Turn segment" x="954.7777709960938" y="0" width="101.64710998535156" height="20">
+                <text id="4:17982" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:17983" name="Speaker track" x="0" y="72" width="1322" height="20">
+              <frame id="4:17984" name="Turn segment" x="423.0400085449219" y="0" width="64.92488861083984" height="20">
+                <text id="4:17985" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:17986" name="Turn segment" x="774.1044311523438" y="0" width="76.08844757080078" height="20">
+                <text id="4:17987" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+          </frame>
+        </frame>
+      </frame>
+      <frame id="4:17988" name="Review filters" x="0" y="188" width="1440" height="42">
+        <frame id="4:17989" name="Search turns" x="16" y="7.5" width="270" height="27">
+          <frame id="4:20099" name="search" x="9" y="6.5" width="14" height="14" />
+          <text id="4:17991" name="Label" x="31" y="5" width="72" height="17" />
+          <text id="4:17992" name="Label" x="111" y="5.5" width="18" height="16" />
+        </frame>
+        <frame id="4:17993" name="Action" x="296" y="6" width="103" height="30">
+          <text id="4:17994" name="Action label" x="11" y="7.5" width="81" height="15" />
+        </frame>
+        <frame id="4:17995" name="Action" x="409" y="6" width="101" height="30">
+          <text id="4:17996" name="Action label" x="11" y="7.5" width="79" height="15" />
+        </frame>
+        <frame id="4:17997" name="View mode" x="520" y="13" width="904" height="16">
+          <text id="4:17998" name="Label" x="830" y="0" width="51" height="16" />
+          <frame id="4:20102" name="list" x="889" y="0" width="15" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:18000" name="Turn table" x="0" y="230" width="1440" height="410">
+        <frame id="4:18001" name="Column headers" x="0" y="0" width="1440" height="30">
+          <text id="4:18002" name="Column heading" x="16" y="8.5" width="44" height="13" />
+          <text id="4:18003" name="Column heading" x="72" y="8.5" width="92" height="13" />
+          <text id="4:18004" name="Column heading" x="176" y="8.5" width="82" height="13" />
+          <text id="4:18005" name="Column heading" x="270" y="8.5" width="964" height="13" />
+          <text id="4:18006" name="Column heading" x="1246" y="8.5" width="60" height="13" />
+          <text id="4:18007" name="Column heading" x="1318" y="8.5" width="106" height="13" />
+        </frame>
+        <frame id="4:18008" name="Turn row" x="0" y="30" width="1440" height="28">
+          <text id="4:18009" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:18010" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:18011" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:18012" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:18013" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:18014" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:18015" name="Turn row" x="0" y="58" width="1440" height="28">
+          <text id="4:18016" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:18017" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:18018" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:18019" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:18020" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:18021" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:18022" name="Turn row" x="0" y="86" width="1440" height="28">
+          <text id="4:18023" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:18024" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:18025" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:18026" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:18027" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:18028" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:18029" name="Turn row" x="0" y="114" width="1440" height="28">
+          <text id="4:18030" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:18031" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:18032" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:18033" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:18034" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:18035" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:18036" name="Turn row" x="0" y="142" width="1440" height="28">
+          <text id="4:18037" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:18038" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:18039" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:18040" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:18041" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:18042" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:18043" name="Turn row" x="0" y="170" width="1440" height="28">
+          <text id="4:18044" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:18045" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:18046" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:18047" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:18048" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:18049" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:18050" name="Turn row" x="0" y="198" width="1440" height="28">
+          <text id="4:18051" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:18052" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:18053" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:18054" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:18055" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:18056" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:18057" name="Turn row" x="0" y="226" width="1440" height="28">
+          <text id="4:18058" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:18059" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:18060" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:18061" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:18062" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:18063" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:18064" name="Turn row" x="0" y="254" width="1440" height="28">
+          <text id="4:18065" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:18066" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:18067" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:18068" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:18069" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:18070" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:18071" name="Turn row" x="0" y="282" width="1440" height="28">
+          <text id="4:18072" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:18073" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:18074" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:18075" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:18076" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:18077" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:18078" name="Turn row" x="0" y="310" width="1440" height="28">
+          <text id="4:18079" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:18080" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:18081" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:18082" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:18083" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:18084" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:18085" name="Turn row" x="0" y="338" width="1440" height="28">
+          <text id="4:18086" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:18087" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:18088" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:18089" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:18090" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:18091" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:18092" name="Table summary" x="0" y="366" width="1440" height="44">
+          <text id="4:18093" name="Label" x="16" y="12" width="138" height="16" />
+          <text id="4:18094" name="Label" x="1337" y="12" width="87" height="16" />
+        </frame>
+      </frame>
+    </frame>
+    <frame id="4:18095" name="Playback controls" x="0" y="754" width="1440" height="64">
+      <frame id="4:18096" name="Transport" x="20" y="17" width="150" height="30">
+        <frame id="4:18097" name="Action" x="0" y="0" width="70" height="30">
+          <frame id="4:20105" name="play" x="11" y="7" width="16" height="16" />
+          <text id="4:18099" name="Action label" x="34" y="7.5" width="25" height="15" />
+        </frame>
+        <frame id="4:18100" name="Action" x="77" y="0" width="73" height="30">
+          <frame id="4:20108" name="square" x="11" y="7" width="16" height="16" />
+          <text id="4:18102" name="Action label" x="34" y="7.5" width="28" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:18103" name="Current audio" x="188" y="14.5" width="226" height="35">
+        <text id="4:18104" name="Current turn" x="0" y="0" width="137" height="17" />
+        <text id="4:18105" name="Elapsed time" x="0" y="19" width="86" height="16" />
+      </frame>
+      <frame id="4:18106" name="Seek track" x="432" y="30" width="608" height="4">
+        <rounded-rectangle id="4:18107" name="Elapsed progress" x="0" y="0" width="1" height="4" />
+      </frame>
+      <text id="4:18108" name="Label" x="1058" y="23.5" width="96" height="17" />
+      <text id="4:18109" name="Label" x="1172" y="24" width="102" height="16" />
+      <text id="4:18110" name="Label" x="1292" y="24" width="128" height="16" />
+    </frame>
+    <frame id="4:18111" name="Application status" x="0" y="818" width="1440" height="26">
+      <text id="4:18112" name="Label" x="20" y="5.5" width="191" height="15" />
+      <text id="4:18113" name="Label" x="1193" y="5.5" width="227" height="15" />
+    </frame>
+    <frame id="4:18114" name="Workshop annotation" x="0" y="844" width="1440" height="56">
+      <text id="4:18115" name="Frame number" x="20" y="13.5" width="24" height="29" />
+      <frame id="4:18116" name="Workshop note" x="64" y="10.5" width="1242" height="35">
+        <text id="4:18117" name="Screen purpose" x="0" y="0" width="144" height="17" />
+        <text id="4:18118" name="Design rationale" x="0" y="19" width="1242" height="16" />
+      </frame>
+      <text id="4:18119" name="Label" x="1326" y="20.5" width="94" height="15" />
+    </frame>
+  </frame>
+  <frame id="4:18121" name="03 · Selected turn — playing" x="-721" y="4550" width="1440" height="900">
+    <frame id="4:18122" name="Window title bar" x="0" y="0" width="1440" height="38">
+      <frame id="4:18123" name="Window controls" x="16" y="13.5" width="49" height="11">
+        <ellipse id="4:18124" name="Window control" x="0" y="0" width="11" height="11" />
+        <ellipse id="4:18125" name="Window control" x="19" y="0" width="11" height="11" />
+        <ellipse id="4:18126" name="Window control" x="38" y="0" width="11" height="11" />
+      </frame>
+      <text id="4:18127" name="Window title" x="596" y="10.5" width="199" height="17" />
+      <text id="4:18128" name="Label" x="1326" y="11" width="98" height="16" />
+    </frame>
+    <frame id="4:18129" name="Episode header" x="0" y="38" width="1440" height="76">
+      <frame id="4:18130" name="Brand" x="20" y="25" width="121" height="26">
+        <frame id="4:20111" name="audio-lines" x="0" y="2" width="22" height="22" />
+        <text id="4:18132" name="Application name" x="30" y="0" width="91" height="26" />
+      </frame>
+      <rounded-rectangle id="4:18133" name="Header divider" x="163" y="23" width="1" height="30" />
+      <frame id="4:18134" name="Episode identity" x="186" y="16.5" width="1028" height="43">
+        <frame id="4:18135" name="Episode name" x="0" y="0" width="159" height="22">
+          <text id="4:18136" name="Label" x="0" y="0" width="159" height="22" />
+        </frame>
+        <text id="4:18137" name="Episode metadata" x="0" y="27" width="423" height="16" />
+      </frame>
+      <frame id="4:18138" name="Action" x="1236" y="23" width="77" height="30">
+        <frame id="4:20114" name="folder-open" x="11" y="7" width="16" height="16" />
+        <text id="4:18140" name="Action label" x="34" y="7.5" width="32" height="15" />
+      </frame>
+      <frame id="4:18141" name="Action" x="1335" y="23" width="85" height="30">
+        <frame id="4:20117" name="rotate-cw" x="11" y="7" width="16" height="16" />
+        <text id="4:18143" name="Action label" x="34" y="7.5" width="40" height="15" />
+      </frame>
+    </frame>
+    <frame id="4:18144" name="Review workspace" x="0" y="114" width="1440" height="640">
+      <frame id="4:18145" name="Episode timeline" x="0" y="0" width="1440" height="188">
+        <frame id="4:18146" name="Timeline heading" x="20" y="10" width="1400" height="17">
+          <frame id="4:18147" name="Timeline identity" x="0" y="0" width="174" height="17">
+            <text id="4:18148" name="Label" x="0" y="0" width="50" height="17" />
+            <text id="4:18149" name="Label" x="62" y="0" width="112" height="16" />
+          </frame>
+          <frame id="4:18150" name="Zoom controls" x="1271" y="0.5" width="129" height="16">
+            <text id="4:18151" name="Label" x="0" y="0" width="57" height="16" />
+            <text id="4:18152" name="Label" x="71" y="0" width="58" height="16" />
+          </frame>
+        </frame>
+        <frame id="4:18153" name="Episode overview" x="20" y="33" width="1400" height="17">
+          <rounded-rectangle id="4:18154" name="Overview section" x="0" y="0" width="114.83333587646484" height="17" />
+          <rounded-rectangle id="4:18155" name="Overview section" x="116.83333587646484" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18156" name="Overview section" x="233.66665649414062" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18157" name="Overview section" x="350.5" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18158" name="Overview section" x="467.33331298828125" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18159" name="Overview section" x="584.1666259765625" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18160" name="Overview section" x="700.9999389648438" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18161" name="Overview section" x="817.833251953125" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18162" name="Overview section" x="934.6665649414062" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18163" name="Overview section" x="1051.4998779296875" y="0" width="114.83333587646484" height="17" />
+          <rounded-rectangle id="4:18164" name="Overview section" x="1168.333251953125" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18165" name="Overview section" x="1285.1666259765625" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18166" name="Visible range" x="0" y="-2" width="68" height="21" />
+        </frame>
+        <frame id="4:18167" name="Time ruler" x="20" y="56" width="1400" height="18">
+          <text id="4:18168" name="Time marker" x="80" y="0" width="30" height="15" />
+          <text id="4:18169" name="Time marker" x="295" y="0" width="30" height="15" />
+          <text id="4:18170" name="Time marker" x="510" y="0" width="30" height="15" />
+          <text id="4:18171" name="Time marker" x="725" y="0" width="30" height="15" />
+          <text id="4:18172" name="Time marker" x="940" y="0" width="30" height="15" />
+          <text id="4:18173" name="Time marker" x="1155" y="0" width="30" height="15" />
+          <text id="4:18174" name="Time marker" x="1370" y="0" width="30" height="15" />
+        </frame>
+        <frame id="4:18175" name="Speaker lanes" x="20" y="80" width="1400" height="92">
+          <frame id="4:18176" name="Speaker labels" x="0" y="0" width="66" height="92">
+            <frame id="4:18177" name="Lane label" x="0" y="0" width="38" height="20">
+              <text id="4:18178" name="Speaker badge" x="0" y="2.5" width="38" height="15" />
+            </frame>
+            <frame id="4:18179" name="Lane label" x="0" y="24" width="43" height="20">
+              <text id="4:18180" name="Speaker badge" x="0" y="2.5" width="43" height="15" />
+            </frame>
+            <frame id="4:18181" name="Lane label" x="0" y="48" width="52" height="20">
+              <text id="4:18182" name="Speaker badge" x="0" y="2.5" width="52" height="15" />
+            </frame>
+            <frame id="4:18183" name="Lane label" x="0" y="72" width="38" height="20">
+              <text id="4:18184" name="Speaker badge" x="0" y="2.5" width="38" height="15" />
+            </frame>
+          </frame>
+          <frame id="4:18185" name="Audio tracks" x="78" y="0" width="1322" height="92">
+            <frame id="4:18186" name="Speaker track" x="0" y="0" width="1322" height="20">
+              <frame id="4:18187" name="Turn segment" x="0" y="0" width="121.03644561767578" height="20">
+                <text id="4:18188" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18189" name="Turn segment" x="211.81378173828125" y="0" width="78.14488983154297" height="20">
+                <text id="4:18190" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18191" name="Turn segment" x="685.383544921875" y="0" width="88.72088623046875" height="20">
+                <text id="4:18192" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18193" name="Turn segment" x="1056.4249267578125" y="0" width="122.79911041259766" height="20">
+                <text id="4:18194" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:18195" name="Speaker track" x="0" y="24" width="1322" height="20">
+              <frame id="4:18196" name="Turn segment" x="121.03644561767578" y="0" width="90.77733612060547" height="20">
+                <text id="4:18197" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18198" name="Turn segment" x="487.9648742675781" y="0" width="84.60800170898438" height="20">
+                <text id="4:18199" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18200" name="Turn segment" x="850.19287109375" y="0" width="104.58489227294922" height="20">
+                <text id="4:18201" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:18202" name="Speaker track" x="0" y="48" width="1322" height="20">
+              <frame id="4:18203" name="Turn segment" x="289.95867919921875" y="0" width="133.08132934570312" height="20">
+                <text id="4:18204" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18205" name="Turn segment" x="572.5728759765625" y="0" width="112.8106689453125" height="20">
+                <text id="4:18206" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18207" name="Turn segment" x="954.7777709960938" y="0" width="101.64710998535156" height="20">
+                <text id="4:18208" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:18209" name="Speaker track" x="0" y="72" width="1322" height="20">
+              <frame id="4:18210" name="Turn segment" x="423.0400085449219" y="0" width="64.92488861083984" height="20">
+                <text id="4:18211" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18212" name="Turn segment" x="774.1044311523438" y="0" width="76.08844757080078" height="20">
+                <text id="4:18213" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <rounded-rectangle id="4:18214" name="Playhead" x="357.8653869628906" y="0" width="1.0576000213623047" height="92" />
+          </frame>
+        </frame>
+      </frame>
+      <frame id="4:18215" name="Review filters" x="0" y="188" width="1440" height="42">
+        <frame id="4:18216" name="Search turns" x="16" y="7.5" width="270" height="27">
+          <frame id="4:20120" name="search" x="9" y="6.5" width="14" height="14" />
+          <text id="4:18218" name="Label" x="31" y="5" width="72" height="17" />
+          <text id="4:18219" name="Label" x="111" y="5.5" width="18" height="16" />
+        </frame>
+        <frame id="4:18220" name="Action" x="296" y="6" width="103" height="30">
+          <text id="4:18221" name="Action label" x="11" y="7.5" width="81" height="15" />
+        </frame>
+        <frame id="4:18222" name="Action" x="409" y="6" width="101" height="30">
+          <text id="4:18223" name="Action label" x="11" y="7.5" width="79" height="15" />
+        </frame>
+        <frame id="4:18224" name="View mode" x="520" y="13" width="904" height="16">
+          <text id="4:18225" name="Label" x="830" y="0" width="51" height="16" />
+          <frame id="4:20123" name="list" x="889" y="0" width="15" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:18227" name="Turn review" x="0" y="230" width="1440" height="410">
+        <frame id="4:18228" name="Turn table" x="0" y="0" width="1064" height="410">
+          <frame id="4:18229" name="Column headers" x="0" y="0" width="1064" height="30">
+            <text id="4:18230" name="Column heading" x="16" y="8.5" width="44" height="13" />
+            <text id="4:18231" name="Column heading" x="72" y="8.5" width="92" height="13" />
+            <text id="4:18232" name="Column heading" x="176" y="8.5" width="82" height="13" />
+            <text id="4:18233" name="Column heading" x="270" y="8.5" width="588" height="13" />
+            <text id="4:18234" name="Column heading" x="870" y="8.5" width="60" height="13" />
+            <text id="4:18235" name="Column heading" x="942" y="8.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18236" name="Turn row" x="0" y="30" width="1064" height="28">
+            <text id="4:18237" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18238" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18239" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18240" name="First words" x="270" y="6.5" width="588" height="15" />
+            <text id="4:18241" name="Duration" x="870" y="7" width="60" height="14" />
+            <text id="4:18242" name="Verification status" x="942" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18243" name="Turn row" x="0" y="58" width="1064" height="28">
+            <text id="4:18244" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18245" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18246" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18247" name="First words" x="270" y="6.5" width="588" height="15" />
+            <text id="4:18248" name="Duration" x="870" y="7" width="60" height="14" />
+            <text id="4:18249" name="Verification status" x="942" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18250" name="Turn row" x="0" y="86" width="1064" height="28">
+            <text id="4:18251" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18252" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18253" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18254" name="First words" x="270" y="6.5" width="588" height="15" />
+            <text id="4:18255" name="Duration" x="870" y="7" width="60" height="14" />
+            <text id="4:18256" name="Verification status" x="942" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18257" name="Turn row · playing" x="0" y="114" width="1064" height="28">
+            <text id="4:18258" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18259" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18260" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18261" name="First words" x="270" y="6.5" width="588" height="15" />
+            <text id="4:18262" name="Duration" x="870" y="7" width="60" height="14" />
+            <text id="4:18263" name="Verification status" x="942" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18264" name="Turn row" x="0" y="142" width="1064" height="28">
+            <text id="4:18265" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18266" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18267" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18268" name="First words" x="270" y="6.5" width="588" height="15" />
+            <text id="4:18269" name="Duration" x="870" y="7" width="60" height="14" />
+            <text id="4:18270" name="Verification status" x="942" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18271" name="Turn row" x="0" y="170" width="1064" height="28">
+            <text id="4:18272" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18273" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18274" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18275" name="First words" x="270" y="6.5" width="588" height="15" />
+            <text id="4:18276" name="Duration" x="870" y="7" width="60" height="14" />
+            <text id="4:18277" name="Verification status" x="942" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18278" name="Turn row" x="0" y="198" width="1064" height="28">
+            <text id="4:18279" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18280" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18281" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18282" name="First words" x="270" y="6.5" width="588" height="15" />
+            <text id="4:18283" name="Duration" x="870" y="7" width="60" height="14" />
+            <text id="4:18284" name="Verification status" x="942" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18285" name="Turn row" x="0" y="226" width="1064" height="28">
+            <text id="4:18286" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18287" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18288" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18289" name="First words" x="270" y="6.5" width="588" height="15" />
+            <text id="4:18290" name="Duration" x="870" y="7" width="60" height="14" />
+            <text id="4:18291" name="Verification status" x="942" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18292" name="Turn row" x="0" y="254" width="1064" height="28">
+            <text id="4:18293" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18294" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18295" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18296" name="First words" x="270" y="6.5" width="588" height="15" />
+            <text id="4:18297" name="Duration" x="870" y="7" width="60" height="14" />
+            <text id="4:18298" name="Verification status" x="942" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18299" name="Turn row" x="0" y="282" width="1064" height="28">
+            <text id="4:18300" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18301" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18302" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18303" name="First words" x="270" y="6.5" width="588" height="15" />
+            <text id="4:18304" name="Duration" x="870" y="7" width="60" height="14" />
+            <text id="4:18305" name="Verification status" x="942" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18306" name="Turn row" x="0" y="310" width="1064" height="28">
+            <text id="4:18307" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18308" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18309" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18310" name="First words" x="270" y="6.5" width="588" height="15" />
+            <text id="4:18311" name="Duration" x="870" y="7" width="60" height="14" />
+            <text id="4:18312" name="Verification status" x="942" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18313" name="Turn row" x="0" y="338" width="1064" height="28">
+            <text id="4:18314" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18315" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18316" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18317" name="First words" x="270" y="6.5" width="588" height="15" />
+            <text id="4:18318" name="Duration" x="870" y="7" width="60" height="14" />
+            <text id="4:18319" name="Verification status" x="942" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18320" name="Table summary" x="0" y="366" width="1064" height="44">
+            <text id="4:18321" name="Label" x="16" y="12" width="138" height="16" />
+            <text id="4:18322" name="Label" x="961" y="12" width="87" height="16" />
+          </frame>
+        </frame>
+        <frame id="4:18323" name="Inspector" x="1064" y="0" width="376" height="410">
+          <frame id="4:18324" name="Panel heading" x="0" y="0" width="376" height="39">
+            <text id="4:18325" name="Label" x="16" y="11" width="79" height="17" />
+            <text id="4:18326" name="Label" x="313" y="12" width="47" height="15" />
+          </frame>
+          <frame id="4:18327" name="Turn detail" x="0" y="39" width="376" height="350">
+            <frame id="4:18328" name="Turn identity" x="16" y="16" width="344" height="15">
+              <text id="4:18329" name="Speaker badge" x="0" y="0" width="52" height="15" />
+              <text id="4:18330" name="Verification status" x="299" y="0" width="45" height="13" />
+            </frame>
+            <frame id="4:18331" name="Detail field" x="16" y="43" width="344" height="51">
+              <text id="4:18332" name="Field label" x="0" y="0" width="64" height="12" />
+              <text id="4:18333" name="Field value" x="0" y="17" width="344" height="34" />
+            </frame>
+            <frame id="4:18334" name="Detail field" x="16" y="106" width="344" height="34">
+              <text id="4:18335" name="Field label" x="0" y="0" width="33" height="12" />
+              <text id="4:18336" name="Field value" x="0" y="17" width="344" height="17" />
+            </frame>
+            <frame id="4:18337" name="Detail field" x="16" y="152" width="344" height="34">
+              <text id="4:18338" name="Field label" x="0" y="0" width="21" height="12" />
+              <text id="4:18339" name="Field value" x="0" y="17" width="344" height="17" />
+            </frame>
+            <text id="4:18340" name="Playback behavior" x="16" y="198" width="344" height="34" />
+            <frame id="4:18341" name="Turn navigation" x="16" y="244" width="271" height="30">
+              <frame id="4:18342" name="Action" x="0" y="0" width="87" height="30">
+                <text id="4:18343" name="Action label" x="11" y="7.5" width="65" height="15" />
+              </frame>
+              <frame id="4:18344" name="Action" x="95" y="0" width="64" height="30">
+                <text id="4:18345" name="Action label" x="11" y="7.5" width="42" height="15" />
+              </frame>
+              <frame id="4:18346" name="Action" x="167" y="0" width="104" height="30">
+                <text id="4:18347" name="Action label" x="11" y="7.5" width="82" height="15" />
+              </frame>
+            </frame>
+            <text id="4:18348" name="Shortcut guidance" x="16" y="286" width="344" height="48" />
+          </frame>
+        </frame>
+      </frame>
+    </frame>
+    <frame id="4:18349" name="Playback controls" x="0" y="754" width="1440" height="64">
+      <frame id="4:18350" name="Transport" x="20" y="17" width="161" height="30">
+        <frame id="4:18351" name="Action" x="0" y="0" width="81" height="30">
+          <frame id="4:20126" name="pause" x="11" y="7" width="16" height="16" />
+          <text id="4:18353" name="Action label" x="34" y="7.5" width="36" height="15" />
+        </frame>
+        <frame id="4:18354" name="Action" x="88" y="0" width="73" height="30">
+          <frame id="4:20129" name="square" x="11" y="7" width="16" height="16" />
+          <text id="4:18356" name="Action label" x="34" y="7.5" width="28" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:18357" name="Current audio" x="199" y="14.5" width="226" height="35">
+        <text id="4:18358" name="Current turn" x="0" y="0" width="102" height="17" />
+        <text id="4:18359" name="Elapsed time" x="0" y="19" width="139" height="16" />
+      </frame>
+      <frame id="4:18360" name="Seek track" x="443" y="30" width="597" height="4">
+        <rounded-rectangle id="4:18361" name="Elapsed progress" x="0" y="0" width="180" height="4" />
+      </frame>
+      <text id="4:18362" name="Label" x="1058" y="23.5" width="96" height="17" />
+      <text id="4:18363" name="Label" x="1172" y="24" width="102" height="16" />
+      <text id="4:18364" name="Label" x="1292" y="24" width="128" height="16" />
+    </frame>
+    <frame id="4:18365" name="Application status" x="0" y="818" width="1440" height="26">
+      <text id="4:18366" name="Label" x="20" y="5.5" width="225" height="15" />
+      <text id="4:18367" name="Label" x="1193" y="5.5" width="227" height="15" />
+    </frame>
+    <frame id="4:18368" name="Workshop annotation" x="0" y="844" width="1440" height="56">
+      <text id="4:18369" name="Frame number" x="20" y="13.5" width="24" height="29" />
+      <frame id="4:18370" name="Workshop note" x="64" y="10.5" width="1242" height="35">
+        <text id="4:18371" name="Screen purpose" x="0" y="0" width="158" height="17" />
+        <text id="4:18372" name="Design rationale" x="0" y="19" width="1242" height="16" />
+      </frame>
+      <text id="4:18373" name="Label" x="1326" y="20.5" width="94" height="15" />
+    </frame>
+  </frame>
+  <frame id="4:18375" name="04 · Verification review" x="839" y="4550" width="1440" height="900">
+    <frame id="4:18376" name="Window title bar" x="0" y="0" width="1440" height="38">
+      <frame id="4:18377" name="Window controls" x="16" y="13.5" width="49" height="11">
+        <ellipse id="4:18378" name="Window control" x="0" y="0" width="11" height="11" />
+        <ellipse id="4:18379" name="Window control" x="19" y="0" width="11" height="11" />
+        <ellipse id="4:18380" name="Window control" x="38" y="0" width="11" height="11" />
+      </frame>
+      <text id="4:18381" name="Window title" x="596" y="10.5" width="199" height="17" />
+      <text id="4:18382" name="Label" x="1326" y="11" width="98" height="16" />
+    </frame>
+    <frame id="4:18383" name="Episode header" x="0" y="38" width="1440" height="76">
+      <frame id="4:18384" name="Brand" x="20" y="25" width="121" height="26">
+        <frame id="4:20132" name="audio-lines" x="0" y="2" width="22" height="22" />
+        <text id="4:18386" name="Application name" x="30" y="0" width="91" height="26" />
+      </frame>
+      <rounded-rectangle id="4:18387" name="Header divider" x="163" y="23" width="1" height="30" />
+      <frame id="4:18388" name="Episode identity" x="186" y="16.5" width="1028" height="43">
+        <frame id="4:18389" name="Episode name" x="0" y="0" width="159" height="22">
+          <text id="4:18390" name="Label" x="0" y="0" width="159" height="22" />
+        </frame>
+        <text id="4:18391" name="Episode metadata" x="0" y="27" width="423" height="16" />
+      </frame>
+      <frame id="4:18392" name="Action" x="1236" y="23" width="77" height="30">
+        <frame id="4:20135" name="folder-open" x="11" y="7" width="16" height="16" />
+        <text id="4:18394" name="Action label" x="34" y="7.5" width="32" height="15" />
+      </frame>
+      <frame id="4:18395" name="Action" x="1335" y="23" width="85" height="30">
+        <frame id="4:20138" name="rotate-cw" x="11" y="7" width="16" height="16" />
+        <text id="4:18397" name="Action label" x="34" y="7.5" width="40" height="15" />
+      </frame>
+    </frame>
+    <frame id="4:18398" name="Review workspace" x="0" y="114" width="1440" height="640">
+      <frame id="4:18399" name="Episode timeline" x="0" y="0" width="1440" height="188">
+        <frame id="4:18400" name="Timeline heading" x="20" y="10" width="1400" height="17">
+          <frame id="4:18401" name="Timeline identity" x="0" y="0" width="174" height="17">
+            <text id="4:18402" name="Label" x="0" y="0" width="50" height="17" />
+            <text id="4:18403" name="Label" x="62" y="0" width="112" height="16" />
+          </frame>
+          <frame id="4:18404" name="Zoom controls" x="1271" y="0.5" width="129" height="16">
+            <text id="4:18405" name="Label" x="0" y="0" width="57" height="16" />
+            <text id="4:18406" name="Label" x="71" y="0" width="58" height="16" />
+          </frame>
+        </frame>
+        <frame id="4:18407" name="Episode overview" x="20" y="33" width="1400" height="17">
+          <rounded-rectangle id="4:18408" name="Overview section" x="0" y="0" width="114.83333587646484" height="17" />
+          <rounded-rectangle id="4:18409" name="Overview section" x="116.83333587646484" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18410" name="Overview section" x="233.66665649414062" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18411" name="Overview section" x="350.5" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18412" name="Overview section" x="467.33331298828125" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18413" name="Overview section" x="584.1666259765625" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18414" name="Overview section" x="700.9999389648438" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18415" name="Overview section" x="817.833251953125" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18416" name="Overview section" x="934.6665649414062" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18417" name="Overview section" x="1051.4998779296875" y="0" width="114.83333587646484" height="17" />
+          <rounded-rectangle id="4:18418" name="Overview section" x="1168.333251953125" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18419" name="Overview section" x="1285.1666259765625" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18420" name="Failed turn marker" x="13.4399995803833" y="0" width="3.5" height="17" />
+          <rounded-rectangle id="4:18421" name="Failed turn marker" x="139.16000366210938" y="0" width="3.5" height="17" />
+          <rounded-rectangle id="4:18422" name="Failed turn marker" x="317.3800048828125" y="0" width="3.5" height="17" />
+          <rounded-rectangle id="4:18423" name="Failed turn marker" x="454.29998779296875" y="0" width="3.5" height="17" />
+          <rounded-rectangle id="4:18424" name="Failed turn marker" x="729.4000244140625" y="0" width="3.5" height="17" />
+          <rounded-rectangle id="4:18425" name="Failed turn marker" x="966.7000122070312" y="0" width="3.5" height="17" />
+          <rounded-rectangle id="4:18426" name="Failed turn marker" x="1227.239990234375" y="0" width="3.5" height="17" />
+          <rounded-rectangle id="4:18427" name="Visible range" x="0" y="-2" width="68" height="21" />
+        </frame>
+        <frame id="4:18428" name="Time ruler" x="20" y="56" width="1400" height="18">
+          <text id="4:18429" name="Time marker" x="80" y="0" width="30" height="15" />
+          <text id="4:18430" name="Time marker" x="295" y="0" width="30" height="15" />
+          <text id="4:18431" name="Time marker" x="510" y="0" width="30" height="15" />
+          <text id="4:18432" name="Time marker" x="725" y="0" width="30" height="15" />
+          <text id="4:18433" name="Time marker" x="940" y="0" width="30" height="15" />
+          <text id="4:18434" name="Time marker" x="1155" y="0" width="30" height="15" />
+          <text id="4:18435" name="Time marker" x="1370" y="0" width="30" height="15" />
+        </frame>
+        <frame id="4:18436" name="Speaker lanes" x="20" y="80" width="1400" height="92">
+          <frame id="4:18437" name="Speaker labels" x="0" y="0" width="66" height="92">
+            <frame id="4:18438" name="Lane label" x="0" y="0" width="38" height="20">
+              <text id="4:18439" name="Speaker badge" x="0" y="2.5" width="38" height="15" />
+            </frame>
+            <frame id="4:18440" name="Lane label" x="0" y="24" width="43" height="20">
+              <text id="4:18441" name="Speaker badge" x="0" y="2.5" width="43" height="15" />
+            </frame>
+            <frame id="4:18442" name="Lane label" x="0" y="48" width="52" height="20">
+              <text id="4:18443" name="Speaker badge" x="0" y="2.5" width="52" height="15" />
+            </frame>
+            <frame id="4:18444" name="Lane label" x="0" y="72" width="38" height="20">
+              <text id="4:18445" name="Speaker badge" x="0" y="2.5" width="38" height="15" />
+            </frame>
+          </frame>
+          <frame id="4:18446" name="Audio tracks" x="78" y="0" width="1322" height="92">
+            <frame id="4:18447" name="Speaker track" x="0" y="0" width="1322" height="20">
+              <frame id="4:18448" name="Turn segment" x="0" y="0" width="121.03644561767578" height="20">
+                <text id="4:18449" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18450" name="Turn segment" x="211.81378173828125" y="0" width="78.14488983154297" height="20">
+                <text id="4:18451" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18452" name="Turn segment" x="685.383544921875" y="0" width="88.72088623046875" height="20">
+                <text id="4:18453" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18454" name="Turn segment" x="1056.4249267578125" y="0" width="122.79911041259766" height="20">
+                <text id="4:18455" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:18456" name="Speaker track" x="0" y="24" width="1322" height="20">
+              <frame id="4:18457" name="Turn segment" x="121.03644561767578" y="0" width="90.77733612060547" height="20">
+                <text id="4:18458" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18459" name="Turn segment" x="487.9648742675781" y="0" width="84.60800170898438" height="20">
+                <text id="4:18460" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18461" name="Turn segment" x="850.19287109375" y="0" width="104.58489227294922" height="20">
+                <text id="4:18462" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:18463" name="Speaker track" x="0" y="48" width="1322" height="20">
+              <frame id="4:18464" name="Turn segment" x="289.95867919921875" y="0" width="133.08132934570312" height="20">
+                <text id="4:18465" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18466" name="Turn segment" x="572.5728759765625" y="0" width="112.8106689453125" height="20">
+                <text id="4:18467" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18468" name="Turn segment" x="954.7777709960938" y="0" width="101.64710998535156" height="20">
+                <text id="4:18469" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:18470" name="Speaker track" x="0" y="72" width="1322" height="20">
+              <frame id="4:18471" name="Turn segment" x="423.0400085449219" y="0" width="64.92488861083984" height="20">
+                <text id="4:18472" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18473" name="Turn segment" x="774.1044311523438" y="0" width="76.08844757080078" height="20">
+                <text id="4:18474" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+          </frame>
+        </frame>
+      </frame>
+      <frame id="4:18475" name="Review filters" x="0" y="188" width="1440" height="42">
+        <frame id="4:18476" name="Search turns" x="16" y="7.5" width="270" height="27">
+          <frame id="4:20141" name="search" x="9" y="6.5" width="14" height="14" />
+          <text id="4:18478" name="Label" x="31" y="5" width="72" height="17" />
+          <text id="4:18479" name="Label" x="111" y="5.5" width="18" height="16" />
+        </frame>
+        <frame id="4:18480" name="Action" x="296" y="6" width="103" height="30">
+          <text id="4:18481" name="Action label" x="11" y="7.5" width="81" height="15" />
+        </frame>
+        <frame id="4:18482" name="Action" x="409" y="6" width="115" height="30">
+          <text id="4:18483" name="Action label" x="11" y="7.5" width="93" height="15" />
+        </frame>
+        <frame id="4:18484" name="View mode" x="534" y="13" width="890" height="16">
+          <text id="4:18485" name="Label" x="816" y="0" width="51" height="16" />
+          <frame id="4:20144" name="list" x="875" y="0" width="15" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:18487" name="Failure review" x="0" y="230" width="1440" height="410">
+        <frame id="4:18488" name="Turn table" x="0" y="0" width="1004" height="410">
+          <frame id="4:18489" name="Column headers" x="0" y="0" width="1004" height="30">
+            <text id="4:18490" name="Column heading" x="16" y="8.5" width="44" height="13" />
+            <text id="4:18491" name="Column heading" x="72" y="8.5" width="92" height="13" />
+            <text id="4:18492" name="Column heading" x="176" y="8.5" width="82" height="13" />
+            <text id="4:18493" name="Column heading" x="270" y="8.5" width="528" height="13" />
+            <text id="4:18494" name="Column heading" x="810" y="8.5" width="60" height="13" />
+            <text id="4:18495" name="Column heading" x="882" y="8.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18496" name="Turn row · selected" x="0" y="30" width="1004" height="28">
+            <text id="4:18497" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18498" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18499" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18500" name="First words" x="270" y="6.5" width="528" height="15" />
+            <text id="4:18501" name="Duration" x="810" y="7" width="60" height="14" />
+            <text id="4:18502" name="Verification status" x="882" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18503" name="Turn row" x="0" y="58" width="1004" height="28">
+            <text id="4:18504" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18505" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18506" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18507" name="First words" x="270" y="6.5" width="528" height="15" />
+            <text id="4:18508" name="Duration" x="810" y="7" width="60" height="14" />
+            <text id="4:18509" name="Verification status" x="882" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18510" name="Turn row" x="0" y="86" width="1004" height="28">
+            <text id="4:18511" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18512" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18513" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18514" name="First words" x="270" y="6.5" width="528" height="15" />
+            <text id="4:18515" name="Duration" x="810" y="7" width="60" height="14" />
+            <text id="4:18516" name="Verification status" x="882" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18517" name="Turn row" x="0" y="114" width="1004" height="28">
+            <text id="4:18518" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18519" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18520" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18521" name="First words" x="270" y="6.5" width="528" height="15" />
+            <text id="4:18522" name="Duration" x="810" y="7" width="60" height="14" />
+            <text id="4:18523" name="Verification status" x="882" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18524" name="Turn row" x="0" y="142" width="1004" height="28">
+            <text id="4:18525" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18526" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18527" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18528" name="First words" x="270" y="6.5" width="528" height="15" />
+            <text id="4:18529" name="Duration" x="810" y="7" width="60" height="14" />
+            <text id="4:18530" name="Verification status" x="882" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18531" name="Turn row" x="0" y="170" width="1004" height="28">
+            <text id="4:18532" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18533" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18534" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18535" name="First words" x="270" y="6.5" width="528" height="15" />
+            <text id="4:18536" name="Duration" x="810" y="7" width="60" height="14" />
+            <text id="4:18537" name="Verification status" x="882" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18538" name="Turn row" x="0" y="198" width="1004" height="28">
+            <text id="4:18539" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18540" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18541" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18542" name="First words" x="270" y="6.5" width="528" height="15" />
+            <text id="4:18543" name="Duration" x="810" y="7" width="60" height="14" />
+            <text id="4:18544" name="Verification status" x="882" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18545" name="Table summary" x="0" y="226" width="1004" height="184">
+            <text id="4:18546" name="Label" x="16" y="12" width="214" height="16" />
+            <text id="4:18547" name="Label" x="892" y="12" width="96" height="16" />
+          </frame>
+        </frame>
+        <frame id="4:18548" name="Inspector" x="1004" y="0" width="436" height="410">
+          <frame id="4:18549" name="Panel heading" x="0" y="0" width="436" height="39">
+            <text id="4:18550" name="Label" x="16" y="11" width="130" height="17" />
+            <text id="4:18551" name="Label" x="387" y="12" width="33" height="15" />
+          </frame>
+          <frame id="4:18552" name="Verification details" x="0" y="39" width="436" height="352">
+            <frame id="4:18553" name="Verification result" x="16" y="16" width="404" height="17">
+              <text id="4:18554" name="Verification status" x="0" y="0" width="45" height="13" />
+              <text id="4:18555" name="Label" x="281" y="0" width="123" height="17" />
+            </frame>
+            <frame id="4:18556" name="Detail field" x="16" y="44" width="404" height="34">
+              <text id="4:18557" name="Field label" x="0" y="0" width="82" height="12" />
+              <text id="4:18558" name="Field value" x="0" y="17" width="404" height="17" />
+            </frame>
+            <frame id="4:18559" name="Detail field" x="16" y="89" width="404" height="34">
+              <text id="4:18560" name="Field label" x="0" y="0" width="64" height="12" />
+              <text id="4:18561" name="Field value" x="0" y="17" width="404" height="17" />
+            </frame>
+            <frame id="4:18562" name="Stress check verdicts" x="16" y="134" width="404" height="94">
+              <text id="4:18563" name="Label" x="0" y="8" width="83" height="15" />
+              <frame id="4:18564" name="Stress verdict" x="0" y="28" width="404" height="16">
+                <text id="4:18565" name="Label" x="0" y="0" width="77" height="16" />
+                <text id="4:18566" name="Label" x="280" y="0" width="124" height="16" />
+              </frame>
+              <frame id="4:18567" name="Stress verdict" x="0" y="49" width="404" height="16">
+                <text id="4:18568" name="Label" x="0" y="0" width="92" height="16" />
+                <text id="4:18569" name="Label" x="277" y="0" width="127" height="16" />
+              </frame>
+              <frame id="4:18570" name="Stress verdict" x="0" y="70" width="404" height="16">
+                <text id="4:18571" name="Label" x="0" y="0" width="89" height="16" />
+                <text id="4:18572" name="Label" x="281" y="0" width="123" height="16" />
+              </frame>
+            </frame>
+            <frame id="4:18573" name="Synthesis actions" x="16" y="239" width="404" height="30">
+              <frame id="4:18574" name="Action" x="0" y="0" width="142" height="30">
+                <text id="4:18575" name="Action label" x="11" y="7.5" width="120" height="15" />
+              </frame>
+              <frame id="4:18576" name="Action" x="150" y="0" width="60" height="30">
+                <text id="4:18577" name="Action label" x="11" y="7.5" width="38" height="15" />
+              </frame>
+            </frame>
+            <frame id="4:18578" name="Verification action" x="16" y="280" width="404" height="30">
+              <frame id="4:18579" name="Action" x="0" y="0" width="92" height="30">
+                <text id="4:18580" name="Action label" x="11" y="7.5" width="70" height="15" />
+              </frame>
+              <text id="4:18581" name="Label" x="104" y="7.5" width="300" height="15" />
+            </frame>
+            <text id="4:18582" name="Label" x="16" y="321" width="404" height="15" />
+          </frame>
+        </frame>
+      </frame>
+    </frame>
+    <frame id="4:18583" name="Playback controls" x="0" y="754" width="1440" height="64">
+      <frame id="4:18584" name="Transport" x="20" y="17" width="150" height="30">
+        <frame id="4:18585" name="Action" x="0" y="0" width="70" height="30">
+          <frame id="4:20147" name="play" x="11" y="7" width="16" height="16" />
+          <text id="4:18587" name="Action label" x="34" y="7.5" width="25" height="15" />
+        </frame>
+        <frame id="4:18588" name="Action" x="77" y="0" width="73" height="30">
+          <frame id="4:20150" name="square" x="11" y="7" width="16" height="16" />
+          <text id="4:18590" name="Action label" x="34" y="7.5" width="28" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:18591" name="Current audio" x="188" y="14.5" width="226" height="35">
+        <text id="4:18592" name="Current turn" x="0" y="0" width="102" height="17" />
+        <text id="4:18593" name="Elapsed time" x="0" y="19" width="139" height="16" />
+      </frame>
+      <frame id="4:18594" name="Seek track" x="432" y="30" width="608" height="4">
+        <rounded-rectangle id="4:18595" name="Elapsed progress" x="0" y="0" width="1" height="4" />
+      </frame>
+      <text id="4:18596" name="Label" x="1058" y="23.5" width="96" height="17" />
+      <text id="4:18597" name="Label" x="1172" y="24" width="102" height="16" />
+      <text id="4:18598" name="Label" x="1292" y="24" width="128" height="16" />
+    </frame>
+    <frame id="4:18599" name="Application status" x="0" y="818" width="1440" height="26">
+      <text id="4:18600" name="Label" x="20" y="5.5" width="234" height="15" />
+      <text id="4:18601" name="Label" x="1193" y="5.5" width="227" height="15" />
+    </frame>
+    <frame id="4:18602" name="Workshop annotation" x="0" y="844" width="1440" height="56">
+      <text id="4:18603" name="Frame number" x="20" y="13.5" width="24" height="29" />
+      <frame id="4:18604" name="Workshop note" x="64" y="10.5" width="1242" height="35">
+        <text id="4:18605" name="Screen purpose" x="0" y="0" width="153" height="17" />
+        <text id="4:18606" name="Design rationale" x="0" y="19" width="1242" height="16" />
+      </frame>
+      <text id="4:18607" name="Label" x="1326" y="20.5" width="94" height="15" />
+    </frame>
+  </frame>
+  <frame id="4:18609" name="05 · Job runner — active" x="-721" y="5550" width="1440" height="900">
+    <frame id="4:18610" name="Window title bar" x="0" y="0" width="1440" height="38">
+      <frame id="4:18611" name="Window controls" x="16" y="13.5" width="49" height="11">
+        <ellipse id="4:18612" name="Window control" x="0" y="0" width="11" height="11" />
+        <ellipse id="4:18613" name="Window control" x="19" y="0" width="11" height="11" />
+        <ellipse id="4:18614" name="Window control" x="38" y="0" width="11" height="11" />
+      </frame>
+      <text id="4:18615" name="Window title" x="596" y="10.5" width="199" height="17" />
+      <text id="4:18616" name="Label" x="1326" y="11" width="98" height="16" />
+    </frame>
+    <frame id="4:18617" name="Episode header" x="0" y="38" width="1440" height="76">
+      <frame id="4:18618" name="Brand" x="20" y="25" width="121" height="26">
+        <frame id="4:20153" name="audio-lines" x="0" y="2" width="22" height="22" />
+        <text id="4:18620" name="Application name" x="30" y="0" width="91" height="26" />
+      </frame>
+      <rounded-rectangle id="4:18621" name="Header divider" x="163" y="23" width="1" height="30" />
+      <frame id="4:18622" name="Episode identity" x="186" y="16.5" width="1028" height="43">
+        <frame id="4:18623" name="Episode name" x="0" y="0" width="159" height="22">
+          <text id="4:18624" name="Label" x="0" y="0" width="159" height="22" />
+        </frame>
+        <text id="4:18625" name="Episode metadata" x="0" y="27" width="423" height="16" />
+      </frame>
+      <frame id="4:18626" name="Action" x="1236" y="23" width="77" height="30">
+        <frame id="4:20156" name="folder-open" x="11" y="7" width="16" height="16" />
+        <text id="4:18628" name="Action label" x="34" y="7.5" width="32" height="15" />
+      </frame>
+      <frame id="4:18629" name="Action" x="1335" y="23" width="85" height="30">
+        <frame id="4:20159" name="rotate-cw" x="11" y="7" width="16" height="16" />
+        <text id="4:18631" name="Action label" x="34" y="7.5" width="40" height="15" />
+      </frame>
+    </frame>
+    <frame id="4:18632" name="Review workspace" x="0" y="114" width="1440" height="640">
+      <frame id="4:18633" name="Episode timeline" x="0" y="0" width="1440" height="188">
+        <frame id="4:18634" name="Timeline heading" x="20" y="10" width="1400" height="17">
+          <frame id="4:18635" name="Timeline identity" x="0" y="0" width="174" height="17">
+            <text id="4:18636" name="Label" x="0" y="0" width="50" height="17" />
+            <text id="4:18637" name="Label" x="62" y="0" width="112" height="16" />
+          </frame>
+          <frame id="4:18638" name="Zoom controls" x="1271" y="0.5" width="129" height="16">
+            <text id="4:18639" name="Label" x="0" y="0" width="57" height="16" />
+            <text id="4:18640" name="Label" x="71" y="0" width="58" height="16" />
+          </frame>
+        </frame>
+        <frame id="4:18641" name="Episode overview" x="20" y="33" width="1400" height="17">
+          <rounded-rectangle id="4:18642" name="Overview section" x="0" y="0" width="114.83333587646484" height="17" />
+          <rounded-rectangle id="4:18643" name="Overview section" x="116.83333587646484" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18644" name="Overview section" x="233.66665649414062" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18645" name="Overview section" x="350.5" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18646" name="Overview section" x="467.33331298828125" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18647" name="Overview section" x="584.1666259765625" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18648" name="Overview section" x="700.9999389648438" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18649" name="Overview section" x="817.833251953125" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18650" name="Overview section" x="934.6665649414062" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18651" name="Overview section" x="1051.4998779296875" y="0" width="114.83333587646484" height="17" />
+          <rounded-rectangle id="4:18652" name="Overview section" x="1168.333251953125" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18653" name="Overview section" x="1285.1666259765625" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18654" name="Visible range" x="0" y="-2" width="68" height="21" />
+        </frame>
+        <frame id="4:18655" name="Time ruler" x="20" y="56" width="1400" height="18">
+          <text id="4:18656" name="Time marker" x="80" y="0" width="30" height="15" />
+          <text id="4:18657" name="Time marker" x="295" y="0" width="30" height="15" />
+          <text id="4:18658" name="Time marker" x="510" y="0" width="30" height="15" />
+          <text id="4:18659" name="Time marker" x="725" y="0" width="30" height="15" />
+          <text id="4:18660" name="Time marker" x="940" y="0" width="30" height="15" />
+          <text id="4:18661" name="Time marker" x="1155" y="0" width="30" height="15" />
+          <text id="4:18662" name="Time marker" x="1370" y="0" width="30" height="15" />
+        </frame>
+        <frame id="4:18663" name="Speaker lanes" x="20" y="80" width="1400" height="92">
+          <frame id="4:18664" name="Speaker labels" x="0" y="0" width="66" height="92">
+            <frame id="4:18665" name="Lane label" x="0" y="0" width="38" height="20">
+              <text id="4:18666" name="Speaker badge" x="0" y="2.5" width="38" height="15" />
+            </frame>
+            <frame id="4:18667" name="Lane label" x="0" y="24" width="43" height="20">
+              <text id="4:18668" name="Speaker badge" x="0" y="2.5" width="43" height="15" />
+            </frame>
+            <frame id="4:18669" name="Lane label" x="0" y="48" width="52" height="20">
+              <text id="4:18670" name="Speaker badge" x="0" y="2.5" width="52" height="15" />
+            </frame>
+            <frame id="4:18671" name="Lane label" x="0" y="72" width="38" height="20">
+              <text id="4:18672" name="Speaker badge" x="0" y="2.5" width="38" height="15" />
+            </frame>
+          </frame>
+          <frame id="4:18673" name="Audio tracks" x="78" y="0" width="1322" height="92">
+            <frame id="4:18674" name="Speaker track" x="0" y="0" width="1322" height="20">
+              <frame id="4:18675" name="Turn segment" x="0" y="0" width="121.03644561767578" height="20">
+                <text id="4:18676" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18677" name="Turn segment" x="211.81378173828125" y="0" width="78.14488983154297" height="20">
+                <text id="4:18678" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18679" name="Turn segment" x="685.383544921875" y="0" width="88.72088623046875" height="20">
+                <text id="4:18680" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18681" name="Turn segment" x="1056.4249267578125" y="0" width="122.79911041259766" height="20">
+                <text id="4:18682" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:18683" name="Speaker track" x="0" y="24" width="1322" height="20">
+              <frame id="4:18684" name="Turn segment" x="121.03644561767578" y="0" width="90.77733612060547" height="20">
+                <text id="4:18685" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18686" name="Turn segment" x="487.9648742675781" y="0" width="84.60800170898438" height="20">
+                <text id="4:18687" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18688" name="Turn segment" x="850.19287109375" y="0" width="104.58489227294922" height="20">
+                <text id="4:18689" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:18690" name="Speaker track" x="0" y="48" width="1322" height="20">
+              <frame id="4:18691" name="Turn segment" x="289.95867919921875" y="0" width="133.08132934570312" height="20">
+                <text id="4:18692" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18693" name="Turn segment" x="572.5728759765625" y="0" width="112.8106689453125" height="20">
+                <text id="4:18694" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18695" name="Turn segment" x="954.7777709960938" y="0" width="101.64710998535156" height="20">
+                <text id="4:18696" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:18697" name="Speaker track" x="0" y="72" width="1322" height="20">
+              <frame id="4:18698" name="Turn segment" x="423.0400085449219" y="0" width="64.92488861083984" height="20">
+                <text id="4:18699" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18700" name="Turn segment" x="774.1044311523438" y="0" width="76.08844757080078" height="20">
+                <text id="4:18701" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+          </frame>
+        </frame>
+      </frame>
+      <frame id="4:18702" name="Review filters" x="0" y="188" width="1440" height="42">
+        <frame id="4:18703" name="Search turns" x="16" y="7.5" width="270" height="27">
+          <frame id="4:20162" name="search" x="9" y="6.5" width="14" height="14" />
+          <text id="4:18705" name="Label" x="31" y="5" width="72" height="17" />
+          <text id="4:18706" name="Label" x="111" y="5.5" width="18" height="16" />
+        </frame>
+        <frame id="4:18707" name="Action" x="296" y="6" width="103" height="30">
+          <text id="4:18708" name="Action label" x="11" y="7.5" width="81" height="15" />
+        </frame>
+        <frame id="4:18709" name="Action" x="409" y="6" width="101" height="30">
+          <text id="4:18710" name="Action label" x="11" y="7.5" width="79" height="15" />
+        </frame>
+        <frame id="4:18711" name="View mode" x="520" y="13" width="904" height="16">
+          <text id="4:18712" name="Label" x="830" y="0" width="51" height="16" />
+          <frame id="4:20165" name="list" x="889" y="0" width="15" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:18714" name="Job workspace" x="0" y="230" width="1440" height="410">
+        <frame id="4:18715" name="Turn table" x="0" y="0" width="930" height="410">
+          <frame id="4:18716" name="Column headers" x="0" y="0" width="930" height="30">
+            <text id="4:18717" name="Column heading" x="16" y="8.5" width="44" height="13" />
+            <text id="4:18718" name="Column heading" x="72" y="8.5" width="92" height="13" />
+            <text id="4:18719" name="Column heading" x="176" y="8.5" width="82" height="13" />
+            <text id="4:18720" name="Column heading" x="270" y="8.5" width="454" height="13" />
+            <text id="4:18721" name="Column heading" x="736" y="8.5" width="60" height="13" />
+            <text id="4:18722" name="Column heading" x="808" y="8.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18723" name="Turn row" x="0" y="30" width="930" height="28">
+            <text id="4:18724" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18725" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18726" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18727" name="First words" x="270" y="6.5" width="454" height="15" />
+            <text id="4:18728" name="Duration" x="736" y="7" width="60" height="14" />
+            <text id="4:18729" name="Verification status" x="808" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18730" name="Turn row" x="0" y="58" width="930" height="28">
+            <text id="4:18731" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18732" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18733" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18734" name="First words" x="270" y="6.5" width="454" height="15" />
+            <text id="4:18735" name="Duration" x="736" y="7" width="60" height="14" />
+            <text id="4:18736" name="Verification status" x="808" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18737" name="Turn row" x="0" y="86" width="930" height="28">
+            <text id="4:18738" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18739" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18740" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18741" name="First words" x="270" y="6.5" width="454" height="15" />
+            <text id="4:18742" name="Duration" x="736" y="7" width="60" height="14" />
+            <text id="4:18743" name="Verification status" x="808" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18744" name="Turn row · selected" x="0" y="114" width="930" height="28">
+            <text id="4:18745" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18746" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18747" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18748" name="First words" x="270" y="6.5" width="454" height="15" />
+            <text id="4:18749" name="Duration" x="736" y="7" width="60" height="14" />
+            <text id="4:18750" name="Verification status" x="808" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18751" name="Turn row" x="0" y="142" width="930" height="28">
+            <text id="4:18752" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18753" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18754" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18755" name="First words" x="270" y="6.5" width="454" height="15" />
+            <text id="4:18756" name="Duration" x="736" y="7" width="60" height="14" />
+            <text id="4:18757" name="Verification status" x="808" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18758" name="Turn row" x="0" y="170" width="930" height="28">
+            <text id="4:18759" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18760" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18761" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18762" name="First words" x="270" y="6.5" width="454" height="15" />
+            <text id="4:18763" name="Duration" x="736" y="7" width="60" height="14" />
+            <text id="4:18764" name="Verification status" x="808" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18765" name="Turn row" x="0" y="198" width="930" height="28">
+            <text id="4:18766" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18767" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18768" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18769" name="First words" x="270" y="6.5" width="454" height="15" />
+            <text id="4:18770" name="Duration" x="736" y="7" width="60" height="14" />
+            <text id="4:18771" name="Verification status" x="808" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18772" name="Turn row" x="0" y="226" width="930" height="28">
+            <text id="4:18773" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18774" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18775" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18776" name="First words" x="270" y="6.5" width="454" height="15" />
+            <text id="4:18777" name="Duration" x="736" y="7" width="60" height="14" />
+            <text id="4:18778" name="Verification status" x="808" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18779" name="Turn row" x="0" y="254" width="930" height="28">
+            <text id="4:18780" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18781" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18782" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18783" name="First words" x="270" y="6.5" width="454" height="15" />
+            <text id="4:18784" name="Duration" x="736" y="7" width="60" height="14" />
+            <text id="4:18785" name="Verification status" x="808" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18786" name="Turn row" x="0" y="282" width="930" height="28">
+            <text id="4:18787" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18788" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18789" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18790" name="First words" x="270" y="6.5" width="454" height="15" />
+            <text id="4:18791" name="Duration" x="736" y="7" width="60" height="14" />
+            <text id="4:18792" name="Verification status" x="808" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18793" name="Turn row" x="0" y="310" width="930" height="28">
+            <text id="4:18794" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18795" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18796" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18797" name="First words" x="270" y="6.5" width="454" height="15" />
+            <text id="4:18798" name="Duration" x="736" y="7" width="60" height="14" />
+            <text id="4:18799" name="Verification status" x="808" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18800" name="Turn row" x="0" y="338" width="930" height="28">
+            <text id="4:18801" name="Turn index" x="16" y="7" width="44" height="14" />
+            <text id="4:18802" name="Start time" x="72" y="7" width="92" height="14" />
+            <text id="4:18803" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+            <text id="4:18804" name="First words" x="270" y="6.5" width="454" height="15" />
+            <text id="4:18805" name="Duration" x="736" y="7" width="60" height="14" />
+            <text id="4:18806" name="Verification status" x="808" y="7.5" width="106" height="13" />
+          </frame>
+          <frame id="4:18807" name="Table summary" x="0" y="366" width="930" height="44">
+            <text id="4:18808" name="Label" x="16" y="12" width="138" height="16" />
+            <text id="4:18809" name="Label" x="827" y="12" width="87" height="16" />
+          </frame>
+        </frame>
+        <frame id="4:18810" name="Inspector" x="930" y="0" width="510" height="410">
+          <frame id="4:18811" name="Panel heading" x="0" y="0" width="510" height="39">
+            <text id="4:18812" name="Label" x="16" y="11" width="64" height="17" />
+            <text id="4:18813" name="Label" x="400" y="12" width="94" height="15" />
+          </frame>
+          <frame id="4:18814" name="Job content" x="0" y="39" width="510" height="371">
+            <frame id="4:18815" name="Fixed job presets" x="12" y="12" width="486" height="66">
+              <frame id="4:18816" name="Action" x="0" y="0" width="114" height="30">
+                <text id="4:18817" name="Action label" x="11" y="7.5" width="92" height="15" />
+              </frame>
+              <frame id="4:18818" name="Action" x="120" y="0" width="113" height="30">
+                <text id="4:18819" name="Action label" x="11" y="7.5" width="91" height="15" />
+              </frame>
+              <frame id="4:18820" name="Action" x="239" y="0" width="142" height="30">
+                <text id="4:18821" name="Action label" x="11" y="7.5" width="120" height="15" />
+              </frame>
+              <frame id="4:18822" name="Action" x="387" y="0" width="57" height="30">
+                <text id="4:18823" name="Action label" x="11" y="7.5" width="35" height="15" />
+              </frame>
+              <frame id="4:18824" name="Action" x="0" y="36" width="60" height="30">
+                <text id="4:18825" name="Action label" x="11" y="7.5" width="38" height="15" />
+              </frame>
+            </frame>
+            <frame id="4:18826" name="Active job" x="12" y="86" width="486" height="37">
+              <frame id="4:18827" name="Job identity" x="0" y="0" width="286" height="37">
+                <text id="4:18828" name="Label" x="0" y="0" width="199" height="19" />
+                <text id="4:18829" name="Label" x="0" y="22" width="286" height="15" />
+              </frame>
+              <text id="4:18830" name="Status badge" x="430" y="12" width="56" height="13" />
+            </frame>
+            <frame id="4:18831" name="Job progress" x="12" y="131" width="486" height="3">
+              <rounded-rectangle id="4:18832" name="Job completed progress" x="0" y="0" width="282" height="3" />
+            </frame>
+            <frame id="4:18833" name="Streaming output" x="12" y="142" width="486" height="179">
+              <text id="4:18834" name="Label" x="11" y="11" width="240" height="15" />
+              <text id="4:18835" name="Log line" x="11" y="31" width="284" height="16" />
+              <text id="4:18836" name="Log line" x="11" y="52" width="291" height="16" />
+              <text id="4:18837" name="Log line" x="11" y="73" width="205" height="16" />
+              <text id="4:18838" name="Log line" x="11" y="94" width="258" height="16" />
+              <text id="4:18839" name="Log line" x="11" y="115" width="258" height="16" />
+              <text id="4:18840" name="Log line" x="11" y="136" width="218" height="16" />
+              <frame id="4:18841" name="Live activity" x="11" y="157" width="184" height="16">
+                <frame id="4:20168" name="loader-circle" x="0" y="2" width="12" height="12" />
+                <text id="4:18843" name="Current task" x="19" y="0" width="165" height="16" />
+              </frame>
+            </frame>
+            <frame id="4:18844" name="Job controls" x="12" y="329" width="486" height="30">
+              <text id="4:18845" name="Label" x="0" y="7" width="198" height="16" />
+              <frame id="4:18846" name="Action" x="423" y="0" width="63" height="30">
+                <text id="4:18847" name="Action label" x="11" y="7.5" width="41" height="15" />
+              </frame>
+            </frame>
+          </frame>
+        </frame>
+      </frame>
+    </frame>
+    <frame id="4:18848" name="Playback controls" x="0" y="754" width="1440" height="64">
+      <frame id="4:18849" name="Transport" x="20" y="17" width="150" height="30">
+        <frame id="4:18850" name="Action" x="0" y="0" width="70" height="30">
+          <frame id="4:20171" name="play" x="11" y="7" width="16" height="16" />
+          <text id="4:18852" name="Action label" x="34" y="7.5" width="25" height="15" />
+        </frame>
+        <frame id="4:18853" name="Action" x="77" y="0" width="73" height="30">
+          <frame id="4:20174" name="square" x="11" y="7" width="16" height="16" />
+          <text id="4:18855" name="Action label" x="34" y="7.5" width="28" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:18856" name="Current audio" x="188" y="14.5" width="226" height="35">
+        <text id="4:18857" name="Current turn" x="0" y="0" width="102" height="17" />
+        <text id="4:18858" name="Elapsed time" x="0" y="19" width="139" height="16" />
+      </frame>
+      <frame id="4:18859" name="Seek track" x="432" y="30" width="608" height="4">
+        <rounded-rectangle id="4:18860" name="Elapsed progress" x="0" y="0" width="1" height="4" />
+      </frame>
+      <text id="4:18861" name="Label" x="1058" y="23.5" width="96" height="17" />
+      <text id="4:18862" name="Label" x="1172" y="24" width="102" height="16" />
+      <text id="4:18863" name="Label" x="1292" y="24" width="128" height="16" />
+    </frame>
+    <frame id="4:18864" name="Application status" x="0" y="818" width="1440" height="26">
+      <text id="4:18865" name="Label" x="20" y="5.5" width="278" height="15" />
+      <text id="4:18866" name="Label" x="1193" y="5.5" width="227" height="15" />
+    </frame>
+    <frame id="4:18867" name="Workshop annotation" x="0" y="844" width="1440" height="56">
+      <text id="4:18868" name="Frame number" x="20" y="13.5" width="24" height="29" />
+      <frame id="4:18869" name="Workshop note" x="64" y="10.5" width="1242" height="35">
+        <text id="4:18870" name="Screen purpose" x="0" y="0" width="236" height="17" />
+        <text id="4:18871" name="Design rationale" x="0" y="19" width="1242" height="16" />
+      </frame>
+      <text id="4:18872" name="Label" x="1326" y="20.5" width="94" height="15" />
+    </frame>
+  </frame>
+  <frame id="4:18874" name="06 · Confirm audio replacement" x="839" y="5550" width="1440" height="900">
+    <frame id="4:18875" name="Window title bar" x="0" y="0" width="1440" height="38">
+      <frame id="4:18876" name="Window controls" x="16" y="13.5" width="49" height="11">
+        <ellipse id="4:18877" name="Window control" x="0" y="0" width="11" height="11" />
+        <ellipse id="4:18878" name="Window control" x="19" y="0" width="11" height="11" />
+        <ellipse id="4:18879" name="Window control" x="38" y="0" width="11" height="11" />
+      </frame>
+      <text id="4:18880" name="Window title" x="596" y="10.5" width="199" height="17" />
+      <text id="4:18881" name="Label" x="1326" y="11" width="98" height="16" />
+    </frame>
+    <frame id="4:18882" name="Episode header" x="0" y="38" width="1440" height="76">
+      <frame id="4:18883" name="Brand" x="20" y="25" width="121" height="26">
+        <frame id="4:20177" name="audio-lines" x="0" y="2" width="22" height="22" />
+        <text id="4:18885" name="Application name" x="30" y="0" width="91" height="26" />
+      </frame>
+      <rounded-rectangle id="4:18886" name="Header divider" x="163" y="23" width="1" height="30" />
+      <frame id="4:18887" name="Episode identity" x="186" y="16.5" width="1028" height="43">
+        <frame id="4:18888" name="Episode name" x="0" y="0" width="159" height="22">
+          <text id="4:18889" name="Label" x="0" y="0" width="159" height="22" />
+        </frame>
+        <text id="4:18890" name="Episode metadata" x="0" y="27" width="423" height="16" />
+      </frame>
+      <frame id="4:18891" name="Action" x="1236" y="23" width="77" height="30">
+        <frame id="4:20180" name="folder-open" x="11" y="7" width="16" height="16" />
+        <text id="4:18893" name="Action label" x="34" y="7.5" width="32" height="15" />
+      </frame>
+      <frame id="4:18894" name="Action" x="1335" y="23" width="85" height="30">
+        <frame id="4:20183" name="rotate-cw" x="11" y="7" width="16" height="16" />
+        <text id="4:18896" name="Action label" x="34" y="7.5" width="40" height="15" />
+      </frame>
+    </frame>
+    <frame id="4:18897" name="Review workspace" x="0" y="114" width="1440" height="640">
+      <frame id="4:18898" name="Episode timeline" x="0" y="0" width="1440" height="188">
+        <frame id="4:18899" name="Timeline heading" x="20" y="10" width="1400" height="17">
+          <frame id="4:18900" name="Timeline identity" x="0" y="0" width="174" height="17">
+            <text id="4:18901" name="Label" x="0" y="0" width="50" height="17" />
+            <text id="4:18902" name="Label" x="62" y="0" width="112" height="16" />
+          </frame>
+          <frame id="4:18903" name="Zoom controls" x="1271" y="0.5" width="129" height="16">
+            <text id="4:18904" name="Label" x="0" y="0" width="57" height="16" />
+            <text id="4:18905" name="Label" x="71" y="0" width="58" height="16" />
+          </frame>
+        </frame>
+        <frame id="4:18906" name="Episode overview" x="20" y="33" width="1400" height="17">
+          <rounded-rectangle id="4:18907" name="Overview section" x="0" y="0" width="114.83333587646484" height="17" />
+          <rounded-rectangle id="4:18908" name="Overview section" x="116.83333587646484" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18909" name="Overview section" x="233.66665649414062" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18910" name="Overview section" x="350.5" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18911" name="Overview section" x="467.33331298828125" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18912" name="Overview section" x="584.1666259765625" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18913" name="Overview section" x="700.9999389648438" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:18914" name="Overview section" x="817.833251953125" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18915" name="Overview section" x="934.6665649414062" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18916" name="Overview section" x="1051.4998779296875" y="0" width="114.83333587646484" height="17" />
+          <rounded-rectangle id="4:18917" name="Overview section" x="1168.333251953125" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18918" name="Overview section" x="1285.1666259765625" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:18919" name="Failed turn marker" x="13.4399995803833" y="0" width="3.5" height="17" />
+          <rounded-rectangle id="4:18920" name="Failed turn marker" x="139.16000366210938" y="0" width="3.5" height="17" />
+          <rounded-rectangle id="4:18921" name="Failed turn marker" x="317.3800048828125" y="0" width="3.5" height="17" />
+          <rounded-rectangle id="4:18922" name="Failed turn marker" x="454.29998779296875" y="0" width="3.5" height="17" />
+          <rounded-rectangle id="4:18923" name="Failed turn marker" x="729.4000244140625" y="0" width="3.5" height="17" />
+          <rounded-rectangle id="4:18924" name="Failed turn marker" x="966.7000122070312" y="0" width="3.5" height="17" />
+          <rounded-rectangle id="4:18925" name="Failed turn marker" x="1227.239990234375" y="0" width="3.5" height="17" />
+          <rounded-rectangle id="4:18926" name="Visible range" x="0" y="-2" width="68" height="21" />
+        </frame>
+        <frame id="4:18927" name="Time ruler" x="20" y="56" width="1400" height="18">
+          <text id="4:18928" name="Time marker" x="80" y="0" width="30" height="15" />
+          <text id="4:18929" name="Time marker" x="295" y="0" width="30" height="15" />
+          <text id="4:18930" name="Time marker" x="510" y="0" width="30" height="15" />
+          <text id="4:18931" name="Time marker" x="725" y="0" width="30" height="15" />
+          <text id="4:18932" name="Time marker" x="940" y="0" width="30" height="15" />
+          <text id="4:18933" name="Time marker" x="1155" y="0" width="30" height="15" />
+          <text id="4:18934" name="Time marker" x="1370" y="0" width="30" height="15" />
+        </frame>
+        <frame id="4:18935" name="Speaker lanes" x="20" y="80" width="1400" height="92">
+          <frame id="4:18936" name="Speaker labels" x="0" y="0" width="66" height="92">
+            <frame id="4:18937" name="Lane label" x="0" y="0" width="38" height="20">
+              <text id="4:18938" name="Speaker badge" x="0" y="2.5" width="38" height="15" />
+            </frame>
+            <frame id="4:18939" name="Lane label" x="0" y="24" width="43" height="20">
+              <text id="4:18940" name="Speaker badge" x="0" y="2.5" width="43" height="15" />
+            </frame>
+            <frame id="4:18941" name="Lane label" x="0" y="48" width="52" height="20">
+              <text id="4:18942" name="Speaker badge" x="0" y="2.5" width="52" height="15" />
+            </frame>
+            <frame id="4:18943" name="Lane label" x="0" y="72" width="38" height="20">
+              <text id="4:18944" name="Speaker badge" x="0" y="2.5" width="38" height="15" />
+            </frame>
+          </frame>
+          <frame id="4:18945" name="Audio tracks" x="78" y="0" width="1322" height="92">
+            <frame id="4:18946" name="Speaker track" x="0" y="0" width="1322" height="20">
+              <frame id="4:18947" name="Turn segment" x="0" y="0" width="121.03644561767578" height="20">
+                <text id="4:18948" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18949" name="Turn segment" x="211.81378173828125" y="0" width="78.14488983154297" height="20">
+                <text id="4:18950" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18951" name="Turn segment" x="685.383544921875" y="0" width="88.72088623046875" height="20">
+                <text id="4:18952" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18953" name="Turn segment" x="1056.4249267578125" y="0" width="122.79911041259766" height="20">
+                <text id="4:18954" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:18955" name="Speaker track" x="0" y="24" width="1322" height="20">
+              <frame id="4:18956" name="Turn segment" x="121.03644561767578" y="0" width="90.77733612060547" height="20">
+                <text id="4:18957" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18958" name="Turn segment" x="487.9648742675781" y="0" width="84.60800170898438" height="20">
+                <text id="4:18959" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18960" name="Turn segment" x="850.19287109375" y="0" width="104.58489227294922" height="20">
+                <text id="4:18961" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:18962" name="Speaker track" x="0" y="48" width="1322" height="20">
+              <frame id="4:18963" name="Turn segment" x="289.95867919921875" y="0" width="133.08132934570312" height="20">
+                <text id="4:18964" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18965" name="Turn segment" x="572.5728759765625" y="0" width="112.8106689453125" height="20">
+                <text id="4:18966" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18967" name="Turn segment" x="954.7777709960938" y="0" width="101.64710998535156" height="20">
+                <text id="4:18968" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:18969" name="Speaker track" x="0" y="72" width="1322" height="20">
+              <frame id="4:18970" name="Turn segment" x="423.0400085449219" y="0" width="64.92488861083984" height="20">
+                <text id="4:18971" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:18972" name="Turn segment" x="774.1044311523438" y="0" width="76.08844757080078" height="20">
+                <text id="4:18973" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+          </frame>
+        </frame>
+      </frame>
+      <frame id="4:18974" name="Review filters" x="0" y="188" width="1440" height="42">
+        <frame id="4:18975" name="Search turns" x="16" y="7.5" width="270" height="27">
+          <frame id="4:20186" name="search" x="9" y="6.5" width="14" height="14" />
+          <text id="4:18977" name="Label" x="31" y="5" width="72" height="17" />
+          <text id="4:18978" name="Label" x="111" y="5.5" width="18" height="16" />
+        </frame>
+        <frame id="4:18979" name="Action" x="296" y="6" width="103" height="30">
+          <text id="4:18980" name="Action label" x="11" y="7.5" width="81" height="15" />
+        </frame>
+        <frame id="4:18981" name="Action" x="409" y="6" width="115" height="30">
+          <text id="4:18982" name="Action label" x="11" y="7.5" width="93" height="15" />
+        </frame>
+        <frame id="4:18983" name="View mode" x="534" y="13" width="890" height="16">
+          <text id="4:18984" name="Label" x="816" y="0" width="51" height="16" />
+          <frame id="4:20189" name="list" x="875" y="0" width="15" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:18986" name="Turn table" x="0" y="230" width="1440" height="410">
+        <frame id="4:18987" name="Column headers" x="0" y="0" width="1440" height="30">
+          <text id="4:18988" name="Column heading" x="16" y="8.5" width="44" height="13" />
+          <text id="4:18989" name="Column heading" x="72" y="8.5" width="92" height="13" />
+          <text id="4:18990" name="Column heading" x="176" y="8.5" width="82" height="13" />
+          <text id="4:18991" name="Column heading" x="270" y="8.5" width="964" height="13" />
+          <text id="4:18992" name="Column heading" x="1246" y="8.5" width="60" height="13" />
+          <text id="4:18993" name="Column heading" x="1318" y="8.5" width="106" height="13" />
+        </frame>
+        <frame id="4:18994" name="Turn row · selected" x="0" y="30" width="1440" height="28">
+          <text id="4:18995" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:18996" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:18997" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:18998" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:18999" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:19000" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:19001" name="Turn row" x="0" y="58" width="1440" height="28">
+          <text id="4:19002" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:19003" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:19004" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:19005" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:19006" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:19007" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:19008" name="Turn row" x="0" y="86" width="1440" height="28">
+          <text id="4:19009" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:19010" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:19011" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:19012" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:19013" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:19014" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:19015" name="Turn row" x="0" y="114" width="1440" height="28">
+          <text id="4:19016" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:19017" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:19018" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:19019" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:19020" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:19021" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:19022" name="Turn row" x="0" y="142" width="1440" height="28">
+          <text id="4:19023" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:19024" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:19025" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:19026" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:19027" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:19028" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:19029" name="Turn row" x="0" y="170" width="1440" height="28">
+          <text id="4:19030" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:19031" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:19032" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:19033" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:19034" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:19035" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:19036" name="Turn row" x="0" y="198" width="1440" height="28">
+          <text id="4:19037" name="Turn index" x="16" y="7" width="44" height="14" />
+          <text id="4:19038" name="Start time" x="72" y="7" width="92" height="14" />
+          <text id="4:19039" name="Speaker badge" x="176" y="6.5" width="82" height="15" />
+          <text id="4:19040" name="First words" x="270" y="6.5" width="964" height="15" />
+          <text id="4:19041" name="Duration" x="1246" y="7" width="60" height="14" />
+          <text id="4:19042" name="Verification status" x="1318" y="7.5" width="106" height="13" />
+        </frame>
+        <frame id="4:19043" name="Table summary" x="0" y="226" width="1440" height="184">
+          <text id="4:19044" name="Label" x="16" y="12" width="214" height="16" />
+          <text id="4:19045" name="Label" x="1328" y="12" width="96" height="16" />
+        </frame>
+      </frame>
+      <rounded-rectangle id="4:19046" name="Modal scrim" x="0" y="0" width="1440" height="640" />
+      <frame id="4:19047" name="Confirmation sheet" x="450" y="89.5" width="540" height="461">
+        <frame id="4:19048" name="Confirmation dialog" x="0" y="0" width="540" height="461">
+          <frame id="4:19049" name="Confirmation heading" x="24" y="24" width="294" height="29">
+            <frame id="4:20192" name="shield-check" x="0" y="1.5" width="26" height="26" />
+            <text id="4:19051" name="Action name" x="38" y="0" width="256" height="29" />
+          </frame>
+          <text id="4:19052" name="Action consequence" x="24" y="71" width="492" height="38" />
+          <frame id="4:19053" name="Affected scope" x="24" y="127" width="492" height="106">
+            <frame id="4:19054" name="Detail field" x="14" y="14" width="464" height="34">
+              <text id="4:19055" name="Field label" x="0" y="0" width="43" height="12" />
+              <text id="4:19056" name="Field value" x="0" y="17" width="464" height="17" />
+            </frame>
+            <frame id="4:19057" name="Detail field" x="14" y="58" width="464" height="34">
+              <text id="4:19058" name="Field label" x="0" y="0" width="90" height="12" />
+              <text id="4:19059" name="Field value" x="0" y="17" width="464" height="17" />
+            </frame>
+          </frame>
+          <frame id="4:19060" name="Safety warning" x="24" y="251" width="492" height="17">
+            <frame id="4:20195" name="triangle-alert" x="0" y="0" width="16" height="16" />
+            <text id="4:19062" name="Replacement warning" x="25" y="0" width="467" height="17" />
+          </frame>
+          <frame id="4:19063" name="Command disclosure" x="24" y="286" width="492" height="103">
+            <text id="4:19064" name="Disclosure heading" x="12" y="12" width="206" height="16" />
+            <text id="4:19065" name="Illustrative command" x="12" y="36" width="468" height="32" />
+            <text id="4:19066" name="Syntax disclaimer" x="12" y="76" width="468" height="15" />
+          </frame>
+          <frame id="4:19067" name="Dialog actions" x="24" y="407" width="492" height="30">
+            <frame id="4:19068" name="Action" x="221" y="0" width="63" height="30">
+              <text id="4:19069" name="Action label" x="11" y="7.5" width="41" height="15" />
+            </frame>
+            <frame id="4:19070" name="Action" x="293" y="0" width="199" height="30">
+              <text id="4:19071" name="Action label" x="11" y="7.5" width="177" height="15" />
+            </frame>
+          </frame>
+        </frame>
+      </frame>
+    </frame>
+    <frame id="4:19072" name="Playback controls" x="0" y="754" width="1440" height="64">
+      <frame id="4:19073" name="Transport" x="20" y="17" width="150" height="30">
+        <frame id="4:19074" name="Action" x="0" y="0" width="70" height="30">
+          <frame id="4:20198" name="play" x="11" y="7" width="16" height="16" />
+          <text id="4:19076" name="Action label" x="34" y="7.5" width="25" height="15" />
+        </frame>
+        <frame id="4:19077" name="Action" x="77" y="0" width="73" height="30">
+          <frame id="4:20201" name="square" x="11" y="7" width="16" height="16" />
+          <text id="4:19079" name="Action label" x="34" y="7.5" width="28" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:19080" name="Current audio" x="188" y="14.5" width="226" height="35">
+        <text id="4:19081" name="Current turn" x="0" y="0" width="102" height="17" />
+        <text id="4:19082" name="Elapsed time" x="0" y="19" width="139" height="16" />
+      </frame>
+      <frame id="4:19083" name="Seek track" x="432" y="30" width="608" height="4">
+        <rounded-rectangle id="4:19084" name="Elapsed progress" x="0" y="0" width="1" height="4" />
+      </frame>
+      <text id="4:19085" name="Label" x="1058" y="23.5" width="96" height="17" />
+      <text id="4:19086" name="Label" x="1172" y="24" width="102" height="16" />
+      <text id="4:19087" name="Label" x="1292" y="24" width="128" height="16" />
+    </frame>
+    <frame id="4:19088" name="Application status" x="0" y="818" width="1440" height="26">
+      <text id="4:19089" name="Label" x="20" y="5.5" width="197" height="15" />
+      <text id="4:19090" name="Label" x="1193" y="5.5" width="227" height="15" />
+    </frame>
+    <frame id="4:19091" name="Workshop annotation" x="0" y="844" width="1440" height="56">
+      <text id="4:19092" name="Frame number" x="20" y="13.5" width="24" height="29" />
+      <frame id="4:19093" name="Workshop note" x="64" y="10.5" width="1242" height="35">
+        <text id="4:19094" name="Screen purpose" x="0" y="0" width="227" height="17" />
+        <text id="4:19095" name="Design rationale" x="0" y="19" width="1242" height="16" />
+      </frame>
+      <text id="4:19096" name="Label" x="1326" y="20.5" width="94" height="15" />
+    </frame>
+  </frame>
+  <frame id="4:19098" name="07 · Agent editing — persistent panel" x="-721" y="6550" width="1440" height="900">
+    <frame id="4:19099" name="Window title bar" x="0" y="0" width="1440" height="38">
+      <frame id="4:19100" name="Window controls" x="16" y="13.5" width="49" height="11">
+        <ellipse id="4:19101" name="Window control" x="0" y="0" width="11" height="11" />
+        <ellipse id="4:19102" name="Window control" x="19" y="0" width="11" height="11" />
+        <ellipse id="4:19103" name="Window control" x="38" y="0" width="11" height="11" />
+      </frame>
+      <text id="4:19104" name="Window title" x="596" y="10.5" width="199" height="17" />
+      <text id="4:19105" name="Label" x="1326" y="11" width="98" height="16" />
+    </frame>
+    <frame id="4:19106" name="Episode header" x="0" y="38" width="1440" height="76">
+      <frame id="4:19107" name="Brand" x="20" y="25" width="121" height="26">
+        <frame id="4:20204" name="audio-lines" x="0" y="2" width="22" height="22" />
+        <text id="4:19109" name="Application name" x="30" y="0" width="91" height="26" />
+      </frame>
+      <rounded-rectangle id="4:19110" name="Header divider" x="163" y="23" width="1" height="30" />
+      <frame id="4:19111" name="Episode identity" x="186" y="16.5" width="1028" height="43">
+        <frame id="4:19112" name="Episode name" x="0" y="0" width="282" height="22">
+          <text id="4:19113" name="Label" x="0" y="0" width="159" height="22" />
+          <text id="4:19114" name="Status badge" x="169" y="0" width="113" height="13" />
+        </frame>
+        <text id="4:19115" name="Episode metadata" x="0" y="27" width="423" height="16" />
+      </frame>
+      <frame id="4:19116" name="Action" x="1236" y="23" width="77" height="30">
+        <frame id="4:20207" name="folder-open" x="11" y="7" width="16" height="16" />
+        <text id="4:19118" name="Action label" x="34" y="7.5" width="32" height="15" />
+      </frame>
+      <frame id="4:19119" name="Action" x="1335" y="23" width="85" height="30">
+        <frame id="4:20210" name="rotate-cw" x="11" y="7" width="16" height="16" />
+        <text id="4:19121" name="Action label" x="34" y="7.5" width="40" height="15" />
+      </frame>
+    </frame>
+    <frame id="4:19122" name="Review workspace" x="0" y="114" width="1440" height="640">
+      <frame id="4:19123" name="Agent editing workspace" x="0" y="0" width="1440" height="640">
+        <frame id="4:19124" name="Episode context" x="0" y="0" width="1000" height="640">
+          <frame id="4:19125" name="Episode timeline" x="0" y="0" width="1000" height="188">
+            <frame id="4:19126" name="Timeline heading" x="20" y="10" width="960" height="17">
+              <frame id="4:19127" name="Timeline identity" x="0" y="0" width="313" height="17">
+                <text id="4:19128" name="Label" x="0" y="0" width="50" height="17" />
+                <text id="4:19129" name="Label" x="62" y="0" width="112" height="16" />
+                <text id="4:19130" name="Status badge" x="186" y="0" width="127" height="13" />
+              </frame>
+              <frame id="4:19131" name="Zoom controls" x="831" y="0.5" width="129" height="16">
+                <text id="4:19132" name="Label" x="0" y="0" width="57" height="16" />
+                <text id="4:19133" name="Label" x="71" y="0" width="58" height="16" />
+              </frame>
+            </frame>
+            <frame id="4:19134" name="Episode overview" x="20" y="33" width="960" height="17">
+              <rounded-rectangle id="4:19135" name="Overview section" x="0" y="0" width="78.16666412353516" height="17" />
+              <rounded-rectangle id="4:19136" name="Overview section" x="80.16666412353516" y="0" width="78.16666412353516" height="17" />
+              <rounded-rectangle id="4:19137" name="Overview section" x="160.3333282470703" y="0" width="78.16666412353516" height="17" />
+              <rounded-rectangle id="4:19138" name="Overview section" x="240.5" y="0" width="78.16665649414062" height="17" />
+              <rounded-rectangle id="4:19139" name="Overview section" x="320.6666564941406" y="0" width="78.16665649414062" height="17" />
+              <rounded-rectangle id="4:19140" name="Overview section" x="400.83331298828125" y="0" width="78.16666412353516" height="17" />
+              <rounded-rectangle id="4:19141" name="Overview section" x="480.9999694824219" y="0" width="78.16666412353516" height="17" />
+              <rounded-rectangle id="4:19142" name="Overview section" x="561.1666259765625" y="0" width="78.16666412353516" height="17" />
+              <rounded-rectangle id="4:19143" name="Overview section" x="641.3333129882812" y="0" width="78.16666412353516" height="17" />
+              <rounded-rectangle id="4:19144" name="Overview section" x="721.5" y="0" width="78.16666412353516" height="17" />
+              <rounded-rectangle id="4:19145" name="Overview section" x="801.6666870117188" y="0" width="78.16667175292969" height="17" />
+              <rounded-rectangle id="4:19146" name="Overview section" x="881.8333740234375" y="0" width="78.16667175292969" height="17" />
+              <rounded-rectangle id="4:19147" name="Visible range" x="0" y="-2" width="68" height="21" />
+            </frame>
+            <frame id="4:19148" name="Time ruler" x="20" y="56" width="960" height="18">
+              <text id="4:19149" name="Time marker" x="80" y="0" width="30" height="15" />
+              <text id="4:19150" name="Time marker" x="221.66665649414062" y="0" width="30" height="15" />
+              <text id="4:19151" name="Time marker" x="363.33331298828125" y="0" width="30" height="15" />
+              <text id="4:19152" name="Time marker" x="504.9999694824219" y="0" width="30" height="15" />
+              <text id="4:19153" name="Time marker" x="646.6666259765625" y="0" width="30" height="15" />
+              <text id="4:19154" name="Time marker" x="788.333251953125" y="0" width="30" height="15" />
+              <text id="4:19155" name="Time marker" x="929.9998779296875" y="0" width="30" height="15" />
+            </frame>
+            <frame id="4:19156" name="Speaker lanes" x="20" y="80" width="960" height="92">
+              <frame id="4:19157" name="Speaker labels" x="0" y="0" width="66" height="92">
+                <frame id="4:19158" name="Lane label" x="0" y="0" width="38" height="20">
+                  <text id="4:19159" name="Speaker badge" x="0" y="2.5" width="38" height="15" />
+                </frame>
+                <frame id="4:19160" name="Lane label" x="0" y="24" width="43" height="20">
+                  <text id="4:19161" name="Speaker badge" x="0" y="2.5" width="43" height="15" />
+                </frame>
+                <frame id="4:19162" name="Lane label" x="0" y="48" width="52" height="20">
+                  <text id="4:19163" name="Speaker badge" x="0" y="2.5" width="52" height="15" />
+                </frame>
+                <frame id="4:19164" name="Lane label" x="0" y="72" width="38" height="20">
+                  <text id="4:19165" name="Speaker badge" x="0" y="2.5" width="38" height="15" />
+                </frame>
+              </frame>
+              <frame id="4:19166" name="Audio tracks" x="78" y="0" width="882" height="92">
+                <frame id="4:19167" name="Speaker track" x="0" y="0" width="882" height="20">
+                  <frame id="4:19168" name="Turn segment" x="0" y="0" width="80.75199890136719" height="20">
+                    <text id="4:19169" name="Turn marker" x="4" y="4" width="17" height="12" />
+                  </frame>
+                  <frame id="4:19170" name="Turn segment" x="141.31600952148438" y="0" width="52.13600158691406" height="20">
+                    <text id="4:19171" name="Turn marker" x="4" y="4" width="17" height="12" />
+                  </frame>
+                  <frame id="4:19172" name="Turn segment" x="457.26800537109375" y="0" width="59.19199752807617" height="20">
+                    <text id="4:19173" name="Turn marker" x="4" y="4" width="17" height="12" />
+                  </frame>
+                  <frame id="4:19174" name="Turn segment" x="704.8160400390625" y="0" width="81.9280014038086" height="20">
+                    <text id="4:19175" name="Turn marker" x="4" y="4" width="17" height="12" />
+                  </frame>
+                </frame>
+                <frame id="4:19176" name="Speaker track" x="0" y="24" width="882" height="20">
+                  <frame id="4:19177" name="Turn segment" x="80.75199890136719" y="0" width="60.56399917602539" height="20">
+                    <text id="4:19178" name="Turn marker" x="4" y="4" width="17" height="12" />
+                  </frame>
+                  <frame id="4:19179" name="Turn segment" x="325.5559997558594" y="0" width="56.448001861572266" height="20">
+                    <text id="4:19180" name="Turn marker" x="4" y="4" width="17" height="12" />
+                  </frame>
+                  <frame id="4:19181" name="Turn segment" x="567.2239990234375" y="0" width="69.7760009765625" height="20">
+                    <text id="4:19182" name="Turn marker" x="4" y="4" width="17" height="12" />
+                  </frame>
+                </frame>
+                <frame id="4:19183" name="Speaker track" x="0" y="48" width="882" height="20">
+                  <frame id="4:19184" name="Turn segment" x="193.4520263671875" y="0" width="88.78799438476562" height="20">
+                    <text id="4:19185" name="Turn marker" x="4" y="4" width="17" height="12" />
+                  </frame>
+                  <frame id="4:19186" name="Turn segment" x="382.0039978027344" y="0" width="75.26399993896484" height="20">
+                    <text id="4:19187" name="Turn marker" x="4" y="4" width="17" height="12" />
+                  </frame>
+                  <frame id="4:19188" name="Turn segment" x="637" y="0" width="67.81600189208984" height="20">
+                    <text id="4:19189" name="Turn marker" x="4" y="4" width="17" height="12" />
+                  </frame>
+                </frame>
+                <frame id="4:19190" name="Speaker track" x="0" y="72" width="882" height="20">
+                  <frame id="4:19191" name="Turn segment" x="282.2400207519531" y="0" width="43.316001892089844" height="20">
+                    <text id="4:19192" name="Turn marker" x="4" y="4" width="17" height="12" />
+                  </frame>
+                  <frame id="4:19193" name="Turn segment" x="516.4600219726562" y="0" width="50.76400375366211" height="20">
+                    <text id="4:19194" name="Turn marker" x="4" y="4" width="17" height="12" />
+                  </frame>
+                </frame>
+                <rounded-rectangle id="4:19195" name="Selected edit range" x="0" y="0" width="636.9804077148438" height="92" />
+                <rounded-rectangle id="4:19196" name="Playhead" x="45.24660110473633" y="0" width="0.7056000232696533" height="92" />
+              </frame>
+            </frame>
+          </frame>
+          <frame id="4:19197" name="Review filters" x="0" y="188" width="1000" height="42">
+            <frame id="4:19198" name="Search turns" x="16" y="7.5" width="270" height="27">
+              <frame id="4:20213" name="search" x="9" y="6.5" width="14" height="14" />
+              <text id="4:19200" name="Label" x="31" y="5" width="98" height="17" />
+              <text id="4:19201" name="Label" x="137" y="5.5" width="18" height="16" />
+            </frame>
+            <frame id="4:19202" name="Action" x="296" y="6" width="103" height="30">
+              <text id="4:19203" name="Action label" x="11" y="7.5" width="81" height="15" />
+            </frame>
+            <frame id="4:19204" name="Action" x="409" y="6" width="101" height="30">
+              <text id="4:19205" name="Action label" x="11" y="7.5" width="79" height="15" />
+            </frame>
+            <frame id="4:19206" name="View mode" x="520" y="13" width="464" height="16">
+              <text id="4:19207" name="Label" x="361" y="0" width="80" height="16" />
+              <frame id="4:20216" name="text-select" x="449" y="0" width="15" height="15" />
+            </frame>
+          </frame>
+          <frame id="4:19209" name="Episode transcript" x="0" y="230" width="1000" height="410">
+            <frame id="4:19210" name="Transcript selection controls" x="20" y="20" width="960" height="16">
+              <text id="4:19211" name="Label" x="0" y="0" width="236" height="16" />
+              <text id="4:19212" name="Label" x="853" y="0" width="107" height="16" />
+            </frame>
+            <frame id="4:19213" name="Transcript turn" x="20" y="52" width="960" height="64">
+              <text id="4:19214" name="Turn time" x="12" y="12" width="65" height="15" />
+              <frame id="4:19215" name="Transcript content" x="91" y="12" width="857" height="40">
+                <text id="4:19216" name="Speaker badge" x="0" y="0" width="38" height="15" />
+                <text id="4:19217" name="Transcript text" x="0" y="20" width="857" height="20" />
+              </frame>
+            </frame>
+            <frame id="4:19218" name="Transcript turn" x="20" y="132" width="960" height="64">
+              <text id="4:19219" name="Turn time" x="12" y="12" width="65" height="15" />
+              <frame id="4:19220" name="Transcript content" x="91" y="12" width="857" height="40">
+                <text id="4:19221" name="Speaker badge" x="0" y="0" width="43" height="15" />
+                <text id="4:19222" name="Transcript text" x="0" y="20" width="857" height="20" />
+              </frame>
+            </frame>
+            <frame id="4:19223" name="Transcript turn" x="20" y="212" width="960" height="64">
+              <text id="4:19224" name="Turn time" x="12" y="12" width="65" height="15" />
+              <frame id="4:19225" name="Transcript content" x="91" y="12" width="857" height="40">
+                <text id="4:19226" name="Speaker badge" x="0" y="0" width="38" height="15" />
+                <text id="4:19227" name="Transcript text" x="0" y="20" width="857" height="20" />
+              </frame>
+            </frame>
+          </frame>
+        </frame>
+        <frame id="4:19228" name="Inspector" x="1000" y="0" width="440" height="640">
+          <frame id="4:19229" name="Panel heading" x="0" y="0" width="440" height="39">
+            <text id="4:19230" name="Label" x="16" y="11" width="114" height="17" />
+            <text id="4:19231" name="Label" x="325" y="12" width="99" height="15" />
+          </frame>
+          <frame id="4:19232" name="Conversation" x="0" y="39" width="440" height="601">
+            <frame id="4:19233" name="Favorite agent selector" x="16" y="16" width="408" height="30">
+              <frame id="4:19234" name="Action" x="0" y="0" width="188" height="30">
+                <text id="4:19235" name="Action label" x="11" y="7.5" width="166" height="15" />
+              </frame>
+              <text id="4:19236" name="Label" x="333" y="7.5" width="75" height="15" />
+            </frame>
+            <frame id="4:19237" name="User request" x="16" y="58" width="408" height="80">
+              <text id="4:19238" name="Label" x="11" y="11" width="178" height="15" />
+              <text id="4:19239" name="Exact example request" x="11" y="31" width="386" height="38" />
+            </frame>
+            <frame id="4:19240" name="Agent working status" x="16" y="150" width="408" height="34">
+              <frame id="4:20219" name="loader-circle" x="0" y="9" width="16" height="16" />
+              <frame id="4:19242" name="Agent activity" x="25" y="0" width="383" height="34">
+                <text id="4:19243" name="Label" x="0" y="0" width="229" height="17" />
+                <text id="4:19244" name="Label" x="0" y="19" width="221" height="15" />
+              </frame>
+            </frame>
+            <frame id="4:19245" name="Agent edit proposal" x="16" y="196" width="408" height="311">
+              <frame id="4:19246" name="Proposal heading" x="14" y="14" width="380" height="17">
+                <text id="4:19247" name="Label" x="0" y="0" width="126" height="17" />
+                <text id="4:19248" name="Status badge" x="334" y="0" width="46" height="13" />
+              </frame>
+              <text id="4:19249" name="Affected range" x="14" y="43" width="222" height="15" />
+              <text id="4:19250" name="Edit explanation" x="14" y="70" width="380" height="34" />
+              <frame id="4:19251" name="Transcript comparison" x="14" y="116" width="380" height="112">
+                <frame id="4:19252" name="Detail field" x="0" y="0" width="380" height="51">
+                  <text id="4:19253" name="Field label" x="0" y="0" width="39" height="12" />
+                  <text id="4:19254" name="Field value" x="0" y="17" width="380" height="34" />
+                </frame>
+                <frame id="4:19255" name="Detail field" x="0" y="61" width="380" height="51">
+                  <text id="4:19256" name="Field label" x="0" y="0" width="33" height="12" />
+                  <text id="4:19257" name="Field value" x="0" y="17" width="380" height="34" />
+                </frame>
+              </frame>
+              <frame id="4:19258" name="Proposal actions" x="14" y="240" width="221" height="30">
+                <frame id="4:19259" name="Action" x="0" y="0" width="92" height="30">
+                  <frame id="4:20222" name="play" x="11" y="7" width="16" height="16" />
+                  <text id="4:19261" name="Action label" x="34" y="7.5" width="47" height="15" />
+                </frame>
+                <frame id="4:19262" name="Action" x="99" y="0" width="56" height="30">
+                  <text id="4:19263" name="Action label" x="11" y="7.5" width="34" height="15" />
+                </frame>
+                <frame id="4:19264" name="Action" x="162" y="0" width="59" height="30">
+                  <text id="4:19265" name="Action label" x="11" y="7.5" width="37" height="15" />
+                </frame>
+              </frame>
+              <text id="4:19266" name="Approval rule" x="14" y="282" width="380" height="15" />
+            </frame>
+            <frame id="4:19267" name="Conversation input" x="16" y="519" width="408" height="36">
+              <text id="4:19268" name="Label" x="11" y="9.5" width="194" height="17" />
+              <frame id="4:20225" name="arrow-up" x="381" y="10" width="16" height="16" />
+            </frame>
+            <text id="4:19270" name="Offline independence" x="16" y="567" width="408" height="15" />
+          </frame>
+        </frame>
+      </frame>
+    </frame>
+    <frame id="4:19271" name="Playback controls" x="0" y="754" width="1440" height="64">
+      <frame id="4:19272" name="Transport" x="20" y="17" width="161" height="30">
+        <frame id="4:19273" name="Action" x="0" y="0" width="81" height="30">
+          <frame id="4:20228" name="pause" x="11" y="7" width="16" height="16" />
+          <text id="4:19275" name="Action label" x="34" y="7.5" width="36" height="15" />
+        </frame>
+        <frame id="4:19276" name="Action" x="88" y="0" width="73" height="30">
+          <frame id="4:20231" name="square" x="11" y="7" width="16" height="16" />
+          <text id="4:19278" name="Action label" x="34" y="7.5" width="28" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:19279" name="Current audio" x="199" y="14.5" width="226" height="35">
+        <text id="4:19280" name="Current turn" x="0" y="0" width="85" height="17" />
+        <text id="4:19281" name="Elapsed time" x="0" y="19" width="139" height="16" />
+      </frame>
+      <frame id="4:19282" name="Seek track" x="443" y="30" width="597" height="4">
+        <rounded-rectangle id="4:19283" name="Elapsed progress" x="0" y="0" width="180" height="4" />
+      </frame>
+      <text id="4:19284" name="Label" x="1058" y="23.5" width="96" height="17" />
+      <text id="4:19285" name="Label" x="1172" y="24" width="102" height="16" />
+      <text id="4:19286" name="Label" x="1292" y="24" width="128" height="16" />
+    </frame>
+    <frame id="4:19287" name="Application status" x="0" y="818" width="1440" height="26">
+      <text id="4:19288" name="Label" x="20" y="5.5" width="307" height="15" />
+      <text id="4:19289" name="Label" x="1131" y="5.5" width="289" height="15" />
+    </frame>
+    <frame id="4:19290" name="Workshop annotation" x="0" y="844" width="1440" height="56">
+      <text id="4:19291" name="Frame number" x="20" y="13.5" width="24" height="29" />
+      <frame id="4:19292" name="Workshop note" x="64" y="10.5" width="1201" height="35">
+        <text id="4:19293" name="Screen purpose" x="0" y="0" width="228" height="17" />
+        <text id="4:19294" name="Design rationale" x="0" y="19" width="1201" height="16" />
+      </frame>
+      <text id="4:19295" name="Label" x="1285" y="20.5" width="135" height="15" />
+    </frame>
+  </frame>
+  <frame id="4:19297" name="08 · Parallel edits — contextual resolution" x="839" y="6550" width="1440" height="900">
+    <frame id="4:19298" name="Window title bar" x="0" y="0" width="1440" height="38">
+      <frame id="4:19299" name="Window controls" x="16" y="13.5" width="49" height="11">
+        <ellipse id="4:19300" name="Window control" x="0" y="0" width="11" height="11" />
+        <ellipse id="4:19301" name="Window control" x="19" y="0" width="11" height="11" />
+        <ellipse id="4:19302" name="Window control" x="38" y="0" width="11" height="11" />
+      </frame>
+      <text id="4:19303" name="Window title" x="596" y="10.5" width="199" height="17" />
+      <text id="4:19304" name="Label" x="1326" y="11" width="98" height="16" />
+    </frame>
+    <frame id="4:19305" name="Episode header" x="0" y="38" width="1440" height="76">
+      <frame id="4:19306" name="Brand" x="20" y="25" width="121" height="26">
+        <frame id="4:20234" name="audio-lines" x="0" y="2" width="22" height="22" />
+        <text id="4:19308" name="Application name" x="30" y="0" width="91" height="26" />
+      </frame>
+      <rounded-rectangle id="4:19309" name="Header divider" x="163" y="23" width="1" height="30" />
+      <frame id="4:19310" name="Episode identity" x="186" y="16.5" width="1028" height="43">
+        <frame id="4:19311" name="Episode name" x="0" y="0" width="282" height="22">
+          <text id="4:19312" name="Label" x="0" y="0" width="159" height="22" />
+          <text id="4:19313" name="Status badge" x="169" y="0" width="113" height="13" />
+        </frame>
+        <text id="4:19314" name="Episode metadata" x="0" y="27" width="423" height="16" />
+      </frame>
+      <frame id="4:19315" name="Action" x="1236" y="23" width="77" height="30">
+        <frame id="4:20237" name="folder-open" x="11" y="7" width="16" height="16" />
+        <text id="4:19317" name="Action label" x="34" y="7.5" width="32" height="15" />
+      </frame>
+      <frame id="4:19318" name="Action" x="1335" y="23" width="85" height="30">
+        <frame id="4:20240" name="rotate-cw" x="11" y="7" width="16" height="16" />
+        <text id="4:19320" name="Action label" x="34" y="7.5" width="40" height="15" />
+      </frame>
+    </frame>
+    <frame id="4:19321" name="Review workspace" x="0" y="114" width="1440" height="640">
+      <frame id="4:19322" name="Version comparison controls" x="0" y="0" width="1440" height="44">
+        <text id="4:19323" name="Label" x="20" y="14" width="54" height="16" />
+        <frame id="4:19324" name="Action" x="84" y="7" width="98" height="30">
+          <text id="4:19325" name="Action label" x="11" y="7.5" width="76" height="15" />
+        </frame>
+        <frame id="4:19326" name="Action" x="192" y="7" width="110" height="30">
+          <text id="4:19327" name="Action label" x="11" y="7.5" width="88" height="15" />
+        </frame>
+        <frame id="4:19328" name="Action" x="312" y="7" width="149" height="30">
+          <text id="4:19329" name="Action label" x="11" y="7.5" width="127" height="15" />
+        </frame>
+        <frame id="4:19330" name="Checkpoint actions" x="471" y="7" width="949" height="30">
+          <frame id="4:19331" name="Action" x="571" y="0" width="128" height="30">
+            <frame id="4:20243" name="history" x="11" y="7" width="16" height="16" />
+            <text id="4:19333" name="Action label" x="34" y="7.5" width="83" height="15" />
+          </frame>
+          <frame id="4:19334" name="Action" x="708" y="0" width="93" height="30">
+            <text id="4:19335" name="Action label" x="11" y="7.5" width="71" height="15" />
+          </frame>
+          <text id="4:19336" name="Label" x="810" y="0" width="139" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:19337" name="Episode timeline" x="0" y="44" width="1440" height="188">
+        <frame id="4:19338" name="Timeline heading" x="20" y="10" width="1400" height="17">
+          <frame id="4:19339" name="Timeline identity" x="0" y="0" width="313" height="17">
+            <text id="4:19340" name="Label" x="0" y="0" width="50" height="17" />
+            <text id="4:19341" name="Label" x="62" y="0" width="112" height="16" />
+            <text id="4:19342" name="Status badge" x="186" y="0" width="127" height="13" />
+          </frame>
+          <frame id="4:19343" name="Zoom controls" x="1271" y="0.5" width="129" height="16">
+            <text id="4:19344" name="Label" x="0" y="0" width="57" height="16" />
+            <text id="4:19345" name="Label" x="71" y="0" width="58" height="16" />
+          </frame>
+        </frame>
+        <frame id="4:19346" name="Episode overview" x="20" y="33" width="1400" height="17">
+          <rounded-rectangle id="4:19347" name="Overview section" x="0" y="0" width="114.83333587646484" height="17" />
+          <rounded-rectangle id="4:19348" name="Overview section" x="116.83333587646484" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:19349" name="Overview section" x="233.66665649414062" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:19350" name="Overview section" x="350.5" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:19351" name="Overview section" x="467.33331298828125" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:19352" name="Overview section" x="584.1666259765625" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:19353" name="Overview section" x="700.9999389648438" y="0" width="114.83332061767578" height="17" />
+          <rounded-rectangle id="4:19354" name="Overview section" x="817.833251953125" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:19355" name="Overview section" x="934.6665649414062" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:19356" name="Overview section" x="1051.4998779296875" y="0" width="114.83333587646484" height="17" />
+          <rounded-rectangle id="4:19357" name="Overview section" x="1168.333251953125" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:19358" name="Overview section" x="1285.1666259765625" y="0" width="114.83332824707031" height="17" />
+          <rounded-rectangle id="4:19359" name="Visible range" x="0" y="-2" width="68" height="21" />
+        </frame>
+        <frame id="4:19360" name="Time ruler" x="20" y="56" width="1400" height="18">
+          <text id="4:19361" name="Time marker" x="80" y="0" width="30" height="15" />
+          <text id="4:19362" name="Time marker" x="295" y="0" width="30" height="15" />
+          <text id="4:19363" name="Time marker" x="510" y="0" width="30" height="15" />
+          <text id="4:19364" name="Time marker" x="725" y="0" width="30" height="15" />
+          <text id="4:19365" name="Time marker" x="940" y="0" width="30" height="15" />
+          <text id="4:19366" name="Time marker" x="1155" y="0" width="30" height="15" />
+          <text id="4:19367" name="Time marker" x="1370" y="0" width="30" height="15" />
+        </frame>
+        <frame id="4:19368" name="Speaker lanes" x="20" y="80" width="1400" height="92">
+          <frame id="4:19369" name="Speaker labels" x="0" y="0" width="66" height="92">
+            <frame id="4:19370" name="Lane label" x="0" y="0" width="38" height="20">
+              <text id="4:19371" name="Speaker badge" x="0" y="2.5" width="38" height="15" />
+            </frame>
+            <frame id="4:19372" name="Lane label" x="0" y="24" width="43" height="20">
+              <text id="4:19373" name="Speaker badge" x="0" y="2.5" width="43" height="15" />
+            </frame>
+            <frame id="4:19374" name="Lane label" x="0" y="48" width="52" height="20">
+              <text id="4:19375" name="Speaker badge" x="0" y="2.5" width="52" height="15" />
+            </frame>
+            <frame id="4:19376" name="Lane label" x="0" y="72" width="38" height="20">
+              <text id="4:19377" name="Speaker badge" x="0" y="2.5" width="38" height="15" />
+            </frame>
+          </frame>
+          <frame id="4:19378" name="Audio tracks" x="78" y="0" width="1322" height="92">
+            <frame id="4:19379" name="Speaker track" x="0" y="0" width="1322" height="20">
+              <frame id="4:19380" name="Turn segment" x="0" y="0" width="121.03644561767578" height="20">
+                <text id="4:19381" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:19382" name="Turn segment" x="211.81378173828125" y="0" width="78.14488983154297" height="20">
+                <text id="4:19383" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:19384" name="Turn segment" x="685.383544921875" y="0" width="88.72088623046875" height="20">
+                <text id="4:19385" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:19386" name="Turn segment" x="1056.4249267578125" y="0" width="122.79911041259766" height="20">
+                <text id="4:19387" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:19388" name="Speaker track" x="0" y="24" width="1322" height="20">
+              <frame id="4:19389" name="Turn segment" x="121.03644561767578" y="0" width="90.77733612060547" height="20">
+                <text id="4:19390" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:19391" name="Turn segment" x="487.9648742675781" y="0" width="84.60800170898438" height="20">
+                <text id="4:19392" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:19393" name="Turn segment" x="850.19287109375" y="0" width="104.58489227294922" height="20">
+                <text id="4:19394" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:19395" name="Speaker track" x="0" y="48" width="1322" height="20">
+              <frame id="4:19396" name="Turn segment" x="289.95867919921875" y="0" width="133.08132934570312" height="20">
+                <text id="4:19397" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:19398" name="Turn segment" x="572.5728759765625" y="0" width="112.8106689453125" height="20">
+                <text id="4:19399" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:19400" name="Turn segment" x="954.7777709960938" y="0" width="101.64710998535156" height="20">
+                <text id="4:19401" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <frame id="4:19402" name="Speaker track" x="0" y="72" width="1322" height="20">
+              <frame id="4:19403" name="Turn segment" x="423.0400085449219" y="0" width="64.92488861083984" height="20">
+                <text id="4:19404" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+              <frame id="4:19405" name="Turn segment" x="774.1044311523438" y="0" width="76.08844757080078" height="20">
+                <text id="4:19406" name="Turn marker" x="4" y="4" width="17" height="12" />
+              </frame>
+            </frame>
+            <rounded-rectangle id="4:19407" name="Selected edit range" x="0" y="0" width="954.7484130859375" height="92" />
+            <rounded-rectangle id="4:19408" name="Playhead" x="67.818603515625" y="0" width="1.0576000213623047" height="92" />
+          </frame>
+        </frame>
+      </frame>
+      <frame id="4:19409" name="Parallel agent tasks" x="0" y="232" width="1440" height="69">
+        <frame id="4:19410" name="Independent agent task" x="20" y="10" width="690" height="34">
+          <frame id="4:20246" name="circle-check" x="0" y="9" width="16" height="16" />
+          <frame id="4:19412" name="Task details" x="28" y="0" width="604" height="34">
+            <text id="4:19413" name="Task title" x="0" y="0" width="250" height="17" />
+            <text id="4:19414" name="Task completion" x="0" y="19" width="183" height="15" />
+          </frame>
+          <text id="4:19415" name="Status badge" x="644" y="10.5" width="46" height="13" />
+        </frame>
+        <frame id="4:19416" name="Independent agent task" x="730" y="10" width="690" height="34">
+          <frame id="4:20249" name="circle-check" x="0" y="9" width="16" height="16" />
+          <frame id="4:19418" name="Task details" x="28" y="0" width="604" height="34">
+            <text id="4:19419" name="Task title" x="0" y="0" width="268" height="17" />
+            <text id="4:19420" name="Task completion" x="0" y="19" width="183" height="15" />
+          </frame>
+          <text id="4:19421" name="Status badge" x="644" y="10.5" width="46" height="13" />
+        </frame>
+      </frame>
+      <frame id="4:19422" name="Conflict resolution" x="0" y="301" width="1440" height="69">
+        <frame id="4:20252" name="triangle-alert" x="20" y="23.5" width="22" height="22" />
+        <frame id="4:19424" name="Overlap explanation" x="58" y="16.5" width="883" height="36">
+          <text id="4:19425" name="Label" x="0" y="0" width="273" height="17" />
+          <text id="4:19426" name="Label" x="0" y="20" width="451" height="16" />
+        </frame>
+        <frame id="4:19427" name="Action" x="957" y="19.5" width="139" height="30">
+          <text id="4:19428" name="Action label" x="11" y="7.5" width="117" height="15" />
+        </frame>
+        <frame id="4:19429" name="Action" x="1112" y="19.5" width="162" height="30">
+          <text id="4:19430" name="Action label" x="11" y="7.5" width="140" height="15" />
+        </frame>
+        <frame id="4:19431" name="Action" x="1290" y="19.5" width="130" height="30">
+          <text id="4:19432" name="Action label" x="11" y="7.5" width="108" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:19433" name="Transcript and contextual proposal" x="0" y="370" width="1440" height="270">
+        <frame id="4:19434" name="Comparison transcript" x="0" y="0" width="840" height="270">
+          <frame id="4:19435" name="Episode transcript" x="0" y="0" width="840" height="270">
+            <frame id="4:19436" name="Transcript selection controls" x="20" y="20" width="800" height="16">
+              <text id="4:19437" name="Label" x="0" y="0" width="236" height="16" />
+              <text id="4:19438" name="Label" x="693" y="0" width="107" height="16" />
+            </frame>
+            <frame id="4:19439" name="Transcript turn" x="20" y="52" width="800" height="84">
+              <text id="4:19440" name="Turn time" x="12" y="12" width="65" height="15" />
+              <frame id="4:19441" name="Transcript content" x="91" y="12" width="697" height="60">
+                <text id="4:19442" name="Speaker badge" x="0" y="0" width="38" height="15" />
+                <text id="4:19443" name="Transcript text" x="0" y="20" width="697" height="40" />
+              </frame>
+            </frame>
+            <frame id="4:19444" name="Transcript turn" x="20" y="152" width="800" height="84">
+              <text id="4:19445" name="Turn time" x="12" y="12" width="65" height="15" />
+              <frame id="4:19446" name="Transcript content" x="91" y="12" width="697" height="60">
+                <text id="4:19447" name="Speaker badge" x="0" y="0" width="43" height="15" />
+                <text id="4:19448" name="Transcript text" x="0" y="20" width="697" height="40" />
+              </frame>
+            </frame>
+          </frame>
+        </frame>
+        <frame id="4:19449" name="Contextual edit popover" x="862" y="-16" width="548" height="279">
+          <rounded-rectangle id="4:19450" name="Range connector" x="-24" y="44" width="24" height="1" />
+          <frame id="4:19451" name="Contextual agent selector" x="14" y="14" width="520" height="16">
+            <text id="4:19452" name="Label" x="0" y="0" width="176" height="16" />
+            <text id="4:19453" name="Label" x="421" y="0" width="99" height="16" />
+          </frame>
+          <frame id="4:19454" name="Agent edit proposal" x="14" y="39" width="520" height="187">
+            <frame id="4:19455" name="Proposal heading" x="14" y="14" width="492" height="17">
+              <text id="4:19456" name="Label" x="0" y="0" width="97" height="17" />
+              <text id="4:19457" name="Status badge" x="438" y="0" width="54" height="13" />
+            </frame>
+            <text id="4:19458" name="Affected range" x="14" y="43" width="222" height="15" />
+            <text id="4:19459" name="Edit explanation" x="14" y="70" width="492" height="34" />
+            <frame id="4:19460" name="Proposal actions" x="14" y="116" width="260" height="30">
+              <frame id="4:19461" name="Action" x="0" y="0" width="92" height="30">
+                <frame id="4:20255" name="play" x="11" y="7" width="16" height="16" />
+                <text id="4:19463" name="Action label" x="34" y="7.5" width="47" height="15" />
+              </frame>
+              <frame id="4:19464" name="Action" x="99" y="0" width="95" height="30">
+                <text id="4:19465" name="Action label" x="11" y="7.5" width="73" height="15" />
+              </frame>
+              <frame id="4:19466" name="Action" x="201" y="0" width="59" height="30">
+                <text id="4:19467" name="Action label" x="11" y="7.5" width="37" height="15" />
+              </frame>
+            </frame>
+            <text id="4:19468" name="Approval rule" x="14" y="158" width="492" height="15" />
+          </frame>
+          <text id="4:19469" name="Position preservation" x="14" y="235" width="520" height="30" />
+        </frame>
+      </frame>
+    </frame>
+    <frame id="4:19470" name="Playback controls" x="0" y="754" width="1440" height="64">
+      <frame id="4:19471" name="Transport" x="20" y="17" width="161" height="30">
+        <frame id="4:19472" name="Action" x="0" y="0" width="81" height="30">
+          <frame id="4:20258" name="pause" x="11" y="7" width="16" height="16" />
+          <text id="4:19474" name="Action label" x="34" y="7.5" width="36" height="15" />
+        </frame>
+        <frame id="4:19475" name="Action" x="88" y="0" width="73" height="30">
+          <frame id="4:20261" name="square" x="11" y="7" width="16" height="16" />
+          <text id="4:19477" name="Action label" x="34" y="7.5" width="28" height="15" />
+        </frame>
+      </frame>
+      <frame id="4:19478" name="Current audio" x="199" y="14.5" width="226" height="35">
+        <text id="4:19479" name="Current turn" x="0" y="0" width="85" height="17" />
+        <text id="4:19480" name="Elapsed time" x="0" y="19" width="139" height="16" />
+      </frame>
+      <frame id="4:19481" name="Seek track" x="443" y="30" width="597" height="4">
+        <rounded-rectangle id="4:19482" name="Elapsed progress" x="0" y="0" width="180" height="4" />
+      </frame>
+      <text id="4:19483" name="Label" x="1058" y="23.5" width="96" height="17" />
+      <text id="4:19484" name="Label" x="1172" y="24" width="102" height="16" />
+      <text id="4:19485" name="Label" x="1292" y="24" width="128" height="16" />
+    </frame>
+    <frame id="4:19486" name="Application status" x="0" y="818" width="1440" height="26">
+      <text id="4:19487" name="Label" x="20" y="5.5" width="409" height="15" />
+      <text id="4:19488" name="Label" x="1131" y="5.5" width="289" height="15" />
+    </frame>
+    <frame id="4:19489" name="Workshop annotation" x="0" y="844" width="1440" height="56">
+      <text id="4:19490" name="Frame number" x="20" y="13.5" width="24" height="29" />
+      <frame id="4:19491" name="Workshop note" x="64" y="10.5" width="1201" height="35">
+        <text id="4:19492" name="Screen purpose" x="0" y="0" width="236" height="17" />
+        <text id="4:19493" name="Design rationale" x="0" y="19" width="1201" height="16" />
+      </frame>
+      <text id="4:19494" name="Label" x="1285" y="20.5" width="135" height="15" />
+    </frame>
+  </frame>
+  <frame id="4:19496" name="Workshop flow notes" x="-721" y="7550" width="1440" height="574">
+    <frame id="4:19497" name="Workshop notes heading" x="26" y="26" width="1388" height="54">
+      <frame id="4:19498" name="Notes identity" x="0" y="0" width="474" height="54">
+        <text id="4:19499" name="Label" x="0" y="0" width="352" height="32" />
+        <text id="4:19500" name="Label" x="0" y="37" width="474" height="17" />
+      </frame>
+      <text id="4:19501" name="Label" x="1235" y="19" width="153" height="16" />
+    </frame>
+    <frame id="4:19502" name="Flow descriptions" x="26" y="102" width="1388" height="335">
+      <frame id="4:19503" name="Flow note" x="0" y="0" width="1388" height="67">
+        <text id="4:19504" name="Flow category" x="0" y="13" width="132" height="15" />
+        <frame id="4:19505" name="Flow description" x="154" y="13" width="1234" height="41">
+          <text id="4:19506" name="Flow path" x="0" y="0" width="293" height="19" />
+          <text id="4:19507" name="Flow behavior" x="0" y="24" width="1234" height="17" />
+        </frame>
+      </frame>
+      <frame id="4:19508" name="Flow note" x="0" y="67" width="1388" height="67">
+        <text id="4:19509" name="Flow category" x="0" y="13" width="132" height="15" />
+        <frame id="4:19510" name="Flow description" x="154" y="13" width="1234" height="41">
+          <text id="4:19511" name="Flow path" x="0" y="0" width="436" height="19" />
+          <text id="4:19512" name="Flow behavior" x="0" y="24" width="1234" height="17" />
+        </frame>
+      </frame>
+      <frame id="4:19513" name="Flow note" x="0" y="134" width="1388" height="67">
+        <text id="4:19514" name="Flow category" x="0" y="13" width="132" height="15" />
+        <frame id="4:19515" name="Flow description" x="154" y="13" width="1234" height="41">
+          <text id="4:19516" name="Flow path" x="0" y="0" width="377" height="19" />
+          <text id="4:19517" name="Flow behavior" x="0" y="24" width="1234" height="17" />
+        </frame>
+      </frame>
+      <frame id="4:19518" name="Flow note" x="0" y="201" width="1388" height="67">
+        <text id="4:19519" name="Flow category" x="0" y="13" width="132" height="15" />
+        <frame id="4:19520" name="Flow description" x="154" y="13" width="1234" height="41">
+          <text id="4:19521" name="Flow path" x="0" y="0" width="239" height="19" />
+          <text id="4:19522" name="Flow behavior" x="0" y="24" width="1234" height="17" />
+        </frame>
+      </frame>
+      <frame id="4:19523" name="Flow note" x="0" y="268" width="1388" height="67">
+        <text id="4:19524" name="Flow category" x="0" y="13" width="132" height="15" />
+        <frame id="4:19525" name="Flow description" x="154" y="13" width="1234" height="41">
+          <text id="4:19526" name="Flow path" x="0" y="0" width="195" height="19" />
+          <text id="4:19527" name="Flow behavior" x="0" y="24" width="1234" height="17" />
+        </frame>
+      </frame>
+    </frame>
+    <frame id="4:19528" name="Workshop principles" x="26" y="459" width="1388" height="51">
+      <frame id="4:19529" name="Detail field" x="0" y="0" width="444" height="34">
+        <text id="4:19530" name="Field label" x="0" y="0" width="147" height="12" />
+        <text id="4:19531" name="Field value" x="0" y="17" width="444" height="17" />
+      </frame>
+      <frame id="4:19532" name="Detail field" x="472" y="0" width="444" height="34">
+        <text id="4:19533" name="Field label" x="0" y="0" width="171" height="12" />
+        <text id="4:19534" name="Field value" x="0" y="17" width="444" height="17" />
+      </frame>
+      <frame id="4:19535" name="Detail field" x="944" y="0" width="444" height="51">
+        <text id="4:19536" name="Field label" x="0" y="0" width="99" height="12" />
+        <text id="4:19537" name="Field value" x="0" y="17" width="444" height="34" />
+      </frame>
+    </frame>
+    <text id="4:19538" name="Label" x="26" y="532" width="1388" height="16" />
+  </frame>
+  <frame id="4:20339" name="scriptCast / Timeline block" x="-721" y="7550" width="1456" height="396">
+    <symbol id="4:20338" name="State=Failed" x="744" y="214" width="680" height="150" />
+    <symbol id="4:20337" name="State=Playing" x="32" y="214" width="680" height="150" />
+    <symbol id="4:20336" name="State=Selected" x="744" y="32" width="680" height="150" />
+    <symbol id="4:20335" name="State=Default" x="32" y="32" width="680" height="150" />
+  </frame>
+  <frame id="4:20345" name="scriptCast / Turn row" x="-721" y="8046" width="2016" height="578">
+    <symbol id="4:20344" name="State=Missing audio" x="32" y="396" width="960" height="150" />
+    <symbol id="4:20343" name="State=Failed" x="1024" y="214" width="960" height="150" />
+    <symbol id="4:20342" name="State=Playing" x="32" y="214" width="960" height="150" />
+    <symbol id="4:20341" name="State=Selected" x="1024" y="32" width="960" height="150" />
+    <symbol id="4:20340" name="State=Default" x="32" y="32" width="960" height="150" />
+  </frame>
+  <frame id="4:20350" name="scriptCast / Speaker badge" x="-721" y="8724" width="1456" height="396">
+    <symbol id="4:20349" name="Speaker=Sam" x="744" y="214" width="680" height="150" />
+    <symbol id="4:20348" name="Speaker=Jordan" x="32" y="214" width="680" height="150" />
+    <symbol id="4:20347" name="Speaker=Maya" x="744" y="32" width="680" height="150" />
+    <symbol id="4:20346" name="Speaker=Alex" x="32" y="32" width="680" height="150" />
+  </frame>
+  <frame id="4:20356" name="scriptCast / Playback" x="-721" y="9220" width="2976" height="629">
+    <symbol id="4:20355" name="State=Unavailable device" x="32" y="430" width="1440" height="167" />
+    <symbol id="4:20354" name="State=Missing audio" x="1504" y="231" width="1440" height="167" />
+    <symbol id="4:20353" name="State=Playing" x="32" y="231" width="1440" height="167" />
+    <symbol id="4:20352" name="State=Selected" x="1504" y="32" width="1440" height="167" />
+    <symbol id="4:20351" name="State=Idle" x="32" y="32" width="1440" height="167" />
+  </frame>
+  <frame id="4:20361" name="scriptCast / Verification" x="-721" y="9949" width="1456" height="396">
+    <symbol id="4:20360" name="State=Missing audio" x="744" y="214" width="680" height="150" />
+    <symbol id="4:20359" name="State=Not verified" x="32" y="214" width="680" height="150" />
+    <symbol id="4:20358" name="State=Failed" x="744" y="32" width="680" height="150" />
+    <symbol id="4:20357" name="State=Passed" x="32" y="32" width="680" height="150" />
+  </frame>
+  <frame id="4:20367" name="scriptCast / Job status" x="-721" y="10445" width="1456" height="716">
+    <symbol id="4:20366" name="State=Canceled" x="32" y="488" width="680" height="196" />
+    <symbol id="4:20365" name="State=Failed" x="744" y="260" width="680" height="196" />
+    <symbol id="4:20364" name="State=Complete" x="32" y="260" width="680" height="196" />
+    <symbol id="4:20363" name="State=Running" x="744" y="32" width="680" height="196" />
+    <symbol id="4:20362" name="State=Idle" x="32" y="32" width="680" height="196" />
+  </frame>
+  <frame id="4:20372" name="scriptCast / Agent proposal" x="-721" y="11261" width="1456" height="890">
+    <symbol id="4:20371" name="State=Applied" x="744" y="461" width="680" height="383" />
+    <symbol id="4:20370" name="State=Conflict" x="32" y="461" width="680" height="397" />
+    <symbol id="4:20369" name="State=Ready" x="744" y="32" width="680" height="397" />
+    <symbol id="4:20368" name="State=Working" x="32" y="32" width="680" height="248" />
+  </frame>
+  <frame id="4:20375" name="scriptCast / Confirmation" x="-721" y="12251" width="1456" height="628">
+    <symbol id="4:20374" name="State=Replace verification" x="744" y="32" width="680" height="564" />
+    <symbol id="4:20373" name="State=Synthesize audio" x="32" y="32" width="680" height="564" />
+  </frame>
+  <frame id="4:20383" name="scriptCast / Workspace state" x="-721" y="12979" width="1456" height="1058">
+    <symbol id="4:20382" name="State=Agent offline" x="32" y="801" width="680" height="225" />
+    <symbol id="4:20381" name="State=CLI unavailable" x="744" y="544" width="680" height="225" />
+    <symbol id="4:20380" name="State=Unavailable device" x="32" y="544" width="680" height="225" />
+    <symbol id="4:20379" name="State=Missing audio" x="744" y="287" width="680" height="225" />
+    <symbol id="4:20378" name="State=Error" x="32" y="287" width="680" height="225" />
+    <symbol id="4:20377" name="State=Loading" x="744" y="32" width="680" height="223" />
+    <symbol id="4:20376" name="State=Empty" x="32" y="32" width="680" height="206" />
+  </frame>
+</canvas>

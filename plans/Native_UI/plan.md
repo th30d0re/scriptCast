@@ -1,0 +1,409 @@
+# Plan: Native UI — a Lightweight egui Window for scriptCast
+
+Host project: `file:Dev/Tools/scriptCast/` (Python package `scriptcast`, branch `dev`), new crate `file:Dev/Tools/scriptCast/ui/` (Rust, eframe/egui, binary `scriptcast-ui`)
+Spec: See [ui/SPEC.md](../../ui/SPEC.md) for the product-level spec.
+Design: See [ui/design/DESIGN.md](../../ui/design/DESIGN.md) — offline snapshot of the Figma design (screens, tokens, icons). The visual source of truth; never call Figma from a loop.
+Tech Plan: See [Tech Plan](tech-plan.md) for full architectural detail.
+Loops: See [loop.md](loop.md) for implementer/verifier prompts.
+
+---
+
+## Section 1: Epic Brief
+
+### Summary
+
+scriptCast renders a markdown podcast script into per-turn speech, verifies it with Whisper, repairs failed turns, and exports DAW sessions — all as a set of Python CLIs (`file:Dev/Tools/scriptCast/pyproject.toml:42-54`). Today the only way to see a rendered episode is to read `episode_manifest.json`, `TURN_INDEX.csv` and `stress.json` by hand, open the Ableton set, or scroll terminal output from `scriptcast-verify`. Finding turn 212, hearing it, and re-rendering it is a multi-tool round trip. This epic adds a native desktop window, written in Rust with egui, that opens an episode output directory instantly, shows every turn on a speaker-coloured timeline and in a searchable table, plays any turn's processed WAV with one key, overlays the verifier's results per turn, and launches the existing CLIs (detect changes, precision insert, regenerate selected turns, verify, repair) with their output streamed live into the window. The UI is a thin front-end: it reads the files the Python tools write and shells out to the Python tools; it never reimplements synthesis, verification or export, and the only files it ever writes itself are reversible checkpoints: before any job that replaces audio or verification output, it clones the files that job can change into the episode's `_backups/ui/` folder, and it can restore them later. The interface is set in OpenDyslexic. Delivery is three phases: Phase A is a read-only episode browser (loader, header, timeline, virtualised table, error states); Phase B adds per-turn playback with keyboard navigation; Phase C adds the job runner with safe command presets, checkpoints and restore, and the verify-results overlay.
+
+### Context & Problem
+
+**Who's affected**
+- The operator producing episodes (currently the ATO podcast in `file:Documents/Theory/TheOriginalPower/`): every review pass means locating a turn by index in `TURN_INDEX.csv`, finding its WAV under `Samples/Processed/<speaker>/`, and playing it in Finder or Ableton.
+- The verify/repair loop: `scriptcast-verify` prints flagged turns to the terminal (`file:Dev/Tools/scriptCast/scriptcast/tools/verify_render.py:275-303`) and optionally writes JSON; nothing shows those results against the timeline.
+- Re-rendering: the right flags (`--precision-insert`, `--regenerate-turns`, never a bare re-render that hits the interactive prompt) are easy to get wrong from memory.
+
+**Where in the product**
+- Episode output directory written by the renderer: `episode_manifest.json` (`file:Dev/Tools/scriptCast/scriptcast/manifest.py:94-189`), `render_state.json` (`file:Dev/Tools/scriptCast/scriptcast/render_state.py:165`), `TURN_INDEX.csv` (`file:Dev/Tools/scriptCast/scriptcast/tools/turn_index.py:37`), `stress.json` (verify `--json-out`, `file:Dev/Tools/scriptCast/scriptcast/tools/verify_render.py:185`), processed WAVs under `Samples/Processed/<speaker>/`.
+- Project configuration: `scriptcast.toml` at the project root (`file:Dev/Tools/scriptCast/scriptcast/project.py:1-34`).
+- CLIs the UI launches: `scriptcast` (`file:Dev/Tools/scriptCast/scriptcast/__main__.py:867`), `scriptcast-verify`, `scriptcast-repair` (`file:Dev/Tools/scriptCast/scriptcast/tools/repair_render.py:89-107`).
+
+**What changes**
+- Phase A adds `ui/` with a theme built from the design tokens, a manifest/render-state/CSV/stress loader, project-root discovery, and a read-only window matching design screens 01–02: empty workspace with recent episodes, header, overview strip plus speaker-lane timeline, virtualised turn table with speaker filter, search and verification column, and the Empty, Loading and Error workspace states.
+- Phase B adds `audio.rs`: Space plays or pauses the selected turn's WAV through rodio, Esc stops, Up and Down move the selection, auto-advance is optional, a seek track shows progress, the output device is selectable, and a Selected turn inspector appears (screen 03).
+- Phase C adds `runner.rs` and `checkpoint.rs` with the Verification and Job runner inspectors and the confirmation dialog (screens 04–06): fixed command presets built from the episode's own metadata, a live log, Cancel, confirmation showing the exact command for anything that synthesizes or overwrites, a checkpoint saved before each such job with a Checkpoints list and Restore, automatic reload after a job, and failed-turn markers from `stress.json`.
+- No Python file changes in any phase.
+
+---
+
+## Section 2: Core Flows
+
+## Flow 0: Real-time Review and Agent-Assisted Editing (Future Phase)
+
+**Description:** The operator listens to an episode while making rapid, targeted edits with help from a preferred agent. Playback, manual editing, and agent work remain available in one continuous workspace.
+
+**Trigger:** The operator opens an episode, starts playback, and selects a favorite agent from the agent selector.
+
+**Steps:**
+
+1. The UI opens the episode with a synchronized waveform/timeline, transcript, playback controls, and an agent conversation panel. The currently playing transcript sentence and waveform range remain highlighted.
+2. While listening, the operator selects a word, sentence, or time range and makes a quick edit: remove filler words or pauses, rewrite a sentence, adjust tone or pacing, or move a segment. The operator can preview the change without losing the current playback position.
+3. The operator sends a targeted instruction to the selected agent, such as: "Make this intro 20 seconds shorter, keep the main idea, and make the tone more energetic." The agent receives the selected range and relevant episode context while playback and independent manual edits continue.
+4. The agent returns a proposed edit with a short explanation, affected range, before/after transcript, and `Preview`, `Apply`, and `Reject` actions. Proposed edits are never applied silently.
+5. `Preview` temporarily plays the proposed version while leaving the rest of the episode unchanged. The operator can switch between Original, Proposed, and Current working versions, then accept, reject, or refine the proposal.
+6. The operator can queue independent requests in parallel, such as removing filler words across the episode, tightening the opening, improving a transition, or normalizing a guest's volume. Each request shows `Analyzing`, `Ready for review`, `Applied`, `Needs attention`, or `Failed`.
+7. If two requests affect overlapping audio, the UI marks the conflict and asks the operator which version should take priority. Non-conflicting edits can continue to complete in parallel.
+8. Applying an edit updates the timeline and transcript immediately, resumes playback near the same location, creates a reversible version checkpoint, and keeps the agent's explanation in edit history.
+9. Before export, the UI identifies unapplied proposals, unresolved conflicts, and processing errors. The operator confirms the selected version and export settings before the final audio is written.
+
+**User-visible guarantees:**
+
+- Agent processing never blocks playback or manual editing.
+- Agent completion never causes an unexpected playback jump.
+- Every edit is reversible through Undo, Redo, and version checkpoints.
+- Original, Proposed, and Applied audio are always distinguishable.
+- If the agent is unavailable, playback and manual editing continue normally.
+
+**Scope note:** This flow extends the current browser/playback/job-runner plan. It requires a later phase for agent selection, edit proposals, concurrent jobs, conflict resolution, version history, and non-destructive audio preview. The current Phase A-C implementation remains usable without an agent connection.
+
+## Flow 1: Open an Episode (Phase A)
+
+**Description:** The operator opens a rendered episode and sees every turn.
+
+**Trigger:** `scriptcast-ui <episode_dir>` on the command line, the Open button (native folder picker), or app start with a remembered last episode.
+
+**Steps:**
+
+1. `main.rs` resolves the episode directory from argv, the picker, or eframe persistent storage.
+2. `episode.rs` reads `episode_manifest.json` (required), then `render_state.json`, `TURN_INDEX.csv` and `stress.json` (each optional).
+3. `episode.rs` walks up from the episode directory to the nearest `scriptcast.toml` to find the project root, and resolves the script path: `render_state.json` `source_file` when absolute, otherwise the manifest `source_file` joined to the project root.
+4. The loader builds an `Episode`: speakers with stable colours, turns with start, duration, first words and WAV paths, and per-turn verify results when present.
+5. The window shows the header, the timeline strip and the table. A missing or invalid manifest shows an error panel naming the file and the parse error.
+
+```mermaid
+sequenceDiagram
+    participant operatorUser as "Operator"
+    participant appMain as "main.rs"
+    participant episodeLoader as "episode.rs"
+    participant episodeDir as "Episode directory"
+    operatorUser->>appMain: "scriptcast-ui outputs/ATO_EP03_five_levels"
+    appMain->>episodeLoader: "Episode::load(dir)"
+    episodeLoader->>episodeDir: "read episode_manifest.json (required)"
+    episodeLoader->>episodeDir: "read render_state.json, TURN_INDEX.csv, stress.json (optional)"
+    episodeLoader->>episodeLoader: "find scriptcast.toml upward; resolve script path"
+    episodeLoader-->>appMain: "Ok(Episode) or Err(LoadError)"
+    appMain-->>operatorUser: "header + timeline + table, or error panel"
+```
+
+## Flow 2: Find and Audition a Turn (Phase B)
+
+**Description:** The operator finds a turn and hears it.
+
+**Trigger:** Typing in the search box, choosing a speaker filter, clicking a timeline block or table row, or Up/Down.
+
+**Steps:**
+
+1. Search and filter narrow the table to matching turns; the timeline dims non-matching blocks rather than hiding them, so positions stay true.
+2. Selecting a turn scrolls the table to it and highlights its block.
+3. Space plays the selected turn's segments in order through one rodio player; pressing Space again pauses or resumes; Esc stops.
+4. Selecting another turn while playing stops the current player and starts the new turn.
+5. With auto-advance on, the next visible turn plays when the current one ends.
+6. A missing WAV shows an inline error on that row; playback of other turns is unaffected.
+
+```mermaid
+sequenceDiagram
+    participant operatorUser as "Operator"
+    participant appMain as "main.rs"
+    participant audioPlayer as "audio.rs"
+    participant rodioOut as "rodio output"
+    operatorUser->>appMain: "click row 212, press Space"
+    appMain->>audioPlayer: "play(turn 212 segment paths)"
+    audioPlayer->>rodioOut: "append decoded WAVs to Player"
+    rodioOut-->>operatorUser: "audio"
+    appMain->>audioPlayer: "poll is_empty() each frame while playing"
+    audioPlayer-->>appMain: "finished"
+    appMain->>audioPlayer: "auto-advance: play(turn 213)"
+```
+
+## Flow 3: Run a Job (Phase C)
+
+**Description:** The operator launches an existing CLI against the open episode and watches it run.
+
+**Trigger:** A button in the run panel: Detect changes, Precision insert, Regenerate selected, Verify, Repair.
+
+**Steps:**
+
+1. `runner.rs` builds the argv from a fixed preset and the episode's metadata (episode id, out dir, script path, voices path from `scriptcast.toml`). The operator never types flags. Turn-targeted presets are disabled unless the script still hashes to `render_state.source_hash`, so manifest turn numbers are guaranteed to be the script numbers the CLI expects.
+2. Presets that synthesize audio or overwrite a file (Precision insert, Regenerate selected, Repair, Verify when `stress.json` exists) open a confirmation dialog showing the exact command line.
+3. After Confirm, `checkpoint.rs` clones every file the job can change into `<episode>/_backups/ui/vNN-<timestamp>-<preset>/` and writes `checkpoint.json`. If the checkpoint fails, the job does not start.
+4. The process starts with the project root as working directory and stdin set to null, so no CLI can block on an interactive prompt.
+5. Reader threads forward stdout and stderr lines over a channel and request a repaint; the log pane appends them.
+6. Cancel kills the child. Only one job runs at a time; the buttons are disabled while it runs.
+7. On exit, the status line shows the exit code, and the episode reloads from disk.
+
+```mermaid
+sequenceDiagram
+    participant operatorUser as "Operator"
+    participant runPanel as "run panel (main.rs)"
+    participant jobRunner as "runner.rs"
+    participant pythonCli as "scriptcast-verify"
+    participant episodeLoader as "episode.rs"
+    participant checkpointStore as "checkpoint.rs"
+    operatorUser->>runPanel: "Verify"
+    runPanel->>operatorUser: "confirm: overwrite stress.json? (shows argv)"
+    operatorUser->>runPanel: "Confirm"
+    runPanel->>checkpointStore: "create(stress.json) -> v04"
+    checkpointStore-->>runPanel: "Ok(v04)"
+    runPanel->>jobRunner: "start(JobSpec)"
+    jobRunner->>pythonCli: "spawn (cwd = project root, stdin = null)"
+    pythonCli-->>jobRunner: "stdout/stderr lines"
+    jobRunner-->>runPanel: "JobEvent::Line (repaint)"
+    pythonCli-->>jobRunner: "exit 0"
+    jobRunner-->>runPanel: "JobEvent::Exited(0)"
+    runPanel->>episodeLoader: "reload"
+```
+
+## Flow 3b: Restore a Checkpoint (Phase C)
+
+**Description:** The operator undoes a job's audio or verification changes.
+
+**Trigger:** Restore on a row of the Checkpoints list in the Job runner inspector.
+
+**Steps:**
+
+1. The Checkpoints list shows each checkpoint for the open episode: version, time, preset, affected turns, file count and size.
+2. Restore opens a confirmation listing exactly which episode files will be replaced.
+3. On Confirm, `checkpoint.rs` first saves the current versions of those same files as a new checkpoint (preset `pre-restore`), so the restore can itself be undone.
+4. It then clones the checkpoint's files back to their original paths, and the episode reloads.
+5. Restore is disabled while a job runs. Checkpoints are never deleted by the app; the operator removes old ones in Finder.
+
+```mermaid
+sequenceDiagram
+    participant operatorUser as "Operator"
+    participant jobPanel as "Job runner inspector"
+    participant checkpointStore as "checkpoint.rs"
+    participant episodeDir as "Episode directory"
+    operatorUser->>jobPanel: "Restore v03"
+    jobPanel->>operatorUser: "confirm: replace these 6 files?"
+    operatorUser->>jobPanel: "Confirm"
+    jobPanel->>checkpointStore: "restore(v03)"
+    checkpointStore->>episodeDir: "clone current files -> v05 pre-restore"
+    checkpointStore->>episodeDir: "clone v03 files back"
+    checkpointStore-->>jobPanel: "Ok"
+    jobPanel->>jobPanel: "reload episode"
+```
+
+## Flow 4: Review Verify Results (Phase C)
+
+**Description:** The operator sees which turns the verifier flagged.
+
+**Trigger:** An episode with `stress.json`, or a finished Verify job.
+
+**Steps:**
+
+1. The loader joins `stress.json` entries to turns by `turn_id` (not by index, since `turn` is the script index and `manifest_turn` the manifest index).
+2. Failed turns get a red marker on the timeline and a score column in the table; a "Failed only" filter shows just those.
+3. Selecting a flagged turn shows `expected` and `heard` text and any stress-check verdicts in a detail panel.
+4. Regenerate selected or Repair can then be launched for those turns from the run panel.
+
+## Flow 5: Error and Edge Paths
+
+1. No episode open: the empty workspace (screen 01) shows Open Episode and recent episodes, never an empty table.
+2. `episode_manifest.json` missing or invalid: the Error workspace state names the path and serde error. If another episode was open, it stays open and usable (design note: "A malformed directory does not erase the current episode"); the failed one is never shown as if it loaded.
+3. No `scriptcast.toml` found: browsing and playback work; run presets that need project config are disabled with a tooltip naming the missing file.
+4. CLI not found: the job fails at spawn with the executable path searched; nothing else changes.
+5. Audio device unavailable: playback pauses at its position, selection is kept, and the Unavailable device state offers Choose output; browsing and jobs keep working.
+6. Window closed while a job runs: the child is killed on exit.
+7. Checkpoint cannot be written (disk full, permission): the job does not start; the error names the path. Episode files are untouched.
+8. Restore fails partway: the `pre-restore` checkpoint taken first holds the state from before the restore; the error names it so the operator can restore it.
+
+### Artifact Output Structure
+
+```
+Dev/Tools/scriptCast/
+├── .gitignore                      # (A) add ui/target/
+├── plans/Native_UI/                # this plan
+│   ├── plan.md
+│   ├── tech-plan.md
+│   ├── loop.md
+│   └── STATE.md
+└── ui/
+    ├── Cargo.toml                  # (A) eframe (persistence), egui_extras (svg), serde, serde_json, rfd, toml, sha2; (B) rodio
+    ├── Cargo.lock
+    ├── SPEC.md                     # product spec (exists)
+    ├── design/                     # Figma snapshot (exists): DESIGN.md, tokens.json, screens/, components/, assets/icons/
+    ├── assets/fonts/               # (exists) OpenDyslexic Regular/Bold (OFL) + OpenDyslexicMono, embedded with include_bytes!
+    ├── src/
+    │   ├── main.rs                 # (A) app shell, layout, timeline, table; (B) keys + playback wiring; (C) inspectors + dialog
+    │   ├── theme.rs                # (A) tokens → egui Visuals/Style, fonts, icons, shared buttons
+    │   ├── episode.rs              # (A) Episode model + loader + project root + colours; (C) stress overlay
+    │   ├── audio.rs                # (B) rodio playback
+    │   ├── runner.rs               # (C) JobSpec presets, spawn, line streaming, cancel
+    │   └── checkpoint.rs           # (C) clone-on-write checkpoints in _backups/ui/, list, restore
+    └── tests/
+        ├── fixtures/
+        │   ├── scriptcast.toml     # (A) fixture project root
+        │   ├── script.md           # (A) fixture script; its SHA-256 is render_state.source_hash
+        │   └── episode_small/      # (A) 3-turn manifest, render_state, TURN_INDEX.csv, stress.json, 3 short WAVs
+        ├── episode_load.rs         # (A) loader tests
+        ├── runner_presets.rs       # (C) argv construction tests
+        └── checkpoints.rs          # (C) create / list / restore round-trip on a temp copy of the fixture
+```
+
+---
+
+## Section 3: Tech Plan
+
+See [Tech Plan](tech-plan.md) for full context.
+
+---
+
+## Section 4: Implementation Plan
+
+### Preamble
+
+> I have created the following plan after thorough exploration and analysis of the codebase. Follow the below plan verbatim. Trust the files and references. Do not re-verify what's written in the plan. Explore only when absolutely necessary. First implement all the proposed file changes and then I'll review all the changes together at the end.
+
+### Observations
+
+- `ui/` already exists as a Cargo project (`cargo new --name scriptcast-ui`, edition 2024) with `eframe 0.36.2`, `rfd 0.17.2`, `rodio 0.22.2`, `serde 1.0` (derive) and `serde_json 1.0` added (`file:Dev/Tools/scriptCast/ui/Cargo.toml`). `src/main.rs` is the `cargo new` stub. Rust toolchain: cargo 1.96.0.
+- The manifest schema is defined by `SegmentEntry`, `TurnEntry`, `SpeakerEntry`, `EpisodeManifest` (`file:Dev/Tools/scriptCast/scriptcast/models.py:73-118`) and written by `write_manifest` (`file:Dev/Tools/scriptCast/scriptcast/manifest.py:94`, path at line 189). Verified against a real episode (`file:Documents/Theory/TheOriginalPower/outputs/ATO_EP03_five_levels/episode_manifest.json`): 392 turns, 4 speakers, `engine: "archive, omnivoice"`, segment WAV paths relative to the episode dir (`Samples/Processed/toussaint/eda1cfb57abfc51b_chunk_0000.wav`).
+- `render_state.json` (`file:Dev/Tools/scriptCast/scriptcast/render_state.py:15-60`) carries `schema_version` ("2.0" in the real file), an absolute `source_file`, `source_hash`, `rendered_at`, and per-turn fingerprints. The manifest's `source_file` is relative to the cwd at render time (`file:Dev/Tools/scriptCast/scriptcast/manifest.py:34-44`), which in practice is the project root.
+- `TURN_INDEX.csv` columns are `turn_index,audio_time,script_time,speaker,clip_name,first_words` (`file:Dev/Tools/scriptCast/scriptcast/tools/turn_index.py:37`); `first_words` is quoted when it contains commas. It is the only place the UI gets turn text without parsing markdown.
+- `stress.json` is `scriptcast-verify --json-out` output: a list of `{turn, manifest_turn, turn_id, speaker, score, worst_run, failed, expected, heard, repetition, stress[]}` (`file:Dev/Tools/scriptCast/scriptcast/tools/verify_render.py:250-303`). `turn` is the script index; join on `turn_id`. The real EP03 file has 18 entries, so it may cover only some turns.
+- The project root is `$SCRIPTCAST_PROJECT`, else the nearest ancestor with `scriptcast.toml`, else cwd (`file:Dev/Tools/scriptCast/scriptcast/project.py:1-10`, `find_root` at line 37). The ATO project's `scriptcast.toml` sets `voices`, `outputs`, `scripts` and others to project-relative paths.
+- `scriptcast` prompts with `input()` when output exists (`file:Dev/Tools/scriptCast/scriptcast/__main__.py:291`), inside `_prepare_episode_output` (line 264). `--precision-insert` (line 163) and `--regenerate-turns` (line 149) resume unconditionally and never prompt; `--detect-changes` (line 157) synthesizes nothing. `--overwrite` (line 121) deletes the episode. The UI therefore offers only those three render modes, never a bare render, never `--overwrite`, and always runs with stdin null.
+- `--regenerate-turns` takes SCRIPT turn indices: `__main__.py:945-950` parses the spec with `parse_turn_spec` (`file:Dev/Tools/scriptCast/scriptcast/render_state.py:213`) and maps it through the freshly parsed script's `turn_index` (assigned at `file:Dev/Tools/scriptCast/scriptcast/parser.py:93`). The manifest's `turn_index` is the script index at render time (`file:Dev/Tools/scriptCast/scriptcast/manifest.py:157`), so the two diverge as soon as a turn is added to or removed from the script; `verify_render.py:200-204` warns that passing manifest numbers then "silently regenerates the wrong turns". `render_state.source_hash` is the SHA-256 of the script file's bytes (`file:Dev/Tools/scriptCast/scriptcast/render_state.py:81-84`), so the UI can prove the indices still agree by hashing the script and comparing.
+- `scriptcast-repair` requires `episode_dir`, `--transcript`, `--episode-id` and `--voices` (`file:Dev/Tools/scriptCast/scriptcast/tools/repair_render.py:89-107`). `scriptcast-verify` requires `episode_dir` and `--transcript` (`file:Dev/Tools/scriptCast/scriptcast/tools/verify_render.py:173-186`).
+- `scriptcast-mix` requires `--script`, `--config`, `--asr` and `--out` (`file:Dev/Tools/scriptCast/scriptcast/tools/mix.py:94-102`). The UI cannot derive `--config` or `--asr` from the episode, so mix is out of v1 (the spec's "mix" button is dropped; recorded in Plan Audit).
+- The Python entry points exit on non-arm64 (`file:Dev/Tools/scriptCast/scriptcast/platform_check.py:12`). The UI targets macOS arm64 only and does not need its own check.
+- The installed `scriptcast` resolves to the Documents checkout (`file:Documents/Theory/scriptCast/`); `which scriptcast` found nothing on the default PATH, so the UI must let the operator set the bin directory (for example a venv's `bin/`).
+- `file:Dev/Tools/scriptCast/.gitignore` has no Rust entries; `ui/target/` must be added.
+- rodio 0.22 API (checked in the registry source): `rodio::DeviceSinkBuilder::open_default_sink()` returns a stream whose `.mixer()` feeds `rodio::Player::connect_new(&mixer)`; `rodio::play(mixer, BufReader<File>)` decodes WAV by default features.
+- The Figma design is snapshotted at `file:Dev/Tools/scriptCast/ui/design/` (captured 2026-10-02): screens 01–06 as `screenshot.png` + `design-context.tsx`, the Workspace state component sheet, flow notes, `tokens.json` (every colour, type role, radius and size measured across the captures) and 21 Lucide SVG icons. Agent screens 07–08 were excluded by the operator. The design uses sample data (speaker names, "Kokoro v1.0", "385 passed", an "illustrative" command) that the app must replace with real data; `DESIGN.md` lists each case.
+- The design assumes full verification coverage, but the real EP03 `stress.json` has 18 entries for 392 turns, so most turns must render as "Not verified", never "Passed".
+- rodio 0.22 also provides `Player::pause`, `is_paused`, `get_pos`, `empty` and `try_seek` (`player.rs:212-340` in the registry source) and `rodio::speakers::available_outputs()` with `SpeakersBuilder::device(..)` for choosing an output device — enough for the design's Pause, seek progress and device menu.
+- `egui_extras` 0.36.2 matches eframe and has an `svg` feature (resvg) for the icons.
+- Fonts (operator decision 2026-10-02): the app uses OpenDyslexic instead of the design's Inter and IBM Plex Mono. Copied into `file:Dev/Tools/scriptCast/ui/assets/fonts/` from the operator's own files: `OpenDyslexic-Regular.otf` and `OpenDyslexic-Bold.otf` v0.990 (from `file:Dev/Tools/DyslexicKeyboard/Fonts/`, SIL OFL, `OFL-OpenDyslexic.txt`) and `OpenDyslexicMono-Regular.otf` v1.001 (from `~/Library/Fonts`, Bitstream Vera + CC BY 3.0, `LICENSE-OpenDyslexicMono.txt`). All three are CFF-outline OTFs. Measured metrics: ascent 1.30 em + descent 0.52 em (line box about 1.8 em, so 12 px text needs about 22 px; rows are 28), average advance 0.815 em versus roughly 0.55 em for Inter, so text runs about 45% wider than the design. There is no Medium weight: 400 and 500 map to Regular, 600 to Bold.
+- Checkpoint facts: EP03 is 453 MB, of which `Samples/Processed/` is 357 MB, so checkpoints must be clones, not byte copies. On macOS, Rust's `std::fs::copy` tries `fclonefileat` first, which is copy-on-write and near-instant on APFS. Regenerate deletes a turn's chunk WAVs before re-rendering (`_delete_turn_chunks_by_id`, `file:Dev/Tools/scriptCast/scriptcast/__main__.py:455-461`), so a clone taken beforehand survives. `<episode>/_backups/` already exists and holds the renderer's own `.als` backups (`file:Dev/Tools/scriptCast/scriptcast/als_generator.py:432-468`, no pruning); the UI uses a separate `_backups/ui/` subfolder. `relayout_episode.py:101` deletes every `*.asd` under the episode, so checkpoints never include `.asd` files.
+- Tests live in `file:Dev/Tools/scriptCast/tests/` (pytest). The Rust crate gets its own `ui/tests/`; Python tests are not touched.
+
+### Approach
+
+Three phases, each usable on its own. Phase A delivers a read-only browser that already replaces reading JSON and CSV by hand. Phase B adds playback, which turns the browser into a review tool. Phase C adds the job runner and the verify overlay, closing the review, re-render, re-verify loop without leaving the window. The UI is read-only over engine output in Phases A and B. In Phase C the only files the UI itself writes are checkpoints under `<episode>/_backups/ui/`, and episode files only through a confirmed Restore; everything else is written by the Python CLIs the operator launches. Commands come from fixed presets, so the UI can never issue `--overwrite` or a prompting render.
+
+### Implementation Steps
+
+Every UI step builds to the design snapshot in `file:Dev/Tools/scriptCast/ui/design/` (read `DESIGN.md` first). Colours, type, radii and fixed sizes come only from `ui/design/tokens.json` through `theme.rs`; screens are matched against `ui/design/screens/*/screenshot.png`. Never call the Figma MCP from a loop.
+
+**Phase A — Episode browser (read-only)**
+
+1. Modify `file:Dev/Tools/scriptCast/.gitignore` — add `ui/target/`.
+2. Modify `file:Dev/Tools/scriptCast/ui/Cargo.toml` — enable eframe's `persistence` feature; add `egui_extras` (same version as eframe, features `svg`) for SVG icons and tables; add `toml` and `sha2` (latest); add `[[bin]] name = "scriptcast-ui"` if the package name does not already produce it; set `[profile.release] lto = "thin"`, `codegen-units = 1`, `strip = true`.
+3. Create `file:Dev/Tools/scriptCast/ui/src/theme.rs` — one `Theme` with every value from `ui/design/tokens.json` as Rust constants (`Color32`, sizes in points); `apply(ctx)` sets dark `Visuals` (panel/window fills, strokes, widget fills for inactive/hovered/active, selection colour, corner radii) and `Style` text styles for the type roles; registers OpenDyslexic Regular and Bold and OpenDyslexicMono embedded with `include_bytes!` from `ui/assets/fonts/` (weights 400/500 → Regular, 600 → Bold; Monospace family → OpenDyslexicMono); a single `FONT_SCALE` constant (start at 1.0) applied to every text size so the wider, taller face fits the design's fixed heights — tune it down only if text clips, and record the value; `speaker_colour(i)` cycles the four-colour speaker palette; `icon(name)` returns an `egui::ImageSource` via `include_image!` for each file in `ui/design/assets/icons/`; `egui_extras::install_image_loaders(ctx)` at startup. Shared widgets: `primary_button`, `secondary_button` (30 high, radius 5, padding x 11, optional 16 px icon, 45% when disabled), `field_label` (10/600 uppercase muted).
+4. Create `file:Dev/Tools/scriptCast/ui/src/episode.rs` — serde structs mirroring `models.py:73-118` (`Manifest`, `SpeakerEntry`, `TurnEntry`, `SegmentEntry`) with `#[serde(default)]` on optional fields and unknown fields ignored; `RenderState` subset (`schema_version`, `source_file`, `source_hash`, `rendered_at`); `TurnIndexRow` from a hand-written CSV line parser handling quoted fields; `VerifyResult` from `stress.json`. `Episode { dir, project_root: Option<PathBuf>, script_path: Option<PathBuf>, script_in_sync: Option<bool> (SHA-256 of the script file equals `render_state.source_hash`; `None` when either is unavailable), manifest, rendered_at, total_ms, speakers: Vec<Speaker { id, name, engine, colour_idx }>, turns: Vec<Turn { index, id, speaker_idx, start_ms, end_ms, first_words, wav_paths, verify: Option<VerifyResult> }> }`. `Episode::load(dir) -> Result<Episode, LoadError>`; `LoadError` names the file and the cause. `find_project_root(dir)` honours `SCRIPTCAST_PROJECT`, then walks up for `scriptcast.toml`. Speaker `colour_idx` by first appearance in the manifest. Verification state per turn: `Passed`, `Failed`, `NotVerified` (no `stress.json` entry), `MissingAudio` (any WAV path absent). `overview_sections(n)` returns, for n equal time slices, the speaker index with the most speech in each.
+5. Create `file:Dev/Tools/scriptCast/ui/tests/fixtures/episode_small/` — a 3-turn, 2-speaker `episode_manifest.json`, matching `render_state.json`, `TURN_INDEX.csv` (one quoted `first_words` with a comma), `stress.json` with one failed entry and one passed entry (the third turn has none, so it is NotVerified), a `scriptcast.toml` and a 3-turn `script.md` one level up (`tests/fixtures/`, with `render_state.source_hash` set to the SHA-256 of `script.md`), and three 0.2 s 48 kHz mono WAVs generated once and checked in.
+6. Create `file:Dev/Tools/scriptCast/ui/tests/episode_load.rs` — loads the fixture: 3 turns, 2 speakers, first_words parsed including the quoted comma, WAV paths absolute and existing, project root found, script path resolved, `script_in_sync == Some(true)`, verification states Passed/Failed/NotVerified; missing manifest returns `LoadError` naming the path; invalid JSON returns `LoadError` with the serde message; missing optional files load with empty fields; a deleted WAV yields MissingAudio; `overview_sections` returns the dominant speaker per slice.
+7. Create `file:Dev/Tools/scriptCast/ui/src/lib.rs` — `pub mod episode; pub mod theme;` (and later `audio`, `runner`).
+8. Replace `file:Dev/Tools/scriptCast/ui/src/main.rs` — `eframe::run_native` (native decorations; window title `scriptCast — <episode_id>`; default size 1440×900; min 1024×640) with app state `{ episode: Option<Result<Episode, LoadError>>, recent: Vec<RecentEpisode>, selected: Option<usize>, search: String, speaker_filter: Option<usize>, failed_only: bool, timeline_view: (start_ms, end_ms) }`, persisted with eframe storage (last episode dir, up to 5 recent episodes with id, last opened, turn count, duration, path). Layout per DESIGN.md "Window layout": episode header (76), review workspace, playback bar (64, disabled in Phase A), status bar (26). Build to screens 01 and 02:
+    - Empty workspace (screen 01) with Open Episode, ⌘O, expected directory contents, Recent episodes list (click to open), local-files footer.
+    - Episode header with brand, episode name, metadata line from real data (`<engine> / <kHz> / <n> turns / <n> speakers / Rendered <rendered_at>`), Open (rfd folder picker) and Reload.
+    - Timeline: heading with total time and turn count, Zoom − / + and Fit episode, overview strip with visible-range box (drag to pan), ruler, one lane per speaker with segment blocks positioned by time inside the visible range; click a block selects its turn; Ctrl+scroll zooms; segments outside the filter dimmed, never hidden.
+    - Filter bar: search (⌘F focuses), All speakers dropdown, Failed only toggle with real count (disabled at 0), "Turn view" label.
+    - Turn table with only visible rows laid out (`ScrollArea::show_rows` or `egui_extras::TableBuilder`), columns and row states per DESIGN.md, Verification column showing Passed / Failed / Not verified / Missing audio, footer summary.
+    - Workspace states from the component sheet: Empty, Loading (if loading takes over 150 ms, on a background thread, with Cancel), Error ("Couldn't open this episode"; a failed open keeps the current episode open, per the design note).
+    - No continuous repaint.
+
+**Phase B — Playback**
+
+9. Create `file:Dev/Tools/scriptCast/ui/src/audio.rs` — `AudioOut { _sink: MixerDeviceSink, player: Option<Player>, playing: Option<usize>, device_name: String }`. `AudioOut::open(device: Option<&str>) -> Result<Self, String>` opens the named output (via `rodio::speakers::available_outputs()` and `SpeakersBuilder::new().device(..)?.default_config()?.open_mixer()`) or the default sink. `outputs() -> Vec<String>`. `play(turn_idx, &[PathBuf]) -> Result<(), String>` stops any current player, creates a new `Player` on the mixer, appends each segment decoded from `BufReader<File>`. `pause()`, `resume()`, `stop()`, `is_paused()`, `is_finished()` (`Player::empty`), `position() -> Duration` (`Player::get_pos`), `playing() -> Option<usize>`.
+10. Modify `file:Dev/Tools/scriptCast/ui/src/main.rs` — build to screen 03: hold `Result<AudioOut, String>`; Space plays the selected turn or toggles pause; Esc stops; Up/Down move within visible rows and scroll into view; selecting while playing switches immediately; Play/Pause and Stop buttons; current-audio block with `mm:ss.mmm / mm:ss.mmm`; seek track with elapsed fill; auto-advance checkbox (persisted) moves to the next visible turn at the end; output device menu (persisted choice; falls back to default with a notice if the saved device is gone); playhead on the timeline; playing row with ▶; Selected turn inspector (376) with TRANSCRIPT (first words from `TURN_INDEX.csv`; full text deferred), AUDIO, FILE, Previous / Next / Review failure, shortcut list; while playing `ctx.request_repaint_after(50 ms)`, otherwise idle. Workspace states: Missing audio (row error + "Regenerate selected" recovery, which stays disabled until Phase C) and Unavailable device (pause, keep position and selection, "Choose output"). Shortcuts are ignored while a text field has focus.
+
+**Phase C — Job runner and verify overlay**
+
+11. Create `file:Dev/Tools/scriptCast/ui/src/runner.rs` — `Preset { DetectChanges, PrecisionInsert, RegenerateTurns(Vec<usize>), Verify, Repair(Option<Vec<usize>>) }`. `JobSpec { program: PathBuf, args: Vec<OsString>, cwd: PathBuf, synthesizes: bool, overwrites: Vec<PathBuf> }` built by `JobSpec::from_preset(preset, &Episode, bin_dir: Option<&Path>) -> Result<JobSpec, String>`:
+    - DetectChanges: `scriptcast --transcript <script> --episode-id <id> --out-dir <episode_dir.parent> --detect-changes`
+    - PrecisionInsert: same with `--precision-insert` (synthesizes)
+    - RegenerateTurns: same with `--regenerate-turns 5,10-15` built from manifest turn indices, compacted into ranges (synthesizes)
+    - Verify: `scriptcast-verify <episode_dir> --transcript <script> --json-out <episode_dir>/stress.json` (overwrites stress.json when it exists)
+    - Repair: `scriptcast-repair <episode_dir> --transcript <script> --episode-id <id> --voices <voices from scriptcast.toml>` plus `--turns` when given (synthesizes)
+    Never emits `--overwrite`. Errors when the script path or project root is missing. `RegenerateTurns` and `Repair` with turns return an error unless `episode.script_in_sync == Some(true)`, because only then do manifest indices equal the script indices the CLIs consume; the error text tells the operator to run Detect changes or Precision insert first. `JobSpec::display()` returns the exact shell-quoted command line. `Job::start(spec) -> Job` spawns with `stdin(Stdio::null())`, piped stdout/stderr, one reader thread per stream sending `JobEvent::{Line(Stream, String), Exited(Option<i32>)}` over `std::sync::mpsc` and calling `ctx.request_repaint()`. `Job::cancel()` kills the child; `Drop` kills it too. `JobState { Idle, Running, Complete, Failed(code), Canceled }`.
+12. Create `file:Dev/Tools/scriptCast/ui/src/checkpoint.rs` — `Checkpoint { version: u32, created_at, preset: String, argv: Vec<String>, turns: Vec<usize>, files: Vec<PathBuf> (relative to the episode dir), bytes: u64, dir: PathBuf }`. `plan_files(&Preset, &Episode) -> Vec<PathBuf>`: always `episode_manifest.json`, `render_state.json`, `TURN_INDEX.csv` and top-level `*.als` when present; RegenerateTurns and Repair with turns add those turns' segment WAVs from the manifest; PrecisionInsert and Repair without turns add every file under `Samples/` except `*.asd`; Verify adds only `stress.json`. `create(episode, preset, argv, turns) -> Result<Checkpoint, String>` makes `<episode>/_backups/ui/vNN-<YYYYmmdd_HHMMSS>-<preset>/` (NN = highest existing + 1, two digits), clones each existing file with `std::fs::copy` into the same relative path, writes `checkpoint.json` last (a folder without it is incomplete and ignored), and fails without starting the job on any error. `list(episode) -> Vec<Checkpoint>` newest first. `restore(episode, &Checkpoint) -> Result<Checkpoint, String>` first calls `create` with preset `pre-restore` for the same files, then copies each file back into place via a temp name in the same directory and a rename, and returns the pre-restore checkpoint. Never deletes anything.
+13. Modify `file:Dev/Tools/scriptCast/ui/src/episode.rs` — expose `voices_path` from `scriptcast.toml` (`voices` key, default `voices.yaml`, relative to project root) via the `toml` crate; join `stress.json` to turns by `turn_id`; `stress_mtime` for "Last verified HH:MM".
+14. Modify `file:Dev/Tools/scriptCast/ui/src/main.rs` — build to screens 04, 05 and 06:
+    - Verification inspector (436): verdict, "Score <score> / 0.90" (threshold is verify's default; show the real score), EXPECTED and HEARD text, the real `stress[]` entries and `repetition` flag (never the design's sample categories), Regenerate selected, Repair, Verify again. Failed-only mode: active toggle style, failed markers on the overview strip, failure footer.
+    - Job runner inspector (510): opened by a "Jobs" button at the right of the filter bar and ⌘J (operator decision 2: plan default), and by the Verification inspector's actions; five preset buttons; bin-dir setting (persisted; empty means `PATH`); one job at a time; active job title, state, indeterminate progress bar while running; log well (retain the last 5,000 lines, mono 11, stick to bottom); elapsed time; Cancel; reload on exit; exit status in the status bar. Regenerate selected and Repair use the selected turn plus any multi-selected turns (Shift/Cmd-click).
+    - Confirmation dialog (540, scrim) for any spec with `synthesizes` or non-empty `overwrites`: title per preset, scope (episode, affected turns with speaker and time range), warning naming exactly what is replaced, command disclosure with `JobSpec::display()` (no "illustrative" caption), Cancel / "Confirm · <preset>". The "Replace verification" variant covers Verify. The warning says what is replaced and adds "A checkpoint is saved first."; after Confirm the checkpoint is created before the job starts, and the active job subtitle reads "<scope> · checkpoint vNN saved".
+    - Checkpoints section in the Job runner inspector: list from `checkpoint::list` (version, time, preset, turns, files, size), Restore per row with its own confirmation listing the files to be replaced, disabled while a job runs; total size of `_backups/ui/` shown at the foot.
+    - Workspace state CLI unavailable: when the configured executable is missing, disable presets, keep the last log, show "Configure CLI".
+15. Create `file:Dev/Tools/scriptCast/ui/tests/runner_presets.rs` — argv for every preset against the fixture episode; `--overwrite` never appears; turn ranges compact (`[3,4,5,9]` → `3-5,9`); missing project root gives an error for Repair; RegenerateTurns errors when the fixture script's bytes no longer match `source_hash` (edit a temp copy) and succeeds when they match; Verify lists `stress.json` in `overwrites` only when the file exists; `display()` round-trips paths with spaces; `Job` with `/bin/echo` streams a line and exits 0; `Job::cancel` on `/bin/sleep 10` exits within 1 s.
+16. Create `file:Dev/Tools/scriptCast/ui/tests/checkpoints.rs` — on a temp copy of the fixture episode: `create` for RegenerateTurns writes `checkpoint.json` plus clones of manifest, render state, `TURN_INDEX.csv`, the `.als` and exactly that turn's WAVs; for Verify only `stress.json`; versions increase v01, v02; `.asd` files are skipped; modify a WAV then `restore` brings back the original bytes and leaves a `pre-restore` checkpoint holding the modified bytes; `create` into a read-only `_backups` returns an error and touches nothing else; `list` ignores folders without a valid `checkpoint.json`.
+17. Update `file:Dev/Tools/scriptCast/ui/SPEC.md` — replace "render, verify, repair, mix" with the five presets; record mix as deferred and why; record the bin-dir decision; record checkpoints and Restore as the one exception to read-only, and OpenDyslexic as the UI font; point to `ui/design/DESIGN.md` as the visual spec.
+
+### Data Flow Summary
+
+```mermaid
+flowchart LR
+    episodeDir["Episode dir (manifest, render_state, TURN_INDEX.csv, stress.json, WAVs)"] --> episodeLoader["episode.rs"]
+    projectToml["scriptcast.toml"] --> episodeLoader
+    designTokens["ui/design/tokens.json + icons"] --> themeModule["theme.rs"]
+    themeModule --> appState
+    episodeLoader --> appState["App state (Episode)"]
+    appState --> timelineView["Timeline (overview + lanes)"]
+    appState --> turnTable["Turn table"]
+    appState --> audioPlayer["audio.rs (rodio)"]
+    appState --> jobRunner["runner.rs presets"]
+    appState --> checkpointStore["checkpoint.rs"]
+    checkpointStore --> backupsDir["episode/_backups/ui/vNN"]
+    backupsDir --> checkpointStore
+    jobRunner --> pythonClis["scriptcast / scriptcast-verify / scriptcast-repair"]
+    pythonClis --> episodeDir
+    pythonClis --> logPane["Log pane"]
+```
+
+### Files Modified
+
+| File | Change |
+|---|---|
+| `.gitignore` | Mod (A) — `ui/target/` |
+| `ui/Cargo.toml` | Mod (A) — eframe persistence, egui_extras svg, toml, sha2, release profile |
+| `ui/src/theme.rs` | New (A) — design tokens, fonts, icons, shared buttons |
+| `ui/assets/fonts/*` | Exists — OpenDyslexic Regular/Bold, OpenDyslexicMono, licences |
+| `ui/src/lib.rs` | New (A) — module exports for tests |
+| `ui/src/episode.rs` | New (A) — loader, model, project root, colours; Mod (C) — voices path, stress join |
+| `ui/src/main.rs` | Replace (A) — screens 01–02, workspace states; Mod (B) — screen 03, playback; Mod (C) — screens 04–06, checkpoints list, restore |
+| `ui/tests/fixtures/episode_small/*` | New (A) — small episode + WAVs |
+| `ui/tests/fixtures/scriptcast.toml`, `script.md` | New (A) — fixture project root and script |
+| `ui/tests/episode_load.rs` | New (A) — loader tests |
+| `ui/src/audio.rs` | New (B) — rodio playback |
+| `ui/src/runner.rs` | New (C) — presets, spawn, streaming, cancel |
+| `ui/src/checkpoint.rs` | New (C) — checkpoints in `_backups/ui/`, list, restore |
+| `ui/tests/checkpoints.rs` | New (C) — create/list/restore tests |
+| `ui/tests/runner_presets.rs` | New (C) — argv and process tests |
+| `ui/SPEC.md` | Mod (C) — presets, mix deferred, checkpoints, font |
+
+No file under `scriptcast/` or `tests/` (Python) changes in any phase.
+
+---
+
+## Section 5: Plan Audit
+
+Implementation has not started. This table is scaffolded now and must be completed after implementation; every Implementation Step appears as a row.
+
+| Plan Step | Actual Outcome | Deviation (Yes/No) | Notes |
+|---|---|---|---|
+| 1. `.gitignore` `ui/target/` | | | |
+| 2. `Cargo.toml` features, egui_extras, toml, sha2, release profile | | | |
+| 3. `theme.rs` tokens, fonts, icons, buttons | | | |
+| 4. `episode.rs` loader + model | | | |
+| 5. Fixture episode | | | |
+| 6. `tests/episode_load.rs` | | | |
+| 7. `lib.rs` | | | |
+| 8. `main.rs` browser window (screens 01, 02 + Empty/Loading/Error) | | | |
+| 9. `audio.rs` | | | |
+| 10. `main.rs` playback (screen 03 + Missing audio/Unavailable device) | | | |
+| 11. `runner.rs` presets + job | | | |
+| 12. `checkpoint.rs` create / list / restore | | | |
+| 13. `episode.rs` voices path + stress join | | | |
+| 14. `main.rs` verification, job runner, checkpoints, confirmation (screens 04-06 + CLI unavailable) | | | |
+| 15. `tests/runner_presets.rs` | | | |
+| 16. `tests/checkpoints.rs` | | | |
+| 17. `SPEC.md` update | | | Planned deviations from SPEC.md: mix removed from v1 (needs `--config` and `--asr`); checkpoints are an exception to read-only. |
