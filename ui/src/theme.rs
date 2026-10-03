@@ -245,32 +245,48 @@ pub fn apply(ctx: &egui::Context) {
     // OpenDyslexic 3 is the face; OpenDyslexic 0.99 stays registered behind it
     // (and behind the mono face) only for symbols OpenDyslexic 3 lacks:
     // arrows, check mark, bullet, ▶.
+    //
+    // egui centres a row on the font's ascent/descent box. These faces reserve
+    // far more space above the letters than below (OpenDyslexic 3: ascent 1556,
+    // descent 426), so text sits visibly low next to icons. Each offset moves
+    // the glyphs so the midpoint of cap height and x-height lands on the box
+    // centre, measured from the 'H' and 'x' outlines of each file.
     let mut fonts = egui::FontDefinitions::empty();
-    for (name, bytes) in [
+    for (name, bytes, y_offset_factor) in [
         (
             "OpenDyslexic3",
             include_bytes!("../assets/fonts/OpenDyslexic3-Regular.ttf").as_slice(),
+            -0.213,
         ),
         (
             "OpenDyslexic3 Bold",
             include_bytes!("../assets/fonts/OpenDyslexic3-Bold.ttf").as_slice(),
+            -0.213,
         ),
         (
             "OpenDyslexic",
             include_bytes!("../assets/fonts/OpenDyslexic-Regular.otf").as_slice(),
+            -0.038,
         ),
         (
             "OpenDyslexic Bold",
             include_bytes!("../assets/fonts/OpenDyslexic-Bold.otf").as_slice(),
+            -0.038,
         ),
         (
             "OpenDyslexicMono",
             include_bytes!("../assets/fonts/OpenDyslexicMono-Regular.otf").as_slice(),
+            -0.056,
         ),
     ] {
-        fonts
-            .font_data
-            .insert(name.into(), egui::FontData::from_static(bytes).into());
+        let tweak = egui::FontTweak {
+            y_offset_factor,
+            ..Default::default()
+        };
+        fonts.font_data.insert(
+            name.into(),
+            egui::FontData::from_static(bytes).tweak(tweak).into(),
+        );
     }
     fonts
         .families
