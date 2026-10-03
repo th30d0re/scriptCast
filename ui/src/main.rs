@@ -857,11 +857,17 @@ impl Browser {
                 .layout(Layout::right_to_left(Align::Center)),
         );
         actions.spacing_mut().item_spacing.x = t::SPACE_8;
-        // This row is laid out right-to-left: CLI, Logic, Live, Reload, Open.
-        let settings = t::secondary_button(&mut actions, "CLI…", None, true);
+        // This row is laid out right-to-left: Settings, Logic, Live, Reload, Open.
+        let settings = t::icon_button(&mut actions, "settings-16-text", true)
+            .on_hover_text("Settings");
         egui::Popup::menu(&settings).show(|ui| {
             ui.set_max_width(t::CLI_POPOVER_WIDTH);
-            ui.label(t::heading("CLI folder", t::SECTION_TITLE));
+            ui.label(t::heading("Settings", t::SECTION_TITLE));
+            ui.label(t::text(
+                "Folder with the scriptcast-export command",
+                t::SECONDARY,
+                t::TEXT_PRIMARY,
+            ));
             ui.label(t::text(
                 self.preferences
                     .cli_dir

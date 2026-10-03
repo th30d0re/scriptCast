@@ -145,5 +145,13 @@
   "lucide": "Window controls",
   "size_px": 49,
   "colour_token": "text-subtle"
+ },
+ {
+  "file": "settings-16-text.svg",
+  "figma_asset": null,
+  "lucide": "settings",
+  "size_px": 16,
+  "colour_token": "text",
+  "note": "Not in the Figma file. Added 2026-10-03 for the header settings button; Lucide 24 px path, stroke scaled to match rotate-cw-16-text."
  }
 ]

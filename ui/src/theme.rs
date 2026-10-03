@@ -161,6 +161,7 @@ pub fn icon(name: &str) -> egui::ImageSource<'static> {
         }
         "play-16-on-accent" => egui::include_image!("../design/assets/icons/play-16-on-accent.svg"),
         "rotate-cw-16-text" => egui::include_image!("../design/assets/icons/rotate-cw-16-text.svg"),
+        "settings-16-text" => egui::include_image!("../design/assets/icons/settings-16-text.svg"),
         "search-14-text-muted" => {
             egui::include_image!("../design/assets/icons/search-14-text-muted.svg")
         }
@@ -363,6 +364,25 @@ pub fn secondary_button(
     enabled: bool,
 ) -> egui::Response {
     button(ui, label, icon_name, enabled, false)
+}
+/// A square secondary button showing only an icon; callers add a tooltip.
+pub fn icon_button(ui: &mut egui::Ui, icon_name: &str, enabled: bool) -> egui::Response {
+    ui.scope(|ui| {
+        // Padding that centres the icon in a BUTTON_HEIGHT square.
+        ui.spacing_mut().button_padding = egui::Vec2::splat((BUTTON_HEIGHT - BUTTON_ICON) / 2.0);
+        ui.add_enabled(
+            enabled,
+            egui::Button::image(
+                egui::Image::new(icon(icon_name))
+                    .fit_to_exact_size(egui::Vec2::splat(BUTTON_ICON)),
+            )
+            .fill(BG_CONTROL)
+            .stroke(egui::Stroke::new(BORDER, BORDER_DEFAULT))
+            .corner_radius(RADIUS_CONTROL as u8)
+            .min_size(egui::Vec2::splat(BUTTON_HEIGHT)),
+        )
+    })
+    .inner
 }
 fn button(
     ui: &mut egui::Ui,
