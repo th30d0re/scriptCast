@@ -78,12 +78,13 @@ pub fn show(
     let mut top = view::region(ui, "timeline_heading", heading, t::BG_WINDOW);
     top.horizontal_centered(|ui| {
         ui.label(t::heading("Timeline", t::SECTION_TITLE));
+        ui.label(
+            egui::RichText::new(view::time(episode.total_ms))
+                .font(t::mono(t::NUMERIC))
+                .color(t::TEXT_MUTED),
+        );
         ui.label(t::text(
-            format!(
-                "{} · {} turns",
-                view::time(episode.total_ms),
-                episode.turns.len()
-            ),
+            format!("· {} turns", episode.turns.len()),
             t::SECONDARY,
             t::TEXT_MUTED,
         ));

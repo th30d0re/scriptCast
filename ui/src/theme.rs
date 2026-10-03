@@ -242,8 +242,19 @@ pub fn fit_text_width(measured: f32, min: f32) -> f32 {
 
 pub fn apply(ctx: &egui::Context) {
     // No default-font fallback: failure to load an embedded font is a test failure.
+    // OpenDyslexic 3 is the face; OpenDyslexic 0.99 stays registered behind it
+    // (and behind the mono face) only for symbols OpenDyslexic 3 lacks:
+    // arrows, check mark, bullet, ▶.
     let mut fonts = egui::FontDefinitions::empty();
     for (name, bytes) in [
+        (
+            "OpenDyslexic3",
+            include_bytes!("../assets/fonts/OpenDyslexic3-Regular.ttf").as_slice(),
+        ),
+        (
+            "OpenDyslexic3 Bold",
+            include_bytes!("../assets/fonts/OpenDyslexic3-Bold.ttf").as_slice(),
+        ),
         (
             "OpenDyslexic",
             include_bytes!("../assets/fonts/OpenDyslexic-Regular.otf").as_slice(),
@@ -263,13 +274,17 @@ pub fn apply(ctx: &egui::Context) {
     }
     fonts
         .families
-        .insert(FontFamily::Proportional, vec!["OpenDyslexic".into()]);
-    fonts
-        .families
-        .insert(FontFamily::Monospace, vec!["OpenDyslexicMono".into()]);
+        .insert(
+            FontFamily::Proportional,
+            vec!["OpenDyslexic3".into(), "OpenDyslexic".into()],
+        );
+    fonts.families.insert(
+        FontFamily::Monospace,
+        vec!["OpenDyslexicMono".into(), "OpenDyslexic".into()],
+    );
     fonts.families.insert(
         FontFamily::Name("OpenDyslexic Bold".into()),
-        vec!["OpenDyslexic Bold".into()],
+        vec!["OpenDyslexic3 Bold".into(), "OpenDyslexic Bold".into()],
     );
     ctx.set_fonts(fonts);
     let mut style = egui::Style {

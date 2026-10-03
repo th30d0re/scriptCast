@@ -308,9 +308,13 @@ mod tests {
         let episode = fixture();
         let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
             let widths = ColumnWidths::measure(ui, &episode);
-            // "Duration" in bold OpenDyslexic 11 is wider than the 60 px token.
-            assert!(widths.duration > t::TABLE_COL_DURATION);
-            assert!(widths.verification > t::TABLE_COL_VERIFICATION);
+            // Font-agnostic: every header must fit its column, whatever the face.
+            let header = |title: &str| t::text_width(ui, title, t::bold(t::SECONDARY));
+            assert!(widths.turn >= header("Turn"));
+            assert!(widths.time >= header("Time"));
+            assert!(widths.speaker >= header("Speaker"));
+            assert!(widths.duration >= header("Duration"));
+            assert!(widths.verification >= header("Verification"));
             assert!(widths.duration <= t::TEXT_WIDTH_CAP);
             assert!(widths.speaker <= t::TEXT_WIDTH_CAP);
         });
