@@ -5,22 +5,70 @@ use scriptcast_ui::{
     theme as t,
 };
 
-fn columns(rect: Rect) -> [Rect; 6] {
+/// Fixed column widths sized from measured text, with the design tokens as
+/// minimums (OpenDyslexic is much wider than the design's Inter).
+#[derive(Clone, Copy, Debug)]
+pub struct ColumnWidths {
+    turn: f32,
+    time: f32,
+    speaker: f32,
+    duration: f32,
+    verification: f32,
+}
+impl ColumnWidths {
+    pub fn measure(ui: &Ui, episode: &Episode) -> Self {
+        let header = |title: &str| t::text_width(ui, title, t::bold(t::SECONDARY));
+        let mono = |value: String| t::text_width(ui, value, t::mono(t::NUMERIC));
+        let max_index = episode.turns.iter().map(|turn| turn.index).max().unwrap_or(0);
+        let max_duration = episode
+            .turns
+            .iter()
+            .map(|turn| turn.end_ms - turn.start_ms)
+            .max()
+            .unwrap_or(0);
+        let verification = [
+            "✓  Passed",
+            "×  Failed",
+            "Not verified",
+            "Missing audio",
+        ]
+        .into_iter()
+        .map(|label| t::text_width(ui, label, t::font(t::SECONDARY)))
+        .fold(header("Verification"), f32::max);
+        Self {
+            turn: t::fit_text_width(header("Turn").max(mono(format!("{max_index:03}"))), t::TABLE_COL_TURN),
+            time: t::fit_text_width(
+                header("Time").max(mono(view::time(episode.total_ms))),
+                t::TABLE_COL_TIME,
+            ),
+            speaker: t::fit_text_width(
+                view::speaker_label_width(ui, &episode.speakers),
+                t::TABLE_COL_SPEAKER,
+            ),
+            duration: t::fit_text_width(
+                header("Duration").max(mono(format!("{:.2} s", max_duration as f64 / 1000.0))),
+                t::TABLE_COL_DURATION,
+            ),
+            verification: t::fit_text_width(verification, t::TABLE_COL_VERIFICATION),
+        }
+    }
+}
+fn columns(rect: Rect, widths: &ColumnWidths) -> [Rect; 6] {
     let widths = [
-        t::TABLE_COL_TURN,
-        t::TABLE_COL_TIME,
-        t::TABLE_COL_SPEAKER,
+        widths.turn,
+        widths.time,
+        widths.speaker,
         (rect.width()
             - t::SPACE_16 * 2.0
             - t::TABLE_COL_GAP * 5.0
-            - t::TABLE_COL_TURN
-            - t::TABLE_COL_TIME
-            - t::TABLE_COL_SPEAKER
-            - t::TABLE_COL_DURATION
-            - t::TABLE_COL_VERIFICATION)
+            - widths.turn
+            - widths.time
+            - widths.speaker
+            - widths.duration
+            - widths.verification)
             .max(0.0),
-        t::TABLE_COL_DURATION,
-        t::TABLE_COL_VERIFICATION,
+        widths.duration,
+        widths.verification,
     ];
     let mut x = rect.left() + t::SPACE_16;
     widths.map(|width| {
@@ -38,9 +86,10 @@ pub fn show(
     failed_only: bool,
 ) -> Option<usize> {
     let area = ui.max_rect();
+    let widths = ColumnWidths::measure(ui, episode);
     let head = Rect::from_min_size(area.min, vec2(area.width(), t::TABLE_HEADER_HEIGHT));
     ui.painter().rect_filled(head, 0, t::BG_WINDOW);
-    for (rect, title) in columns(head).into_iter().zip([
+    for (rect, title) in columns(head, &widths).into_iter().zip([
         "Turn",
         "Time",
         "Speaker",
@@ -93,7 +142,7 @@ pub fn show(
                     },
                 );
                 view::rule(ui, rect);
-                let cells = columns(rect);
+                let cells = columns(rect, &widths);
                 view::line(
                     ui,
                     cells[0],
@@ -225,4 +274,46 @@ pub fn show(
         t::TEXT_SUBTLE,
     );
     clicked
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+    fn fixture() -> Episode {
+        Episode::load(
+            &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/episode_small"),
+        )
+        .unwrap()
+    }
+    #[test]
+    fn columns_keep_at_least_the_design_token_width() {
+        let ctx = egui::Context::default();
+        t::apply(&ctx);
+        let episode = fixture();
+        let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
+            let widths = ColumnWidths::measure(ui, &episode);
+            assert!(widths.turn >= t::TABLE_COL_TURN);
+            assert!(widths.time >= t::TABLE_COL_TIME);
+            assert!(widths.speaker >= t::TABLE_COL_SPEAKER);
+            assert!(widths.duration >= t::TABLE_COL_DURATION);
+            assert!(widths.verification >= t::TABLE_COL_VERIFICATION);
+        });
+        output.textures_delta.clear();
+    }
+    #[test]
+    fn wide_content_grows_columns_beyond_the_tokens() {
+        let ctx = egui::Context::default();
+        t::apply(&ctx);
+        let episode = fixture();
+        let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
+            let widths = ColumnWidths::measure(ui, &episode);
+            // "Duration" in bold OpenDyslexic 11 is wider than the 60 px token.
+            assert!(widths.duration > t::TABLE_COL_DURATION);
+            assert!(widths.verification > t::TABLE_COL_VERIFICATION);
+            assert!(widths.duration <= t::TEXT_WIDTH_CAP);
+            assert!(widths.speaker <= t::TEXT_WIDTH_CAP);
+        });
+        output.textures_delta.clear();
+    }
 }

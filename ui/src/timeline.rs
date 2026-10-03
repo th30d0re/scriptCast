@@ -44,6 +44,26 @@ impl TimelineView {
     }
 }
 
+/// Frameless clickable text brightening on hover (design screen 02 zoom controls).
+fn zoom_button(ui: &mut Ui, label: &str) -> egui::Response {
+    let galley = ui
+        .painter()
+        .layout_no_wrap(label.into(), t::font(t::SECONDARY), t::TEXT_MUTED);
+    let (rect, response) = ui.allocate_exact_size(galley.size(), Sense::click());
+    if ui.is_rect_visible(rect) {
+        ui.painter().galley_with_override_text_color(
+            rect.min,
+            galley,
+            if response.hovered() {
+                t::TEXT_PRIMARY
+            } else {
+                t::TEXT_MUTED
+            },
+        );
+    }
+    response.on_hover_cursor(egui::CursorIcon::PointingHand)
+}
+
 pub fn show(
     ui: &mut Ui,
     episode: &Episode,
@@ -56,7 +76,6 @@ pub fn show(
     let content = view::inset(rect, t::SPACE_20, t::SPACE_10);
     let heading = Rect::from_min_size(content.min, vec2(content.width(), t::SPACE_22));
     let mut top = view::region(ui, "timeline_heading", heading, t::BG_WINDOW);
-    top.spacing_mut().interact_size.y = t::SPACE_22;
     top.horizontal_centered(|ui| {
         ui.label(t::heading("Timeline", t::SECTION_TITLE));
         ui.label(t::text(
@@ -69,23 +88,19 @@ pub fn show(
             t::TEXT_MUTED,
         ));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui
-                .button(t::text("Fit episode", t::SECONDARY, t::TEXT_MUTED))
-                .clicked()
-            {
+            ui.spacing_mut().item_spacing.x = 0.0;
+            // Design screen 02: plain muted text, no frame or fill.
+            if zoom_button(ui, "Fit episode").clicked() {
                 view.fit(episode.total_ms);
             }
-            if ui
-                .button(t::text("+", t::SECONDARY, t::TEXT_MUTED))
-                .clicked()
-            {
+            ui.add_space(t::SPACE_14);
+            if zoom_button(ui, "+").clicked() {
                 view.zoom(1.5, episode.total_ms);
             }
+            ui.add_space(t::SPACE_8);
             ui.label(t::text("Zoom", t::SECONDARY, t::TEXT_MUTED));
-            if ui
-                .button(t::text("−", t::SECONDARY, t::TEXT_MUTED))
-                .clicked()
-            {
+            ui.add_space(t::SPACE_8);
+            if zoom_button(ui, "−").clicked() {
                 view.zoom(1.0 / 1.5, episode.total_ms);
             }
         });
@@ -169,13 +184,17 @@ pub fn show(
         Stroke::new(t::BORDER, t::ACCENT),
         StrokeKind::Inside,
     );
+    // The lane label column and everything right of it (ruler, tracks) follow
+    // the widest speaker name, with the design token as the minimum width.
+    let label_width = t::fit_text_width(
+        view::speaker_label_width(ui, &episode.speakers),
+        t::TIMELINE_LANE_LABEL_WIDTH,
+    );
+    let gutter = label_width + t::TIMELINE_LANES_TO_LABEL_GAP;
     let ruler = Rect::from_min_size(
-        pos2(
-            content.left() + t::TIMELINE_RULER_LEFT_PAD,
-            overview.bottom() + t::SPACE_6,
-        ),
+        pos2(content.left() + gutter, overview.bottom() + t::SPACE_6),
         vec2(
-            content.width() - t::TIMELINE_RULER_LEFT_PAD,
+            (content.width() - gutter).max(0.0),
             t::TIMELINE_RULER_HEIGHT,
         ),
     );
@@ -221,10 +240,7 @@ pub fn show(
                     Sense::hover(),
                 );
                 let colour = t::speaker_colour(speaker.colour_idx);
-                let label = Rect::from_min_size(
-                    lane.min,
-                    vec2(t::TIMELINE_LANE_LABEL_WIDTH, lane.height()),
-                );
+                let label = Rect::from_min_size(lane.min, vec2(label_width, lane.height()));
                 ui.painter().rect_filled(
                     Rect::from_min_size(
                         pos2(label.left(), label.center().y - t::SPACE_6),

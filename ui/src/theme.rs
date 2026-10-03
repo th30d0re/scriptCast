@@ -213,6 +213,33 @@ pub fn field_label(ui: &mut egui::Ui, value: &str) -> egui::Response {
     )
 }
 
+/// Upper bound for text-sized boxes (lane labels, table columns) so one long
+/// name cannot eat the layout.
+pub const TEXT_WIDTH_CAP: f32 = 200.0;
+
+/// Width of `value` laid out on a single line in `font`.
+pub fn text_width(ui: &egui::Ui, value: impl Into<String>, font: FontId) -> f32 {
+    ui.painter()
+        .layout_no_wrap(value.into(), font, TEXT_MUTED)
+        .size()
+        .x
+}
+/// Height of `value` wrapped to `wrap_width` in `font`.
+pub fn wrapped_height(ui: &egui::Ui, value: &str, font: FontId, wrap_width: f32) -> f32 {
+    ui.painter()
+        .layout(value.to_string(), font, TEXT_MUTED, wrap_width)
+        .size()
+        .y
+}
+/// Height of a single line of `font`.
+pub fn line_height(ui: &egui::Ui, font: FontId) -> f32 {
+    ui.painter().fonts_mut(|f| f.row_height(&font))
+}
+/// `measured` with the design token as floor and [`TEXT_WIDTH_CAP`] as ceiling.
+pub fn fit_text_width(measured: f32, min: f32) -> f32 {
+    measured.clamp(min, TEXT_WIDTH_CAP)
+}
+
 pub fn apply(ctx: &egui::Context) {
     // No default-font fallback: failure to load an embedded font is a test failure.
     let mut fonts = egui::FontDefinitions::empty();
@@ -335,4 +362,15 @@ fn button(
             .corner_radius(RADIUS_CONTROL as u8)
             .min_size(egui::vec2(0.0, BUTTON_HEIGHT)),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn fit_text_width_clamps_between_token_and_cap() {
+        assert_eq!(fit_text_width(10.0, TABLE_COL_SPEAKER), TABLE_COL_SPEAKER);
+        assert_eq!(fit_text_width(150.0, TABLE_COL_SPEAKER), 150.0);
+        assert_eq!(fit_text_width(500.0, TABLE_COL_SPEAKER), TEXT_WIDTH_CAP);
+    }
 }

@@ -1,5 +1,5 @@
 use eframe::egui::{self, Color32, FontId, Rect, Ui, UiBuilder, pos2, vec2};
-use scriptcast_ui::theme as t;
+use scriptcast_ui::{episode::Speaker, theme as t};
 
 pub fn region(ui: &mut Ui, id: &str, rect: Rect, fill: Color32) -> Ui {
     ui.painter().rect_filled(rect, 0, fill);
@@ -40,4 +40,16 @@ pub fn time(ms: u64) -> String {
 }
 pub fn duration(ms: u64) -> String {
     format!("{:02}:{:02}", ms / 60000, (ms / 1000) % 60)
+}
+/// Widest `▎<display name>` across speakers in the speaker-label font. `▎` is
+/// not in OpenDyslexic, so it measures as the replacement glyph — roughly the
+/// width of the painted colour bar and its gap.
+pub fn speaker_label_width(ui: &Ui, speakers: &[Speaker]) -> f32 {
+    speakers.iter().fold(0.0, |widest, speaker| {
+        widest.max(t::text_width(
+            ui,
+            format!("▎{}", speaker.name),
+            t::font(t::SPEAKER_LABEL),
+        ))
+    })
 }

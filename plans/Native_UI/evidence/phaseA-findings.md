@@ -255,3 +255,91 @@ Acceptance suite after the change: `cargo build --release` clean; `cargo test` 1
 - Requires a GUI session (a window must be created); behaviour with an occluded or minimized window was not tested.
 - The 500 ms quiet window is a heuristic: an image that took longer than that to load *and* had not yet requested a repaint could be missed. All icons are tiny embedded files loading in milliseconds, so this is theoretical here; the 20 s deadline bounds the opposite failure.
 - Visual judgement of the captures is the orchestrator's job; only exit codes, dimensions and non-empty bytes were verified here.
+
+## Visual fixes round 1
+
+Root cause addressed throughout: text-bearing boxes are now sized from measured
+OpenDyslexic text with the design token as the minimum, via new helpers in
+`theme.rs`: `text_width` / `wrapped_height` / `line_height` (all built on
+`ui.painter().layout*`/`fonts_mut`; `Ui` has no `fonts()` in egui 0.36) and
+`fit_text_width(measured, min)` which clamps to the token floor and a new
+`TEXT_WIDTH_CAP = 200.0` ceiling. Font, `FONT_SCALE`, region heights and row
+heights unchanged.
+
+1. **Empty workspace clipped list** — `main.rs::empty` no longer uses the fixed
+   `(EMPTY_DIVIDER + 4*22)` height. `empty_left_height`/`empty_right_height`
+   compute each column's content height from the same strings/spacings the
+   renderers use (copy is now in consts `HERO_TITLE_TEXT`, `HERO_BODY_TEXT`,
+   `DIR_LIST`, `LOCAL_FILES_NOTE` so the two cannot drift); the block is laid out
+   at `max(columns)` capped by the workspace, centred vertically, and each column
+   gets a `ScrollArea` only when its own content exceeds the capped height. The
+   divider spans the laid-out (taller) column. Gotcha recorded: egui applies
+   `item_spacing` **after** each widget using the value in effect when that
+   widget was added, so the gap after the field label is `SPACE_20` even though
+   the spacing is set to `SPACE_7` right after — the first attempt under-measured
+   by that 13 px and still clipped the fourth mono line; confirmed fixed in the
+   capture. Regression test: `empty_columns_fit_the_default_window_without_scrolling`.
+2. **Speaker names** — `view::speaker_label_width` measures the widest
+   `▎<display name>` in the speaker-label font (`▎` U+258E is not in
+   OpenDyslexic, so it measures as the replacement glyph, roughly the painted
+   bar + gap). Timeline label column = `fit_text_width(measured, TIMELINE_LANE_LABEL_WIDTH)`;
+   ruler and lane tracks start at `label_width + TIMELINE_LANES_TO_LABEL_GAP`
+   (the fixed `TIMELINE_RULER_LEFT_PAD` is no longer used; the token remains in
+   theme.rs). Table Speaker column = `fit_text_width(same measurement, TABLE_COL_SPEAKER)`.
+   Longer names still truncate with `…` at the 200 cap.
+3. **Table fixed columns** — new `ColumnWidths::measure` (table.rs): Turn, Time,
+   Speaker, Duration, Verification each take `max(token, bold header, widest
+   value)` capped at 200; First words keeps the remainder. Widest values are
+   derived analytically (max turn index, `view::time(total_ms)`, longest
+   duration, all four verification labels) so the per-frame cost is ~10 galley
+   layouts. Tests: `columns_keep_at_least_the_design_token_width`,
+   `wide_content_grows_columns_beyond_the_tokens`.
+4. **Search field** — real cause found: egui 0.36 `Ui::put` advances the parent
+   cursor (`scope_dyn` → `advance_cursor_after_rect`), so the speaker ComboBox
+   started at the edit rect's right edge — 68 px inside the field — and painted
+   over "Cmd+F" leaving "C". The TextEdit now lives in a non-cursor-advancing
+   child ui (left_to_right/Center for vertical centring, `desired_width` = edit
+   width). Field width = `max(SEARCH_WIDTH, 7 + icon 14 + 7 + "Search turns" +
+   8 + "Cmd+F" + 8)`, hint right-aligned with 8 px padding. The 10 px bar
+   spacing is unchanged and now actually visible between field and ComboBox.
+5. **Zoom controls** — `timeline.rs::zoom_button` paints `layout_no_wrap` text
+   with `galley_with_override_text_color` (`TEXT_MUTED` → `TEXT_PRIMARY` on
+   hover), allocated exactly at galley size, `PointingHand` cursor, no frame or
+   fill. Order `−  Zoom  +` (8 px gaps) then `Fit episode` after 14 px, matching
+   design screen 02. Behaviour (zoom 1.5× steps, fit) unchanged.
+6. **Overview density** — `episode::overview_section_count(total_ms) =
+   clamp(round(total_minutes / 3), 12, 32)`; EP03 (64:21) now renders 21
+   sections instead of 120. Dominant-speaker colouring, 48% outside-range
+   opacity, visible-range box and time-positioned failed markers unchanged.
+   Tests in episode.rs cover 20 min → 12, 64 min → 21, 3 h → 32 (and 0 → 12).
+7. **Header timestamp** — new `rendered_when` (main.rs): `rendered_at` is parsed
+   with `chrono::DateTime::parse_from_rfc3339` and formatted `18 Sep 2026, 10:26`
+   in `chrono::Local` (manual English month table, unpadded day); unparseable
+   values pass through unchanged, `None` still shows `unknown`. The line was and
+   remains one `view::line` in sans 11 px muted — the "different face" was the
+   raw ISO string's length/punctuation, not a font mix. **New dependency:
+   `chrono` 0.4.45 with `default-features = false, features = ["clock", "std"]`**
+   (not previously in the lockfile; chosen as the lightest correct local-time
+   option — adds `iana-time-zone` + `iana-time-zone-haiku`, 3 packages total).
+   Recent-episodes "when" values are relative strings ("Today", "N days ago"),
+   not absolute dates, so the new format does not apply there.
+8. **Playback current-audio width** — block width = `max(PLAYBACK_CURRENT_AUDIO_WIDTH,
+   measured "Turn NNN · Speaker" line, measured "00:00.000 / —" mono line)`; the
+   seek track still fills the remainder.
+
+Acceptance, this machine: `cargo build --release`, `cargo test`
+(2 lib + 22 bin + 15 loader + 1 font, all pass; 1 ignored), and
+`cargo clippy --all-targets -- -D warnings` all exit 0;
+`--screenshot` captures `/tmp/sc-v1-empty.png`, `/tmp/sc-v1-ep03.png` and
+`/tmp/sc-v1-ep03-sel.png` all exit 0 at 2880×1800; the colour-literal grep
+outside `theme.rs` prints nothing. The four mono list lines are visible in the
+empty capture and no text reviewed above is truncated. Visual judgement against
+the design remains the orchestrator's.
+
+Not done / notes:
+- `EMPTY_DIVIDER` and `TIMELINE_RULER_LEFT_PAD` tokens are now unused by code
+  (still exported from theme.rs as design tokens).
+- In the shorter-than-content window case the columns scroll; content then wraps
+  about a scrollbar-width narrower than the measured 410/386 px, so the measured
+  heights are a slight underestimate in that mode only — harmless, since that
+  mode scrolls by definition.

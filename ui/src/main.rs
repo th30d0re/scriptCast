@@ -5,7 +5,7 @@ mod view;
 
 use eframe::egui::{self, Align, Layout, Rect, Sense, Ui, UiBuilder, pos2, vec2};
 use scriptcast_ui::{
-    episode::{Episode, LoadError, VerificationState as V},
+    episode::{Episode, LoadError, VerificationState as V, overview_section_count},
     theme as t,
 };
 use serde::{Deserialize, Serialize};
@@ -22,7 +22,19 @@ use timeline::TimelineView;
 
 const STORAGE_KEY: &str = "scriptcast_browser";
 const LOAD_NOTICE_DELAY: Duration = Duration::from_millis(150);
-const OVERVIEW_SECTIONS: usize = 120;
+
+// Empty-workspace copy, factored out so the content height measurement in
+// `empty_left_height`/`empty_right_height` cannot drift from what is rendered.
+const HERO_TITLE_TEXT: &str = "Your episode starts here.";
+const HERO_BODY_TEXT: &str = "Open an episode directory containing rendered audio and metadata. scriptCast loads the timeline, speakers, turns, and verification results in one local workspace.";
+const DIR_LIST_TITLE: &str = "Expected directory contents";
+const DIR_LIST: [&str; 4] = [
+    "episode/",
+    "  episode_manifest.json",
+    "  Samples/Processed/",
+    "  TURN_INDEX.csv + stress.json (optional)",
+];
+const LOCAL_FILES_NOTE: &str = "● Local files  Nothing uploaded. No connection required.";
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct RecentEpisode {
@@ -199,7 +211,7 @@ impl Browser {
         {
             self.filters.speaker = None;
         }
-        self.overview = episode.overview_sections(OVERVIEW_SECTIONS);
+        self.overview = episode.overview_sections(overview_section_count(episode.total_ms));
         self.preferences.last_episode = Some(episode.dir.clone());
         self.preferences.recent.retain(|r| r.path != episode.dir);
         self.preferences.recent.insert(
@@ -421,7 +433,10 @@ impl Browser {
                     e.manifest.sample_rate as f64 / 1000.0,
                     e.turns.len(),
                     e.speakers.len(),
-                    e.rendered_at.as_deref().unwrap_or("unknown")
+                    e.rendered_at.as_deref().map_or_else(
+                        || "unknown".to_string(),
+                        |iso| rendered_when(iso).into_owned(),
+                    )
                 ),
                 e.warnings.join("\n"),
             )
@@ -467,8 +482,21 @@ impl Browser {
                 .layout(Layout::left_to_right(Align::Center)),
         );
         ui.spacing_mut().item_spacing.x = t::SPACE_10;
+        let prompt = "Search turns";
+        let hint = "Cmd+F";
+        let hint_width = t::text_width(&ui, hint, t::font(t::CAPTION));
+        // The field grows so prompt and hint always fit; the token is the floor.
+        let search_width = t::SEARCH_WIDTH.max(
+            t::SPACE_7
+                + t::SPACE_14
+                + t::SPACE_7
+                + t::text_width(&ui, prompt, t::font(t::BODY))
+                + t::SPACE_8
+                + hint_width
+                + t::SPACE_8,
+        );
         let (search_rect, _) =
-            ui.allocate_exact_size(vec2(t::SEARCH_WIDTH, t::SEARCH_HEIGHT), Sense::hover());
+            ui.allocate_exact_size(vec2(search_width, t::SEARCH_HEIGHT), Sense::hover());
         ui.painter()
             .rect_filled(search_rect, t::RADIUS_CONTROL, t::BG_WINDOW);
         ui.painter().rect_stroke(
@@ -482,32 +510,37 @@ impl Browser {
             egui::Vec2::splat(t::SPACE_14),
         );
         egui::Image::new(t::icon("search-14-text-muted")).paint_at(&ui, icon);
+        let hint_rect = Rect::from_min_max(
+            pos2(
+                search_rect.right() - t::SPACE_8 - hint_width,
+                search_rect.top(),
+            ),
+            pos2(search_rect.right() - t::SPACE_8, search_rect.bottom()),
+        );
         let edit = Rect::from_min_max(
             pos2(icon.right() + t::SPACE_7, search_rect.top()),
-            pos2(
-                search_rect.right() - t::TABLE_COL_DURATION - t::SPACE_8,
-                search_rect.bottom(),
-            ),
+            pos2(hint_rect.left() - t::SPACE_8, search_rect.bottom()),
         );
-        let response = ui.put(
-            edit,
+        // A child ui, not `ui.put`: `put` advances the parent cursor past the
+        // edit rect, which pushed the following ComboBox into the search field.
+        let mut edit_ui = ui.new_child(
+            UiBuilder::new()
+                .max_rect(edit)
+                .layout(Layout::left_to_right(Align::Center)),
+        );
+        let response = edit_ui.add(
             egui::TextEdit::singleline(&mut self.filters.search)
                 .id(egui::Id::new("turn_search"))
                 .font(t::font(t::BODY))
-                .hint_text("Search turns")
+                .hint_text(prompt)
+                .desired_width(edit.width())
                 .frame(egui::Frame::NONE),
         );
         if self.focus_search {
             response.request_focus();
             self.focus_search = false;
         }
-        view::line(
-            &ui,
-            Rect::from_min_max(pos2(edit.right(), edit.top()), search_rect.max),
-            "Cmd+F",
-            t::font(t::CAPTION),
-            t::TEXT_SUBTLE,
-        );
+        view::line(&ui, hint_rect, hint, t::font(t::CAPTION), t::TEXT_SUBTLE);
         let old_speaker = self.filters.speaker;
         let old_failed = self.filters.failed_only;
         egui::ComboBox::from_id_salt("speaker_filter")
@@ -571,12 +604,18 @@ impl Browser {
         let rect = ui.max_rect();
         let width = t::EMPTY_LEFT + t::EMPTY_RIGHT + t::EMPTY_GAP * 2.0 + t::BORDER;
         let x = rect.center().x - width / 2.0;
-        let height = (t::EMPTY_DIVIDER + t::SPACE_22 * 4.0).min(rect.height() - t::SPACE_20 * 2.0);
+        let left_height = empty_left_height(ui);
+        let right_height = self.empty_right_height(ui);
+        // Content height, centred vertically; an inner scroll only appears when
+        // the window is shorter than the column's content.
+        let height = left_height
+            .max(right_height)
+            .min((rect.height() - t::SPACE_20 * 2.0).max(t::SPACE_20));
         let top = rect.center().y - height / 2.0;
         let left = Rect::from_min_size(pos2(x, top), vec2(t::EMPTY_LEFT, height));
-        let divider = Rect::from_center_size(
-            pos2(left.right() + t::EMPTY_GAP, rect.center().y),
-            vec2(t::BORDER, t::EMPTY_DIVIDER),
+        let divider = Rect::from_min_size(
+            pos2(left.right() + t::EMPTY_GAP, top),
+            vec2(t::BORDER, height),
         );
         ui.painter().rect_filled(divider, 0, t::BORDER_DEFAULT);
         let right = Rect::from_min_size(
@@ -585,79 +624,30 @@ impl Browser {
         );
         let mut open = false;
         let mut left_ui = view::region(ui, "empty_guidance", left, t::BG_WINDOW);
-        egui::ScrollArea::vertical().id_salt("empty_guidance_scroll").show(&mut left_ui,|ui| {
-            ui.spacing_mut().item_spacing.y=t::SPACE_20;
-            ui.add(egui::Image::new(t::icon("folder-open-42-accent")).fit_to_exact_size(egui::Vec2::splat(t::HERO_ICON)));
-            ui.label(t::heading("Your episode starts here.",t::HERO_TITLE));
-            ui.label(t::text("Open an episode directory containing rendered audio and metadata. scriptCast loads the timeline, speakers, turns, and verification results in one local workspace.",t::TEXT_14,t::TEXT_MUTED));
-            ui.horizontal(|ui| { open |= t::primary_button(ui,"Open Episode",Some("folder-open-16-on-accent"),true).clicked(); ui.label(t::text("Cmd+O",t::BODY,t::TEXT_MUTED)); });
-            ui.add_space(t::SPACE_16); t::field_label(ui,"Expected directory contents");
-            ui.spacing_mut().item_spacing.y=t::SPACE_7;
-            for text in ["episode/","  episode_manifest.json","  Samples/Processed/","  TURN_INDEX.csv + stress.json (optional)"] { ui.label(egui::RichText::new(text).font(t::mono(t::BODY)).color(t::TEXT_MUTED)); }
-        });
+        if left_height > height {
+            egui::ScrollArea::vertical()
+                .id_salt("empty_guidance_scroll")
+                .auto_shrink([false, false])
+                .show(&mut left_ui, |ui| open |= empty_left(ui));
+        } else {
+            open |= empty_left(&mut left_ui);
+        }
         let mut path = None;
-        let mut recent_ui = view::region(ui, "recent_episodes", right, t::BG_WINDOW);
-        egui::ScrollArea::vertical()
-            .id_salt("recent_scroll")
-            .show(&mut recent_ui, |ui| {
-                ui.horizontal(|ui| {
-                    ui.label(t::heading("Recent episodes", t::TEXT_13));
-                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        if ui
-                            .link(t::text("Open directory ↗", t::SECONDARY, t::TEXT_SUBTLE))
-                            .clicked()
-                        {
-                            open = true;
-                        }
-                    });
+        let mut right_ui = view::region(ui, "recent_episodes", right, t::BG_WINDOW);
+        if right_height > height {
+            egui::ScrollArea::vertical()
+                .id_salt("recent_scroll")
+                .auto_shrink([false, false])
+                .show(&mut right_ui, |ui| {
+                    let (open_dir, selected) = self.empty_right(ui);
+                    open |= open_dir;
+                    path = selected;
                 });
-                ui.add_space(t::SPACE_12);
-                if self.preferences.recent.is_empty() {
-                    ui.label(t::text("No recent episodes yet.", t::BODY, t::TEXT_MUTED));
-                }
-                for recent in &self.preferences.recent {
-                    let (row, response) = ui.allocate_exact_size(
-                        vec2(ui.available_width(), t::EPISODE_HEADER_HEIGHT),
-                        Sense::click(),
-                    );
-                    let title = Rect::from_min_size(row.min, vec2(row.width(), t::SPACE_22));
-                    let meta = title.translate(vec2(0.0, t::SPACE_22 + t::SPACE_5));
-                    let path_rect = meta.translate(vec2(0.0, t::SPACE_22));
-                    view::line(ui, title, &recent.id, t::font(t::TEXT_14), t::TEXT_PRIMARY);
-                    view::line(
-                        ui,
-                        meta,
-                        &format!(
-                            "{} · {} turns · {}",
-                            opened_when(recent.opened),
-                            recent.turns,
-                            view::duration(recent.total_ms)
-                        ),
-                        t::font(t::BODY),
-                        t::TEXT_MUTED,
-                    );
-                    view::line(
-                        ui,
-                        path_rect,
-                        &recent.path.display().to_string(),
-                        t::mono(t::CAPTION),
-                        t::TEXT_SUBTLE,
-                    );
-                    view::rule(ui, row);
-                    if response
-                        .on_hover_text(recent.path.display().to_string())
-                        .clicked()
-                    {
-                        path = Some(recent.path.clone());
-                    }
-                }
-                ui.add_space(t::SPACE_16);
-                ui.label(t::text(
-                    "● Local files  Nothing uploaded. No connection required.",
-                    t::CAPTION,
-                    t::TEXT_MUTED,
-                ));
-            });
+        } else {
+            let (open_dir, selected) = self.empty_right(&mut right_ui);
+            open |= open_dir;
+            path = selected;
+        }
         let ctx = ui.ctx().clone();
         if open {
             self.pick(&ctx);
@@ -665,6 +655,81 @@ impl Browser {
         if let Some(path) = path {
             self.open(path, &ctx);
         }
+    }
+    /// Content height of the recent-episodes column; mirrors `empty_right`.
+    fn empty_right_height(&self, ui: &Ui) -> f32 {
+        // The heading row shares a line with the "Open directory ↗" link, an
+        // interactive widget, so it can grow to the theme's interact height.
+        let mut height = t::line_height(ui, t::bold(t::TEXT_13)).max(t::BUTTON_HEIGHT)
+            + t::SPACE_6
+            + t::SPACE_12;
+        if self.preferences.recent.is_empty() {
+            height += t::wrapped_height(ui, "No recent episodes yet.", t::font(t::BODY), t::EMPTY_RIGHT);
+        } else {
+            let rows = self.preferences.recent.len() as f32;
+            height += rows * t::EPISODE_HEADER_HEIGHT + (rows - 1.0) * t::SPACE_6;
+        }
+        height + t::SPACE_6 + t::SPACE_16 + t::wrapped_height(ui, LOCAL_FILES_NOTE, t::font(t::CAPTION), t::EMPTY_RIGHT)
+    }
+    /// Right column of the empty workspace. Returns (open-directory clicked,
+    /// selected recent path).
+    fn empty_right(&self, ui: &mut Ui) -> (bool, Option<PathBuf>) {
+        let mut open = false;
+        let mut path = None;
+        ui.horizontal(|ui| {
+            ui.label(t::heading("Recent episodes", t::TEXT_13));
+            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                if ui
+                    .link(t::text("Open directory ↗", t::SECONDARY, t::TEXT_SUBTLE))
+                    .clicked()
+                {
+                    open = true;
+                }
+            });
+        });
+        ui.add_space(t::SPACE_12);
+        if self.preferences.recent.is_empty() {
+            ui.label(t::text("No recent episodes yet.", t::BODY, t::TEXT_MUTED));
+        }
+        for recent in &self.preferences.recent {
+            let (row, response) = ui.allocate_exact_size(
+                vec2(ui.available_width(), t::EPISODE_HEADER_HEIGHT),
+                Sense::click(),
+            );
+            let title = Rect::from_min_size(row.min, vec2(row.width(), t::SPACE_22));
+            let meta = title.translate(vec2(0.0, t::SPACE_22 + t::SPACE_5));
+            let path_rect = meta.translate(vec2(0.0, t::SPACE_22));
+            view::line(ui, title, &recent.id, t::font(t::TEXT_14), t::TEXT_PRIMARY);
+            view::line(
+                ui,
+                meta,
+                &format!(
+                    "{} · {} turns · {}",
+                    opened_when(recent.opened),
+                    recent.turns,
+                    view::duration(recent.total_ms)
+                ),
+                t::font(t::BODY),
+                t::TEXT_MUTED,
+            );
+            view::line(
+                ui,
+                path_rect,
+                &recent.path.display().to_string(),
+                t::mono(t::CAPTION),
+                t::TEXT_SUBTLE,
+            );
+            view::rule(ui, row);
+            if response
+                .on_hover_text(recent.path.display().to_string())
+                .clicked()
+            {
+                path = Some(recent.path.clone());
+            }
+        }
+        ui.add_space(t::SPACE_16);
+        ui.label(t::text(LOCAL_FILES_NOTE, t::CAPTION, t::TEXT_MUTED));
+        (open, path)
     }
     fn playback(&self, ui: &mut Ui) {
         let rect = ui.max_rect();
@@ -683,13 +748,6 @@ impl Browser {
             t::primary_button(ui, "Play", Some("play-16-on-accent"), false);
             t::secondary_button(ui, "Stop", Some("square-16-text"), false);
         });
-        let (current, _) = ui.allocate_exact_size(
-            vec2(
-                t::PLAYBACK_CURRENT_AUDIO_WIDTH,
-                t::BUTTON_HEIGHT + t::SPACE_12,
-            ),
-            Sense::hover(),
-        );
         let label = self
             .selected
             .and_then(|i| {
@@ -702,12 +760,20 @@ impl Browser {
             })
             .map(|(turn, speaker)| format!("Turn {:03} · {}", turn.index, speaker.name))
             .unwrap_or_else(|| "Select a turn to audition".into());
+        let position = "00:00.000 / —";
+        let current_width = t::PLAYBACK_CURRENT_AUDIO_WIDTH
+            .max(t::text_width(&ui, label.as_str(), t::font(t::BODY)))
+            .max(t::text_width(&ui, position, t::mono(t::NUMERIC)));
+        let (current, _) = ui.allocate_exact_size(
+            vec2(current_width, t::BUTTON_HEIGHT + t::SPACE_12),
+            Sense::hover(),
+        );
         let top = Rect::from_min_size(current.min, vec2(current.width(), current.height() / 2.0));
         view::line(&ui, top, &label, t::font(t::BODY), t::TEXT_PRIMARY);
         view::line(
             &ui,
             top.translate(vec2(0.0, top.height())),
-            "00:00.000 / —",
+            position,
             t::mono(t::NUMERIC),
             t::TEXT_MUTED,
         );
@@ -910,6 +976,48 @@ impl eframe::App for Browser {
         self.persist
     }
 }
+/// Content height of the guidance column; mirrors `empty_left` item for item.
+/// Item spacing is applied after each widget with the spacing in effect when
+/// that widget was added, so the gap after the field label is still SPACE_20.
+fn empty_left_height(ui: &Ui) -> f32 {
+    let mut height = t::HERO_ICON;
+    height += t::SPACE_20
+        + t::wrapped_height(ui, HERO_TITLE_TEXT, t::bold(t::HERO_TITLE), t::EMPTY_LEFT);
+    height += t::SPACE_20
+        + t::wrapped_height(ui, HERO_BODY_TEXT, t::font(t::TEXT_14), t::EMPTY_LEFT);
+    height += t::SPACE_20 + t::BUTTON_HEIGHT;
+    height += t::SPACE_20 + t::SPACE_16 + t::line_height(ui, t::bold(t::FIELD_LABEL));
+    let lines = DIR_LIST.len() as f32;
+    height += t::SPACE_20 + t::line_height(ui, t::mono(t::BODY)) * lines + t::SPACE_7 * (lines - 1.0);
+    height
+}
+/// Left column of the empty workspace. Returns true when Open Episode was clicked.
+fn empty_left(ui: &mut Ui) -> bool {
+    let mut open = false;
+    ui.spacing_mut().item_spacing.y = t::SPACE_20;
+    ui.add(
+        egui::Image::new(t::icon("folder-open-42-accent"))
+            .fit_to_exact_size(egui::Vec2::splat(t::HERO_ICON)),
+    );
+    ui.label(t::heading(HERO_TITLE_TEXT, t::HERO_TITLE));
+    ui.label(t::text(HERO_BODY_TEXT, t::TEXT_14, t::TEXT_MUTED));
+    ui.horizontal(|ui| {
+        open |= t::primary_button(ui, "Open Episode", Some("folder-open-16-on-accent"), true)
+            .clicked();
+        ui.label(t::text("Cmd+O", t::BODY, t::TEXT_MUTED));
+    });
+    ui.add_space(t::SPACE_16);
+    t::field_label(ui, DIR_LIST_TITLE);
+    ui.spacing_mut().item_spacing.y = t::SPACE_7;
+    for text in DIR_LIST {
+        ui.label(
+            egui::RichText::new(text)
+                .font(t::mono(t::BODY))
+                .color(t::TEXT_MUTED),
+        );
+    }
+    open
+}
 fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -921,6 +1029,29 @@ fn opened_when(timestamp: u64) -> String {
         0 => "Today".into(),
         1 => "Yesterday".into(),
         days => format!("{days} days ago"),
+    }
+}
+/// ISO 8601 timestamp → the design's `18 Sep 2026, 10:26` in local time.
+/// Unparseable values pass through unchanged.
+fn rendered_when(iso: &str) -> std::borrow::Cow<'_, str> {
+    use chrono::{Datelike, Timelike};
+    const MONTHS: [&str; 12] = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+    match chrono::DateTime::parse_from_rfc3339(iso) {
+        Ok(dt) => {
+            let local = dt.with_timezone(&chrono::Local);
+            format!(
+                "{} {} {}, {:02}:{:02}",
+                local.day(),
+                MONTHS[(local.month() - 1) as usize],
+                local.year(),
+                local.hour(),
+                local.minute()
+            )
+            .into()
+        }
+        Err(_) => iso.into(),
     }
 }
 fn main() -> eframe::Result {
@@ -1067,5 +1198,31 @@ mod tests {
                 drop(sender);
             }
         }
+    }
+    #[test]
+    fn rendered_when_formats_local_time_and_passes_garbage_through() {
+        let formatted = rendered_when("2026-09-18T12:00:00.000000Z");
+        assert!(
+            formatted.contains("Sep 2026, "),
+            "unexpected format: {formatted}"
+        );
+        assert!(!formatted.contains('T') && !formatted.ends_with('Z'));
+        assert!(formatted.contains(':'), "no clock time in {formatted}");
+        assert_eq!(rendered_when("not a timestamp"), "not a timestamp");
+        assert_eq!(rendered_when(""), "");
+    }
+    #[test]
+    fn empty_columns_fit_the_default_window_without_scrolling() {
+        let ctx = egui::Context::default();
+        t::apply(&ctx);
+        let app = Browser::default();
+        let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
+            let workspace =
+                t::WINDOW_SIZE[1] - t::EPISODE_HEADER_HEIGHT - t::PLAYBACK_BAR_HEIGHT - t::STATUS_BAR_HEIGHT;
+            let available = workspace - t::SPACE_20 * 2.0;
+            assert!(empty_left_height(ui) <= available);
+            assert!(app.empty_right_height(ui) <= available);
+        });
+        output.textures_delta.clear();
     }
 }

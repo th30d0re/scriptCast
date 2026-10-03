@@ -438,6 +438,12 @@ impl Episode {
     }
 }
 
+/// Sections in the timeline overview strip: about one per three minutes,
+/// clamped to the design's 12–32 range.
+pub fn overview_section_count(total_ms: u64) -> usize {
+    (total_ms as f64 / 180_000.0).round().clamp(12.0, 32.0) as usize
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct TurnIndexRow {
     pub turn_index: usize,
@@ -522,4 +528,16 @@ pub fn parse_turn_index(input: &str) -> Result<Vec<TurnIndexRow>, String> {
             })
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::overview_section_count;
+    #[test]
+    fn overview_sections_scale_with_episode_length() {
+        assert_eq!(overview_section_count(20 * 60_000), 12);
+        assert_eq!(overview_section_count(64 * 60_000), 21);
+        assert_eq!(overview_section_count(3 * 3_600_000), 32);
+        assert_eq!(overview_section_count(0), 12);
+    }
 }
