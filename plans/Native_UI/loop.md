@@ -24,7 +24,7 @@ This file defines the loops that build `scriptcast-ui` in three phases. Each loo
 - Rust toolchain on PATH (`cargo 1.96.0` verified). `cd ui && cargo build` succeeds on the `cargo new` stub before Phase A.
 - Design snapshot present: `file:Dev/Tools/scriptCast/ui/design/` with `DESIGN.md`, `tokens.json`, `screens/01-06`, `components/workspace-state`, `assets/icons`. Every loop reads `DESIGN.md` before writing UI code. **No loop calls the Figma MCP** (Starter plan, ~20 calls a month); a missing value is derived from `tokens.json` or escalated.
 - Fonts: OpenDyslexic Regular and Bold plus OpenDyslexicMono are already in `ui/assets/fonts/` with their licences (operator decision: dyslexia-friendly fonts instead of the design's Inter / IBM Plex Mono). Do not substitute other fonts.
-- A real episode for live checks: `file:Documents/Theory/TheOriginalPower/outputs/ATO_EP03_five_levels/` (392 turns, 4 speakers, has `stress.json` with 18 entries). Read-only for every phase except Phase C job runs the operator approves.
+- A real episode for live checks: `file:Documents/Theory/TheOriginalPower/outputs/ATO_EP03_five_levels/` (392 turns, 4 speakers, 64:21 long, no multi-segment turns; `stress.json` has 18 entries, all passed; its script has changed since the render, so `script_in_sync` is false). Read-only for every phase except Phase C job runs the operator approves.
 - For Phase C live checks: a scratch clone of EP03 made with `cp -cR` (APFS clone, near-free) into the loop's scratch directory. Every Phase C live check that runs a job, makes a checkpoint or restores runs against the scratch clone, never the real EP03.
 - For Phase C live checks: a Python environment where `scriptcast`, `scriptcast-verify` and `scriptcast-repair` run (the `dev` venv or the Documents install). Its `bin/` directory goes in the UI's bin-dir setting.
 - No file under `scriptcast/` (Python) or `tests/` (Python) may change in any phase.
@@ -108,7 +108,7 @@ Checks:
 1. audio.rs exists; build/test/clippy green.
 2. Live (EP03): select a turn, Space plays it; Space pauses and resumes; Esc stops.
 3. Live: while playing, click another turn — the first stops, the second starts, no overlap.
-4. Live: a multi-segment turn (any turn with more than one entry in segments) plays all chunks in order; the time readout and seek fill advance.
+4. Live: the fixture episode's two-segment turn plays both chunks in order (EP03 has no multi-segment turns); on EP03 the time readout and seek fill advance.
 5. Live: auto-advance on — playback continues into the next visible turn, respecting the active filter.
 6. Live: typing a space in the search box does not start playback.
 7. Live: in a COPY of the fixture episode with one WAV renamed, that row shows Missing audio and other turns still play.
