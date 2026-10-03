@@ -13,16 +13,22 @@ use std::time::Duration;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum InspectorMode {
     SelectedTurn,
+    Verification,
+    Jobs,
 }
 impl InspectorMode {
     pub fn width(self) -> f32 {
         match self {
             Self::SelectedTurn => t::INSPECTOR_WIDTH_SELECTED_TURN,
+            Self::Verification => t::INSPECTOR_WIDTH_VERIFICATION,
+            Self::Jobs => t::INSPECTOR_WIDTH_JOB_RUNNER,
         }
     }
     fn title(self) -> &'static str {
         match self {
             Self::SelectedTurn => "Selected turn",
+            Self::Verification => "Verification",
+            Self::Jobs => "Job runner",
         }
     }
 }
@@ -31,6 +37,7 @@ impl InspectorMode {
 pub enum Action {
     Previous,
     Next,
+    Review,
 }
 
 /// The inspector's text field: TRANSCRIPT only when this turn has a
@@ -151,8 +158,15 @@ pub fn show(
                     action = Some(Action::Next);
                 }
             });
+            if t::secondary_button(ui, "Review verification", None, true).clicked() {
+                action = Some(Action::Review);
+            }
             ui.spacing_mut().item_spacing.y = t::SPACE_2;
-            ui.label(t::text("Space · Play / pause", t::SECONDARY, t::TEXT_SUBTLE));
+            ui.label(t::text(
+                "Space · Play / pause",
+                t::SECONDARY,
+                t::TEXT_SUBTLE,
+            ));
             ui.label(t::text(
                 "↑ ↓ · Select previous / next turn",
                 t::SECONDARY,
@@ -196,8 +210,8 @@ fn status_sentence(
             "Paused turn {turn_index:03} at {}. Space resumes; Esc stops.",
             view::time(position.as_millis() as u64)
         ),
-        Transport::Idle => format!(
-            "Turn {turn_index:03} selected. Space plays it; ↑ ↓ move the selection."
-        ),
+        Transport::Idle => {
+            format!("Turn {turn_index:03} selected. Space plays it; ↑ ↓ move the selection.")
+        }
     }
 }

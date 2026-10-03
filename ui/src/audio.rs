@@ -7,8 +7,10 @@
 //! every appended source in its own `track_position()`, so `get_pos()` resets
 //! at each segment boundary (see phaseB-findings.md).
 
-use rodio::{ChannelCount, Decoder, DeviceSinkBuilder, MixerDeviceSink, Player, SampleRate, Source, cpal};
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
+use rodio::{
+    ChannelCount, Decoder, DeviceSinkBuilder, MixerDeviceSink, Player, SampleRate, Source, cpal,
+};
 use std::{
     fmt,
     fs::File,
@@ -197,8 +199,7 @@ impl AudioOut {
         let mut total = Duration::ZERO;
         let mut decoded = true;
         for path in wavs {
-            let file =
-                File::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
+            let file = File::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
             let source = Decoder::new(BufReader::new(file))
                 .map_err(|e| format!("{}: {e}", path.display()))?;
             match source.total_duration() {
@@ -385,5 +386,25 @@ mod tests {
         let duration = info.duration.unwrap();
         assert!(duration.as_millis().abs_diff(200) <= 20, "{duration:?}");
         assert!(probe(&dir.join("Samples/Processed/nope.wav")).is_none());
+    }
+}
+
+pub fn is_builtin_speakers(name: &str) -> bool {
+    let lower = name.to_lowercase();
+    lower.contains("macbook") && lower.contains("speakers")
+}
+
+#[cfg(test)]
+mod phase_c_tests {
+    use super::*;
+
+    #[test]
+    fn test_is_builtin_speakers() {
+        assert!(is_builtin_speakers("MacBook Pro Speakers"));
+        assert!(is_builtin_speakers("macbook air speakers"));
+        assert!(!is_builtin_speakers("Headphones"));
+        assert!(!is_builtin_speakers("AirPods"));
+        assert!(!is_builtin_speakers("External DAC"));
+        assert!(!is_builtin_speakers(""));
     }
 }

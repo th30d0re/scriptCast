@@ -21,7 +21,7 @@ static NEXT: AtomicUsize = AtomicUsize::new(0);
 struct Scratch(PathBuf);
 impl Scratch {
     fn new() -> Self {
-        let path = PathBuf::from("/tmp/scriptcast-b2").join(format!(
+        let path = PathBuf::from("/tmp/scriptcast-c/b2").join(format!(
             "test-{}-{}",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)
@@ -49,7 +49,7 @@ impl Scratch {
     fn checkout(&self, name: &str) -> PathBuf {
         fs::write(
             self.0.join("pyproject.toml"),
-            format!("[project]\nname = '{name}'\n"),
+            format!("[project]\nname = '{name}'\n[project.scripts]\nscriptcast-export = 'scriptcast.tools.export_session:main'\n"),
         )
         .unwrap();
         let executable = self.0.join("ui/target/release/scriptcast-ui");
@@ -138,7 +138,7 @@ fn live_without_als_path_uses_episode_set() {
 
 #[test]
 fn opener_argv_preserves_paths_with_spaces_without_launching() {
-    let path = Path::new("/tmp/scriptcast-b2/episode space/file name.als");
+    let path = Path::new("/tmp/scriptcast-c/b2/episode space/file name.als");
     for (command, bundle) in [
         (daw::live_command(path), "com.ableton.live"),
         (daw::logic_command(path), "com.apple.logic10"),

@@ -29,6 +29,10 @@ Open a rendered scriptCast episode directory in the episode browser.
 Options:
   --screenshot PATH  after the UI settles, save the window to PATH as PNG and exit
   --size WxH         inner window size in points (default: 1440x900)
+  --inspector MODE   selected, verification, or jobs
+  --confirm PRESET   show confirmation; never auto-confirm
+  --run PRESET       run detect-changes or verify; capture after exit
+  --running-screenshot PATH  also save the active job (requires --run)
   --fresh            ignore persisted state and do not save state on exit
   --select N         select manifest turn N after loading, scrolled into view
   --play             after --select, start playback of the selected turn
@@ -62,6 +66,10 @@ pub struct Cli {
     pub mute: bool,
     pub simulate_device_loss: bool,
     pub help: bool,
+    pub inspector: Option<crate::inspector::InspectorMode>,
+    pub confirm: Option<String>,
+    pub run: Option<String>,
+    pub running_screenshot: Option<PathBuf>,
 }
 
 impl Cli {
@@ -77,6 +85,10 @@ impl Cli {
             mute: false,
             simulate_device_loss: false,
             help: false,
+            inspector: None,
+            confirm: None,
+            run: None,
+            running_screenshot: None,
         };
         let mut positional_only = false;
         let mut args = args.into_iter();
@@ -87,7 +99,10 @@ impl Cli {
             };
             if !is_flag {
                 if cli.episode.is_some() {
-                    return Err(format!("unexpected extra argument {}", arg.to_string_lossy()));
+                    return Err(format!(
+                        "unexpected extra argument {}",
+                        arg.to_string_lossy()
+                    ));
                 }
                 cli.episode = Some(PathBuf::from(arg));
                 continue;
@@ -95,10 +110,48 @@ impl Cli {
             match arg.to_string_lossy().as_ref() {
                 "--" => positional_only = true,
                 "-h" | "--help" => cli.help = true,
+                "--inspector" => {
+                    cli.inspector = Some(
+                        match args
+                            .next()
+                            .ok_or("--inspector needs selected, verification or jobs")?
+                            .to_string_lossy()
+                            .as_ref()
+                        {
+                            "selected" => crate::inspector::InspectorMode::SelectedTurn,
+                            "verification" => crate::inspector::InspectorMode::Verification,
+                            "jobs" => crate::inspector::InspectorMode::Jobs,
+                            _ => return Err("Unknown inspector".into()),
+                        },
+                    );
+                }
+                "--confirm" => {
+                    let name = args
+                        .next()
+                        .ok_or("--confirm needs a preset")?
+                        .to_string_lossy()
+                        .into_owned();
+                    scriptcast_ui::runner::Preset::parse(&name, vec![])?;
+                    cli.confirm = Some(name);
+                }
+                "--run" => {
+                    let name = args
+                        .next()
+                        .ok_or("--run needs detect-changes or verify")?
+                        .to_string_lossy()
+                        .into_owned();
+                    scriptcast_ui::runner::Preset::safe_run(&name)?;
+                    cli.run = Some(name);
+                }
                 "--fresh" => cli.fresh = true,
                 "--play" => cli.play = true,
                 "--mute" => cli.mute = true,
                 "--simulate-device-loss" => cli.simulate_device_loss = true,
+                "--running-screenshot" => {
+                    cli.running_screenshot = Some(PathBuf::from(
+                        args.next().ok_or("--running-screenshot needs a path")?,
+                    ));
+                }
                 "--screenshot" => {
                     let value = args
                         .next()
@@ -134,6 +187,15 @@ impl Cli {
         }
         if cli.simulate_device_loss && !cli.play {
             return Err("--simulate-device-loss needs --play".into());
+        }
+        if cli.running_screenshot.is_some() && cli.run.is_none() {
+            return Err("--running-screenshot requires --run".into());
+        }
+        if cli.run.is_some() && cli.confirm.is_some() {
+            return Err("--run and --confirm are mutually exclusive".into());
+        }
+        if (cli.run.is_some() || cli.confirm.is_some()) && cli.episode.is_none() {
+            return Err("--run / --confirm require an explicit episode".into());
         }
         Ok(cli)
     }
@@ -304,20 +366,46 @@ mod tests {
     }
     #[test]
     fn flags_may_follow_the_episode_dir() {
-        let cli = parse(&["/tmp/episode", "--select", "3", "--screenshot", "/tmp/o.png"]).unwrap();
+        let cli = parse(&[
+            "/tmp/episode",
+            "--select",
+            "3",
+            "--screenshot",
+            "/tmp/o.png",
+        ])
+        .unwrap();
         assert_eq!(cli.episode, Some(PathBuf::from("/tmp/episode")));
         assert_eq!(cli.select, Some(3));
         assert_eq!(cli.screenshot, Some(PathBuf::from("/tmp/o.png")));
     }
     #[test]
     fn size_parses_points() {
-        assert_eq!(parse(&["--size", "1440x900"]).unwrap().size, [1440.0, 900.0]);
-        assert_eq!(parse(&["--size", "2880X1800"]).unwrap().size, [2880.0, 1800.0]);
-        assert_eq!(parse(&["--size", "1200.5x800"]).unwrap().size, [1200.5, 800.0]);
+        assert_eq!(
+            parse(&["--size", "1440x900"]).unwrap().size,
+            [1440.0, 900.0]
+        );
+        assert_eq!(
+            parse(&["--size", "2880X1800"]).unwrap().size,
+            [2880.0, 1800.0]
+        );
+        assert_eq!(
+            parse(&["--size", "1200.5x800"]).unwrap().size,
+            [1200.5, 800.0]
+        );
     }
     #[test]
     fn size_rejects_garbage() {
-        for bad in ["1440", "x900", "1440x", "axb", "0x900", "1440x0", "-5x100", "NaNx900", "1440x900x1"] {
+        for bad in [
+            "1440",
+            "x900",
+            "1440x",
+            "axb",
+            "0x900",
+            "1440x0",
+            "-5x100",
+            "NaNx900",
+            "1440x900x1",
+        ] {
             assert!(parse(&["--size", bad]).is_err(), "accepted {bad}");
         }
     }
@@ -334,8 +422,14 @@ mod tests {
         assert!(cli.play);
         assert_eq!(cli.at, Some(4620));
         assert!(!cli.mute && !cli.simulate_device_loss);
-        assert!(parse(&["--play", "/tmp/ep"]).is_err(), "--play needs --select");
-        assert!(parse(&["--at", "100", "/tmp/ep"]).is_err(), "--at needs --play");
+        assert!(
+            parse(&["--play", "/tmp/ep"]).is_err(),
+            "--play needs --select"
+        );
+        assert!(
+            parse(&["--at", "100", "/tmp/ep"]).is_err(),
+            "--at needs --play"
+        );
         assert!(
             parse(&["--simulate-device-loss", "/tmp/ep"]).is_err(),
             "--simulate-device-loss needs --play"
@@ -345,7 +439,15 @@ mod tests {
     }
     #[test]
     fn screenshot_with_play_is_always_muted() {
-        let cli = parse(&["/tmp/e", "--select", "0", "--play", "--screenshot", "/tmp/o.png"]).unwrap();
+        let cli = parse(&[
+            "/tmp/e",
+            "--select",
+            "0",
+            "--play",
+            "--screenshot",
+            "/tmp/o.png",
+        ])
+        .unwrap();
         assert!(cli.effective_muted(), "capture + play must imply mute");
         let cli = parse(&["/tmp/e", "--select", "0", "--play"]).unwrap();
         assert!(!cli.effective_muted(), "plain --play is audible");
@@ -373,7 +475,7 @@ mod tests {
     #[test]
     fn png_round_trip_has_full_dimensions() {
         let image = egui::ColorImage::new([8, 4], vec![egui::Color32::RED; 32]);
-        let path = std::env::temp_dir().join(format!(
+        let path = PathBuf::from("/tmp/scriptcast-c").join(format!(
             "scriptcast-ui-capture-test-{}.png",
             std::process::id()
         ));

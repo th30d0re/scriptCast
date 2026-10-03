@@ -286,14 +286,10 @@ impl Episode {
                 .map_err(|e| e.to_string())
                 .and_then(|s| toml::from_str::<toml::Value>(&s).map_err(|e| e.to_string()))
             {
-                Ok(config) => Some(absolute(
-                    &root.join(
-                        config
-                            .get("voices")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("voices.yaml"),
-                    ),
-                )),
+                Ok(config) => config
+                    .get("voices")
+                    .and_then(|v| v.as_str())
+                    .map(|v| absolute(&root.join(v))),
                 Err(e) => {
                     warnings.push(format!("{}: {e}", path.display()));
                     None

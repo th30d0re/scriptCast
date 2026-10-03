@@ -290,12 +290,10 @@ pub fn apply(ctx: &egui::Context) {
             egui::FontData::from_static(bytes).tweak(tweak).into(),
         );
     }
-    fonts
-        .families
-        .insert(
-            FontFamily::Proportional,
-            vec!["OpenDyslexic3".into(), "OpenDyslexic".into()],
-        );
+    fonts.families.insert(
+        FontFamily::Proportional,
+        vec!["OpenDyslexic3".into(), "OpenDyslexic".into()],
+    );
     fonts.families.insert(
         FontFamily::Monospace,
         vec!["OpenDyslexicMono".into(), "OpenDyslexic".into()],
@@ -373,8 +371,7 @@ pub fn icon_button(ui: &mut egui::Ui, icon_name: &str, enabled: bool) -> egui::R
         ui.add_enabled(
             enabled,
             egui::Button::image(
-                egui::Image::new(icon(icon_name))
-                    .fit_to_exact_size(egui::Vec2::splat(BUTTON_ICON)),
+                egui::Image::new(icon(icon_name)).fit_to_exact_size(egui::Vec2::splat(BUTTON_ICON)),
             )
             .fill(BG_CONTROL)
             .stroke(egui::Stroke::new(BORDER, BORDER_DEFAULT))
@@ -415,6 +412,10 @@ fn button(
             .min_size(egui::vec2(0.0, BUTTON_HEIGHT)),
     )
 }
+
+pub const JOB_LOG_HEIGHT: f32 = 180.0;
+pub const RESTORE_LIST_HEIGHT: f32 = 180.0;
+pub const CONFIRM_ICON: f32 = 26.0;
 
 #[cfg(test)]
 mod tests {
