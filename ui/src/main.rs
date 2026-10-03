@@ -73,9 +73,14 @@ struct Preferences {
     recent: Vec<RecentEpisode>,
     /// Play the next visible turn when the current one finishes (screen 03).
     auto_advance: bool,
+    #[serde(default = "default_true")]
+    gapless: bool,
     /// Output device choice, persisted by name; a gone device falls back to
     /// the default output with a notice.
     output_device: Option<String>,
+}
+fn default_true() -> bool {
+    true
 }
 impl Default for Preferences {
     fn default() -> Self {
@@ -84,6 +89,7 @@ impl Default for Preferences {
             last_episode: None,
             recent: Vec::new(),
             auto_advance: true,
+            gapless: true,
             output_device: None,
         }
     }
@@ -259,13 +265,16 @@ struct SelectedMedia {
 impl Browser {
     fn new(cc: &eframe::CreationContext<'_>, cli: &capture::Cli) -> Self {
         t::apply(&cc.egui_ctx);
-        let preferences = if cli.effective_fresh() {
+        let mut preferences = if cli.effective_fresh() {
             Preferences::default()
         } else {
             cc.storage
                 .and_then(|s| eframe::get_value(s, STORAGE_KEY))
                 .unwrap_or_default()
         };
+        if cli.no_gapless {
+            preferences.gapless = false;
+        }
         let muted = cli.effective_muted();
         let (audio, audio_notice) = match AudioOut::open(preferences.output_device.as_deref()) {
             Ok(mut audio) => {
@@ -657,7 +666,10 @@ impl Browser {
     }
     fn poll_audio(&mut self, ctx: &egui::Context) {
         let device_error = match self.audio.as_mut() {
-            Some(Ok(audio)) => audio.take_device_error(),
+            Some(Ok(audio)) => {
+                audio.sync_queue();
+                audio.take_device_error()
+            }
             _ => None,
         };
         if let Some(message) = device_error {
@@ -665,6 +677,52 @@ impl Browser {
         }
         if let Transport::Playing(turn) = self.transport {
             let finished = matches!(&self.audio, Some(Ok(audio)) if audio.is_finished());
+            let new_playing = self
+                .audio
+                .as_ref()
+                .and_then(|a| a.as_ref().ok())
+                .and_then(|a| a.playing());
+            if let Some(new) = new_playing {
+                if new != turn {
+                    self.transport = Transport::Playing(new);
+                    self.select(new);
+                    let visible = self.visible_indices();
+                    let target = self
+                        .episode
+                        .as_ref()
+                        .and_then(|e| advance_target(e, &visible, turn));
+                    if Some(new) != target {
+                        if let Some(target) = target {
+                            self.start_audio(target);
+                        } else {
+                            self.stop_audio();
+                        }
+                    }
+                } else if self.preferences.auto_advance && self.preferences.gapless {
+                    let queued_after = self
+                        .audio
+                        .as_ref()
+                        .and_then(|a| a.as_ref().ok())
+                        .is_some_and(|a| a.queued_after_current());
+                    if !queued_after {
+                        let visible = self.visible_indices();
+                        let target = self
+                            .episode
+                            .as_ref()
+                            .and_then(|e| advance_target(e, &visible, turn));
+                        if let Some(next) = target {
+                            let wavs = self
+                                .episode
+                                .as_ref()
+                                .and_then(|e| e.turns.get(next))
+                                .map(|t| t.wav_paths.clone());
+                            if let (Some(wavs), Some(Ok(audio))) = (wavs, self.audio.as_mut()) {
+                                let _ = audio.queue_next(next, &wavs);
+                            }
+                        }
+                    }
+                }
+            }
             if finished {
                 self.on_playback_finished(turn);
             }
@@ -972,6 +1030,20 @@ impl Browser {
                 self.preferences.cli_dir = None;
                 self.export_command = None;
                 self.refresh_commands(ui.ctx());
+            }
+            ui.add_space(t::SPACE_8);
+            ui.label(t::heading("Playback", t::SECTION_TITLE));
+            let mut gapless = self.preferences.gapless;
+            if ui
+                .checkbox(
+                    &mut gapless,
+                    egui::RichText::new("Gapless auto-advance")
+                        .font(t::font(t::BODY))
+                        .color(t::TEXT_PRIMARY),
+                )
+                .changed()
+            {
+                self.preferences.gapless = gapless;
             }
         });
         let export = self

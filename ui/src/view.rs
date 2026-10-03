@@ -51,7 +51,7 @@ pub fn speaker_label_width(ui: &Ui, speakers: &[Speaker]) -> f32 {
     speakers.iter().fold(0.0, |widest, speaker| {
         widest.max(t::text_width(
             ui,
-            format!("▎{}", speaker.name),
+            speaker.name.clone(),
             t::font(t::SPEAKER_LABEL),
         ))
     })
