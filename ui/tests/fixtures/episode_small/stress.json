@@ -1,0 +1,30 @@
+[
+  {
+    "turn": 99,
+    "manifest_turn": 99,
+    "turn_id": "turn-1",
+    "score": 1.0,
+    "failed": false,
+    "expected": "Hello, world.",
+    "heard": "Hello, world.",
+    "stress": [],
+    "repetition": null
+  },
+  {
+    "turn": 1,
+    "manifest_turn": 1,
+    "turn_id": "turn-2",
+    "score": 0.6,
+    "failed": true,
+    "expected": "Two chunks in order.",
+    "heard": "Two chunks.",
+    "repetition": "Two chunks",
+    "stress": [
+      {
+        "word": "order",
+        "reading": "default",
+        "verdict": "wrong"
+      }
+    ]
+  }
+]

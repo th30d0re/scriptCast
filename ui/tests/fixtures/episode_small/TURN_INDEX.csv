@@ -1,0 +1,4 @@
+turn_index,audio_time,script_time,speaker,clip_name,first_words
+1,00:00,00:00,alice,turn_1_0,"Hello, world."
+2,00:00,00:00,bob,turn_2_0,Two chunks in order.
+3,00:00,00:00,alice,turn_3_0,Not checked yet.
