@@ -1,6 +1,7 @@
 mod capture;
 mod discrepancy_view;
 mod editing;
+mod find_replace;
 mod inspector;
 mod jobs;
 mod read_along;
@@ -92,6 +93,8 @@ struct Preferences {
     /// Whisper only / Ensemble toggle for discrepancy review (Phase H4).
     #[serde(default)]
     discrepancy_mode: scriptcast_ui::discrepancy::ReviewMode,
+    #[serde(default)]
+    find: scriptcast_ui::find::Options,
 }
 fn default_true() -> bool {
     true
@@ -112,6 +115,7 @@ impl Default for Preferences {
             appearance: t::Appearance::default(),
             edit_mode: editing::EditMode::default(),
             discrepancy_mode: scriptcast_ui::discrepancy::ReviewMode::default(),
+            find: scriptcast_ui::find::Options::default(),
         }
     }
 }
@@ -132,6 +136,7 @@ struct Filters {
     speaker: Option<usize>,
     failed_only: bool,
 }
+#[cfg(test)]
 impl Filters {
     fn matches(&self, episode: &Episode) -> Vec<bool> {
         let query = self.search.to_lowercase();
@@ -239,6 +244,7 @@ fn neighbour_targets(visible: &[usize], current: Option<usize>) -> (Option<usize
 #[derive(Default)]
 struct Browser {
     editing: editing::Editing,
+    find: find_replace::FindReplace,
     table_cache: table::TextCache,
     jobs: jobs::Jobs,
     export_command: Option<Result<ExportCommand, String>>,
@@ -360,6 +366,12 @@ impl Browser {
             ..Self::default()
         };
         app.editing.capture_open = cli.edit;
+        app.find.capture_query = cli.find.clone();
+        if let Some(replacement) = &cli.replace {
+            app.find.replacement = replacement.clone();
+            app.find.replace_open = true;
+        }
+
         if let Some(path) = cli
             .episode
             .clone()
@@ -696,9 +708,8 @@ impl Browser {
     }
     fn visible_indices(&self) -> Vec<usize> {
         match &self.episode {
-            Some(e) => self
-                .filters
-                .matches(e)
+            Some(_) => self
+                .find_visibility()
                 .iter()
                 .enumerate()
                 .filter_map(|(i, v)| v.then_some(i))
@@ -796,6 +807,14 @@ impl Browser {
         }
     }
     fn capture_logic(&mut self, ctx: &egui::Context) {
+        // Keep the window visible/focused while frames is still 0 (loading). Do not
+        // schedule a keep-alive tick here: `has_requested_repaint` treats delayed
+        // ticks as pending and would prevent Settling from ever going quiet.
+        if self.capture.as_ref().is_some_and(|cap| cap.frames == 0) {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+            ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+        }
+
         if self.capture.is_some()
             && self.pending.is_none()
             && let Some((path, error)) = &self.error
@@ -963,7 +982,16 @@ impl Browser {
         let editor_focused = ctx.memory(|m| m.has_focus(editing::editor_id()));
         let dialog = self.jobs.confirmation.is_some()
             || self.jobs.restore.is_some()
-            || self.editing.pending_selection.is_some();
+            || self.editing.pending_selection.is_some()
+            || self.find.confirmation.is_some();
+        if editor_focused && self.preferences.edit_mode == editing::EditMode::Row {
+            if !dialog && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+            {
+                self.editing.cancel();
+                ctx.memory_mut(|m| m.surrender_focus(editing::editor_id()));
+            }
+            return;
+        }
         if !dialog && self.editing.draft.is_some() {
             if ctx.input_mut(|i| {
                 i.consume_key(egui::Modifiers::COMMAND, egui::Key::S)
@@ -978,6 +1006,9 @@ impl Browser {
                 ctx.memory_mut(|m| m.surrender_focus(editing::editor_id()));
                 return;
             }
+        }
+        if !editor_focused && !dialog {
+            self.find_shortcuts(ctx);
         }
         if editing::suppress_shortcuts(editor_focused, ctx.text_edit_focused(), dialog) {
             return;
@@ -1061,12 +1092,9 @@ impl Browser {
         if space {
             self.play_selected();
         }
-        if (up || down)
-            && let Some(e) = &self.episode
-        {
+        if (up || down) && self.episode.is_some() {
             let visible: Vec<_> = self
-                .filters
-                .matches(e)
+                .find_visibility()
                 .iter()
                 .enumerate()
                 .filter_map(|(i, v)| v.then_some(i))
@@ -1250,157 +1278,6 @@ impl Browser {
         }
         if open {
             self.pick(&ctx);
-        }
-    }
-    fn filter_bar(&mut self, ui: &mut Ui) {
-        let Some(e) = &self.episode else {
-            return;
-        };
-        let rect = view::inset(ui.max_rect(), t::SPACE_16, 0.0);
-        let mut ui = ui.new_child(
-            UiBuilder::new()
-                .max_rect(rect)
-                .layout(Layout::left_to_right(Align::Center)),
-        );
-        ui.spacing_mut().item_spacing.x = t::SPACE_10;
-        let prompt = "Search turns";
-        let hint = "Cmd+F";
-        let hint_width = t::text_width(&ui, hint, t::font(t::CAPTION));
-        // The field grows so prompt and hint always fit; the token is the floor.
-        let search_width = t::SEARCH_WIDTH.max(
-            t::SPACE_7
-                + t::SPACE_14
-                + t::SPACE_7
-                + t::text_width(&ui, prompt, t::font(t::BODY))
-                + t::SPACE_8
-                + hint_width
-                + t::SPACE_8,
-        );
-        let (search_rect, _) =
-            ui.allocate_exact_size(vec2(search_width, t::SEARCH_HEIGHT), Sense::hover());
-        ui.painter()
-            .rect_filled(search_rect, t::RADIUS_CONTROL, t::BG_WINDOW);
-        ui.painter().rect_stroke(
-            search_rect,
-            t::RADIUS_CONTROL,
-            egui::Stroke::new(t::BORDER, t::BORDER_DEFAULT),
-            egui::StrokeKind::Inside,
-        );
-        let icon = Rect::from_center_size(
-            pos2(search_rect.left() + t::SPACE_14, search_rect.center().y),
-            egui::Vec2::splat(t::SPACE_14),
-        );
-        egui::Image::new(t::icon("search-14-text-muted")).paint_at(&ui, icon);
-        let hint_rect = Rect::from_min_max(
-            pos2(
-                search_rect.right() - t::SPACE_8 - hint_width,
-                search_rect.top(),
-            ),
-            pos2(search_rect.right() - t::SPACE_8, search_rect.bottom()),
-        );
-        let edit = Rect::from_min_max(
-            pos2(icon.right() + t::SPACE_7, search_rect.top()),
-            pos2(hint_rect.left() - t::SPACE_8, search_rect.bottom()),
-        );
-        // A child ui, not `ui.put`: `put` advances the parent cursor past the
-        // edit rect, which pushed the following ComboBox into the search field.
-        let mut edit_ui = ui.new_child(
-            UiBuilder::new()
-                .max_rect(edit)
-                .layout(Layout::left_to_right(Align::Center)),
-        );
-        let response = edit_ui.add(
-            egui::TextEdit::singleline(&mut self.filters.search)
-                .id(egui::Id::new("turn_search"))
-                .font(t::font(t::BODY))
-                .hint_text(prompt)
-                .desired_width(edit.width())
-                .frame(egui::Frame::NONE),
-        );
-        if self.focus_search {
-            response.request_focus();
-            self.focus_search = false;
-        }
-        view::line(&ui, hint_rect, hint, t::font(t::CAPTION), t::TEXT_SUBTLE);
-        let old_speaker = self.filters.speaker;
-        let old_failed = self.filters.failed_only;
-        egui::ComboBox::from_id_salt("speaker_filter")
-            .selected_text(
-                self.filters
-                    .speaker
-                    .map(|s| e.speakers[s].name.as_str())
-                    .unwrap_or("All speakers"),
-            )
-            .show_ui(&mut ui, |ui| {
-                ui.selectable_value(&mut self.filters.speaker, None, "All speakers");
-                for (i, speaker) in e.speakers.iter().enumerate() {
-                    ui.selectable_value(&mut self.filters.speaker, Some(i), &speaker.name);
-                }
-            });
-        let failures = e.count(V::Failed);
-        let label = format!(
-            "{}Failed only · {}",
-            if self.filters.failed_only { "✓ " } else { "" },
-            failures
-        );
-        let button = egui::Button::new(t::heading(label, t::BUTTON).color(
-            if self.filters.failed_only {
-                t::STATUS_FAILED
-            } else {
-                t::TEXT_PRIMARY
-            },
-        ))
-        .min_size(vec2(0.0, t::BUTTON_HEIGHT))
-        .fill(if self.filters.failed_only {
-            t::BG_DANGER
-        } else {
-            t::BG_CONTROL
-        })
-        .stroke(egui::Stroke::new(
-            t::BORDER,
-            if self.filters.failed_only {
-                t::STATUS_FAILED
-            } else {
-                t::BORDER_DEFAULT
-            },
-        ));
-        if ui.add_enabled(failures > 0, button).clicked() {
-            self.filters.failed_only = !self.filters.failed_only;
-        }
-        editing::mode_toggle(&mut ui, &mut self.preferences.edit_mode);
-        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            let tip = if self.preferences.inspector_hidden {
-                "Show side panel"
-            } else {
-                "Hide side panel"
-            };
-            let size = egui::Vec2::splat(t::TEXT_15);
-            let (rect, response) = ui.allocate_exact_size(size, Sense::click());
-            egui::Image::new(t::icon("list-15-text-muted")).paint_at(ui, rect);
-            if response.on_hover_text(tip).clicked() {
-                self.preferences.inspector_hidden = !self.preferences.inspector_hidden;
-            }
-            if t::secondary_button(ui, "Jobs", None, true)
-                .on_hover_text("Job runner · Cmd+J")
-                .clicked()
-            {
-                self.preferences.inspector_hidden = false;
-                self.jobs.mode = Some(InspectorMode::Jobs);
-            }
-            if t::secondary_button(ui, "Verification", None, self.selected.is_some()).clicked() {
-                self.preferences.inspector_hidden = false;
-                self.jobs.mode = Some(InspectorMode::Verification);
-            }
-            if t::secondary_button(ui, "Selected", None, self.selected.is_some()).clicked() {
-                self.preferences.inspector_hidden = false;
-                self.jobs.mode = Some(InspectorMode::SelectedTurn);
-            }
-        });
-        if response.changed()
-            || old_speaker != self.filters.speaker
-            || old_failed != self.filters.failed_only
-        {
-            self.scroll_to = Some(0);
         }
     }
     fn empty(&mut self, ui: &mut Ui) {
@@ -2172,7 +2049,14 @@ impl Browser {
             let timeline = Rect::from_min_size(workspace.min, vec2(workspace.width(), timeline_h));
             let filter = Rect::from_min_size(
                 timeline.left_bottom(),
-                vec2(workspace.width(), t::FILTER_BAR_HEIGHT),
+                vec2(
+                    workspace.width(),
+                    if self.find.replace_open {
+                        t::FIND_BAR_HEIGHT + t::REPLACE_BAR_HEIGHT
+                    } else {
+                        t::FIND_BAR_HEIGHT
+                    },
+                ),
             );
             let review = Rect::from_min_max(filter.left_bottom(), workspace.max);
             self.filter_bar(&mut view::region(ui, "filters", filter, t::BG_RAISED));
@@ -2184,7 +2068,7 @@ impl Browser {
                     Some((turn, start + self.audio_position().as_millis() as u64))
                 });
                 (
-                    self.filters.matches(e),
+                    self.find_visibility(),
                     playing,
                     self.selected.filter(|i| e.turns.get(*i).is_some()),
                 )
@@ -2257,6 +2141,9 @@ impl Browser {
                 &self.jobs.selected,
                 &edited,
                 markers.is_none(),
+                &self.find,
+                &self.filters.search,
+                &self.preferences.find,
                 &mut self.editing,
                 self.preferences.edit_mode,
                 !self.jobs.busy() && self.pending.is_none(),
@@ -2370,6 +2257,7 @@ impl Browser {
         }
         self.workspace_card(&ctx);
         self.confirmation_dialog(&ctx);
+        self.replace_dialog(&ctx);
         self.settings_window(&ctx);
         self.draft_guard(&ctx);
     }
@@ -2379,6 +2267,7 @@ impl eframe::App for Browser {
         self.poll_load(ctx);
         self.poll_jobs(ctx);
         self.poll_editing(ctx);
+        self.refresh_find();
         self.poll_review_save();
         self.poll_daw();
         self.poll_audio(ctx);

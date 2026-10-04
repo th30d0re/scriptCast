@@ -76,7 +76,7 @@ fn splice_handles_eof_empty_spans_and_invalid_input() {
 
 #[test]
 fn save_conflict_empty_draft_and_checkpoint_failure_touch_no_script() {
-    let tmp = Scratch::new();
+    let tmp = phase_i_scratch();
     let e = tmp.fixture();
     let path = e.script_path.as_ref().unwrap();
     let bytes = original("\n");
@@ -101,7 +101,7 @@ fn save_conflict_empty_draft_and_checkpoint_failure_touch_no_script() {
 
 #[test]
 fn checkpoint_precedes_save_and_restore_is_reversible_with_modes() {
-    let tmp = Scratch::new();
+    let tmp = phase_i_scratch();
     let e = tmp.fixture();
     let path = e.script_path.as_ref().unwrap();
     let bytes = original("\r\n");
@@ -137,7 +137,7 @@ fn checkpoint_precedes_save_and_restore_is_reversible_with_modes() {
 
 #[test]
 fn external_names_cannot_collide_and_audio_cannot_escape() {
-    let tmp = Scratch::new();
+    let tmp = phase_i_scratch();
     let e = tmp.fixture();
     let path = e.script_path.as_ref().unwrap();
     let files = [PlannedFile {
@@ -164,7 +164,7 @@ fn external_names_cannot_collide_and_audio_cannot_escape() {
 
 #[test]
 fn legacy_audio_checkpoint_is_listed_and_restored() {
-    let tmp = Scratch::new();
+    let tmp = phase_i_scratch();
     let e = tmp.fixture();
     let files = [PlannedFile {
         path: e.dir.join("stress.json"),
@@ -197,7 +197,7 @@ fn edited_rows_require_equal_counts_and_deduplicate() {
 
 #[test]
 fn real_cli_edit_changes_and_restore_on_copied_fixture() {
-    let tmp = Scratch::new();
+    let tmp = phase_i_scratch();
     let mut e = tmp.fixture();
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
@@ -268,7 +268,7 @@ Path('episode_small/render_state.json').write_text(json.dumps(state.to_dict()))
 #[test]
 fn checkpoint_paths_refuse_symlink_escapes_before_writing() {
     use std::os::unix::fs::symlink;
-    let tmp = Scratch::new();
+    let tmp = phase_i_scratch();
     let e = tmp.fixture();
     let outside = tmp.0.join("outside");
     fs::create_dir(&outside).unwrap();
@@ -366,4 +366,202 @@ fn phase_d2_live_copy_save_changes_and_restore() {
     )
     .unwrap();
     println!("{summary}");
+}
+
+#[test]
+fn batch_bytes_one_checkpoint_conflict_and_restore() {
+    for ending in ["\n", "\r\n"] {
+        let tmp = phase_i_scratch();
+        let e = tmp.fixture();
+        let path = e.script_path.as_ref().unwrap();
+        let bytes = original(ending);
+        fs::write(path, &bytes).unwrap();
+        let body = ["Original **body**.", "<!-- comment -->", "last line"].join(ending);
+        let second = ScriptTurn {
+            index: 2,
+            turn_id: "second".into(),
+            speaker_id: "bob".into(),
+            display_name: "Bob".into(),
+            header_line: 10,
+            body_start: 11,
+            body_end: 11,
+            body: "Next.".into(),
+        };
+        let edits = vec![
+            (turn(&body), body.replace("Original", "New")),
+            (second, "Last.".into()),
+        ];
+        assert!(script::save_many(&e, &edits, "wrong hash").is_err());
+        assert_eq!(fs::read(path).unwrap(), bytes);
+        assert!(!e.dir.join("_backups").exists());
+        let cp = script::save_many(&e, &edits, &hash(&bytes)).unwrap();
+        assert_eq!(checkpoint::list(&e.dir).len(), 1);
+        assert_eq!(cp.turns, vec![1, 2]);
+        assert_eq!(cp.kind, "script-edit");
+        let expected = String::from_utf8(bytes.clone())
+            .unwrap()
+            .replace("Original", "New")
+            .replace("Next.", "Last.");
+        assert_eq!(fs::read(path).unwrap(), expected.as_bytes());
+        checkpoint::restore(&e.dir, &cp).unwrap();
+        assert_eq!(fs::read(path).unwrap(), bytes);
+    }
+}
+
+#[test]
+fn batch_validates_all_spans_and_clip_tags_before_checkpointing() {
+    let tmp = phase_i_scratch();
+    let e = tmp.fixture();
+    let path = e.script_path.as_ref().unwrap();
+    let bytes = original("\n");
+    fs::write(path, &bytes).unwrap();
+    let t = turn("Original **body**.\n<!-- comment -->\nlast line");
+    let mut bad = t.clone();
+    bad.index = 2;
+    bad.body_end = 999;
+    assert!(
+        script::save_many(
+            &e,
+            &[(t.clone(), "new".into()), (bad, "bad".into())],
+            &hash(&bytes)
+        )
+        .is_err()
+    );
+    assert!(
+        script::save_many(
+            &e,
+            &[(t.clone(), "new".into()), (t, "duplicate".into())],
+            &hash(&bytes)
+        )
+        .is_err()
+    );
+    assert!(script::save_many(&e, &[], &hash(&bytes)).is_err());
+    assert!(!e.dir.join("_backups").exists());
+    assert_eq!(fs::read(path).unwrap(), bytes);
+}
+
+fn phase_i_scratch() -> Scratch {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    static NEXT: AtomicUsize = AtomicUsize::new(0);
+    let path = PathBuf::from("/tmp/scriptcast-i").join(format!(
+        "script-edit-test-{}-{}",
+        std::process::id(),
+        NEXT.fetch_add(1, Ordering::Relaxed),
+    ));
+    fs::create_dir_all(&path).unwrap();
+    Scratch(path)
+}
+
+/// Live acceptance only operates on the explicitly prepared Phase I copy.
+#[test]
+#[ignore = "requires the EP03 project copy under /tmp/scriptcast-i/live"]
+fn phase_i_live_replace_all_changes_and_restore() {
+    use scriptcast_ui::find::{self, Matcher, Options};
+    let root = fs::canonicalize("/tmp/scriptcast-i/live").unwrap();
+    let dir = root.join("outputs/ATO_EP03_five_levels");
+    let e = scriptcast_ui::episode::Episode::load(&dir).unwrap();
+    assert!(
+        fs::canonicalize(e.script_path.as_ref().unwrap())
+            .unwrap()
+            .starts_with(&root)
+    );
+    let export = ExportCommand {
+        source: ExportSource::DevCheckout(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .parent()
+                .unwrap()
+                .into(),
+        ),
+        program: std::env::var_os("SCRIPTCAST_I_PYTHON")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| "python3".into()),
+    };
+    let loaded = script::load_turns(&export, &e).unwrap();
+    let path = fs::canonicalize(&loaded.script_path).unwrap();
+    assert!(path.starts_with(&root));
+    let original = fs::read(&path).unwrap();
+    let options = Options {
+        whole_word: true,
+        ..Default::default()
+    };
+    let matcher = Matcher::new("racism", &options).unwrap();
+    let plan = find::plan(&loaded.turns, &matcher, &options, "bias", None);
+    assert!(plan.edits.len() > 1);
+    let before_checkpoints = checkpoint::list(&dir).len();
+    let cp = script::save_many(&e, &plan.edits, &loaded.script_sha256).unwrap();
+    let saved = fs::read(&path).unwrap();
+    let changes_result = script::load_changes(&export, &e);
+    let checkpoint_count = checkpoint::list(&dir).len();
+    // Always restore before checking the post-save exports or byte assertions.
+    checkpoint::restore(&dir, &cp).unwrap();
+    assert_eq!(fs::read(&path).unwrap(), original);
+    assert_eq!(checkpoint_count, before_checkpoints + 1);
+    let changes = changes_result.unwrap();
+    for (turn, _) in &plan.edits {
+        assert!(changes.inserted.contains(&turn.index) || changes.modified.contains(&turn.index));
+    }
+    let before_text = String::from_utf8(original.clone()).unwrap();
+    let after_text = String::from_utf8(saved.clone()).unwrap();
+    let before_lines: Vec<_> = before_text.split_inclusive('\n').collect();
+    let after_lines: Vec<_> = after_text.split_inclusive('\n').collect();
+    assert_eq!(before_lines.len(), after_lines.len());
+    let regex = regex::Regex::new(r"(?i)\bracism\b").unwrap();
+    for (index, (before, after)) in before_lines.iter().zip(&after_lines).enumerate() {
+        if before != after {
+            assert!(
+                plan.edits
+                    .iter()
+                    .any(|(t, _)| index + 1 >= t.body_start && index < t.body_end)
+            );
+            assert_eq!(regex.replace_all(before, "bias"), *after);
+        }
+    }
+    let summary = serde_json::json!({
+        "script": path, "query": "racism", "replacement": "bias",
+        "occurrences": plan.occurrences, "turns": plan.edits.len(), "skipped": plan.skipped,
+        "indices": plan.edits.iter().map(|(t, _)| t.index).collect::<Vec<_>>(),
+        "checkpoint": cp.dir, "checkpoint_version": cp.version,
+        "original_sha256": hash(&original), "replaced_sha256": hash(&saved),
+        "restored_sha256": hash(&fs::read(&path).unwrap()), "restored_bytes_equal": true,
+        "only_matched_words_changed": true, "one_checkpoint": true,
+        "changes_after_save": { "inserted": changes.inserted, "modified": changes.modified,
+            "deleted": changes.deleted, "unchanged": changes.unchanged },
+    });
+    fs::write("/tmp/scriptcast-i/script-before.md", original).unwrap();
+    fs::write("/tmp/scriptcast-i/script-after.md", saved).unwrap();
+    fs::write(
+        "/tmp/scriptcast-i/live-roundtrip.json",
+        serde_json::to_vec_pretty(&summary).unwrap(),
+    )
+    .unwrap();
+    println!("{summary}");
+}
+
+#[test]
+fn batch_preserves_mixed_line_endings_and_accepts_changed_line_counts() {
+    let tmp = phase_i_scratch();
+    let e = tmp.fixture();
+    let path = e.script_path.as_ref().unwrap();
+    let bytes = b"Alice (00:00)\r\nFirst.\nKeep.\r\n\r\nBob (00:01)\nLast.";
+    fs::write(path, bytes).unwrap();
+    let mut first = turn("First.\nKeep.");
+    first.header_line = 1;
+    first.body_start = 2;
+    first.body_end = 3;
+    let mut last = turn("Last.");
+    last.index = 2;
+    last.header_line = 5;
+    last.body_start = 6;
+    last.body_end = 6;
+    let edits = [
+        (last, "New last.\nExtra.".into()),
+        (first, "New first.\nKeep.".into()),
+    ];
+    let cp = script::save_many(&e, &edits, &hash(bytes)).unwrap();
+    assert_eq!(
+        fs::read(path).unwrap(),
+        b"Alice (00:00)\r\nNew first.\nKeep.\r\n\r\nBob (00:01)\nNew last.\nExtra."
+    );
+    checkpoint::restore(&e.dir, &cp).unwrap();
+    assert_eq!(fs::read(path).unwrap(), bytes);
 }
