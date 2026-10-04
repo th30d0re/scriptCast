@@ -8,7 +8,7 @@ use crate::{
     view,
 };
 use eframe::egui::{self, Align, Layout, Rect, Sense, Ui, UiBuilder, pos2, vec2};
-use scriptcast_ui::{episode::Episode, theme as t};
+use scriptcast_ui::{episode::Episode, script, theme as t};
 use std::time::Duration;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -46,6 +46,7 @@ pub enum Action {
     Previous,
     Next,
     Review,
+    RunReadAlong,
 }
 
 /// The inspector's text field: TRANSCRIPT only when this turn has a
@@ -65,6 +66,22 @@ pub fn transcript_field(turn: &scriptcast_ui::episode::Turn) -> (&'static str, &
     }
 }
 
+fn read_along_prompt(episode: &Episode, turn_id: &str) -> Option<&'static str> {
+    if episode.read_along.words(turn_id).is_some() {
+        return None;
+    }
+    let stale = episode
+        .read_along
+        .notice
+        .as_deref()
+        .is_some_and(|n| n.contains("out of date"));
+    Some(if stale {
+        "Read-along timings are out of date (episode re-rendered). Run Jobs → Read-along timings."
+    } else {
+        "No read-along timings yet. Run Jobs → Read-along timings."
+    })
+}
+
 #[expect(clippy::too_many_arguments)]
 pub fn show(
     ui: &mut Ui,
@@ -81,6 +98,7 @@ pub fn show(
     edit_mode: EditMode,
     edited: bool,
     enabled: bool,
+    read_along: bool,
 ) -> (Option<Action>, Option<editing::Action>) {
     let turn = &episode.turns[turn_idx];
     let speaker = &episode.speakers[turn.speaker_idx];
@@ -122,6 +140,12 @@ pub fn show(
     body_ui.set_clip_rect(body.intersect(ui.clip_rect()));
     let mut action = None;
     let mut edit_action = None;
+    let scope = match (&editing.changes, &editing.turns) {
+        (Some(changes), Some(turns)) => {
+            Some(script::RenderScope::from_changes(changes, &turns.turns))
+        }
+        _ => None,
+    };
     egui::ScrollArea::vertical()
         .id_salt("inspector_scroll")
         .auto_shrink([false, false])
@@ -199,23 +223,40 @@ pub fn show(
                     t::STATUS_FAILED,
                 ));
             }
-            if let Some(notice) = &episode.read_along.notice {
+            if read_along
+                && !editing.edit_tab
+                && let Some(prompt) = read_along_prompt(episode, &turn.id)
+            {
+                ui.label(t::text(prompt, t::SECONDARY, t::TEXT_MUTED));
+                if t::secondary_button(ui, "Run…", None, enabled).clicked() {
+                    action = Some(Action::RunReadAlong);
+                }
+            } else if let Some(notice) = &episode.read_along.notice
+                && !read_along
+            {
                 ui.label(t::text(notice, t::SECONDARY, t::TEXT_MUTED));
             }
             if let Some(notice) = &editing.notice {
                 ui.label(t::text(notice, t::SECONDARY, t::TEXT_MUTED));
             }
-            if editing.edit_tab
-                && editing.has_edits()
-                && t::secondary_button(
+            if editing.edit_tab && editing.has_edits() {
+                let can_render = scope.as_ref().is_some_and(|s| s.synthesis_enabled());
+                let response = t::secondary_button(
                     ui,
                     "Re-render edited turns",
                     None,
-                    enabled && !editing.busy(),
-                )
-                .clicked()
-            {
-                edit_action = Some(editing::Action::Render);
+                    enabled && !editing.busy() && can_render,
+                );
+                let response = if !can_render {
+                    response.on_hover_text(
+                        "Only audio-clip transcript corrections changed; nothing to synthesize.",
+                    )
+                } else {
+                    response
+                };
+                if response.clicked() {
+                    edit_action = Some(editing::Action::Render);
+                }
             }
             if editing.edit_tab && edit_mode == EditMode::Panel {
                 return;

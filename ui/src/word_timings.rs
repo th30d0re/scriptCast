@@ -53,7 +53,7 @@ impl ReadAlong {
         if timings.manifest_sha256 != manifest_hash(manifest) {
             return Ok(Self {
                 timings: None,
-                notice: Some("Read-along timings are out of date".into()),
+                notice: Some("Read-along timings are out of date (episode re-rendered)".into()),
             });
         }
         for words in timings.turns.values() {
@@ -166,7 +166,7 @@ mod tests {
         assert!(stale.words("turn").is_none());
         assert_eq!(
             stale.notice.as_deref(),
-            Some("Read-along timings are out of date")
+            Some("Read-along timings are out of date (episode re-rendered)")
         );
         assert!(ReadAlong::from_bytes(b"{", manifest).is_err());
     }

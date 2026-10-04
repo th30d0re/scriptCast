@@ -148,6 +148,7 @@ pub fn save(
     new_body: &str,
     loaded_sha256: &str,
 ) -> Result<Checkpoint, String> {
+    preserve_clip_tag(&turn.body, new_body)?;
     let path = episode
         .script_path
         .as_ref()
@@ -218,4 +219,151 @@ pub fn edited_turns(
     indices.sort_unstable();
     indices.dedup();
     Some(indices)
+}
+
+/// First `[clip:<id>]` tag id in a turn body, if any.
+pub fn clip_id(body: &str) -> Option<&str> {
+    let start = body.find("[clip:")? + "[clip:".len();
+    let rest = body.get(start..)?;
+    let end = rest.find(']')?;
+    let id = rest.get(..end)?.trim();
+    if id.is_empty() || id.chars().any(char::is_whitespace) {
+        None
+    } else {
+        Some(id)
+    }
+}
+
+/// Full `[clip:<id>]` token for the first clip tag in `body`.
+pub fn clip_tag(body: &str) -> Option<String> {
+    clip_id(body).map(|id| format!("[clip:{id}]"))
+}
+
+/// Body text with the first clip tag removed, for table display.
+pub fn display_body(body: &str) -> String {
+    match clip_tag(body) {
+        Some(tag) => {
+            let stripped = body.replacen(&tag, "", 1);
+            stripped.trim().to_string()
+        }
+        None => body.to_string(),
+    }
+}
+
+/// Refuse saves that drop an existing audio-clip tag.
+pub fn preserve_clip_tag(original: &str, edited: &str) -> Result<(), String> {
+    let Some(tag) = clip_tag(original) else {
+        return Ok(());
+    };
+    if edited.contains(&tag) {
+        Ok(())
+    } else {
+        Err(format!(
+            "Keep the audio clip tag {tag}. Transcript-only edits cannot remove it."
+        ))
+    }
+}
+
+/// Edited turns split into synthesis work versus clip transcript corrections.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RenderScope {
+    pub synthesis: Vec<usize>,
+    pub clip_corrections: Vec<usize>,
+}
+
+impl RenderScope {
+    pub fn from_changes(changes: &Changes, turns: &[ScriptTurn]) -> Self {
+        let mut synthesis = Vec::new();
+        let mut clip_corrections = Vec::new();
+        let mut indices = changes.inserted.clone();
+        indices.extend(&changes.modified);
+        indices.sort_unstable();
+        indices.dedup();
+        for index in indices {
+            match turns.iter().find(|t| t.index == index) {
+                Some(turn) if clip_id(&turn.body).is_some() => clip_corrections.push(index),
+                Some(_) => synthesis.push(index),
+                None => synthesis.push(index),
+            }
+        }
+        Self {
+            synthesis,
+            clip_corrections,
+        }
+    }
+
+    pub fn synthesis_enabled(&self) -> bool {
+        !self.synthesis.is_empty()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn turn(index: usize, body: &str) -> ScriptTurn {
+        ScriptTurn {
+            index,
+            turn_id: format!("t{index}"),
+            speaker_id: "s".into(),
+            display_name: "S".into(),
+            header_line: 1,
+            body_start: 2,
+            body_end: 2,
+            body: body.into(),
+        }
+    }
+
+    #[test]
+    fn clip_id_detects_tag_and_rejects_empty_or_spaced() {
+        assert_eq!(clip_id("[clip:atwater_1981] spoken"), Some("atwater_1981"));
+        assert_eq!(clip_id("pre [clip:x] post"), Some("x"));
+        assert_eq!(clip_id("no clip here"), None);
+        assert_eq!(clip_id("[clip:]"), None);
+        assert_eq!(clip_id("[clip:has space]"), None);
+        assert_eq!(
+            display_body("[clip:atwater_1981] Spoken words."),
+            "Spoken words."
+        );
+    }
+
+    #[test]
+    fn save_refuses_removed_clip_tag() {
+        let original = "[clip:atwater_1981] Hello there.";
+        assert!(preserve_clip_tag(original, original).is_ok());
+        assert!(preserve_clip_tag(original, "[clip:atwater_1981] Hello.").is_ok());
+        let err = preserve_clip_tag(original, "Hello there.").unwrap_err();
+        assert!(err.contains("[clip:atwater_1981]"));
+        assert!(preserve_clip_tag("plain text", "other").is_ok());
+    }
+
+    #[test]
+    fn render_scope_splits_synthesis_and_clip_only_disables() {
+        let turns = vec![
+            turn(1, "Synthesized line."),
+            turn(2, "[clip:atwater_1981] Archive line."),
+            turn(3, "Another synth."),
+        ];
+        let mixed = Changes {
+            inserted: vec![],
+            modified: vec![1, 2],
+            deleted: vec![],
+            unchanged: 1,
+        };
+        let scope = RenderScope::from_changes(&mixed, &turns);
+        assert_eq!(scope.synthesis, vec![1]);
+        assert_eq!(scope.clip_corrections, vec![2]);
+        assert!(scope.synthesis_enabled());
+
+        let clip_only = Changes {
+            inserted: vec![],
+            modified: vec![2],
+            deleted: vec![],
+            unchanged: 2,
+        };
+        let scope = RenderScope::from_changes(&clip_only, &turns);
+        assert!(scope.synthesis.is_empty());
+        assert_eq!(scope.clip_corrections, vec![2]);
+        assert!(!scope.synthesis_enabled());
+    }
 }
