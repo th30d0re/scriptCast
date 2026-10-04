@@ -12,6 +12,8 @@ use std::sync::mpsc::{self, Receiver};
 
 pub const FOOTNOTE: &str =
     "Audio remains unchanged. To replace rendered audio, save this draft and confirm synthesis.";
+pub const CLIP_FOOTNOTE: &str =
+    "Audio clip: this corrects the transcript only. The original recording is not regenerated.";
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EditMode {
@@ -323,6 +325,9 @@ pub fn inline_editor(
     if draft.changed() && wrap_warning {
         ui.horizontal(draft_warning);
     }
+    if script::clip_id(&draft.original).is_some() {
+        ui.label(t::text(CLIP_FOOTNOTE, t::CAPTION, t::TEXT_SUBTLE));
+    }
     action
 }
 
@@ -370,8 +375,10 @@ pub fn editor(
             ui.label(t::text("Unsaved draft", t::SECONDARY, t::STATUS_FAILED));
         });
     }
+    let clip = script::clip_id(&draft.original).is_some();
+    let footnote = if clip { CLIP_FOOTNOTE } else { FOOTNOTE };
     if row {
-        ui.label(t::text(FOOTNOTE, t::CAPTION, t::TEXT_SUBTLE));
+        ui.label(t::text(footnote, t::CAPTION, t::TEXT_SUBTLE));
     }
     let save_enabled = enabled && !busy && draft.changed() && !draft.text.trim().is_empty();
     let buttons = |ui: &mut Ui| {
@@ -393,7 +400,7 @@ pub fn editor(
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), buttons);
     } else {
         ui.horizontal(buttons);
-        ui.label(t::text(FOOTNOTE, t::CAPTION, t::TEXT_SUBTLE));
+        ui.label(t::text(footnote, t::CAPTION, t::TEXT_SUBTLE));
     }
     action
 }
@@ -418,12 +425,11 @@ impl Browser {
             Some(Action::Cancel) => self.editing.cancel(),
             Some(Action::Save) => self.save_draft(ctx),
             Some(Action::Render) => {
-                if let Some(c) = &self.editing.changes {
-                    let mut affected = c.inserted.clone();
-                    affected.extend(&c.modified);
-                    affected.sort_unstable();
-                    affected.dedup();
-                    self.request_job(Preset::PrecisionInsert, Some(affected), ctx);
+                if let (Some(c), Some(turns)) = (&self.editing.changes, &self.editing.turns) {
+                    let scope = script::RenderScope::from_changes(c, &turns.turns);
+                    if scope.synthesis_enabled() {
+                        self.request_job(Preset::PrecisionInsert, Some(scope.synthesis), ctx);
+                    }
                 }
             }
             None => {}
@@ -531,6 +537,10 @@ impl Browser {
                     Ok(turns) => {
                         self.editing.loaded_sha256 = Some(turns.script_sha256.clone());
                         self.editing.turns = Some(turns);
+                        // Full transcript heights replace first_words; re-anchor.
+                        if let Some(row) = self.selected {
+                            self.scroll_to = Some(row);
+                        }
                     }
                     Err(error) => self.editing.error = Some(error),
                 }

@@ -1,4 +1,4 @@
-//! Measured two-line read-along text, painted inside the table's virtual items.
+//! Measured read-along text, painted inside the table's virtual items.
 use eframe::egui::{self, Rect, Ui, pos2, vec2};
 use scriptcast_ui::{
     theme as t,
@@ -61,9 +61,6 @@ impl Transcript {
             job.append(text, 0.0, normal);
         }
         job.wrap.max_width = width.max(0.0);
-        job.wrap.max_rows = t::READ_ALONG_LINES;
-        // Reserve an ellipsis on the last line while more words remain.
-        job.wrap.overflow_character = Some('…');
         let galley = ui.painter().layout_job(job);
         let mut pills = Vec::new();
         if let Some(range) = active {
@@ -72,8 +69,7 @@ impl Transcript {
             for row in &galley.rows {
                 let mut pill = Rect::NOTHING;
                 for glyph in &row.glyphs {
-                    // An elided glyph is synthetic and must never acquire a word highlight.
-                    if chars.contains(&index) && glyph.chr != '…' {
+                    if chars.contains(&index) {
                         let rect = Rect::from_min_size(
                             row.pos + vec2(glyph.pos.x, 0.0),
                             vec2(glyph.advance_width, row.size.y),
@@ -94,12 +90,7 @@ impl Transcript {
     }
 
     pub fn height(&self) -> f32 {
-        let minimum = if self.galley.rows.len() > 1 {
-            t::TABLE_ROW_HEIGHT_2
-        } else {
-            t::TABLE_ROW_HEIGHT
-        };
-        minimum.max(self.galley.size().y + t::SPACE_4 * 2.0)
+        t::TABLE_ROW_HEIGHT.max(self.galley.size().y + t::SPACE_4 * 2.0)
     }
 
     pub fn paint(&self, ui: &Ui, rect: Rect) {
@@ -155,7 +146,7 @@ mod tests {
     }
 
     #[test]
-    fn transcripts_wrap_to_two_lines_and_ellipsize() {
+    fn transcripts_grow_to_full_wrapped_text() {
         let ctx = egui::Context::default();
         t::apply(&ctx);
         let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
@@ -163,19 +154,37 @@ mod tests {
                 Transcript::measure(ui, "spoken", t::INSPECTOR_WIDTH_SELECTED_TURN, Some(0..6));
             assert_eq!(short.galley.rows.len(), 1);
             assert_eq!(short.pills.len(), 1);
-            let long = Transcript::measure(
+            let three = Transcript::measure(
                 ui,
-                &"spoken ".repeat(100),
+                &"spoken word phrase ".repeat(12),
                 t::INSPECTOR_WIDTH_SELECTED_TURN,
                 None,
             );
-            assert!(long.height() > short.height());
-            assert_eq!(long.galley.rows.len(), 2);
-            assert_eq!(
-                long.galley.rows.last().unwrap().glyphs.last().unwrap().chr,
-                '…'
+            let six = Transcript::measure(
+                ui,
+                &"spoken word phrase ".repeat(40),
+                t::INSPECTOR_WIDTH_SELECTED_TURN,
+                None,
             );
-            long.paint(
+            assert!(
+                three.galley.rows.len() >= 3,
+                "rows={}",
+                three.galley.rows.len()
+            );
+            assert!(six.galley.rows.len() >= 6, "rows={}", six.galley.rows.len());
+            assert!(three.height() > short.height());
+            assert!(six.height() > three.height());
+            assert!(
+                six.galley
+                    .rows
+                    .last()
+                    .unwrap()
+                    .glyphs
+                    .last()
+                    .map(|g| g.chr != '…')
+                    .unwrap_or(true)
+            );
+            six.paint(
                 ui,
                 Rect::from_min_size(ui.max_rect().min, egui::Vec2::splat(t::SETTINGS_WIDTH)),
             );

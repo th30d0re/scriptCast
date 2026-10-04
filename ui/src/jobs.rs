@@ -847,16 +847,42 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                             ui.label(t::text(scope(c), t::BODY, t::TEXT_PRIMARY));
                             let turns = c.affected.clone().unwrap_or_else(|| c.preset.turns());
 if c.preset == Preset::PrecisionInsert && c.affected.is_some() {
+    let scope = match (&self.editing.changes, &self.editing.turns) {
+        (Some(changes), Some(script_turns)) => Some(
+            scriptcast_ui::script::RenderScope::from_changes(changes, &script_turns.turns),
+        ),
+        _ => None,
+    };
     if let Some(changes) = &self.editing.changes {
         ui.label(t::text(format!("{} inserted · {} modified · {} deleted",
             changes.inserted.len(), changes.modified.len(), changes.deleted.len()),
             t::SECONDARY, t::TEXT_MUTED));
     }
     egui::ScrollArea::vertical().max_height(t::RESTORE_LIST_HEIGHT).show(ui, |ui| {
-        if let Some(script) = &self.editing.turns {
-            for turn in script.turns.iter().filter(|t| turns.contains(&t.index)) {
+        if let Some(script_turns) = &self.editing.turns {
+            for turn in script_turns.turns.iter().filter(|t| turns.contains(&t.index)) {
                 ui.label(t::text(format!("{:03} · {}", turn.index, turn.display_name),
                     t::SECONDARY, t::TEXT_PRIMARY));
+            }
+            if let Some(scope) = &scope
+                && !scope.clip_corrections.is_empty()
+            {
+                ui.label(t::text(
+                    "Transcript corrections (no synthesis)",
+                    t::SECONDARY,
+                    t::TEXT_MUTED,
+                ));
+                for turn in script_turns
+                    .turns
+                    .iter()
+                    .filter(|t| scope.clip_corrections.contains(&t.index))
+                {
+                    ui.label(t::text(
+                        format!("{:03} · {}", turn.index, turn.display_name),
+                        t::SECONDARY,
+                        t::TEXT_MUTED,
+                    ));
+                }
             }
         }
     });

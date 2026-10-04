@@ -5,7 +5,7 @@ use crate::{
 use eframe::egui::{self, Rect, Sense, Ui, pos2, vec2};
 use scriptcast_ui::{
     episode::{Episode, VerificationState as V},
-    theme as t,
+    script, theme as t,
 };
 
 /// Fixed column widths sized from measured text, with the design tokens as
@@ -133,7 +133,57 @@ impl TextCache {
     }
 }
 
-/// Both expansions now live inside their turn; one prefix sum accounts for all row heights.
+/// Height of the audio-clip badge row (icon + vertical pad).
+fn clip_badge_row_height() -> f32 {
+    t::AUDIO_CLIP_ICON + t::AUDIO_CLIP_BADGE_PAD * 2.0
+}
+
+fn paint_clip_badge(ui: &Ui, rect: Rect, clip_id: &str) -> f32 {
+    let painter = ui.painter().with_clip_rect(rect.intersect(ui.clip_rect()));
+    let label = "Audio clip";
+    let label_galley =
+        painter.layout_no_wrap(label.to_owned(), t::font(t::SECONDARY), t::TEXT_AUDIO_CLIP);
+    let badge_w = t::AUDIO_CLIP_BADGE_PAD * 2.0
+        + t::AUDIO_CLIP_ICON
+        + t::AUDIO_CLIP_BADGE_GAP
+        + label_galley.size().x;
+    let badge_h = clip_badge_row_height();
+    let badge = Rect::from_min_size(rect.min, vec2(badge_w.min(rect.width()), badge_h));
+    painter.rect(
+        badge,
+        t::RADIUS_AUDIO_CLIP_BADGE,
+        t::BG_AUDIO_CLIP_BADGE,
+        egui::Stroke::new(t::BORDER, t::BORDER_DEFAULT),
+        egui::StrokeKind::Inside,
+    );
+    let icon = Rect::from_min_size(
+        pos2(
+            badge.left() + t::AUDIO_CLIP_BADGE_PAD,
+            badge.center().y - t::AUDIO_CLIP_ICON / 2.0,
+        ),
+        vec2(t::AUDIO_CLIP_ICON, t::AUDIO_CLIP_ICON),
+    );
+    egui::Image::new(t::icon("file-audio-13-text")).paint_at(ui, icon);
+    painter.galley(
+        pos2(
+            icon.right() + t::AUDIO_CLIP_BADGE_GAP,
+            badge.center().y - label_galley.size().y / 2.0,
+        ),
+        label_galley,
+        t::TEXT_AUDIO_CLIP,
+    );
+    let id_x = badge.right() + t::SPACE_8;
+    if id_x < rect.right() {
+        let id_galley =
+            painter.layout_no_wrap(clip_id.to_owned(), t::mono(t::NUMERIC), t::TEXT_MUTED);
+        painter.galley(
+            pos2(id_x, badge.center().y - id_galley.size().y / 2.0),
+            id_galley,
+            t::TEXT_MUTED,
+        );
+    }
+    badge_h
+}
 struct RowOffsets(Vec<f32>);
 impl RowOffsets {
     fn new(heights: impl IntoIterator<Item = f32>) -> Self {
@@ -242,13 +292,19 @@ pub fn show(
         + editing::inline_actions_height(&body_ui, transcript_width, editing.draft.as_ref())
         + t::SPACE_4 * 3.0;
     let heights = visible.iter().map(|&idx| {
-        let text = editing.body(idx).unwrap_or(&episode.turns[idx].first_words);
+        let raw = editing.body(idx).unwrap_or(&episode.turns[idx].first_words);
+        let clip = script::clip_id(raw);
+        let text = if clip.is_some() {
+            script::display_body(raw)
+        } else {
+            raw.to_string()
+        };
         let active = read_position
             .filter(|_| playing == Some(idx))
             .and_then(|position| {
                 let words = episode.read_along.words(&episode.turns[idx].id)?;
                 read_along::active_range(
-                    text,
+                    &text,
                     words,
                     scriptcast_ui::word_timings::manifest_position(
                         &episode.manifest.turns[idx],
@@ -256,11 +312,16 @@ pub fn show(
                     ),
                 )
             });
-        let transcript = cache.measure(&body_ui, idx, text, transcript_width, active);
+        let transcript = cache.measure(&body_ui, idx, &text, transcript_width, active);
         if editor_turn == Some(idx) {
             editor_height
         } else {
-            transcript.height()
+            let chrome = if clip.is_some() {
+                clip_badge_row_height() + t::SPACE_4
+            } else {
+                0.0
+            };
+            chrome + transcript.height()
         }
     });
     let rows = RowOffsets::new(heights);
@@ -357,7 +418,13 @@ pub fn show(
                 edit_action =
                     editing::inline_editor(&mut editor_ui, editing, field_height, enabled);
             } else {
-                transcript.paint(ui, cells[3]);
+                let raw = editing.body(idx).unwrap_or(&turn.first_words);
+                let mut text_rect = cells[3];
+                if let Some(id) = script::clip_id(raw) {
+                    let used = paint_clip_badge(ui, text_rect, id);
+                    text_rect.min.y += used + t::SPACE_4;
+                }
+                transcript.paint(ui, text_rect);
             }
             view::line(
                 ui,

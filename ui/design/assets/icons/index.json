@@ -42,6 +42,14 @@
   "colour_token": "accent"
  },
  {
+  "file": "file-audio-13-text.svg",
+  "figma_asset": "48:139",
+  "lucide": "file-audio",
+  "size_px": 13,
+  "colour_token": "text-audio-clip",
+  "note": "Phase G audio-clip badge; Figma node 48:139."
+ },
+ {
   "file": "headphones-22-accent.svg",
   "figma_asset": "a9bc6.svg",
   "lucide": "headphones",

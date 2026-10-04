@@ -21,6 +21,10 @@ pub const BORDER_DEFAULT: Color32 = Color32::from_rgb(54, 58, 65);
 pub const TEXT_PRIMARY: Color32 = Color32::from_rgb(237, 240, 244);
 pub const TEXT_MUTED: Color32 = Color32::from_rgb(164, 171, 182);
 pub const TEXT_SUBTLE: Color32 = Color32::from_rgb(113, 121, 133);
+/// Audio-clip badge label (Figma 48:139, `#c4cbd5`).
+pub const TEXT_AUDIO_CLIP: Color32 = Color32::from_rgb(196, 203, 213);
+/// Audio-clip badge fill (Figma 48:139, `#2c3037`).
+pub const BG_AUDIO_CLIP_BADGE: Color32 = Color32::from_rgb(44, 48, 55);
 /// Default accent; live colour is [`accent()`] / [`Appearance`].
 pub const ACCENT: Color32 = Color32::from_rgb(140, 175, 243);
 pub const ON_ACCENT: Color32 = Color32::from_rgb(21, 28, 41);
@@ -97,6 +101,7 @@ pub const RADIUS_OVERVIEW_SECTION: f32 = 1.0;
 pub const RADIUS_SEGMENT: f32 = 2.0;
 pub const RADIUS_SEEK_TRACK: f32 = 2.0;
 pub const RADIUS_WAVE_VIEWPORT: f32 = 3.0;
+pub const RADIUS_AUDIO_CLIP_BADGE: f32 = 4.0;
 pub const RADIUS_CONTROL: f32 = 5.0;
 pub const RADIUS_WINDOW: f32 = 8.0;
 pub const RADIUS_CARD: f32 = 8.0;
@@ -204,7 +209,12 @@ pub const READ_ALONG_TEXT: f32 = 13.0;
 pub const READ_ALONG_RADIUS: f32 = 3.0;
 pub const READ_ALONG_PAD_X: f32 = 4.0;
 pub const READ_ALONG_PAD_Y: f32 = 2.0;
-pub const READ_ALONG_LINES: usize = 2;
+/// Vertical pad inside the audio-clip badge (Figma 48:139).
+pub const AUDIO_CLIP_BADGE_PAD: f32 = 7.0;
+/// Gap between the file-audio icon and "Audio clip" label.
+pub const AUDIO_CLIP_BADGE_GAP: f32 = 6.0;
+/// File-audio icon size inside the badge.
+pub const AUDIO_CLIP_ICON: f32 = 13.0;
 pub const SECONDARY: f32 = 11.0;
 pub const CAPTION: f32 = 10.0;
 pub const FIELD_LABEL: f32 = 10.0;
@@ -241,6 +251,9 @@ pub fn icon(name: &str) -> egui::ImageSource<'static> {
         }
         "folder-open-42-accent" => {
             egui::include_image!("../design/assets/icons/folder-open-42-accent.svg")
+        }
+        "file-audio-13-text" => {
+            egui::include_image!("../design/assets/icons/file-audio-13-text.svg")
         }
         "headphones-22-accent" => {
             egui::include_image!("../design/assets/icons/headphones-22-accent.svg")

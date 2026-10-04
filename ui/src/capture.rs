@@ -79,6 +79,8 @@ pub struct Cli {
     pub layout: Option<(f32, f32)>,
     /// Hidden capture aid: open the Settings window.
     pub settings: bool,
+    /// Hidden capture aid: start with the side panel collapsed.
+    pub inspector_hidden: bool,
 }
 
 impl Cli {
@@ -103,6 +105,7 @@ impl Cli {
             no_gapless: false,
             layout: None,
             settings: false,
+            inspector_hidden: false,
         };
         let mut positional_only = false;
         let mut args = args.into_iter();
@@ -179,6 +182,7 @@ impl Cli {
                 "--simulate-device-loss" => cli.simulate_device_loss = true,
                 "--no-gapless" => cli.no_gapless = true,
                 "--settings" => cli.settings = true,
+                "--inspector-hidden" => cli.inspector_hidden = true,
                 "--running-screenshot" => {
                     cli.running_screenshot = Some(PathBuf::from(
                         args.next().ok_or("--running-screenshot needs a path")?,

@@ -80,6 +80,9 @@ struct Preferences {
     /// Inspector pane width for every mode; `None` uses each mode's default.
     #[serde(default)]
     inspector_width: Option<f32>,
+    /// When true the review table uses the full width (side panel hidden).
+    #[serde(default)]
+    inspector_hidden: bool,
     /// Accent, speaker colours, and text scale.
     #[serde(default)]
     appearance: t::Appearance,
@@ -101,6 +104,7 @@ impl Default for Preferences {
             output_device: None,
             timeline_height: None,
             inspector_width: None,
+            inspector_hidden: false,
             appearance: t::Appearance::default(),
             edit_mode: editing::EditMode::default(),
         }
@@ -294,6 +298,9 @@ impl Browser {
         if let Some((timeline_height, inspector_width)) = cli.layout {
             preferences.timeline_height = Some(timeline_height);
             preferences.inspector_width = Some(inspector_width);
+        }
+        if cli.inspector_hidden {
+            preferences.inspector_hidden = true;
         }
         if let Some(mode) = cli.edit_mode {
             preferences.edit_mode = mode;
@@ -954,6 +961,7 @@ impl Browser {
             return;
         }
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::J)) {
+            self.preferences.inspector_hidden = false;
             self.jobs.mode = Some(InspectorMode::Jobs);
         }
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Comma)) {
@@ -1308,20 +1316,30 @@ impl Browser {
         }
         editing::mode_toggle(&mut ui, &mut self.preferences.edit_mode);
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            ui.add(
-                egui::Image::new(t::icon("list-15-text-muted"))
-                    .fit_to_exact_size(egui::Vec2::splat(t::TEXT_15)),
-            );
+            let tip = if self.preferences.inspector_hidden {
+                "Show side panel"
+            } else {
+                "Hide side panel"
+            };
+            let size = egui::Vec2::splat(t::TEXT_15);
+            let (rect, response) = ui.allocate_exact_size(size, Sense::click());
+            egui::Image::new(t::icon("list-15-text-muted")).paint_at(ui, rect);
+            if response.on_hover_text(tip).clicked() {
+                self.preferences.inspector_hidden = !self.preferences.inspector_hidden;
+            }
             if t::secondary_button(ui, "Jobs", None, true)
                 .on_hover_text("Job runner · Cmd+J")
                 .clicked()
             {
+                self.preferences.inspector_hidden = false;
                 self.jobs.mode = Some(InspectorMode::Jobs);
             }
             if t::secondary_button(ui, "Verification", None, self.selected.is_some()).clicked() {
+                self.preferences.inspector_hidden = false;
                 self.jobs.mode = Some(InspectorMode::Verification);
             }
             if t::secondary_button(ui, "Selected", None, self.selected.is_some()).clicked() {
+                self.preferences.inspector_hidden = false;
                 self.jobs.mode = Some(InspectorMode::SelectedTurn);
             }
         });
@@ -1621,6 +1639,21 @@ impl Browser {
                 self.preferences.auto_advance = auto;
             }
         });
+        let clip_note = playing_turn.or(self.selected).is_some_and(|i| {
+            let body = self.editing.body(i).or_else(|| {
+                self.episode
+                    .as_ref()
+                    .map(|e| e.turns[i].first_words.as_str())
+            });
+            body.is_some_and(|b| scriptcast_ui::script::clip_id(b).is_some())
+        });
+        if clip_note {
+            options.label(t::text(
+                "Original recording · Not synthesized",
+                t::SECONDARY,
+                t::TEXT_MUTED,
+            ));
+        }
         let track = Rect::from_min_max(
             pos2(
                 remaining.left(),
@@ -2100,25 +2133,22 @@ impl Browser {
                 let next = (timeline_h + h_split.drag_delta).clamp(t::TIMELINE_MIN, timeline_max);
                 self.preferences.timeline_height = Some(next);
             }
-            // The inspector takes the right side of the review row whenever a
-            // turn is selected (or Jobs mode is open); width is resizable.
             // The inspector takes the right of the review row whenever a turn is
-            // selected: its mode's default width, or the operator's dragged width.
+            // selected (or Jobs is open), unless the operator hid the side panel.
             let selected_turn = self.selected.or(selected_turn);
             let mode = self.jobs.mode.unwrap_or(InspectorMode::SelectedTurn);
-            let (table_rect, inspector_rect) = match selected_turn.is_some()
-                || mode == InspectorMode::Jobs
-            {
-                true => {
-                    let width = mode.panel_width(self.preferences.inspector_width, review.width());
-                    let inspector =
-                        Rect::from_min_max(pos2(review.right() - width, review.top()), review.max);
-                    (
-                        Rect::from_min_max(review.min, pos2(inspector.left(), review.bottom())),
-                        Some(inspector),
-                    )
-                }
-                false => (review, None),
+            let show_inspector = !self.preferences.inspector_hidden
+                && (selected_turn.is_some() || mode == InspectorMode::Jobs);
+            let (table_rect, inspector_rect) = if show_inspector {
+                let width = mode.panel_width(self.preferences.inspector_width, review.width());
+                let inspector =
+                    Rect::from_min_max(pos2(review.right() - width, review.top()), review.max);
+                (
+                    Rect::from_min_max(review.min, pos2(inspector.left(), review.bottom())),
+                    Some(inspector),
+                )
+            } else {
+                (review, None)
             };
             let read_position = (self.preferences.read_along
                 && matches!(self.transport, Transport::Playing(_)))
@@ -2193,6 +2223,7 @@ impl Browser {
                         self.preferences.edit_mode,
                         edited.contains(&turn),
                         !self.jobs.busy() && self.pending.is_none(),
+                        self.preferences.read_along,
                     );
                     self.edit_action(edit_action, &ctx);
                     match action {
@@ -2208,6 +2239,9 @@ impl Browser {
                         }
                         Some(inspector::Action::Review) => {
                             self.jobs.mode = Some(InspectorMode::Verification)
+                        }
+                        Some(inspector::Action::RunReadAlong) => {
+                            self.request_job(scriptcast_ui::runner::Preset::ReadAlong, None, &ctx);
                         }
                         None => {}
                     }
@@ -2442,12 +2476,14 @@ mod tests {
         assert!(old.read_along);
         assert!(old.timeline_height.is_none());
         assert!(old.inspector_width.is_none());
+        assert!(!old.inspector_hidden);
         assert_eq!(old.appearance, t::Appearance::default());
         let preferences = Preferences {
             cli_dir: Some(PathBuf::from("/tmp/scriptcast-b2/my cli folder")),
             read_along: false,
             timeline_height: Some(420.0),
             inspector_width: Some(480.0),
+            inspector_hidden: true,
             appearance: t::Appearance {
                 accent: [1, 2, 3],
                 text_scale: 1.1,
@@ -2461,7 +2497,21 @@ mod tests {
         assert!(!restored.read_along);
         assert_eq!(restored.timeline_height, Some(420.0));
         assert_eq!(restored.inspector_width, Some(480.0));
+        assert!(restored.inspector_hidden);
         assert_eq!(restored.appearance, preferences.appearance);
+    }
+
+    #[test]
+    fn inspector_hidden_persists_and_defaults_false() {
+        let old: Preferences = serde_json::from_str("{}").unwrap();
+        assert!(!old.inspector_hidden);
+        let preferences = Preferences {
+            inspector_hidden: true,
+            ..Preferences::default()
+        };
+        let restored: Preferences =
+            serde_json::from_str(&serde_json::to_string(&preferences).unwrap()).unwrap();
+        assert!(restored.inspector_hidden);
     }
 
     #[test]
