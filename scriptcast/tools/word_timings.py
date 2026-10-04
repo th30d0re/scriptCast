@@ -29,6 +29,32 @@ def turn_selection(value: str) -> set[int]:
     return selected
 
 
+def transcribe_with_prompt(
+    audio: Path, model: str, *, initial_prompt: str | None = None
+) -> list[dict]:
+    """Whisper word timings; optional ``initial_prompt`` for vocabulary hints."""
+    try:
+        import mlx_whisper
+    except ImportError as exc:  # pragma: no cover - depends on the environment
+        raise SystemExit(
+            "scriptcast-word-timings needs mlx-whisper (pip install mlx-whisper)"
+        ) from exc
+    kwargs = {
+        "path_or_hf_repo": model,
+        "language": "en",
+        "word_timestamps": True,
+        "condition_on_previous_text": False,
+    }
+    if initial_prompt:
+        kwargs["initial_prompt"] = initial_prompt
+    result = mlx_whisper.transcribe(str(audio), **kwargs)
+    return [
+        {"word": w["word"].strip(), "start": w["start"], "end": w["end"]}
+        for segment in result["segments"]
+        for w in segment.get("words", [])
+    ]
+
+
 def build_timings(episode_dir: Path, manifest: dict, script_turns, model: str,
                   turns: set[int] | None = None, *, transcribe_fn=transcribe) -> dict:
     """Align each turn independently; no stitched episode audio is read."""
@@ -102,6 +128,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--turns", type=turn_selection)
     parser.add_argument("--out", type=Path)
+    parser.add_argument(
+        "--no-feedback",
+        action="store_true",
+        help="Ignore vocabulary hints from the project review log.",
+    )
     args = parser.parse_args(argv)
     try:
         episode_dir = args.episode_dir.resolve()
@@ -109,20 +140,35 @@ def main(argv: list[str] | None = None) -> int:
         original = manifest_path.read_bytes()
         manifest = json.loads(original)
         script = args.script
+        project = current(episode_dir)
         if script is None:
             source = manifest.get("source_file")
             if not source:
                 source = json.loads((episode_dir / "render_state.json").read_text())["source_file"]
-            script = current(episode_dir).resolve(source)
+            script = project.resolve(source)
         output = args.out or episode_dir / "word_timings.json"
         inputs = {manifest_path, script.resolve(), episode_dir / "render_state.json"}
         inputs.update((episode_dir / segment["segment_wav"]).resolve()
                       for turn in manifest["turns"] for segment in turn["segments"])
         if output.resolve() in inputs or output.suffix.lower() != ".json":
             raise ValueError("Output must be a .json file and cannot overwrite an input")
+        hints = ""
+        if not args.no_feedback:
+            from scriptcast.review import project_dir_from_voices, vocabulary_hints
+            try:
+                hints = vocabulary_hints(project_dir_from_voices(project.voices))
+            except Exception as exc:  # noqa: BLE001 - hints are optional
+                print(f"vocabulary hints unavailable ({exc})", file=sys.stderr)
+                hints = ""
+        if hints:
+            def transcribe_fn(audio, model):
+                return transcribe_with_prompt(audio, model, initial_prompt=hints)
+        else:
+            # Same default path as before H5 when no hints exist.
+            transcribe_fn = transcribe
         data = {"manifest_sha256": hashlib.sha256(original).hexdigest(), "model": args.model,
                 "turns": build_timings(episode_dir, manifest, parse_transcript(script), args.model,
-                                       args.turns, transcribe_fn=transcribe)}
+                                       args.turns, transcribe_fn=transcribe_fn)}
         if manifest_path.read_bytes() != original:
             raise ValueError("Manifest changed during transcription; rerun timings")
         atomic_write(output, data)

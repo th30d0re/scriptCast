@@ -26,6 +26,7 @@ pub enum Preset {
     ReadAlong,
     ClipTranscripts,
     SecondOpinion,
+    ReviewStats,
     Repair(Option<Vec<usize>>),
 }
 impl Preset {
@@ -38,6 +39,7 @@ impl Preset {
             Self::ReadAlong => "read-along-timings",
             Self::ClipTranscripts => "clip-transcripts",
             Self::SecondOpinion => "second-opinion",
+            Self::ReviewStats => "review-stats",
             Self::Repair(_) => "repair",
         }
     }
@@ -50,6 +52,7 @@ impl Preset {
             Self::ReadAlong => "Read-along timings",
             Self::ClipTranscripts => "Clip transcripts",
             Self::SecondOpinion => "Second opinion (failed turns)",
+            Self::ReviewStats => "Review stats",
             Self::Repair(_) => "Repair",
         }
     }
@@ -59,6 +62,7 @@ impl Preset {
             Self::ReadAlong => "scriptcast-word-timings",
             Self::ClipTranscripts => "scriptcast-clip-transcribe",
             Self::SecondOpinion => "scriptcast-verify-ensemble",
+            Self::ReviewStats => "scriptcast-review-stats",
             Self::Repair(_) => "scriptcast-repair",
             _ => "scriptcast",
         }
@@ -78,6 +82,7 @@ impl Preset {
             "read-along-timings" => Ok(Self::ReadAlong),
             "clip-transcripts" => Ok(Self::ClipTranscripts),
             "second-opinion" => Ok(Self::SecondOpinion),
+            "review-stats" => Ok(Self::ReviewStats),
             "repair" => Ok(Self::Repair((!turns.is_empty()).then_some(turns))),
             _ => Err(format!("Unknown preset {name}")),
         }
@@ -89,9 +94,10 @@ impl Preset {
             "read-along-timings" => Ok(Self::ReadAlong),
             "clip-transcripts" => Ok(Self::ClipTranscripts),
             "second-opinion" => Ok(Self::SecondOpinion),
+            "review-stats" => Ok(Self::ReviewStats),
             _ => Err(
                 "--run refuses synthesizing presets; use detect-changes, verify, \
-                 read-along-timings, clip-transcripts or second-opinion"
+                 read-along-timings, clip-transcripts, second-opinion or review-stats"
                     .into(),
             ),
         }
@@ -145,6 +151,16 @@ impl JobSpec {
                     "--script".into(),
                     script.as_os_str().into(),
                 ]);
+            }
+            Preset::ReviewStats => {
+                let voices = e
+                    .voices_path
+                    .as_ref()
+                    .ok_or("Missing voices path for review stats")?;
+                let project_dir = crate::review::project_dir_from_voices(voices)
+                    .ok_or("Could not resolve project_dir from voices")?;
+                args.push(project_dir.into_os_string());
+                args.extend(["--episode".into(), e.manifest.episode_id.clone().into()]);
             }
             Preset::Verify => {
                 args.extend([

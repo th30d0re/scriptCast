@@ -17,6 +17,8 @@ fn commands() -> Commands {
         "scriptcast-word-timings",
         "scriptcast-clip-transcribe",
         "scriptcast-verify-ensemble",
+        "scriptcast-review",
+        "scriptcast-review-stats",
     ]
     .into_iter()
     .map(|s| {

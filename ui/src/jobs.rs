@@ -398,6 +398,8 @@ impl Browser {
                 "scriptcast-word-timings",
                 "scriptcast-clip-transcribe",
                 "scriptcast-verify-ensemble",
+                "scriptcast-review",
+                "scriptcast-review-stats",
                 "scriptcast-repair",
                 "scriptcast-export",
             ]
@@ -614,6 +616,7 @@ impl Browser {
             Preset::ReadAlong,
             Preset::ClipTranscripts,
             Preset::SecondOpinion,
+            Preset::ReviewStats,
             Preset::Repair((!turns.is_empty()).then_some(turns)),
         ];
 
@@ -764,18 +767,24 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
     }
 
     pub(crate) fn verification_panel(&mut self, ui: &mut Ui, turn: usize) {
-        let e = self.episode.as_ref().unwrap();
-        let turn_data = &e.turns[turn];
-        let v = turn_data.verify.clone();
-        let failed = matches!(
-            turn_data.verification,
-            scriptcast_ui::episode::VerificationState::Failed
-        );
-        let turn_id = turn_data.id.clone();
-        let ensemble = e.stress_ensemble.get(&turn_id).cloned();
-        let ensemble_notice = e.stress_ensemble.notice.clone();
-        let label = format!("Verification · Turn {:03}", turn_data.index);
-        let state = turn_data.verification;
+        let (v, failed, turn_id, turn_index, ensemble, ensemble_notice, state) = {
+            let e = self.episode.as_ref().unwrap();
+            let turn_data = &e.turns[turn];
+            let turn_id = turn_data.id.clone();
+            (
+                turn_data.verify.clone(),
+                matches!(
+                    turn_data.verification,
+                    scriptcast_ui::episode::VerificationState::Failed
+                ),
+                turn_id.clone(),
+                turn_data.index,
+                e.stress_ensemble.get(&turn_id).cloned(),
+                e.stress_ensemble.notice.clone(),
+                turn_data.verification,
+            )
+        };
+        let label = format!("Verification · Turn {turn_index:03}");
         ui.add_space(t::SPACE_16);
         ui.label(t::heading(label, t::SECTION_TITLE));
         ui.separator();
@@ -892,6 +901,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                         action = Some(Preset::SecondOpinion);
                     }
                 }
+                self.reviewer_decision_block(ui, turn, &turn_id);
             }
             ui.add_space(t::SPACE_16);
             ui.horizontal_wrapped(|ui| {
@@ -932,6 +942,273 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
         });
         if let Some(p) = action {
             self.request_job(p, None, ui.ctx());
+        }
+    }
+
+    fn ensure_review_form(&mut self, turn_id: &str, expected: &str, heard: &str) {
+        let needs_new = self.review.as_ref().is_none_or(|f| f.turn_id != turn_id);
+        if needs_new {
+            self.review = Some(scriptcast_ui::review::DecisionForm::for_turn(
+                turn_id, expected, heard,
+            ));
+        }
+    }
+
+    fn reviewer_decision_block(&mut self, ui: &mut Ui, turn: usize, turn_id: &str) {
+        let (expected, heard, phonon) = {
+            let e = self.episode.as_ref().unwrap();
+            let turn_data = &e.turns[turn];
+            let expected = turn_data
+                .verify
+                .as_ref()
+                .map(|v| v.expected.clone())
+                .unwrap_or_default();
+            let heard = turn_data
+                .verify
+                .as_ref()
+                .map(|v| v.heard.clone())
+                .unwrap_or_default();
+            let phonon = e
+                .stress_ensemble
+                .get(turn_id)
+                .and_then(|s| s.spans.first())
+                .map(|s| s.phonon.clone());
+            (expected, heard, phonon)
+        };
+        self.ensure_review_form(turn_id, &expected, &heard);
+        ui.add_space(t::SPACE_16);
+        ui.label(t::heading("Reviewer decision", t::SECTION_TITLE));
+        ui.label(t::text(
+            scriptcast_ui::review::NO_RETRAIN,
+            t::CAPTION,
+            t::TEXT_SUBTLE,
+        ));
+        let (saved, notice, save_clicked) = {
+            let Some(form) = self.review.as_mut() else {
+                return;
+            };
+            for outcome in scriptcast_ui::review::Outcome::all() {
+                let selected = form.outcome == outcome;
+                if ui
+                    .radio(selected, t::text(outcome.label(), t::BODY, t::TEXT_PRIMARY))
+                    .clicked()
+                {
+                    form.outcome = outcome;
+                    form.saved = false;
+                }
+                ui.label(t::text(outcome.explanation(), t::CAPTION, t::TEXT_MUTED));
+            }
+            t::field_label(ui, "Optional correction");
+            let response = ui.add(
+                egui::TextEdit::multiline(&mut form.correction)
+                    .desired_width(ui.available_width())
+                    .desired_rows(2),
+            );
+            if response.changed() {
+                form.saved = false;
+            }
+            let can_save = !form.busy && self.review_save.is_none() && !self.jobs.busy();
+            let save_hint = self
+                .jobs
+                .commands
+                .get("scriptcast-review")
+                .map(|r| match r {
+                    Ok(resolved) => resolved.description(),
+                    Err(error) => error.clone(),
+                })
+                .unwrap_or_else(|| "scriptcast-review unresolved".into());
+            ui.add_space(t::SPACE_8);
+            let save_clicked = t::primary_button(ui, "Save decision", None, can_save)
+                .on_hover_text(&save_hint)
+                .on_disabled_hover_text(&save_hint)
+                .clicked();
+            if form.outcome == scriptcast_ui::review::Outcome::RecognizerMisheard {
+                if let Some(pair) = form
+                    .single_accept()
+                    .map(|p| (p.word.clone(), p.heard.clone()))
+                {
+                    let checked = &mut form.accepts[0].checked;
+                    ui.checkbox(
+                        checked,
+                        t::text(
+                            format!("Accept this hearing for {} in future verifications", pair.0),
+                            t::BODY,
+                            t::TEXT_PRIMARY,
+                        ),
+                    );
+                } else if !form.accepts.is_empty() {
+                    ui.label(t::text(
+                        "Accept hearings for future verifications:",
+                        t::CAPTION,
+                        t::TEXT_MUTED,
+                    ));
+                    for pair in &mut form.accepts {
+                        ui.checkbox(
+                            &mut pair.checked,
+                            t::text(
+                                format!("{} ← {}", pair.word, pair.heard),
+                                t::BODY,
+                                t::TEXT_PRIMARY,
+                            ),
+                        );
+                    }
+                }
+            }
+            if let Some(hint) = form.calibrate_hint() {
+                ui.label(t::text(hint, t::CAPTION, t::TEXT_SUBTLE));
+            }
+            (form.saved, form.notice.clone(), save_clicked)
+        };
+        if save_clicked {
+            self.save_review_decision(turn_id, &expected, &heard, phonon.as_deref(), ui.ctx());
+        }
+        if saved {
+            ui.label(t::text(
+                scriptcast_ui::review::SAVED_BANNER,
+                t::BODY,
+                t::STATUS_PASSED,
+            ));
+        }
+        if let Some(notice) = notice
+            && !saved
+        {
+            ui.label(t::text(notice, t::CAPTION, t::STATUS_FAILED));
+        }
+    }
+
+    fn save_review_decision(
+        &mut self,
+        turn_id: &str,
+        expected: &str,
+        heard: &str,
+        phonon: Option<&str>,
+        ctx: &egui::Context,
+    ) {
+        let Some(form) = self.review.clone() else {
+            return;
+        };
+        let resolved = match self.jobs.commands.get("scriptcast-review") {
+            Some(Ok(resolved)) => resolved.clone(),
+            Some(Err(error)) => {
+                if let Some(f) = self.review.as_mut() {
+                    f.notice = Some(error.clone());
+                }
+                return;
+            }
+            None => {
+                if let Some(f) = self.review.as_mut() {
+                    f.notice = Some("scriptcast-review unresolved".into());
+                }
+                return;
+            }
+        };
+        let (project_dir, episode, cwd) = {
+            let e = match &self.episode {
+                Some(e) => e,
+                None => return,
+            };
+            let voices = match &e.voices_path {
+                Some(path) => path,
+                None => {
+                    if let Some(f) = self.review.as_mut() {
+                        f.notice = Some("Missing voices path".into());
+                    }
+                    return;
+                }
+            };
+            let project_dir = match scriptcast_ui::review::project_dir_from_voices(voices) {
+                Some(path) => path,
+                None => {
+                    if let Some(f) = self.review.as_mut() {
+                        f.notice = Some("Could not resolve project_dir".into());
+                    }
+                    return;
+                }
+            };
+            let cwd = e.project_root.clone().unwrap_or_else(|| e.dir.clone());
+            (project_dir, e.manifest.episode_id.clone(), cwd)
+        };
+        let start_token = 0usize;
+        let end_token = expected.split_whitespace().count().saturating_sub(1);
+        let args = scriptcast_ui::review::add_args(
+            &scriptcast_ui::review::AddRequest {
+                project_dir: &project_dir,
+                turn_id,
+                episode: &episode,
+                start_token,
+                end_token,
+                script_text: expected,
+                heard_whisper: heard,
+                heard_phonon: phonon,
+            },
+            &form,
+        );
+        if let Some(f) = self.review.as_mut() {
+            f.busy = true;
+            f.notice = None;
+            f.saved = false;
+        }
+        let (tx, rx) = mpsc::channel();
+        self.review_save = Some(rx);
+        let ctx = ctx.clone();
+        std::thread::spawn(move || {
+            let mut command = std::process::Command::new(&resolved.program);
+            command.args(&resolved.prefix);
+            command.args(&args);
+            command
+                .current_dir(&cwd)
+                .env("PATH", &resolved.path)
+                .env("PYTHONUNBUFFERED", "1")
+                .env("PYTHONDONTWRITEBYTECODE", "1")
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped());
+            if let Some(p) = &resolved.pythonpath {
+                command.env("PYTHONPATH", p);
+            }
+            let result = match command.output() {
+                Ok(output) if output.status.success() => Ok(()),
+                Ok(output) => {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    let stdout = String::from_utf8_lossy(&output.stdout);
+                    let detail = if !stderr.trim().is_empty() {
+                        stderr.trim()
+                    } else {
+                        stdout.trim()
+                    };
+                    Err(format!("scriptcast-review failed: {detail}"))
+                }
+                Err(error) => Err(format!("scriptcast-review: {error}")),
+            };
+            let _ = tx.send(result);
+            ctx.request_repaint();
+        });
+    }
+
+    pub(crate) fn poll_review_save(&mut self) {
+        let Some(rx) = &self.review_save else {
+            return;
+        };
+        let result = match rx.try_recv() {
+            Ok(result) => Some(result),
+            Err(mpsc::TryRecvError::Disconnected) => Some(Err("Review save worker stopped".into())),
+            Err(mpsc::TryRecvError::Empty) => None,
+        };
+        if let Some(result) = result {
+            self.review_save = None;
+            if let Some(form) = self.review.as_mut() {
+                form.busy = false;
+                match result {
+                    Ok(()) => {
+                        form.saved = true;
+                        form.notice = Some(scriptcast_ui::review::SAVED_BANNER.into());
+                    }
+                    Err(error) => {
+                        form.saved = false;
+                        form.notice = Some(error);
+                    }
+                }
+            }
         }
     }
 
