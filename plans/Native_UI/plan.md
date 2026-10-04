@@ -457,7 +457,26 @@ The reviewer's outcome stays manual: the ensemble only points where to listen. T
 
 H4. **Toggle.** In the Discrepancy review screen, switch "Whisper only / Ensemble". Ensemble colours each span by its source engine and marks disagreements.
 
-Order: H1 → H2 (clips) → H3 → H4. Each is its own brief. Python work needs the operator's approval at H1, and the discrepancy screen waits for its Figma design.
+H5. **Feedback that improves accuracy over time** (operator request 2026-10-04). No model is retrained, and nothing is sent off the machine; each reviewed outcome feeds a local mechanism that the next run uses. Every outcome from the Discrepancy review is stored in `<project>/scriptcast/review_log.jsonl` (append-only):
+`{turn_id, episode, span, script_text, heard (per engine), outcome, reviewer_correction, timestamp}`.
+
+How each outcome feeds back:
+- **"Recognizer misheard"** feeds two things.
+  - A project **hearing allowlist** (`scriptcast/accepted_hearings.yaml`, e.g. `pati: [potty]`). The verifier treats an approved hearing of that word as a match on later runs, so the same false failure does not come back. It is scoped per word and per project, and every entry links back to its review.
+  - A **vocabulary hint list**: rare words from those reviews (Latin terms, names) are passed to Whisper as `initial_prompt` on the next verify and word-timing runs, which raises the chance they are heard correctly. `verify_render.py` passes no prompt today.
+- **"Audio is wrong"** on a word the engine mispronounces repeatedly: suggest a `pronunciations.yaml` respelling candidate. The existing `scriptcast-calibrate record --candidates …` flow tests it (`pronunciations.yaml` header: "Add an entry only after calibrating it"). The UI drafts the command; the operator runs and approves it. Never auto-added.
+- **"Script needs correcting":** the script edit is the fix. It is logged only so recurring patterns become visible.
+
+Measurement, so "it helps" is checked, not assumed. A `scriptcast-review-stats` report over `review_log.jsonl` shows:
+- false-failure rate per episode (failures later marked "misheard");
+- repeat offenders, i.e. words failing in several episodes;
+- whether the allowlist and hints reduced failures on the next verify.
+
+**Optional and later:** the opt-in "Save for model improvement" export (audio + reference + heard + correction) stays local. It becomes a fine-tuning or evaluation set only if a training pipeline is ever set up. The UI must say plainly that it does not retrain anything by itself.
+
+All of H5 is Python plus small UI hooks in the Discrepancy review, so it needs the same operator approval as H1.
+
+Order: H1 → H2 (clips) → H3 → H4 → H5. Each is its own brief. Python work needs the operator's approval at H1, and the discrepancy screen waits for its Figma design.
 
 **Phase D — Inline editing (operator request 2026-10-03; after Phase C)**
 
@@ -601,3 +620,4 @@ Phase A rows completed 2026-10-03; Phase B and C rows are filled as those phases
 | H2. Clip transcripts + clip read-along | | | |
 | H3. Verification second opinion | | | |
 | H4. Discrepancy view engine toggle | | | Waits for Figma |
+| H5. Review feedback loop (allowlist, Whisper hints, pronunciation suggestions, stats) | | | Needs operator approval (Python) |
