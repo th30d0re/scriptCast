@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import difflib
 import json
+import sys
 import logging
 import re
 import statistics
@@ -89,6 +90,27 @@ def _sounds_alike(want: str, got: str, floor: float = 0.75) -> bool:
     return difflib.SequenceMatcher(None, a, b).ratio() >= floor
 
 
+def _apply_accepted(
+    expected: list[str],
+    heard: list[str],
+    accepted: dict[str, set[str]],
+) -> tuple[list[str], int]:
+    """Rewrite heard tokens that are allowlisted for the aligned expected word.
+
+    Returns the rewritten heard list and how many tokens were accepted.
+    """
+    out = list(heard)
+    hits = 0
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, expected, out).get_opcodes():
+        if tag != "replace" or (i2 - i1) != (j2 - j1):
+            continue
+        for di, dj in zip(range(i1, i2), range(j1, j2)):
+            if out[dj] in accepted.get(expected[di], ()):
+                out[dj] = expected[di]
+                hits += 1
+    return out, hits
+
+
 def _repetition(expected: str, heard: str) -> str | None:
     """An inserted span that duplicates its neighbours: a stutter.
 
@@ -121,7 +143,12 @@ def _repetition(expected: str, heard: str) -> str | None:
     return None
 
 
-def _score(expected: str, heard: str) -> tuple[float, int]:
+def _score(
+    expected: str,
+    heard: str,
+    *,
+    accepted: dict[str, set[str]] | None = None,
+) -> tuple[float, int]:
     """(overall word similarity, longest run of consecutive words mangled).
 
     The run length is the signal that matters. A whole-turn ratio barely moves
@@ -132,10 +159,16 @@ def _score(expected: str, heard: str) -> tuple[float, int]:
 
     Runs that only differ in spelling are not counted, so a correctly-read line
     does not keep failing on the transcriber's habits.
+
+    When ``accepted`` maps a script word to allowlisted hearings, those heard
+    tokens count as matches for scoring and run detection. Pass ``None`` (the
+    default) to keep the pre-feedback path byte-identical.
     """
     a, b = _normalize(expected), _normalize(heard)
     if not a:
         return 1.0, 0
+    if accepted:
+        b, _hits = _apply_accepted(a, b, accepted)
     matcher = difflib.SequenceMatcher(None, a, b)
     worst = 0
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
@@ -149,9 +182,34 @@ def _score(expected: str, heard: str) -> tuple[float, int]:
     return max(matcher.ratio(), despaced), worst
 
 
-def _diff(expected: str, heard: str, width: int = 3) -> str:
+def _score_with_feedback(
+    expected: str,
+    heard: str,
+    accepted: dict[str, set[str]] | None,
+) -> tuple[float, int, int]:
+    """Like ``_score``, also returning how many accepted-hearing hits applied."""
+    if not accepted:
+        ratio, worst = _score(expected, heard)
+        return ratio, worst, 0
+    a, b = _normalize(expected), _normalize(heard)
+    if not a:
+        return 1.0, 0, 0
+    b, hits = _apply_accepted(a, b, accepted)
+    ratio, worst = _score(" ".join(a), " ".join(b))
+    return ratio, worst, hits
+
+
+def _diff(
+    expected: str,
+    heard: str,
+    width: int = 3,
+    *,
+    accepted: dict[str, set[str]] | None = None,
+) -> str:
     """The runs that differ, so the failure mode is visible."""
     a, b = _normalize(expected), _normalize(heard)
+    if accepted:
+        b, _hits = _apply_accepted(a, b, accepted)
     out = []
     for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b).get_opcodes():
         if tag == "equal":
@@ -185,10 +243,22 @@ def main() -> int:
     ap.add_argument("--json-out", type=Path, default=None)
     ap.add_argument("--no-stress", action="store_true",
                     help="Skip the heteronym stress check.")
+    ap.add_argument(
+        "--no-feedback",
+        action="store_true",
+        help="Ignore accepted hearings and vocabulary hints.",
+    )
     args = ap.parse_args()
 
     logging.disable(logging.WARNING)
     import mlx_whisper  # imported here so --help works without the model stack
+
+    from scriptcast.project import current
+    from scriptcast.review import (
+        load_accepted_hearings,
+        project_dir_from_voices,
+        vocabulary_hints,
+    )
 
     manifest = json.loads((args.episode_dir / "episode_manifest.json").read_text())
     script_turns = tokenize_markup(parse_transcript(args.transcript))
@@ -196,6 +266,19 @@ def main() -> int:
     wanted = (
         {int(x) for x in args.turns.split(",")} if args.turns else None
     )
+    accepted: dict[str, set[str]] = {}
+    hints = ""
+    if not args.no_feedback:
+        # Feedback is optional: if the project or its files cannot be found,
+        # verify exactly as it did before H5 rather than failing.
+        try:
+            project_dir = project_dir_from_voices(current(args.episode_dir).voices)
+            accepted = load_accepted_hearings(project_dir)
+            hints = vocabulary_hints(project_dir)
+        except Exception as exc:  # noqa: BLE001 - any lookup failure means "no feedback"
+            print(f"feedback unavailable ({exc}); verifying without it", file=sys.stderr)
+            accepted, hints = {}, ""
+    hints_used = bool(hints)
 
     # Turn indices reported here are the SCRIPT's, because that is what
     # `--regenerate-turns` consumes. The manifest carries its own indices and
@@ -233,40 +316,49 @@ def main() -> int:
                 or clip_id_in(source.clean_text)
                 else find_heteronyms(chunk_text)
             )
-            result = mlx_whisper.transcribe(
-                str(wav),
-                path_or_hf_repo=_MODELS[args.model],
-                verbose=False,
-                word_timestamps=bool(readings),
-            )
+            transcribe_kwargs = {
+                "path_or_hf_repo": _MODELS[args.model],
+                "verbose": False,
+                "word_timestamps": bool(readings),
+            }
+            if hints_used:
+                transcribe_kwargs["initial_prompt"] = hints
+            result = mlx_whisper.transcribe(str(wav), **transcribe_kwargs)
             heard_parts.append(result["text"].strip())
             if readings:
                 words = [w for part in result["segments"] for w in part.get("words", [])]
                 stress.extend(check_segment(wav, chunk_text, words, readings))
         heard = " ".join(heard_parts)
-        ratio, worst_run = _score(expected, heard)
+        if accepted:
+            ratio, worst_run, accepted_hits = _score_with_feedback(
+                expected, heard, accepted
+            )
+        else:
+            ratio, worst_run = _score(expected, heard)
+            accepted_hits = 0
         repeated = _repetition(expected, heard)
         stress_flags = [e for e in stress if e.get("verdict") in _STRESS_FAILS]
-        results.append(
-            {
-                "turn": source.turn_index,
-                "repetition": repeated,
-                "manifest_turn": turn["turn_index"],
-                "speaker": turn["speaker_id"],
-                "turn_id": turn["turn_id"],
-                "score": round(ratio, 3),
-                "worst_run": worst_run,
-                "stress": stress,
-                "failed": bool(
-                    ratio < args.threshold
-                    or worst_run > args.max_run
-                    or repeated
-                    or stress_flags
-                ),
-                "expected": expected,
-                "heard": heard,
-            }
-        )
+        entry = {
+            "turn": source.turn_index,
+            "repetition": repeated,
+            "manifest_turn": turn["turn_index"],
+            "speaker": turn["speaker_id"],
+            "turn_id": turn["turn_id"],
+            "score": round(ratio, 3),
+            "worst_run": worst_run,
+            "stress": stress,
+            "failed": bool(
+                ratio < args.threshold
+                or worst_run > args.max_run
+                or repeated
+                or stress_flags
+            ),
+            "expected": expected,
+            "heard": heard,
+        }
+        if accepted_hits or hints_used:
+            entry["feedback"] = {"accepted": accepted_hits, "hints": hints_used}
+        results.append(entry)
 
     if not results:
         print("no turns matched")
@@ -291,7 +383,7 @@ def main() -> int:
               f"{r['speaker']}  {r['turn_id']}{tag}")
         print(f"      want: {r['expected'][:150]}")
         print(f"      got : {r['heard'][:150]}")
-        d = _diff(r["expected"], r["heard"])
+        d = _diff(r["expected"], r["heard"], accepted=accepted or None)
         if d:
             print(f"      diff: {d}")
         for e in r["stress"]:

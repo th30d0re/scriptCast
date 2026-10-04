@@ -278,6 +278,10 @@ struct Browser {
     selected_media: Option<(String, SelectedMedia)>,
     /// Settings window (⌘, / gear).
     settings_open: bool,
+    /// Reviewer decision form for the Verification inspector (Phase H5).
+    review: Option<scriptcast_ui::review::DecisionForm>,
+    /// In-flight `scriptcast-review add` result.
+    review_save: Option<std::sync::mpsc::Receiver<Result<(), String>>>,
 }
 struct SelectedMedia {
     file_line: String,
@@ -2295,6 +2299,7 @@ impl eframe::App for Browser {
         self.poll_load(ctx);
         self.poll_jobs(ctx);
         self.poll_editing(ctx);
+        self.poll_review_save();
         self.poll_daw();
         self.poll_audio(ctx);
         self.capture_logic(ctx);
