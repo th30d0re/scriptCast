@@ -844,6 +844,10 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                 ));
             }
             if failed {
+                ui.add_space(t::SPACE_12);
+                if t::primary_button(ui, "Review discrepancies", None, true).clicked() {
+                    self.open_discrepancy_review();
+                }
                 ui.add_space(t::SPACE_16);
                 ui.label(t::heading("Second opinion", t::SECTION_TITLE));
                 if let Some(second) = &ensemble {
@@ -945,7 +949,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
         }
     }
 
-    fn ensure_review_form(&mut self, turn_id: &str, expected: &str, heard: &str) {
+    pub(crate) fn ensure_review_form(&mut self, turn_id: &str, expected: &str, heard: &str) {
         let needs_new = self.review.as_ref().is_none_or(|f| f.turn_id != turn_id);
         if needs_new {
             self.review = Some(scriptcast_ui::review::DecisionForm::for_turn(
@@ -993,8 +997,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                     .radio(selected, t::text(outcome.label(), t::BODY, t::TEXT_PRIMARY))
                     .clicked()
                 {
-                    form.outcome = outcome;
-                    form.saved = false;
+                    scriptcast_ui::review::choose_outcome(form, outcome);
                 }
                 ui.label(t::text(outcome.explanation(), t::CAPTION, t::TEXT_MUTED));
             }
@@ -1076,7 +1079,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
         }
     }
 
-    fn save_review_decision(
+    pub(crate) fn save_review_decision(
         &mut self,
         turn_id: &str,
         expected: &str,

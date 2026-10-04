@@ -38,6 +38,24 @@ impl Outcome {
         }
     }
 
+    /// Short title for discrepancy-view outcome cards (Figma 48:3588).
+    pub fn card_title(self) -> &'static str {
+        match self {
+            Self::AudioWrong => "Audio is wrong",
+            Self::ScriptNeedsCorrection => "Correct script only",
+            Self::RecognizerMisheard => "Recognition error",
+        }
+    }
+
+    /// One-line detail under [`Self::card_title`].
+    pub fn card_detail(self) -> &'static str {
+        match self {
+            Self::AudioWrong => "Regenerate only after confirmation",
+            Self::ScriptNeedsCorrection => "Edit the script; keep rendered audio",
+            Self::RecognizerMisheard => "Whisper misheard; record a reviewer exception",
+        }
+    }
+
     pub fn all() -> [Self; 3] {
         [
             Self::AudioWrong,
@@ -45,6 +63,12 @@ impl Outcome {
             Self::RecognizerMisheard,
         ]
     }
+}
+
+/// Shared by the Verification inspector and the discrepancy review view.
+pub fn choose_outcome(form: &mut DecisionForm, outcome: Outcome) {
+    form.outcome = outcome;
+    form.saved = false;
 }
 
 /// One expected/heard word pair the operator may accept for future verifies.
@@ -315,6 +339,18 @@ mod tests {
         let mut multi = DecisionForm::for_turn("t1", "a b", "x y");
         multi.outcome = Outcome::AudioWrong;
         assert!(multi.calibrate_hint().is_none());
+    }
+
+    #[test]
+    fn choose_outcome_updates_form_for_both_views() {
+        let mut form = DecisionForm::for_turn("t1", "a", "b");
+        form.saved = true;
+        choose_outcome(&mut form, Outcome::AudioWrong);
+        assert_eq!(form.outcome, Outcome::AudioWrong);
+        assert!(!form.saved);
+        choose_outcome(&mut form, Outcome::ScriptNeedsCorrection);
+        assert_eq!(form.outcome, Outcome::ScriptNeedsCorrection);
+        assert_eq!(form.outcome.card_title(), "Correct script only");
     }
 
     #[test]
