@@ -211,6 +211,8 @@ pub const READ_ALONG_PAD_X: f32 = 4.0;
 pub const READ_ALONG_PAD_Y: f32 = 2.0;
 /// Vertical pad inside the audio-clip badge (Figma 48:139).
 pub const AUDIO_CLIP_BADGE_PAD: f32 = 7.0;
+/// Space above and below the Audio clip badge, so it clears the surrounding text.
+pub const AUDIO_CLIP_BADGE_MARGIN: f32 = 6.0;
 /// Gap between the file-audio icon and "Audio clip" label.
 pub const AUDIO_CLIP_BADGE_GAP: f32 = 6.0;
 /// File-audio icon size inside the badge.

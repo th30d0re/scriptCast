@@ -322,7 +322,7 @@ pub fn show(
             editor_height
         } else {
             let chrome = if clip.is_some() {
-                clip_badge_row_height() + t::SPACE_4
+                clip_badge_row_height() + t::AUDIO_CLIP_BADGE_MARGIN * 2.0
             } else {
                 0.0
             };
@@ -426,8 +426,10 @@ pub fn show(
                 let raw = editing.body(idx).unwrap_or(&turn.first_words);
                 let mut text_rect = cells[3];
                 if let Some(id) = script::clip_id(raw) {
-                    let used = paint_clip_badge(ui, text_rect, id);
-                    text_rect.min.y += used + t::SPACE_4;
+                    let mut badge_rect = text_rect;
+                    badge_rect.min.y += t::AUDIO_CLIP_BADGE_MARGIN;
+                    let used = paint_clip_badge(ui, badge_rect, id);
+                    text_rect.min.y += used + t::AUDIO_CLIP_BADGE_MARGIN * 2.0;
                 }
                 transcript.paint(ui, text_rect);
             }
