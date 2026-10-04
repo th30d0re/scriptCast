@@ -143,3 +143,4 @@
 
 - Operator: bring the videolab ensemble into scriptCast, clips first. Plan in plan.md "Phase H". The Python port (H1) needs explicit approval before dispatch.
 - Operator decision 2026-10-04: no Python change for clip-turn identity; clip edits are UI-only transcript corrections, excluded from re-render (Phase G).
+- Operator approved the ensemble Python work (H1-H5) on 2026-10-04. Agents may not write under TheOriginalPower, so H1 copies videolab's merge into scriptcast.asr; switching videolab to import it is a later, operator-side step.
