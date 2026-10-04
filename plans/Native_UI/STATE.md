@@ -134,3 +134,7 @@
 - Pending operator: visual check of Settings, both edit layouts, and resizing (screenshots timed out while the display slept). Real-script editing is the operator's first use; every save takes a script-edit checkpoint first.
 - Next: Phase E (read-along word highlighting) needs operator approval for a per-word timing output in Python (captions.py alignment).
 - Worker notes: Codex quota resets 2026-10-04 01:42. Cursor (Auto) reliable for finishing and verification chunks.
+
+## Phase E — Read-along word highlighting
+
+- Operator approved the Python per-word timing tool on 2026-10-04 ("approve Phase E"). Brief: `briefs/phase-e.md`. Transcribes per-turn WAVs (not the stitched mp3) so times match the manifest.
