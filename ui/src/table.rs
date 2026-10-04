@@ -34,10 +34,16 @@ impl ColumnWidths {
             .map(|turn| turn.end_ms - turn.start_ms)
             .max()
             .unwrap_or(0);
-        let verification = ["✓  Passed", "×  Failed", "Not verified", "Missing audio"]
-            .into_iter()
-            .map(|label| t::text_width(ui, label, t::font(t::SECONDARY)))
-            .fold(header("Verification"), f32::max);
+        let verification = [
+            "✓  Passed",
+            "×  Failed",
+            "×  Failed maybe misheard",
+            "Not verified",
+            "Missing audio",
+        ]
+        .into_iter()
+        .map(|label| t::text_width(ui, label, t::font(t::SECONDARY)))
+        .fold(header("Verification"), f32::max);
         Self {
             // The playing row prefixes the number with "▶" (design screen 03).
             turn: t::fit_text_width(
@@ -445,13 +451,58 @@ pub fn show(
             } else {
                 view::verification_label(turn.verification)
             };
-            view::line(ui, top_cells[5], label, t::font(t::SECONDARY), colour);
+            let maybe_misheard = turn.verification == V::Failed
+                && episode
+                    .stress_ensemble
+                    .get(&turn.id)
+                    .is_some_and(|e| e.summary == "likely_recognition");
+            if maybe_misheard {
+                let mut job = egui::text::LayoutJob::default();
+                job.append(
+                    label,
+                    0.0,
+                    egui::TextFormat {
+                        font_id: t::font(t::SECONDARY),
+                        color: colour,
+                        ..Default::default()
+                    },
+                );
+                job.append(
+                    "  maybe misheard",
+                    0.0,
+                    egui::TextFormat {
+                        font_id: t::font(t::SECONDARY),
+                        color: t::TEXT_MUTED,
+                        ..Default::default()
+                    },
+                );
+                job.wrap.max_width = top_cells[5].width().max(0.0);
+                job.wrap.max_rows = 1;
+                job.wrap.break_anywhere = true;
+                let galley = ui.painter().layout_job(job);
+                ui.painter()
+                    .with_clip_rect(top_cells[5].intersect(ui.clip_rect()))
+                    .galley(
+                        pos2(
+                            top_cells[5].left(),
+                            top_cells[5].center().y - galley.size().y / 2.0,
+                        ),
+                        galley,
+                        colour,
+                    );
+            } else {
+                view::line(ui, top_cells[5], label, t::font(t::SECONDARY), colour);
+            }
             let response = response.on_hover_text(format!(
                 "Turn {:03} · {}\n{}\n{}",
                 turn.index,
                 speaker.name,
                 editing.body(idx).unwrap_or(&turn.first_words),
-                label,
+                if maybe_misheard {
+                    format!("{label} · maybe misheard")
+                } else {
+                    label.to_string()
+                },
             ));
             if response.clicked() || response.double_clicked() {
                 clicked = Some((idx, response.double_clicked()));

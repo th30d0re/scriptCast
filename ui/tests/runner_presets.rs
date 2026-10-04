@@ -16,6 +16,7 @@ fn commands() -> Commands {
         "scriptcast-repair",
         "scriptcast-word-timings",
         "scriptcast-clip-transcribe",
+        "scriptcast-verify-ensemble",
     ]
     .into_iter()
     .map(|s| {
@@ -234,6 +235,26 @@ fn automation_refuses_every_synthesizing_preset() {
         Preset::safe_run("clip-transcripts").unwrap(),
         Preset::ClipTranscripts
     );
+    assert_eq!(
+        Preset::safe_run("second-opinion").unwrap(),
+        Preset::SecondOpinion
+    );
+}
+
+#[test]
+fn second_opinion_preset_matches_clip_shape() {
+    let tmp = Scratch::new();
+    let e = tmp.fixture();
+    let c = commands();
+    let script = e.script_path.as_ref().unwrap().display().to_string();
+    let dir = e.dir.display().to_string();
+    let s = JobSpec::from_preset(&Preset::SecondOpinion, &e, &c).unwrap();
+    assert_eq!(args(&s), [dir, "--script".into(), script]);
+    assert!(!s.synthesizes);
+    assert!(s.overwrites.is_empty());
+    std::fs::write(e.dir.join("stress_ensemble.json"), "{}").unwrap();
+    let s = JobSpec::from_preset(&Preset::SecondOpinion, &e, &c).unwrap();
+    assert_eq!(s.overwrites, vec![e.dir.join("stress_ensemble.json")]);
 }
 
 #[test]
