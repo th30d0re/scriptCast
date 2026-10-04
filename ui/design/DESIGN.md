@@ -103,3 +103,16 @@ Component sheets for Timeline block, Turn row, Speaker badge, Playback, Verifica
 ## Fidelity check
 
 Run the app at 1440×900 against `outputs/ATO_EP03_five_levels`, take a screenshot of the same state, and compare side by side with the matching `screenshot.png`. Layout, colours, sizes and type must match; text content will differ because the design uses sample data.
+
+## Update 2026-10-04: screen 03 A/B behaviour (supersedes 03b/03c where they differ)
+
+Captured from Figma frames `4:18121` (A, direct inline editing) and `23:2` (B, side-panel editing) into `screens/03e-update-2026-10-04/`.
+
+- **Table.** The "First words" column is now **Transcript** and shows the turn's full text. It wraps to at most 2 lines, then ellipsis, so row height varies with text. The design shows 2-line rows of about 52 px.
+- **A, direct inline editing.**
+  - The selected row's Transcript cell itself becomes the editor, with a caret in the text.
+  - Under the text, inside the same row: **Save draft** (primary, small), **Cancel**, and on the right "Unsaved draft" with the alert icon.
+  - There is no separate editor block under the row.
+- **Mode toggle.** A filter-bar segmented button "Inline / Side panel" sits after "Failed only", showing the active mode as a small pill ("Inline"). It is the same setting as Settings → Editing.
+- **Playback bar.** The second line of the current-audio block reads "Turn 004 · Jordan · Paused" when paused.
+- **B, read-along.** The current word is highlighted **inside the playing row's Transcript text**: an accent pill, radius 3, padding 4×2, semibold, in on-accent text. There is no extra read-along row under the playing row.
