@@ -167,6 +167,7 @@ pub enum Action {
     Save,
     Cancel,
     Render,
+    UseEnsemble,
 }
 
 pub fn field_height(ui: &Ui, text: &str, width: f32, available: f32) -> f32 {
@@ -337,6 +338,7 @@ pub fn editor(
     height: f32,
     row: bool,
     enabled: bool,
+    ensemble: Option<&str>,
 ) -> Option<Action> {
     let busy = editing.busy();
     let draft = editing.draft.as_mut()?;
@@ -379,6 +381,19 @@ pub fn editor(
     let footnote = if clip { CLIP_FOOTNOTE } else { FOOTNOTE };
     if row {
         ui.label(t::text(footnote, t::CAPTION, t::TEXT_SUBTLE));
+    }
+    if clip {
+        let can_use = enabled && !busy && ensemble.is_some_and(|t| !t.trim().is_empty());
+        let response = t::secondary_button(ui, "Use ensemble transcript", None, can_use);
+        let response = if ensemble.is_none() {
+            response
+                .on_disabled_hover_text("No ensemble transcript yet. Run Jobs → Clip transcripts.")
+        } else {
+            response
+        };
+        if response.clicked() {
+            action = Some(Action::UseEnsemble);
+        }
     }
     let save_enabled = enabled && !busy && draft.changed() && !draft.text.trim().is_empty();
     let buttons = |ui: &mut Ui| {
@@ -424,6 +439,7 @@ impl Browser {
             }
             Some(Action::Cancel) => self.editing.cancel(),
             Some(Action::Save) => self.save_draft(ctx),
+            Some(Action::UseEnsemble) => self.apply_ensemble_transcript(),
             Some(Action::Render) => {
                 if let (Some(c), Some(turns)) = (&self.editing.changes, &self.editing.turns) {
                     let scope = script::RenderScope::from_changes(c, &turns.turns);
@@ -433,6 +449,37 @@ impl Browser {
                 }
             }
             None => {}
+        }
+    }
+    pub(crate) fn apply_ensemble_transcript(&mut self) {
+        let Some(draft) = self.editing.draft.as_mut() else {
+            return;
+        };
+        let Some(episode) = self.episode.as_ref() else {
+            return;
+        };
+        let Some(turn) = episode.turns.get(draft.turn) else {
+            return;
+        };
+        let Some(clip) = episode.clip_transcripts.get(&turn.id) else {
+            self.editing.notice =
+                Some("No ensemble transcript yet. Run Jobs → Clip transcripts.".into());
+            return;
+        };
+        let source = if script::clip_tag(&draft.text).is_some() {
+            draft.text.clone()
+        } else {
+            draft.original.clone()
+        };
+        match scriptcast_ui::clip_transcripts::use_ensemble_transcript(
+            &source,
+            &clip.ensemble_text(),
+        ) {
+            Ok(text) => {
+                draft.text = text;
+                self.editing.notice = Some("Draft updated from ensemble transcript.".into());
+            }
+            Err(error) => self.editing.notice = Some(error),
         }
     }
     pub(crate) fn save_draft(&mut self, ctx: &egui::Context) {

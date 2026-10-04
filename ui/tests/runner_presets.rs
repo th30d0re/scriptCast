@@ -10,21 +10,27 @@ use std::{
     time::{Duration, Instant},
 };
 fn commands() -> Commands {
-    ["scriptcast", "scriptcast-verify", "scriptcast-repair"]
-        .into_iter()
-        .map(|s| {
-            (
-                s.into(),
-                Ok(Resolved {
-                    program: PathBuf::from("/fake bin").join(s),
-                    source: ExportSource::Folder,
-                    prefix: vec![],
-                    path: "/usr/bin:/bin".into(),
-                    pythonpath: None,
-                }),
-            )
-        })
-        .collect()
+    [
+        "scriptcast",
+        "scriptcast-verify",
+        "scriptcast-repair",
+        "scriptcast-word-timings",
+        "scriptcast-clip-transcribe",
+    ]
+    .into_iter()
+    .map(|s| {
+        (
+            s.into(),
+            Ok(Resolved {
+                program: PathBuf::from("/fake bin").join(s),
+                source: ExportSource::Folder,
+                prefix: vec![],
+                path: "/usr/bin:/bin".into(),
+                pythonpath: None,
+            }),
+        )
+    })
+    .collect()
 }
 fn args(s: &JobSpec) -> Vec<String> {
     s.args
@@ -224,6 +230,26 @@ fn automation_refuses_every_synthesizing_preset() {
         Preset::safe_run("detect-changes").unwrap(),
         Preset::DetectChanges
     );
+    assert_eq!(
+        Preset::safe_run("clip-transcripts").unwrap(),
+        Preset::ClipTranscripts
+    );
+}
+
+#[test]
+fn clip_transcripts_preset_matches_read_along_shape() {
+    let tmp = Scratch::new();
+    let e = tmp.fixture();
+    let c = commands();
+    let script = e.script_path.as_ref().unwrap().display().to_string();
+    let dir = e.dir.display().to_string();
+    let s = JobSpec::from_preset(&Preset::ClipTranscripts, &e, &c).unwrap();
+    assert_eq!(args(&s), [dir, "--script".into(), script]);
+    assert!(!s.synthesizes);
+    assert!(s.overwrites.is_empty());
+    std::fs::write(e.dir.join("clip_transcripts.json"), "{}").unwrap();
+    let s = JobSpec::from_preset(&Preset::ClipTranscripts, &e, &c).unwrap();
+    assert_eq!(s.overwrites, vec![e.dir.join("clip_transcripts.json")]);
 }
 
 #[test]

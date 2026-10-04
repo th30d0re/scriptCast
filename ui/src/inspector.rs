@@ -5,10 +5,10 @@
 use crate::{
     Transport,
     editing::{self, EditMode, Editing},
-    view,
+    read_along, view,
 };
 use eframe::egui::{self, Align, Layout, Rect, Sense, Ui, UiBuilder, pos2, vec2};
-use scriptcast_ui::{episode::Episode, script, theme as t};
+use scriptcast_ui::{clip_transcripts::ClipTurn, episode::Episode, script, theme as t};
 use std::time::Duration;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -47,6 +47,7 @@ pub enum Action {
     Next,
     Review,
     RunReadAlong,
+    RunClipTranscripts,
 }
 
 /// The inspector's text field: TRANSCRIPT only when this turn has a
@@ -80,6 +81,27 @@ fn read_along_prompt(episode: &Episode, turn_id: &str) -> Option<&'static str> {
     } else {
         "No read-along timings yet. Run Jobs → Read-along timings."
     })
+}
+
+fn clip_transcript_prompt(episode: &Episode, turn_id: &str) -> Option<&'static str> {
+    if episode.clip_transcripts.get(turn_id).is_some() {
+        return None;
+    }
+    let stale = episode
+        .clip_transcripts
+        .notice
+        .as_deref()
+        .is_some_and(|n| n.contains("out of date"));
+    Some(if stale {
+        "Clip transcripts are out of date (episode re-rendered). Run Jobs → Clip transcripts."
+    } else {
+        "No ensemble transcript yet. Run Jobs → Clip transcripts."
+    })
+}
+
+#[cfg(test)]
+pub fn strip_clip_tag_for_display(body: &str) -> String {
+    script::display_body(body)
 }
 
 #[expect(clippy::too_many_arguments)]
@@ -197,6 +219,14 @@ pub fn show(
                     t::accent(),
                 ));
             }
+            let raw_body = editing.body(turn_idx).map(str::to_owned);
+            let is_clip = raw_body
+                .as_deref()
+                .is_some_and(|b| script::clip_id(b).is_some());
+            let clip_turn = is_clip
+                .then(|| episode.clip_transcripts.get(&turn.id))
+                .flatten();
+            let ensemble_text = clip_turn.map(ClipTurn::ensemble_text);
             if editing.edit_tab && edit_mode == EditMode::Panel && editing.draft.is_some() {
                 let height = editing::field_height(
                     ui,
@@ -204,9 +234,23 @@ pub fn show(
                     ui.available_width(),
                     body.height() - t::EDITOR_CHROME_HEIGHT,
                 );
-                edit_action = editing::editor(ui, editing, height, false, enabled).or(edit_action);
-            } else if let Some(body) = editing.body(turn_idx) {
-                field(ui, "Transcript", body, false);
+                edit_action = editing::editor(
+                    ui,
+                    editing,
+                    height,
+                    false,
+                    enabled,
+                    ensemble_text.as_deref(),
+                )
+                .or(edit_action);
+            } else if let Some(body_text) = &raw_body {
+                // Badge already shows the clip id; strip the raw tag here.
+                let display = if is_clip {
+                    script::display_body(body_text)
+                } else {
+                    body_text.clone()
+                };
+                field(ui, "Transcript", &display, false);
             } else {
                 // The legacy verification-text helper remains available to verification views.
                 field(ui, "First words", &turn.first_words, false);
@@ -223,7 +267,40 @@ pub fn show(
                     t::STATUS_FAILED,
                 ));
             }
-            if read_along
+            if is_clip && !editing.edit_tab {
+                if let Some(clip) = clip_turn {
+                    let script_text = raw_body
+                        .as_deref()
+                        .map(script::display_body)
+                        .unwrap_or_default();
+                    let ensemble = ensemble_text.as_deref().unwrap_or("");
+                    let words = clip.as_words();
+                    let row_maps = read_along::word_mapping(&script_text, &words).is_some();
+                    let play_ms = matches!(transport, Transport::Playing(_)).then(|| {
+                        scriptcast_ui::word_timings::manifest_position(
+                            &episode.manifest.turns[turn_idx],
+                            position.as_millis() as u64,
+                        )
+                    });
+                    let active = play_ms.and_then(|ms| {
+                        if row_maps {
+                            None
+                        } else {
+                            read_along::active_range(ensemble, &words, ms)
+                        }
+                    });
+                    ensemble_block(ui, clip, ensemble, active, !row_maps);
+                } else if read_along && let Some(prompt) = clip_transcript_prompt(episode, &turn.id)
+                {
+                    ui.label(t::text(prompt, t::SECONDARY, t::TEXT_MUTED));
+                    if t::secondary_button(ui, "Run…", None, enabled).clicked() {
+                        action = Some(Action::RunClipTranscripts);
+                    }
+                } else if let Some(notice) = &episode.clip_transcripts.notice {
+                    ui.label(t::text(notice, t::SECONDARY, t::TEXT_MUTED));
+                }
+            } else if !is_clip
+                && read_along
                 && !editing.edit_tab
                 && let Some(prompt) = read_along_prompt(episode, &turn.id)
             {
@@ -231,7 +308,8 @@ pub fn show(
                 if t::secondary_button(ui, "Run…", None, enabled).clicked() {
                     action = Some(Action::RunReadAlong);
                 }
-            } else if let Some(notice) = &episode.read_along.notice
+            } else if !is_clip
+                && let Some(notice) = &episode.read_along.notice
                 && !read_along
             {
                 ui.label(t::text(notice, t::SECONDARY, t::TEXT_MUTED));
@@ -308,6 +386,67 @@ pub fn show(
     (action, edit_action)
 }
 
+fn ensemble_block(
+    ui: &mut Ui,
+    clip: &ClipTurn,
+    ensemble: &str,
+    active: Option<std::ops::Range<usize>>,
+    follow_recording: bool,
+) {
+    // Status lines first so disagreement / follow-recording stay above the fold
+    // when the merged text is long.
+    ui.spacing_mut().item_spacing.y = t::SPACE_5;
+    t::field_label(ui, "Ensemble transcript");
+    ui.spacing_mut().item_spacing.y = t::SPACE_8;
+    if follow_recording {
+        ui.label(t::text(
+            "Highlighting follows the recording's transcript",
+            t::CAPTION,
+            t::TEXT_MUTED,
+        ));
+    }
+    if clip.listen_manually {
+        ui.label(t::text(
+            format!(
+                "Listen manually: engines disagree by {:.1}%",
+                clip.whisper_disagreement_pct
+            ),
+            t::SECONDARY,
+            t::STATUS_FAILED,
+        ));
+    } else {
+        ui.label(t::text(
+            format!("Whisper disagreement {:.1}%", clip.whisper_disagreement_pct),
+            t::CAPTION,
+            t::TEXT_MUTED,
+        ));
+    }
+    if !clip.all_phonon2() {
+        ui.horizontal_wrapped(|ui| {
+            ui.spacing_mut().item_spacing.x = t::SPACE_8;
+            for engine in clip.engine_labels() {
+                ui.label(t::text(engine, t::CAPTION, t::TEXT_MUTED));
+            }
+        });
+    }
+    for warning in &clip.coverage_warnings {
+        let excerpt = warning.excerpt.trim();
+        if !excerpt.is_empty() {
+            ui.label(t::text(
+                format!("Coverage warning: {excerpt}"),
+                t::CAPTION,
+                t::STATUS_FAILED,
+            ));
+        }
+    }
+    let width = ui.available_width();
+    let measured = read_along::Transcript::measure(ui, ensemble, width, active);
+    let height = measured.galley.size().y + t::SPACE_4 * 2.0;
+    let (rect, _) = ui.allocate_exact_size(vec2(width, height), Sense::hover());
+    measured.paint(ui, rect);
+    ui.spacing_mut().item_spacing.y = t::SPACE_12;
+}
+
 /// One labelled detail field: 10/600 uppercase muted label over the value.
 /// The gap after the label is SPACE_5 (egui applies the spacing in effect when
 /// the widget is added); between fields it is SPACE_12.
@@ -338,5 +477,19 @@ fn status_sentence(
         Transport::Idle => {
             format!("Turn {turn_index:03} selected. Space plays it; ↑ ↓ move the selection.")
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn transcript_display_strips_clip_tag() {
+        assert_eq!(
+            strip_clip_tag_for_display("[clip:atwater_1981] Spoken words."),
+            "Spoken words."
+        );
+        assert_eq!(strip_clip_tag_for_display("plain text"), "plain text");
     }
 }
