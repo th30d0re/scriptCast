@@ -272,8 +272,12 @@ pub fn resolve_with(
     if let Some(dir) = exe.and_then(find_dev_checkout) {
         let module = module_for(&dir, command)?;
         // Import the entry module (not just scriptcast) to check its dependencies.
-        let program = venvs
-            .iter()
+        // Venvs with an installed scriptcast come first: their interpreter has the
+        // full dependency set (e.g. misaki), which later lazy imports need.
+        let mut ordered: Vec<&PathBuf> = venvs.iter().collect();
+        ordered.sort_by_key(|v| !is_executable(&v.join("bin/scriptcast")));
+        let program = ordered
+            .into_iter()
             .map(|p| p.join("bin/python"))
             .find(|p| is_executable(p) && probe_module(p, &module, &dir, path))
             .unwrap_or_else(|| {

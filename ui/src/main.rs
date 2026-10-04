@@ -1058,10 +1058,12 @@ impl Browser {
             self.settings_open = true;
             self.jobs.configure = false;
         }
+        // Show a placeholder while discovery runs, but never store it: the script
+        // loader waits for a real result in `export_command`.
         let export = self
             .export_command
-            .get_or_insert_with(|| Err("Resolving CLI commands…".into()))
-            .clone();
+            .clone()
+            .unwrap_or_else(|| Err("Resolving CLI commands…".into()));
         let logic_reason = if self.logic_task.is_some() {
             Some("Preparing for Logic…".into())
         } else {
