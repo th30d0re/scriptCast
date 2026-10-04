@@ -232,3 +232,168 @@ runpy.run_module('scriptcast.tools.export_session', run_name='__main__')
     after = inventory(tmp_path)
     after.pop(output.name)
     assert after == before
+
+
+@pytest.fixture
+def script_project(tmp_path, monkeypatch):
+    from scriptcast.markup import tokenize_markup
+    from scriptcast.parser import parse_transcript
+    from scriptcast.render_state import RenderState, compute_turn_fingerprint
+    from scriptcast.voices import load_voices
+
+    monkeypatch.delenv("SCRIPTCAST_PROJECT", raising=False)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "scriptcast.toml").write_text('voices = "cast.yaml"\n')
+    voices_path = tmp_path / "cast.yaml"
+    voices_path.write_text("speakers:\n  alice:\n    engine: kokoro\n"
+                           "    kokoro_voice: af_heart\n    lang_code: a\n")
+    script = tmp_path / "script.md"
+    script.write_text("Alice (00:00)\n\nHello **world**.\n<!-- keep this -->\n\n\n"
+                      "Alice (00:01)\nSecond line.\n\nAlice (00:02)\n\n")
+    episode_dir = tmp_path / "outputs" / "ep"
+    episode_dir.mkdir(parents=True)
+    voices = load_voices(voices_path)
+    turns = tokenize_markup(parse_transcript(script))
+    state = RenderState("2.0", "script.md", "unused", "today",
+                        [compute_turn_fingerprint(t, voices.get(t.speaker_id)) for t in turns], [])
+    (episode_dir / "render_state.json").write_text(json.dumps(state.to_dict()))
+    return episode_dir, script, turns
+
+
+@pytest.mark.parametrize("ending", [b"\n", b"\r\n"])
+def test_turns_json_raw_spans_and_no_writes(script_project, tmp_path, capsys, ending):
+    import hashlib
+
+    episode_dir, script, _ = script_project
+    script.write_bytes(script.read_bytes().replace(b"\n", ending))
+    original = script.read_bytes()
+    before = inventory(tmp_path)
+    assert export_session.main([str(episode_dir), "--turns-json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["script_path"] == str(script)
+    assert data["script_sha256"] == hashlib.sha256(original).hexdigest()
+    assert data["line_ending"] == ("crlf" if ending == b"\r\n" else "lf")
+    first, second, empty = data["turns"]
+    assert first["index"] == 0
+    assert first["speaker_id"] == "alice"
+    assert first["display_name"] == "Alice"
+    assert (first["header_line"], first["body_start"], first["body_end"]) == (1, 3, 4)
+    assert first["body"] == "Hello **world**." + ending.decode() + "<!-- keep this -->"
+    assert (second["body_start"], second["body_end"]) == (8, 8)
+    assert empty["body"] == ""
+    assert empty["body_start"] == empty["body_end"] + 1
+    assert inventory(tmp_path) == before
+
+
+def test_changes_json_text_and_voice_changes(script_project, tmp_path, capsys):
+    episode_dir, script, turns = script_project
+    before = inventory(tmp_path)
+    assert export_session.main([str(episode_dir), "--changes-json"]) == 0
+    assert json.loads(capsys.readouterr().out) == {
+        "inserted": [], "modified": [], "deleted": [], "unchanged": 3,
+    }
+    assert inventory(tmp_path) == before
+    script.write_text(script.read_text().replace("Second line.", "Edited line."))
+    before = inventory(tmp_path)
+    assert export_session.main([str(episode_dir), "--changes-json"]) == 0
+    assert json.loads(capsys.readouterr().out) == {
+        "inserted": [1], "modified": [], "deleted": [turns[1].turn_id], "unchanged": 2,
+    }
+    assert inventory(tmp_path) == before
+    voices = tmp_path / "cast.yaml"
+    voices.write_text(voices.read_text().replace("af_heart", "af_bella"))
+    before = inventory(tmp_path)
+    assert export_session.main([str(episode_dir), "--changes-json"]) == 0
+    assert json.loads(capsys.readouterr().out)["modified"] == [0, 2]
+    assert inventory(tmp_path) == before
+
+
+@pytest.mark.parametrize("mode", ["--turns-json", "--changes-json"])
+@pytest.mark.parametrize("failure", ["missing-script", "invalid-state", "out"])
+def test_json_failures_write_nothing(script_project, tmp_path, capsys, mode, failure):
+    episode_dir, script, _ = script_project
+    args = [str(episode_dir), mode]
+    if failure == "missing-script":
+        script.unlink()
+    elif failure == "invalid-state":
+        (episode_dir / "render_state.json").write_text("[]")
+    else:
+        args += ["--out", str(tmp_path / "must-not-exist.json")]
+    before = inventory(tmp_path)
+    assert export_session.main(args) == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "scriptcast-export:" in captured.err
+    assert inventory(tmp_path) == before
+
+
+def test_turns_script_override_without_state(script_project, capsys):
+    episode_dir, script, _ = script_project
+    (episode_dir / "render_state.json").unlink()
+    assert export_session.main([str(episode_dir), "--turns-json", "--script", str(script)]) == 0
+    assert len(json.loads(capsys.readouterr().out)["turns"]) == 3
+
+
+def test_json_modes_are_mutually_exclusive(script_project):
+    episode_dir, _, _ = script_project
+    with pytest.raises(SystemExit) as exc:
+        export_session.main([str(episode_dir), "--turns-json", "--changes-json"])
+    assert exc.value.code == 2
+
+
+@pytest.mark.parametrize("failure", ["missing-voices", "invalid-yaml", "missing-dependency"])
+def test_changes_reports_configuration_failures(script_project, tmp_path, monkeypatch, capsys, failure):
+    from scriptcast import render_state
+
+    episode_dir, _, _ = script_project
+    voices = tmp_path / "cast.yaml"
+    if failure == "missing-voices":
+        voices.unlink()
+    elif failure == "invalid-yaml":
+        voices.write_text("speakers: [invalid")
+    else:
+        def unavailable(*args):
+            raise ImportError("missing pronunciation dependency")
+        monkeypatch.setattr(render_state, "plan_precision_insert", unavailable)
+    before = inventory(tmp_path)
+    assert export_session.main([str(episode_dir), "--changes-json"]) == 1
+    output = capsys.readouterr()
+    assert not output.out
+    assert "scriptcast-export:" in output.err
+    assert "Traceback" not in output.err
+    assert inventory(tmp_path) == before
+
+
+def test_legacy_migration_is_in_memory_only(script_project, tmp_path, capsys):
+    episode_dir, _, _ = script_project
+    path = episode_dir / "render_state.json"
+    state = json.loads(path.read_text())
+    state["schema_version"] = "1.0"
+    for index, turn in enumerate(state["turns"]):
+        turn.pop("turn_id")
+        turn["turn_index"] = index
+    path.write_text(json.dumps(state))
+    before = inventory(tmp_path)
+    assert export_session.main([str(episode_dir), "--changes-json"]) == 0
+    assert json.loads(capsys.readouterr().out) == {
+        "inserted": [], "modified": [], "deleted": [], "unchanged": 3,
+    }
+    assert inventory(tmp_path) == before
+
+
+def test_turns_keep_unicode_line_separators_inside_physical_lines(script_project, capsys):
+    episode_dir, script, _ = script_project
+    script.write_text(script.read_text().replace("Second line.", "Second\u2028line."))
+    assert export_session.main([str(episode_dir), "--turns-json"]) == 0
+    turn = json.loads(capsys.readouterr().out)["turns"][1]
+    assert turn["body"] == "Second\u2028line."
+    assert (turn["body_start"], turn["body_end"]) == (8, 8)
+
+
+def test_unsupported_bare_cr_is_reported(script_project, capsys):
+    episode_dir, script, _ = script_project
+    script.write_bytes(script.read_bytes().replace(b"\n", b"\r"))
+    assert export_session.main([str(episode_dir), "--turns-json"]) == 1
+    output = capsys.readouterr()
+    assert not output.out
+    assert "Unsupported bare CR" in output.err

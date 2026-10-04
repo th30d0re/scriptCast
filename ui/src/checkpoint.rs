@@ -13,16 +13,49 @@ pub struct Checkpoint {
     pub argv: Vec<String>,
     pub turns: Vec<usize>,
     pub files: Vec<PathBuf>,
+    #[serde(default = "audio_kind")]
+    pub kind: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub external_files: Vec<PlannedFile>,
     pub bytes: u64,
     #[serde(skip)]
     pub dir: PathBuf,
 }
 /// Separates source/destination from storage, allowing Phase D external plans.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PlannedFile {
     pub path: PathBuf,
     pub stored_as: PathBuf,
 }
+fn audio_kind() -> String {
+    "audio".into()
+}
+
+/// Absolute destinations are allowed only through this explicit checkpoint kind.
+pub fn create_external(
+    episode: &Path,
+    preset: &str,
+    files: &[PathBuf],
+    turns: Vec<usize>,
+) -> Result<Checkpoint, String> {
+    let files = files
+        .iter()
+        .map(|path| {
+            if !path.is_absolute() {
+                return Err(format!(
+                    "External path must be absolute: {}",
+                    path.display()
+                ));
+            }
+            let path = fs::canonicalize(path).map_err(|e| e.to_string())?;
+            let name = path.file_name().ok_or("External file has no name")?;
+            let stored_as = Path::new("external").join(name);
+            Ok(PlannedFile { path, stored_as })
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    create_impl(episode, preset, vec![], turns, &files, true)
+}
+
 pub fn plan_files(p: &Preset, e: &Episode) -> Result<Vec<PlannedFile>, String> {
     let mut paths = vec![];
     if matches!(p, Preset::Verify) {
@@ -111,6 +144,34 @@ pub fn create(
     turns: Vec<usize>,
     files: &[PlannedFile],
 ) -> Result<Checkpoint, String> {
+    create_impl(episode, preset, argv, turns, files, false)
+}
+
+fn create_impl(
+    episode: &Path,
+    preset: &str,
+    argv: Vec<String>,
+    turns: Vec<usize>,
+    files: &[PlannedFile],
+    external: bool,
+) -> Result<Checkpoint, String> {
+    let mut stored = std::collections::HashSet::new();
+    for f in files {
+        validate_relative(&f.stored_as)?;
+        if f.stored_as == Path::new("checkpoint.json") || !stored.insert(&f.stored_as) {
+            return Err("Checkpoint storage paths must be unique and not checkpoint.json".into());
+        }
+        if external {
+            validate_external(f)?;
+        } else {
+            safe_existing(episode, &f.path)?;
+            if fs::canonicalize(&f.path).map_err(|e| e.to_string())?
+                != fs::canonicalize(episode.join(&f.stored_as)).map_err(|e| e.to_string())?
+            {
+                return Err("Checkpoint storage path does not match its episode source".into());
+            }
+        }
+    }
     if preset.is_empty()
         || !preset
             .bytes()
@@ -119,6 +180,11 @@ pub fn create(
         return Err("Invalid checkpoint preset".into());
     }
     let root = episode.join("_backups/ui");
+    let ancestor = root
+        .ancestors()
+        .find(|p| p.exists())
+        .ok_or("Missing episode directory")?;
+    safe_existing(episode, ancestor)?;
     fs::create_dir_all(&root).map_err(|e| format!("{}: {e}", root.display()))?;
     safe_existing(episode, &root)?;
     let version = fs::read_dir(&root)
@@ -149,6 +215,8 @@ pub fn create(
         argv,
         turns,
         files: vec![],
+        kind: if external { "script-edit" } else { "audio" }.into(),
+        external_files: if external { files.to_vec() } else { vec![] },
         bytes: 0,
         dir,
     };
@@ -181,11 +249,7 @@ pub fn list(episode: &Path) -> Vec<Checkpoint> {
                 serde_json::from_slice(&fs::read(entry.path().join("checkpoint.json")).ok()?)
                     .ok()?;
             cp.dir = entry.path();
-            if cp
-                .files
-                .iter()
-                .any(|p| validate_relative(p).is_err() || !cp.dir.join(p).is_file())
-            {
+            if checkpoint_files(episode, &cp).is_err() {
                 return None;
             }
             Some(cp)
@@ -194,28 +258,91 @@ pub fn list(episode: &Path) -> Vec<Checkpoint> {
     out.sort_by_key(|c| std::cmp::Reverse(c.version));
     out
 }
-pub fn restore(episode: &Path, cp: &Checkpoint) -> Result<Checkpoint, String> {
-    safe_existing(&episode.join("_backups/ui"), &cp.dir)?;
-    let mut files = vec![];
-    for p in &cp.files {
-        validate_relative(p)?;
-        safe_existing(&cp.dir, &cp.dir.join(p))?;
-        let dest = episode.join(p);
-        if dest.exists() {
-            safe_existing(episode, &dest)?;
-            files.push(PlannedFile {
-                path: dest,
-                stored_as: p.clone(),
-            });
-        }
+fn validate_external(f: &PlannedFile) -> Result<(), String> {
+    if !f.path.is_absolute()
+        || f.path
+            .components()
+            .any(|c| matches!(c, Component::ParentDir | Component::CurDir))
+        || f.stored_as != Path::new("external").join(f.path.file_name().ok_or("Missing filename")?)
+    {
+        return Err("Invalid external checkpoint mapping".into());
     }
-    let before = create(episode, "pre-restore", vec![], cp.turns.clone(), &files)?;
-    for (i, p) in cp.files.iter().enumerate() {
+    let parent = f.path.parent().ok_or("Missing external parent")?;
+    if fs::canonicalize(parent).map_err(|e| e.to_string())? != parent {
+        return Err("External checkpoint parent changed or contains a symlink".into());
+    }
+    if let Ok(meta) = fs::symlink_metadata(&f.path)
+        && (!meta.is_file() || meta.file_type().is_symlink())
+    {
+        return Err("External checkpoint destination must be a regular file".into());
+    }
+    Ok(())
+}
+
+fn checkpoint_files(episode: &Path, cp: &Checkpoint) -> Result<Vec<PlannedFile>, String> {
+    safe_existing(&episode.join("_backups/ui"), &cp.dir)?;
+    let external = match cp.kind.as_str() {
+        "audio" if cp.external_files.is_empty() => false,
+        "script-edit" if cp.external_files.len() == cp.files.len() => true,
+        _ => return Err("Invalid checkpoint kind or external mappings".into()),
+    };
+    let mut seen = std::collections::HashSet::new();
+    cp.files
+        .iter()
+        .enumerate()
+        .map(|(i, stored_as)| {
+            validate_relative(stored_as)?;
+            if stored_as == Path::new("checkpoint.json") || !seen.insert(stored_as) {
+                return Err("Invalid checkpoint storage paths".into());
+            }
+            safe_existing(&cp.dir, &cp.dir.join(stored_as))?;
+            if !cp.dir.join(stored_as).is_file() {
+                return Err("Checkpoint source is not a file".into());
+            }
+            if external {
+                let f = &cp.external_files[i];
+                if &f.stored_as != stored_as {
+                    return Err("External checkpoint mapping mismatch".into());
+                }
+                validate_external(f)?;
+                Ok(f.clone())
+            } else {
+                let path = episode.join(stored_as);
+                // Check the nearest existing ancestor before creating any directories.
+                let ancestor = path
+                    .ancestors()
+                    .find(|p| p.exists())
+                    .ok_or("Missing destination")?;
+                safe_existing(episode, ancestor)?;
+                Ok(PlannedFile {
+                    path,
+                    stored_as: stored_as.clone(),
+                })
+            }
+        })
+        .collect()
+}
+
+pub fn restore(episode: &Path, cp: &Checkpoint) -> Result<Checkpoint, String> {
+    let files = checkpoint_files(episode, cp)?;
+    let existing: Vec<_> = files.iter().filter(|f| f.path.exists()).cloned().collect();
+    let before = create_impl(
+        episode,
+        "pre-restore",
+        vec![],
+        cp.turns.clone(),
+        &existing,
+        cp.kind == "script-edit",
+    )?;
+    for (i, f) in files.iter().enumerate() {
         let result = (|| {
-            let dest = episode.join(p);
-            let parent = dest.parent().unwrap();
+            let parent = f.path.parent().ok_or("Missing destination parent")?;
             fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-            safe_existing(episode, parent)?;
+            if cp.kind == "script-edit" {
+                validate_external(f)?;
+            } else {
+                safe_existing(episode, parent)?;
+            }
             let tmp = parent.join(format!(
                 ".scriptcast-restore-{}-{}-{i}",
                 std::process::id(),
@@ -226,13 +353,18 @@ pub fn restore(episode: &Path, cp: &Checkpoint) -> Result<Checkpoint, String> {
                 .create_new(true)
                 .open(&tmp)
                 .map_err(|e| e.to_string())?;
-            fs::copy(cp.dir.join(p), &tmp).map_err(|e| e.to_string())?;
-            fs::rename(tmp, dest).map_err(|e| e.to_string())
+            let result = fs::copy(cp.dir.join(&f.stored_as), &tmp)
+                .and_then(|_| fs::rename(&tmp, &f.path))
+                .map_err(|e| e.to_string());
+            if result.is_err() {
+                let _ = fs::remove_file(&tmp);
+            }
+            result
         })();
         if let Err(e) = result {
             return Err(format!(
                 "Restore {} failed: {e}. Prior state: {}",
-                p.display(),
+                f.path.display(),
                 before.dir.display()
             ));
         }
