@@ -1648,11 +1648,18 @@ impl Browser {
             body.is_some_and(|b| scriptcast_ui::script::clip_id(b).is_some())
         });
         if clip_note {
-            options.label(t::text(
-                "Original recording · Not synthesized",
-                t::SECONDARY,
-                t::TEXT_MUTED,
-            ));
+            // Two short lines instead of one long one: the waveform keeps its width.
+            let width = ["Original recording", "Not synthesized"]
+                .iter()
+                .map(|line| t::text_width(&options, *line, t::font(t::SECONDARY)))
+                .fold(0.0, f32::max);
+            let size = vec2(width, t::WAVE_VIEWPORT_HEIGHT);
+            options.allocate_ui_with_layout(size, Layout::top_down(Align::Min), |ui| {
+                ui.set_max_width(width);
+                ui.spacing_mut().item_spacing.y = 0.0;
+                ui.label(t::text("Original recording", t::SECONDARY, t::TEXT_MUTED));
+                ui.label(t::text("Not synthesized", t::SECONDARY, t::TEXT_MUTED));
+            });
         }
         let track = Rect::from_min_max(
             pos2(
