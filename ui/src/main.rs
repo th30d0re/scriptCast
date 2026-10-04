@@ -230,6 +230,7 @@ fn neighbour_targets(visible: &[usize], current: Option<usize>) -> (Option<usize
 #[derive(Default)]
 struct Browser {
     editing: editing::Editing,
+    table_cache: table::TextCache,
     jobs: jobs::Jobs,
     export_command: Option<Result<ExportCommand, String>>,
     live_task: Option<DawTask>,
@@ -1305,6 +1306,7 @@ impl Browser {
         if ui.add_enabled(failures > 0, button).clicked() {
             self.filters.failed_only = !self.filters.failed_only;
         }
+        editing::mode_toggle(&mut ui, &mut self.preferences.edit_mode);
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
             ui.add(
                 egui::Image::new(t::icon("list-15-text-muted"))
@@ -1528,7 +1530,14 @@ impl Browser {
         });
         let (label, position) = match &shown {
             Some((index, name)) => (
-                format!("Turn {index:03} · {name}"),
+                format!(
+                    "Turn {index:03} · {name}{}",
+                    if matches!(self.transport, Transport::Paused(_)) {
+                        " · Paused"
+                    } else {
+                        ""
+                    }
+                ),
                 format!(
                     "{} / {}",
                     view::time(position_ms),
@@ -2118,6 +2127,7 @@ impl Browser {
                 &mut view::region(ui, "table", table_rect, t::BG_SURFACE),
                 self.episode.as_ref().unwrap(),
                 &visible,
+                &mut self.table_cache,
                 self.selected,
                 self.transport.turn(),
                 read_position,

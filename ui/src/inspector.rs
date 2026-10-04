@@ -287,18 +287,13 @@ fn field(ui: &mut Ui, label: &str, value: &str, mono: bool) {
 fn status_sentence(
     turn_index: usize,
     transport: Transport,
-    position: Duration,
-    auto_advance: bool,
+    _position: Duration,
+    _auto_advance: bool,
 ) -> String {
+    let local = "Transcript edits are local until saved; rendered audio remains unchanged.";
     match transport {
-        Transport::Playing(_) => format!(
-            "Listening to turn {turn_index:03}. Select any turn to switch audio. Auto-advance is {}.",
-            if auto_advance { "on" } else { "off" }
-        ),
-        Transport::Paused(_) => format!(
-            "Paused turn {turn_index:03} at {}. Space resumes; Esc stops.",
-            view::time(position.as_millis() as u64)
-        ),
+        Transport::Playing(_) => format!("Listening to turn {turn_index:03}. {local}"),
+        Transport::Paused(_) => format!("Paused on turn {turn_index:03}. {local}"),
         Transport::Idle => {
             format!("Turn {turn_index:03} selected. Space plays it; ↑ ↓ move the selection.")
         }
