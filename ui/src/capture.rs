@@ -35,6 +35,8 @@ Options:
   --running-screenshot PATH  also save the active job (requires --run)
   --fresh            ignore persisted state and do not save state on exit
   --select N         select manifest turn N after loading, scrolled into view
+  --edit             open the transcript editor (requires --select)
+  --edit-mode MODE   panel (default) or row
   --play             after --select, start playback of the selected turn
                      (requires --select)
   --at MS            after --play starts, seek the player to MS milliseconds
@@ -61,6 +63,8 @@ pub struct Cli {
     pub size: [f32; 2],
     pub fresh: bool,
     pub select: Option<usize>,
+    pub edit: bool,
+    pub edit_mode: Option<crate::editing::EditMode>,
     pub play: bool,
     pub at: Option<u64>,
     pub mute: bool,
@@ -85,6 +89,8 @@ impl Cli {
             size: t::WINDOW_SIZE,
             fresh: false,
             select: None,
+            edit: false,
+            edit_mode: None,
             play: false,
             at: None,
             mute: false,
@@ -152,7 +158,23 @@ impl Cli {
                     cli.run = Some(name);
                 }
                 "--fresh" => cli.fresh = true,
+                "--edit" => cli.edit = true,
+                "--edit-mode" => {
+                    cli.edit_mode = Some(
+                        match args
+                            .next()
+                            .ok_or("--edit-mode needs panel or row")?
+                            .to_string_lossy()
+                            .as_ref()
+                        {
+                            "panel" => crate::editing::EditMode::Panel,
+                            "row" => crate::editing::EditMode::Row,
+                            _ => return Err("--edit-mode needs panel or row".into()),
+                        },
+                    );
+                }
                 "--play" => cli.play = true,
+
                 "--mute" => cli.mute = true,
                 "--simulate-device-loss" => cli.simulate_device_loss = true,
                 "--no-gapless" => cli.no_gapless = true,
@@ -195,6 +217,9 @@ impl Cli {
                 }
                 other => return Err(format!("unknown option {other}")),
             }
+        }
+        if cli.edit && cli.select.is_none() {
+            return Err("--edit needs --select".into());
         }
         if cli.play && cli.select.is_none() {
             return Err("--play needs --select (there is no default turn to play)".into());
@@ -522,7 +547,7 @@ mod tests {
     #[test]
     fn png_round_trip_has_full_dimensions() {
         let image = egui::ColorImage::new([8, 4], vec![egui::Color32::RED; 32]);
-        let path = PathBuf::from("/tmp/scriptcast-d").join(format!(
+        let path = PathBuf::from("/tmp/scriptcast-d2").join(format!(
             "scriptcast-ui-capture-test-{}.png",
             std::process::id()
         ));

@@ -75,7 +75,8 @@ pub fn show(
     selected: Option<usize>,
     playing: Option<(usize, u64)>,
     waveforms: Option<&Waveforms>,
-) -> Option<usize> {
+    edited: &[usize],
+) -> Option<(usize, bool)> {
     let rect = ui.max_rect();
     let content = view::inset(rect, t::SPACE_20, t::SPACE_10);
     let heading = Rect::from_min_size(content.min, vec2(content.width(), t::SPACE_22));
@@ -312,6 +313,22 @@ pub fn show(
                         ),
                         StrokeKind::Inside,
                     );
+                    if edited.contains(&idx) {
+                        let outline = block.shrink(t::BORDER);
+                        let points = [
+                            outline.left_top(),
+                            outline.right_top(),
+                            outline.right_bottom(),
+                            outline.left_bottom(),
+                            outline.left_top(),
+                        ];
+                        ui.painter().add(egui::Shape::dashed_line(
+                            &points,
+                            Stroke::new(t::SPACE_2, t::accent()),
+                            t::SPACE_4,
+                            t::SPACE_4,
+                        ));
+                    }
                     if block.width() > t::SPACE_8 {
                         let label_str = format!("{:03}", turn.index);
                         let label_colour = if active && failed {
@@ -364,8 +381,8 @@ pub fn show(
                             view::time(turn.end_ms),
                             turn.first_words
                         ));
-                    if response.clicked() {
-                        clicked = Some(idx);
+                    if response.clicked() || response.double_clicked() {
+                        clicked = Some((idx, response.double_clicked()));
                     }
                 }
             }

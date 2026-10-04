@@ -2,12 +2,13 @@
 //! Selected turn (376 px); Phase C adds Verification (436) and Job runner
 //! (510) — `InspectorMode::width` is where those land.
 
-use crate::{Transport, view};
-use eframe::egui::{self, Align, Layout, Rect, Sense, Ui, UiBuilder, pos2, vec2};
-use scriptcast_ui::{
-    episode::{Episode, Turn},
-    theme as t,
+use crate::{
+    Transport,
+    editing::{self, EditMode, Editing},
+    view,
 };
+use eframe::egui::{self, Align, Layout, Rect, Sense, Ui, UiBuilder, pos2, vec2};
+use scriptcast_ui::{episode::Episode, theme as t};
 use std::time::Duration;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -50,7 +51,8 @@ pub enum Action {
 /// The inspector's text field: TRANSCRIPT only when this turn has a
 /// `stress.json` entry with real expected text; anything else is FIRST WORDS
 /// from `TURN_INDEX.csv` and is never labelled a transcript.
-pub fn transcript_field(turn: &Turn) -> (&'static str, &str) {
+#[cfg(test)]
+pub fn transcript_field(turn: &scriptcast_ui::episode::Turn) -> (&'static str, &str) {
     let expected = turn
         .verify
         .as_ref()
@@ -75,7 +77,11 @@ pub fn show(
     can_previous: bool,
     can_next: bool,
     file_field: &str,
-) -> Option<Action> {
+    editing: &mut Editing,
+    edit_mode: EditMode,
+    edited: bool,
+    enabled: bool,
+) -> (Option<Action>, Option<editing::Action>) {
     let turn = &episode.turns[turn_idx];
     let speaker = &episode.speakers[turn.speaker_idx];
     let rect = ui.max_rect();
@@ -115,13 +121,32 @@ pub fn show(
     );
     body_ui.set_clip_rect(body.intersect(ui.clip_rect()));
     let mut action = None;
+    let mut edit_action = None;
     egui::ScrollArea::vertical()
         .id_salt("inspector_scroll")
         .auto_shrink([false, false])
         .show(&mut body_ui, |ui| {
             ui.add_space(t::SPACE_16);
             ui.spacing_mut().item_spacing.y = t::SPACE_12;
+            ui.horizontal(|ui| {
+                if ui
+                    .selectable_label(
+                        !editing.edit_tab,
+                        t::text("Turn view", t::BODY, t::TEXT_PRIMARY),
+                    )
+                    .clicked()
+                {
+                    editing.edit_tab = false;
+                }
+                if ui
+                    .selectable_label(editing.edit_tab, t::text("Edit", t::BODY, t::TEXT_PRIMARY))
+                    .clicked()
+                {
+                    edit_action = Some(editing::Action::Open);
+                }
+            });
             // Speaker + verification row.
+
             ui.horizontal(|ui| {
                 let colour = t::speaker_colour(speaker.colour_idx);
                 let (bar, _) =
@@ -133,12 +158,66 @@ pub fn show(
                         .color(colour),
                 );
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    let (label, colour) = view::verification_label(turn.verification);
+                    let (label, colour) = if edited {
+                        ("Edited", t::accent())
+                    } else {
+                        view::verification_label(turn.verification)
+                    };
                     ui.label(t::text(label, t::SECONDARY, colour));
                 });
             });
-            let (label, value) = transcript_field(turn);
-            field(ui, label, value, false);
+            if edited && transport.turn() == Some(turn_idx) {
+                ui.label(t::text(
+                    "Audio is from before this edit",
+                    t::SECONDARY,
+                    t::accent(),
+                ));
+            }
+            if editing.edit_tab && edit_mode == EditMode::Panel && editing.draft.is_some() {
+                let height = editing::field_height(
+                    ui,
+                    &editing.draft.as_ref().unwrap().text,
+                    ui.available_width(),
+                    body.height() - t::EDITOR_CHROME_HEIGHT,
+                );
+                edit_action = editing::editor(ui, editing, height, false, enabled).or(edit_action);
+            } else if let Some(body) = editing.body(turn_idx) {
+                field(ui, "Transcript", body, false);
+            } else {
+                // The legacy verification-text helper remains available to verification views.
+                field(ui, "First words", &turn.first_words, false);
+                ui.label(t::text(
+                    format!("Full text unavailable: {}", editing.unavailable()),
+                    t::SECONDARY,
+                    t::TEXT_MUTED,
+                ));
+            }
+            if let Some(error) = &editing.changes_error {
+                ui.label(t::text(
+                    format!("Edit markers unavailable: {error}"),
+                    t::CAPTION,
+                    t::STATUS_FAILED,
+                ));
+            }
+            if let Some(notice) = &editing.notice {
+                ui.label(t::text(notice, t::SECONDARY, t::TEXT_MUTED));
+            }
+            if editing.edit_tab
+                && editing.has_edits()
+                && t::secondary_button(
+                    ui,
+                    "Re-render edited turns",
+                    None,
+                    enabled && !editing.busy(),
+                )
+                .clicked()
+            {
+                edit_action = Some(editing::Action::Render);
+            }
+            if editing.edit_tab && edit_mode == EditMode::Panel {
+                return;
+            }
+
             field(
                 ui,
                 "Audio",
@@ -182,7 +261,7 @@ pub fn show(
             ui.label(t::text("Esc · Stop playback", t::SECONDARY, t::TEXT_SUBTLE));
             ui.add_space(t::SPACE_16);
         });
-    action
+    (action, edit_action)
 }
 
 /// One labelled detail field: 10/600 uppercase muted label over the value.
