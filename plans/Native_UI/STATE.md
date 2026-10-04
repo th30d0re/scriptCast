@@ -126,3 +126,11 @@
 
 - Merged to dev; app 0.4.0-waveforms. Speaker labels, gapless auto-advance, 48 kHz output (whine fixed, operator-confirmed), timeline-block waveforms (392 envelopes in 3.9 s, background), scrolling waveform playback bar with seek.
 - Worker evaluation on tight chunks: Gemini 3.1 Pro High: correct logic, drops comments, skips fmt, ran out of quota mid-chunk. Cursor (Auto): two chunks in 4–5 min, accurate reports; one colour built outside theme.rs; its agent tried to launch other worker CLIs on its own (now forbidden in briefs).
+
+## Phase D — result (2026-10-03)
+
+- Part 1 (engine) and part 2 (UI) merged to dev; app 0.6.0-editing. Also merged L1/L2 (resizable panes, Settings on Cmd+,).
+- Verified on a /tmp copy of EP03: save turn 6 -> --changes-json lists it -> script-edit restore -> bytes equal. Real EP03 script and project git status unchanged (orchestrator hashes).
+- Pending operator: visual check of Settings, both edit layouts, and resizing (screenshots timed out while the display slept). Real-script editing is the operator's first use; every save takes a script-edit checkpoint first.
+- Next: Phase E (read-along word highlighting) needs operator approval for a per-word timing output in Python (captions.py alignment).
+- Worker notes: Codex quota resets 2026-10-04 01:42. Cursor (Auto) reliable for finishing and verification chunks.
