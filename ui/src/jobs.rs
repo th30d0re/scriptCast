@@ -331,6 +331,7 @@ impl Browser {
             let commands = [
                 "scriptcast",
                 "scriptcast-verify",
+                "scriptcast-word-timings",
                 "scriptcast-repair",
                 "scriptcast-export",
             ]
@@ -543,6 +544,7 @@ impl Browser {
             Preset::PrecisionInsert,
             Preset::RegenerateTurns(turns.clone()),
             Preset::Verify,
+            Preset::ReadAlong,
             Preset::Repair((!turns.is_empty()).then_some(turns)),
         ];
 
@@ -902,6 +904,8 @@ for p in &cp.files {
 
                 let warning = if restore.is_some() {
                     "The listed files will be replaced. A pre-restore checkpoint is saved first."
+                } else if c.as_ref().unwrap().preset == Preset::ReadAlong {
+                    "word_timings.json will be replaced. A checkpoint is saved first."
                 } else if c.as_ref().unwrap().preset == Preset::Verify {
                     "stress.json will be replaced. A checkpoint is saved first."
                 } else {

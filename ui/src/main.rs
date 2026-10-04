@@ -2,6 +2,7 @@ mod capture;
 mod editing;
 mod inspector;
 mod jobs;
+mod read_along;
 mod settings;
 mod table;
 mod timeline;
@@ -68,6 +69,8 @@ struct Preferences {
     auto_advance: bool,
     #[serde(default = "default_true")]
     gapless: bool,
+    #[serde(default = "default_true")]
+    read_along: bool,
     /// Output device choice, persisted by name; a gone device falls back to
     /// the default output with a notice.
     output_device: Option<String>,
@@ -94,6 +97,7 @@ impl Default for Preferences {
             recent: Vec::new(),
             auto_advance: true,
             gapless: true,
+            read_along: true,
             output_device: None,
             timeline_height: None,
             inspector_width: None,
@@ -2105,12 +2109,16 @@ impl Browser {
                 }
                 false => (review, None),
             };
+            let read_position = (self.preferences.read_along
+                && matches!(self.transport, Transport::Playing(_)))
+            .then(|| self.audio_position().as_millis() as u64);
             let (clicked, edit_action) = table::show(
                 &mut view::region(ui, "table", table_rect, t::BG_SURFACE),
                 self.episode.as_ref().unwrap(),
                 &visible,
                 self.selected,
                 self.transport.turn(),
+                read_position,
                 self.scroll_to.take(),
                 self.filters.failed_only,
                 &self.jobs.selected,
@@ -2419,11 +2427,13 @@ mod tests {
     fn cli_folder_preferences_round_trip_and_old_preferences_still_load() {
         let old: Preferences = serde_json::from_str("{}").unwrap();
         assert!(old.cli_dir.is_none());
+        assert!(old.read_along);
         assert!(old.timeline_height.is_none());
         assert!(old.inspector_width.is_none());
         assert_eq!(old.appearance, t::Appearance::default());
         let preferences = Preferences {
             cli_dir: Some(PathBuf::from("/tmp/scriptcast-b2/my cli folder")),
+            read_along: false,
             timeline_height: Some(420.0),
             inspector_width: Some(480.0),
             appearance: t::Appearance {
@@ -2436,6 +2446,7 @@ mod tests {
         let saved = serde_json::to_string(&preferences).unwrap();
         let restored: Preferences = serde_json::from_str(&saved).unwrap();
         assert_eq!(restored.cli_dir, preferences.cli_dir);
+        assert!(!restored.read_along);
         assert_eq!(restored.timeline_height, Some(420.0));
         assert_eq!(restored.inspector_width, Some(480.0));
         assert_eq!(restored.appearance, preferences.appearance);

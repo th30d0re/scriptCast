@@ -1,5 +1,6 @@
 use crate::{
     editing::{self, EditMode, Editing},
+    read_along::{self, Strip},
     view,
 };
 use eframe::egui::{self, Rect, Sense, Ui, pos2, vec2};
@@ -93,6 +94,7 @@ pub fn show(
     visible: &[usize],
     selected: Option<usize>,
     playing: Option<usize>,
+    read_position: Option<u64>,
     scroll_to: Option<usize>,
     failed_only: bool,
     multi: &std::collections::BTreeSet<usize>,
@@ -141,6 +143,7 @@ pub fn show(
     body_ui.spacing_mut().item_spacing.y = 0.0;
     let mut scroll = egui::ScrollArea::vertical()
         .id_salt("turn_rows")
+        .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysVisible)
         .auto_shrink([false, false]);
     let editor_row = if edit_mode == EditMode::Row {
         editing
@@ -159,13 +162,33 @@ pub fn show(
         )
     });
     let editor_height = field_height + t::EDITOR_ROW_CHROME;
+    let read_row = read_position.and_then(|_| {
+        playing.and_then(|idx| {
+            episode.read_along.words(&episode.turns[idx].id)?;
+            visible.iter().position(|row| *row == idx)
+        })
+    });
+    let strip = read_row.map(|row| {
+        Strip::measure(
+            &body_ui,
+            episode
+                .read_along
+                .words(&episode.turns[visible[row]].id)
+                .unwrap(),
+            scriptcast_ui::word_timings::manifest_position(
+                &episode.manifest.turns[visible[row]],
+                read_position.unwrap(),
+            ),
+            body.width() - body_ui.spacing().scroll.allocated_width(),
+        )
+    });
+    let read_height = strip.as_ref().map_or(0.0, |strip| strip.height);
     let row_top = |row: usize| {
-        row as f32 * t::TABLE_ROW_HEIGHT
-            + if editor_row.is_some_and(|e| row > e) {
-                editor_height
-            } else {
-                0.0
-            }
+        read_along::row_top(
+            row,
+            editor_row.map(|row| (row, editor_height)),
+            read_row.map(|row| (row, read_height)),
+        )
     };
     if let Some(position) = scroll_to.and_then(|idx| visible.iter().position(|v| *v == idx)) {
         scroll = scroll.vertical_scroll_offset((row_top(position) - t::TABLE_ROW_HEIGHT).max(0.0));
@@ -276,6 +299,21 @@ pub fn show(
                     clicked = Some((idx, response.double_clicked()));
                 }
             }
+            if read_row == Some(row)
+                && bottom + read_height >= viewport.top()
+                && bottom <= viewport.bottom()
+            {
+                let rect =
+                    Rect::from_min_size(origin + vec2(0.0, bottom), vec2(width, read_height));
+                strip.as_ref().unwrap().paint(ui, rect);
+                view::rule(ui, rect);
+            }
+            let bottom = bottom
+                + if read_row == Some(row) {
+                    read_height
+                } else {
+                    0.0
+                };
             if editor_row == Some(row)
                 && bottom + editor_height >= viewport.top()
                 && bottom <= viewport.bottom()

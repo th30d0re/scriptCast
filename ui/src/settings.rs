@@ -116,6 +116,10 @@ impl Browser {
 
                 ui.add_space(t::SPACE_8);
                 ui.label(t::heading("Playback", t::SECTION_TITLE));
+                ui.checkbox(
+                    &mut self.preferences.read_along,
+                    t::text("Read-along highlighting", t::BODY, t::TEXT_PRIMARY),
+                );
                 if ui
                     .checkbox(
                         &mut auto_advance,

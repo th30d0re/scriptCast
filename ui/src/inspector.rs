@@ -199,6 +199,9 @@ pub fn show(
                     t::STATUS_FAILED,
                 ));
             }
+            if let Some(notice) = &episode.read_along.notice {
+                ui.label(t::text(notice, t::SECONDARY, t::TEXT_MUTED));
+            }
             if let Some(notice) = &editing.notice {
                 ui.label(t::text(notice, t::SECONDARY, t::TEXT_MUTED));
             }

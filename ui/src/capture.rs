@@ -31,7 +31,7 @@ Options:
   --size WxH         inner window size in points (default: 1440x900)
   --inspector MODE   selected, verification, or jobs
   --confirm PRESET   show confirmation; never auto-confirm
-  --run PRESET       run detect-changes or verify; capture after exit
+  --run PRESET       run detect-changes, verify or read-along-timings; capture after exit
   --running-screenshot PATH  also save the active job (requires --run)
   --fresh            ignore persisted state and do not save state on exit
   --select N         select manifest turn N after loading, scrolled into view
@@ -547,7 +547,7 @@ mod tests {
     #[test]
     fn png_round_trip_has_full_dimensions() {
         let image = egui::ColorImage::new([8, 4], vec![egui::Color32::RED; 32]);
-        let path = PathBuf::from("/tmp/scriptcast-d2").join(format!(
+        let path = PathBuf::from("/tmp/scriptcast-e").join(format!(
             "scriptcast-ui-capture-test-{}.png",
             std::process::id()
         ));
