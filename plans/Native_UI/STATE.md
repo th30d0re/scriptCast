@@ -138,3 +138,8 @@
 ## Phase E — Read-along word highlighting
 
 - Operator approved the Python per-word timing tool on 2026-10-04 ("approve Phase E"). Brief: `briefs/phase-e.md`. Transcribes per-turn WAVs (not the stitched mp3) so times match the manifest.
+
+## Phase H — ASR ensemble (planned 2026-10-04)
+
+- Operator: bring the videolab ensemble into scriptCast, clips first. Plan in plan.md "Phase H". The Python port (H1) needs explicit approval before dispatch.
+- Operator decision 2026-10-04: no Python change for clip-turn identity; clip edits are UI-only transcript corrections, excluded from re-render (Phase G).

@@ -420,6 +420,45 @@ B3.3. Timeline turn blocks draw their waveform as vertical bars in the speaker c
 B3.4. Playback bar: replace the seek track with the "Waveform viewport" (Figma `4:18360`): 36 high, `bg/surface` fill, 1 px border, radius 3; the playing turn's waveform scrolls under a fixed 2 px playhead at the centre, with 32 px fades at both ends (`03d-waveforms/playback-bar.png`). Click or drag seeks. **On built-in MacBook speakers** (`audio::is_builtin_speakers`), keep the plain seek track instead: the scrolling waveform needs fast redraws, and fast redraws cause audible coil whine through the speakers (operator, 2026-10-03: absent in headphones).
 B3.5. Tests: envelope of a fixture WAV (length, peak position), the seek-track fallback choice by device name, and capture evidence of both bar variants.
 
+**Phase H — ASR ensemble in scriptCast (operator request 2026-10-04; clips first; needs operator approval of the Python port before dispatch)**
+
+Why. scriptCast checks synthesized turns against a known script, so Whisper skipping words barely matters there: read-along aligns to the script and fills gaps from it. Two places lack a trustworthy reference:
+- **real audio clips** (`[clip:<id>]` turns such as `atwater_1981`): no script guarantees what was actually said, Phase E gives them no read-along, and their transcript corrections (Phase G) have no good starting text;
+- **verification failures**: a single Whisper reading cannot tell "the audio is wrong" from "Whisper misheard".
+
+The videolab ensemble already solves complete-coverage transcription with word timing:
+- `TheOriginalPower/videolab/src/videolab/asr_merge.py` (218 lines, pure functions: `word_gaps`, `fill_gaps`, `drop_words_in_spans`, `group_words_into_segments`, `backfill_from_reference`, `coverage_warnings`);
+- the engines in `videolab/src/videolab/asr.py`: Phonon-2 word pass `_phonon_words` :351, Phonon-1-Big `_big_text` :384, the ensemble entry :489;
+- measured on 8 reels: omitted words fell from 241 to 72;
+- it guarantees **coverage, not correct wording**.
+
+H1. **Port the merge.** Move `asr_merge.py` into `scriptcast/asr/merge.py` as a shared module, so videolab imports it from scriptCast instead of keeping a copy. Add the engine adapters in `scriptcast/asr/engines.py`:
+- Phonon-2 word pass with 15 s offset windows at 0/5/10 s;
+- Whisper (mlx);
+- the Phonon-1-Big check;
+- Whisper-only fallback.
+
+The engines need `.venv-fermion` (Big fails under mlx-audio 0.4.3 in `.venv-voice`). The UI's C0 resolver already searches every `.venv*`, so H1 registers a console script that `.venv-fermion` can run. Port videolab's existing tests with the module.
+
+H2. **Clip transcripts.** `scriptcast-clip-transcribe <episode> [--turns]` runs the ensemble on each clip turn's processed WAV. It writes `clip_transcripts.json` (derived and atomic; checkpointed like Verify when overwriting):
+- per clip turn: `turn_id`, merged words `{text, start_ms, end_ms, engine}`, `coverage_warnings`, a Whisper-disagreement percentage, and the manifest hash.
+
+UI:
+- Read-along for clip turns uses these words.
+- Phase G's clip editor gets "Use ensemble transcript" to start a correction from the merged text (still a transcript-only correction, never synthesis).
+- Clips whose Whisper disagreement is over 15% show "Listen manually" (the videolab rule).
+
+H3. **Verification second opinion.** For failed turns only, run Phonon-2 beside Whisper and store both readings, plus per-span agreement, in `stress_ensemble.json`. The Verification inspector and the Discrepancy review screen show per span:
+- both engines agree with each other but differ from the script: likely an audio problem;
+- the engines disagree with each other: likely a recognition error, so listen first;
+- one engine skipped: a coverage gap.
+
+The reviewer's outcome stays manual: the ensemble only points where to listen. The original verifier score is never replaced.
+
+H4. **Toggle.** In the Discrepancy review screen, switch "Whisper only / Ensemble". Ensemble colours each span by its source engine and marks disagreements.
+
+Order: H1 → H2 (clips) → H3 → H4. Each is its own brief. Python work needs the operator's approval at H1, and the discrepancy screen waits for its Figma design.
+
 **Phase D — Inline editing (operator request 2026-10-03; after Phase C)**
 
 D1. Modify `file:Dev/Tools/scriptCast/scriptcast/tools/export_session.py` (pending operator approval; read-only, writes nothing):
@@ -558,3 +597,7 @@ Phase A rows completed 2026-10-03; Phase B and C rows are filled as those phases
 | B3.1 Speaker-name bars removed | | | |
 | B3.2–B3.4 Waveforms (timeline blocks, playback viewport, speaker fallback) | | | |
 | B3.5 Tests | | | |
+| H1. Port asr_merge + engines into scriptcast.asr | | | Awaiting operator approval of the Python port |
+| H2. Clip transcripts + clip read-along | | | |
+| H3. Verification second opinion | | | |
+| H4. Discrepancy view engine toggle | | | Waits for Figma |
