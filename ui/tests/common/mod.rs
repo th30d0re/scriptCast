@@ -9,7 +9,7 @@ static NEXT: AtomicUsize = AtomicUsize::new(0);
 pub struct Scratch(pub PathBuf);
 impl Scratch {
     pub fn new() -> Self {
-        let p = PathBuf::from("/tmp/scriptcast-c").join(format!(
+        let p = PathBuf::from("/tmp/scriptcast-d").join(format!(
             "test-{}-{}",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)

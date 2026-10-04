@@ -168,9 +168,10 @@ fn process_spec(program: &str, args: Vec<OsString>) -> (Scratch, JobSpec) {
 fn echo_streams_before_exit_and_sleep_cancels() {
     let (_tmp, s) = process_spec("/bin/echo", vec!["streamed".into()]);
     let job = Job::start(&s, eframe::egui::Context::default()).unwrap();
-    assert!(
-        matches!(job.receiver.recv_timeout(Duration::from_secs(2)).unwrap(),JobEvent::Line(Stream::Stdout,s) if s=="streamed")
-    );
+    assert!(matches!(
+        job.receiver.recv_timeout(Duration::from_secs(2)).unwrap(),
+        JobEvent::Line(Stream::Stdout, s) if s == "streamed"
+    ));
     assert!(matches!(
         job.receiver.recv_timeout(Duration::from_secs(2)).unwrap(),
         JobEvent::Exited(Some(0))
@@ -187,7 +188,13 @@ fn echo_streams_before_exit_and_sleep_cancels() {
 }
 #[test]
 fn stdin_is_null_environment_is_injected_and_stderr_drains() {
-    let(_tmp,s)=process_spec("/bin/sh",vec!["-c".into(),"read value; test $? -ne 0 || exit 3; printf '%s\\n' \"$PATH\"; printf 'last error\\n' >&2".into()]);
+    let (_tmp, s) = process_spec(
+        "/bin/sh",
+        vec![
+            "-c".into(),
+            "read value; test $? -ne 0 || exit 3; printf '%s\\n' \"$PATH\"; printf 'last error\\n' >&2".into(),
+        ],
+    );
     let job = Job::start(&s, eframe::egui::Context::default()).unwrap();
     let mut lines = vec![];
     loop {
