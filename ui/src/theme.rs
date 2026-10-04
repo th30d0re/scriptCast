@@ -160,6 +160,10 @@ pub const INSPECTOR_MIN: f32 = 320.0;
 pub const INSPECTOR_MAX_FRACTION: f32 = 0.6;
 pub const INSPECTOR_HEADING_HEIGHT: f32 = 39.0;
 pub const PLAYBACK_BAR_HEIGHT: f32 = 64.0;
+/// Audio strip above the playback bar in discrepancy review (Figma 48:3588).
+pub const AUDIO_STRIP_HEIGHT: f32 = 52.0;
+/// Right column width for "Why did this turn fail?".
+pub const DISCREPANCY_DECISION_WIDTH: f32 = 320.0;
 pub const PLAYBACK_CURRENT_AUDIO_WIDTH: f32 = 226.0;
 pub const SEEK_TRACK_HEIGHT: f32 = 4.0;
 pub const PROGRESS_HEIGHT: f32 = 3.0;

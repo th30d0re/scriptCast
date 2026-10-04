@@ -36,6 +36,8 @@ Options:
   --running-screenshot PATH  also save the active job (requires --run)
   --fresh            ignore persisted state and do not save state on exit
   --select N         select manifest turn N after loading, scrolled into view
+  --review N         open discrepancy review on failed turn N (implies --select N)
+  --review-mode MODE whisper or ensemble (with --review; default whisper)
   --edit             open the transcript editor (requires --select)
   --edit-mode MODE   panel (default) or row
   --play             after --select, start playback of the selected turn
@@ -64,6 +66,10 @@ pub struct Cli {
     pub size: [f32; 2],
     pub fresh: bool,
     pub select: Option<usize>,
+    /// Open discrepancy review after selecting this turn (capture aid).
+    pub review: Option<usize>,
+    /// Whisper / Ensemble mode when opening `--review`.
+    pub review_mode: Option<scriptcast_ui::discrepancy::ReviewMode>,
     pub edit: bool,
     pub edit_mode: Option<crate::editing::EditMode>,
     pub play: bool,
@@ -92,6 +98,8 @@ impl Cli {
             size: t::WINDOW_SIZE,
             fresh: false,
             select: None,
+            review: None,
+            review_mode: None,
             edit: false,
             edit_mode: None,
             play: false,
@@ -214,6 +222,28 @@ impl Cli {
                         .ok_or_else(|| "--select needs a turn number".to_string())?;
                     cli.select = Some(parse_select(&value.to_string_lossy())?);
                 }
+                "--review" => {
+                    let value = args
+                        .next()
+                        .ok_or_else(|| "--review needs a turn number".to_string())?;
+                    let turn = parse_select(&value.to_string_lossy())?;
+                    cli.review = Some(turn);
+                    if cli.select.is_none() {
+                        cli.select = Some(turn);
+                    }
+                }
+                "--review-mode" => {
+                    let value = args
+                        .next()
+                        .ok_or_else(|| "--review-mode needs whisper or ensemble".to_string())?;
+                    cli.review_mode = Some(match value.to_string_lossy().as_ref() {
+                        "whisper" | "whisper-only" | "whisper_only" => {
+                            scriptcast_ui::discrepancy::ReviewMode::WhisperOnly
+                        }
+                        "ensemble" => scriptcast_ui::discrepancy::ReviewMode::Ensemble,
+                        _ => return Err("--review-mode needs whisper or ensemble".into()),
+                    });
+                }
                 "--at" => {
                     let value = args
                         .next()
@@ -225,6 +255,12 @@ impl Cli {
         }
         if cli.edit && cli.select.is_none() {
             return Err("--edit needs --select".into());
+        }
+        if cli.review.is_some() && cli.select.is_none() {
+            return Err("--review needs a turn number".into());
+        }
+        if cli.review_mode.is_some() && cli.review.is_none() {
+            return Err("--review-mode needs --review".into());
         }
         if cli.play && cli.select.is_none() {
             return Err("--play needs --select (there is no default turn to play)".into());
@@ -492,6 +528,19 @@ mod tests {
         assert_eq!(parse(&["--select", "391"]).unwrap().select, Some(391));
         assert!(parse(&["--select", "-1"]).is_err());
         assert!(parse(&["--select", "three"]).is_err());
+    }
+    #[test]
+    fn review_implies_select() {
+        let cli = parse(&["/tmp/e", "--review", "119"]).unwrap();
+        assert_eq!(cli.review, Some(119));
+        assert_eq!(cli.select, Some(119));
+        assert!(parse(&["--review"]).is_err());
+        let cli = parse(&["/tmp/e", "--review", "119", "--review-mode", "ensemble"]).unwrap();
+        assert_eq!(
+            cli.review_mode,
+            Some(scriptcast_ui::discrepancy::ReviewMode::Ensemble)
+        );
+        assert!(parse(&["--review-mode", "ensemble"]).is_err());
     }
     #[test]
     fn play_flags_parse_and_validate_combinations() {

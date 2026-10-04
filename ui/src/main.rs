@@ -1,4 +1,5 @@
 mod capture;
+mod discrepancy_view;
 mod editing;
 mod inspector;
 mod jobs;
@@ -88,6 +89,9 @@ struct Preferences {
     appearance: t::Appearance,
     #[serde(default)]
     edit_mode: editing::EditMode,
+    /// Whisper only / Ensemble toggle for discrepancy review (Phase H4).
+    #[serde(default)]
+    discrepancy_mode: scriptcast_ui::discrepancy::ReviewMode,
 }
 fn default_true() -> bool {
     true
@@ -107,6 +111,7 @@ impl Default for Preferences {
             inspector_hidden: false,
             appearance: t::Appearance::default(),
             edit_mode: editing::EditMode::default(),
+            discrepancy_mode: scriptcast_ui::discrepancy::ReviewMode::default(),
         }
     }
 }
@@ -151,14 +156,14 @@ impl Filters {
 /// Playback state of the transport. `AudioOut` mirrors it; the transition
 /// functions below are pure and unit-tested without audio hardware.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-enum Transport {
+pub(crate) enum Transport {
     #[default]
     Idle,
     Playing(usize),
     Paused(usize),
 }
 impl Transport {
-    fn turn(self) -> Option<usize> {
+    pub(crate) fn turn(self) -> Option<usize> {
         match self {
             Self::Idle => None,
             Self::Playing(t) | Self::Paused(t) => Some(t),
@@ -282,6 +287,11 @@ struct Browser {
     review: Option<scriptcast_ui::review::DecisionForm>,
     /// In-flight `scriptcast-review add` result.
     review_save: Option<std::sync::mpsc::Receiver<Result<(), String>>>,
+    /// Full-screen discrepancy review (Phase H4).
+    discrepancy_open: bool,
+    discrepancy_card: usize,
+    /// Open discrepancy review once `--review` selection lands.
+    pending_review: bool,
 }
 struct SelectedMedia {
     file_line: String,
@@ -308,6 +318,9 @@ impl Browser {
         }
         if let Some(mode) = cli.edit_mode {
             preferences.edit_mode = mode;
+        }
+        if let Some(mode) = cli.review_mode {
+            preferences.discrepancy_mode = mode;
         }
         t::apply(&cc.egui_ctx);
         t::set_appearance(&cc.egui_ctx, preferences.appearance);
@@ -343,6 +356,7 @@ impl Browser {
             muted,
             device_list: AudioOut::outputs(),
             settings_open: cli.settings,
+            pending_review: cli.review.is_some(),
             ..Self::default()
         };
         app.editing.capture_open = cli.edit;
@@ -485,8 +499,15 @@ impl Browser {
             let position = episode.turns.iter().position(|turn| turn.index == want);
             let count = episode.turns.len();
             match position {
-                Some(position) => self.select(position),
+                Some(position) => {
+                    self.select(position);
+                    if self.pending_review {
+                        self.pending_review = false;
+                        self.open_discrepancy_review();
+                    }
+                }
                 None => {
+                    self.pending_review = false;
                     self.select_error = Some(format!(
                         "episode has no manifest turn {want} ({count} turns loaded)"
                     ));
@@ -976,6 +997,32 @@ impl Browser {
         {
             self.open_editor(row);
         }
+        if !self.discrepancy_open
+            && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::D))
+        {
+            self.open_discrepancy_review();
+        }
+        if self.discrepancy_open {
+            let (prev, next, save_decision) = ctx.input_mut(|i| {
+                (
+                    i.consume_key(egui::Modifiers::NONE, egui::Key::OpenBracket),
+                    i.consume_key(egui::Modifiers::NONE, egui::Key::CloseBracket),
+                    i.consume_key(egui::Modifiers::COMMAND, egui::Key::Enter),
+                )
+            });
+            let n = self.discrepancy_cards().len();
+            if prev {
+                self.discrepancy_card =
+                    scriptcast_ui::discrepancy::select_delta(self.discrepancy_card, n, -1);
+            }
+            if next {
+                self.discrepancy_card =
+                    scriptcast_ui::discrepancy::select_delta(self.discrepancy_card, n, 1);
+            }
+            if save_decision {
+                self.save_discrepancy_decision(ctx);
+            }
+        }
         let (open, reload, search, up, down, escape, space) = ctx.input_mut(|i| {
             (
                 i.consume_key(egui::Modifiers::COMMAND, egui::Key::O),
@@ -999,6 +1046,8 @@ impl Browser {
         if escape {
             if self.settings_open {
                 self.settings_open = false;
+            } else if self.discrepancy_open {
+                self.close_discrepancy_review();
             } else {
                 self.pending = None;
                 self.error = None;
@@ -1785,7 +1834,9 @@ impl Browser {
     }
     fn status(&self, ui: &mut Ui) {
         let rect = view::inset(ui.max_rect(), t::SPACE_20, 0.0);
-        let status = if self.jobs.confirmation.is_some() || self.jobs.restore.is_some() {
+        let status = if self.discrepancy_open {
+            "[ Previous difference ] Next difference Space Play/pause · Cmd+Return Save decision".into()
+        } else if self.jobs.confirmation.is_some() || self.jobs.restore.is_some() {
             "Awaiting confirmation · no job has started".into()
         } else if let Some(notice) = &self.editing.notice {
             notice.clone()
@@ -1844,7 +1895,12 @@ impl Browser {
                 .max_rect(rect)
                 .layout(Layout::right_to_left(Align::Center)),
         );
-        row.label(t::text("Local workspace", t::CAPTION, t::TEXT_SUBTLE));
+        let right = if self.discrepancy_open {
+            "Audio unchanged · Draft"
+        } else {
+            "Local workspace"
+        };
+        row.label(t::text(right, t::CAPTION, t::TEXT_SUBTLE));
         let left = Rect::from_min_max(
             rect.min,
             pos2(row.min_rect().left() - t::SPACE_20, rect.bottom()),
@@ -2078,11 +2134,35 @@ impl Browser {
             pos2(rect.left(), status.top() - t::PLAYBACK_BAR_HEIGHT),
             status.right_top(),
         );
-        let workspace = Rect::from_min_max(header.left_bottom(), playback.right_top());
+        let strip_h = if self.discrepancy_open {
+            t::AUDIO_STRIP_HEIGHT
+        } else {
+            0.0
+        };
+        let strip = Rect::from_min_max(
+            pos2(rect.left(), playback.top() - strip_h),
+            playback.right_top(),
+        );
+        let workspace = Rect::from_min_max(header.left_bottom(), strip.right_top());
         self.header(&mut view::region(ui, "header", header, t::BG_SURFACE));
+        if self.discrepancy_open {
+            self.discrepancy_audio_strip(&mut view::region(
+                ui,
+                "audio_strip",
+                strip,
+                t::BG_SURFACE,
+            ));
+        }
         self.playback(&mut view::region(ui, "playback", playback, t::BG_RAISED));
         self.status(&mut view::region(ui, "status", status, t::BG_WINDOW));
-        if self.episode.is_some() {
+        if self.episode.is_some() && self.discrepancy_open {
+            self.discrepancy_review(&mut view::region(
+                ui,
+                "discrepancy",
+                view::inset(workspace, t::SPACE_16, t::SPACE_12),
+                t::BG_WINDOW,
+            ));
+        } else if self.episode.is_some() {
             let timeline_max = (workspace.height() * t::TIMELINE_MAX_FRACTION).max(t::TIMELINE_MIN);
             let timeline_h = self
                 .preferences
@@ -2518,6 +2598,25 @@ mod tests {
         assert_eq!(restored.inspector_width, Some(480.0));
         assert!(restored.inspector_hidden);
         assert_eq!(restored.appearance, preferences.appearance);
+    }
+
+    #[test]
+    fn discrepancy_mode_toggle_persists() {
+        let old: Preferences = serde_json::from_str("{}").unwrap();
+        assert_eq!(
+            old.discrepancy_mode,
+            scriptcast_ui::discrepancy::ReviewMode::WhisperOnly
+        );
+        let preferences = Preferences {
+            discrepancy_mode: scriptcast_ui::discrepancy::ReviewMode::Ensemble,
+            ..Preferences::default()
+        };
+        let restored: Preferences =
+            serde_json::from_str(&serde_json::to_string(&preferences).unwrap()).unwrap();
+        assert_eq!(
+            restored.discrepancy_mode,
+            scriptcast_ui::discrepancy::ReviewMode::Ensemble
+        );
     }
 
     #[test]

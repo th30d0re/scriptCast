@@ -3,6 +3,7 @@ pub mod checkpoint;
 pub mod cli;
 pub mod clip_transcripts;
 pub mod daw;
+pub mod discrepancy;
 pub mod episode;
 pub mod review;
 pub mod runner;
