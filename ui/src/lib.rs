@@ -7,3 +7,4 @@ pub mod runner;
 pub mod script;
 pub mod theme;
 pub mod waveform;
+pub mod word_timings;

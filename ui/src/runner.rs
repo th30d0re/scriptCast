@@ -23,6 +23,7 @@ pub enum Preset {
     PrecisionInsert,
     RegenerateTurns(Vec<usize>),
     Verify,
+    ReadAlong,
     Repair(Option<Vec<usize>>),
 }
 impl Preset {
@@ -32,6 +33,7 @@ impl Preset {
             Self::PrecisionInsert => "precision-insert",
             Self::RegenerateTurns(_) => "regenerate-turns",
             Self::Verify => "verify",
+            Self::ReadAlong => "read-along-timings",
             Self::Repair(_) => "repair",
         }
     }
@@ -41,12 +43,14 @@ impl Preset {
             Self::PrecisionInsert => "Precision insert",
             Self::RegenerateTurns(_) => "Regenerate selected",
             Self::Verify => "Verify",
+            Self::ReadAlong => "Read-along timings",
             Self::Repair(_) => "Repair",
         }
     }
     pub fn command(&self) -> &'static str {
         match self {
             Self::Verify => "scriptcast-verify",
+            Self::ReadAlong => "scriptcast-word-timings",
             Self::Repair(_) => "scriptcast-repair",
             _ => "scriptcast",
         }
@@ -63,6 +67,7 @@ impl Preset {
             "precision-insert" => Ok(Self::PrecisionInsert),
             "regenerate-turns" | "regenerate-selected" => Ok(Self::RegenerateTurns(turns)),
             "verify" => Ok(Self::Verify),
+            "read-along-timings" => Ok(Self::ReadAlong),
             "repair" => Ok(Self::Repair((!turns.is_empty()).then_some(turns))),
             _ => Err(format!("Unknown preset {name}")),
         }
@@ -71,7 +76,8 @@ impl Preset {
         match name {
             "detect-changes" => Ok(Self::DetectChanges),
             "verify" => Ok(Self::Verify),
-            _ => Err("--run refuses synthesizing presets; use detect-changes or verify".into()),
+            "read-along-timings" => Ok(Self::ReadAlong),
+            _ => Err("--run refuses synthesizing presets; use detect-changes, verify or read-along-timings".into()),
         }
     }
 }
@@ -117,6 +123,13 @@ impl JobSpec {
         let out = e.dir.parent().ok_or("Episode has no output parent")?;
         let mut synthesizes = false;
         match p {
+            Preset::ReadAlong => {
+                args.extend([
+                    e.dir.clone().into_os_string(),
+                    "--script".into(),
+                    script.as_os_str().into(),
+                ]);
+            }
             Preset::Verify => {
                 args.extend([
                     e.dir.clone().into_os_string(),
@@ -176,11 +189,16 @@ impl JobSpec {
                 }
             }
         }
-        let overwrites = if matches!(p, Preset::Verify) && e.dir.join("stress.json").exists() {
-            vec![e.dir.join("stress.json")]
-        } else {
-            vec![]
+        let derived = match p {
+            Preset::Verify => Some("stress.json"),
+            Preset::ReadAlong => Some("word_timings.json"),
+            _ => None,
         };
+        let overwrites = derived
+            .map(|name| e.dir.join(name))
+            .filter(|path| path.exists())
+            .into_iter()
+            .collect();
         Ok(Self {
             program: resolved.program.clone(),
             args,
