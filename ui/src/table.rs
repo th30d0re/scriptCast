@@ -237,10 +237,14 @@ pub fn show(
     multi: &std::collections::BTreeSet<usize>,
     edited: &[usize],
     mismatch: bool,
+    find: &crate::find_replace::FindReplace,
+    query: &str,
+    options: &scriptcast_ui::find::Options,
     editing: &mut Editing,
     edit_mode: EditMode,
     enabled: bool,
 ) -> (Option<(usize, bool)>, Option<editing::Action>) {
+    let matcher = scriptcast_ui::find::Matcher::new(query, options).ok();
     let mut area = ui.max_rect();
     if mismatch {
         let banner = Rect::from_min_size(area.min, vec2(area.width(), t::EDITOR_BANNER_HEIGHT));
@@ -437,6 +441,18 @@ pub fn show(
                     let used = paint_clip_badge(ui, badge_rect, id);
                     text_rect.min.y += used + t::AUDIO_CLIP_BADGE_MARGIN * 2.0;
                 }
+                let highlights = matcher.as_ref().map_or_else(Vec::new, |matcher| {
+                    scriptcast_ui::find::occurrences(idx, raw, matcher, options)
+                });
+                let current = find.current.and_then(|i| find.matches.get(i));
+                paint_matches(
+                    ui,
+                    text_rect,
+                    transcript,
+                    &cache.rows[&idx].text,
+                    &highlights,
+                    current,
+                );
                 transcript.paint(ui, text_rect);
             }
             view::line(
@@ -576,6 +592,53 @@ pub fn show(
         t::TEXT_SUBTLE,
     );
     (clicked, edit_action)
+}
+
+fn paint_matches(
+    ui: &Ui,
+    rect: Rect,
+    transcript: &read_along::Transcript,
+    text: &str,
+    matches: &[scriptcast_ui::find::Occurrence],
+    current: Option<&scriptcast_ui::find::Occurrence>,
+) {
+    let painter = ui.painter().with_clip_rect(rect.intersect(ui.clip_rect()));
+    let origin = rect.min + vec2(0.0, t::SPACE_4);
+    for found in matches {
+        let chars = text[..found.displayed.start].chars().count()
+            ..text[..found.displayed.end].chars().count();
+        let mut index = 0;
+        for row in &transcript.galley.rows {
+            let mut highlight = Rect::NOTHING;
+            for glyph in &row.glyphs {
+                if chars.contains(&index) {
+                    highlight = highlight.union(Rect::from_min_size(
+                        origin + row.pos.to_vec2() + vec2(glyph.pos.x, 0.0),
+                        vec2(glyph.advance_width, row.size.y),
+                    ));
+                }
+                index += 1;
+            }
+            if row.ends_with_newline {
+                index += 1;
+            }
+            if highlight.is_positive() {
+                if current == Some(found) {
+                    painter.rect_filled(highlight, t::RADIUS_CONTROL, t::FIND_CURRENT);
+                    painter.rect_stroke(
+                        highlight,
+                        t::RADIUS_CONTROL,
+                        egui::Stroke::new(t::BORDER, t::FIND_GOLD),
+                        egui::StrokeKind::Inside,
+                    );
+                }
+                painter.line_segment(
+                    [highlight.left_bottom(), highlight.right_bottom()],
+                    egui::Stroke::new(t::BORDER, t::FIND_GOLD),
+                );
+            }
+        }
+    }
 }
 
 #[cfg(test)]

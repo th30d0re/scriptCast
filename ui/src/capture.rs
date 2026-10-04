@@ -36,6 +36,8 @@ Options:
   --running-screenshot PATH  also save the active job (requires --run)
   --fresh            ignore persisted state and do not save state on exit
   --select N         select manifest turn N after loading, scrolled into view
+  --find QUERY       find words after the episode loads
+  --replace TEXT     open Replace with TEXT (never saves automatically)
   --edit             open the transcript editor (requires --select)
   --edit-mode MODE   panel (default) or row
   --play             after --select, start playback of the selected turn
@@ -65,6 +67,8 @@ pub struct Cli {
     pub fresh: bool,
     pub select: Option<usize>,
     pub edit: bool,
+    pub find: Option<String>,
+    pub replace: Option<String>,
     pub edit_mode: Option<crate::editing::EditMode>,
     pub play: bool,
     pub at: Option<u64>,
@@ -93,6 +97,8 @@ impl Cli {
             fresh: false,
             select: None,
             edit: false,
+            find: None,
+            replace: None,
             edit_mode: None,
             play: false,
             at: None,
@@ -163,6 +169,23 @@ impl Cli {
                 }
                 "--fresh" => cli.fresh = true,
                 "--edit" => cli.edit = true,
+                "--find" => {
+                    cli.find = Some(
+                        args.next()
+                            .ok_or("--find needs a query")?
+                            .to_string_lossy()
+                            .into_owned(),
+                    );
+                }
+                "--replace" => {
+                    cli.replace = Some(
+                        args.next()
+                            .ok_or("--replace needs text")?
+                            .to_string_lossy()
+                            .into_owned(),
+                    );
+                }
+
                 "--edit-mode" => {
                     cli.edit_mode = Some(
                         match args

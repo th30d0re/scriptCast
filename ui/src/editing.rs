@@ -550,11 +550,21 @@ impl Browser {
                             name.unwrap_or_default().to_string_lossy(),
                             cp.version,
                         ));
+                        if let Some((count, turns)) = self.find.saved_counts.take() {
+                            self.editing.notice = Some(format!(
+                                "Replaced {count} in {turns} turns · checkpoint v{:02}",
+                                cp.version,
+                            ));
+                        }
                         self.editing.cancel();
+
                         self.refresh_checkpoints();
                         self.reload(ctx);
                     }
-                    Err(error) => self.editing.notice = Some(error),
+                    Err(error) => {
+                        self.find.saved_counts = None;
+                        self.editing.notice = Some(error);
+                    }
                 }
             }
         }
@@ -651,6 +661,47 @@ impl Browser {
             self.editing.pending_selection = None;
             self.editing.focus_requested = true;
         }
+    }
+}
+
+impl Browser {
+    pub(crate) fn save_replacements(
+        &mut self,
+        plan: scriptcast_ui::find::Plan,
+        ctx: &egui::Context,
+    ) {
+        if self.editing.draft.is_some() {
+            self.editing.notice = Some("Save or cancel the open edit first".into());
+            return;
+        }
+        if self.editing.busy()
+            || self.jobs.busy()
+            || self.pending.is_some()
+            || self.editing.loading()
+        {
+            return;
+        }
+        let (Some(mut episode), Some(turns), Some(hash)) = (
+            self.episode.clone(),
+            self.editing.turns.as_ref(),
+            self.editing.loaded_sha256.clone(),
+        ) else {
+            return;
+        };
+        if self.editing.manifest_len != Some(turns.turns.len()) {
+            self.editing.notice = Some(self.editing.unavailable().into());
+            return;
+        }
+        episode.script_path = Some(turns.script_path.clone());
+        self.find.saved_counts = Some((plan.occurrences, plan.edits.len()));
+        let (tx, rx) = mpsc::channel();
+        self.editing.saving = Some(rx);
+        self.editing.notice = Some("Saving replacements…".into());
+        let ctx = ctx.clone();
+        std::thread::spawn(move || {
+            let _ = tx.send(script::save_many(&episode, &plan.edits, &hash));
+            ctx.request_repaint();
+        });
     }
 }
 

@@ -132,6 +132,11 @@ pub const WAVE_VIEWPORT_SECONDS: f32 = 6.0;
 pub const WAVE_VIEWPORT_FILL: f32 = 0.8;
 pub const WAVE_FADE: f32 = 32.0;
 pub const WAVE_PLAYHEAD: f32 = 2.0;
+pub const FIND_GOLD: Color32 = Color32::from_rgb(218, 181, 108);
+pub const FIND_CURRENT: Color32 = Color32::from_rgb(88, 72, 41);
+pub const FIND_FIELD_WIDTH: f32 = 190.0;
+pub const FIND_BAR_HEIGHT: f32 = 42.0;
+pub const REPLACE_BAR_HEIGHT: f32 = 76.0;
 pub const FILTER_BAR_HEIGHT: f32 = 42.0;
 pub const SEARCH_WIDTH: f32 = 270.0;
 pub const EDITOR_MIN_HEIGHT: f32 = 120.0;
@@ -555,6 +560,99 @@ fn button(
 pub const JOB_LOG_HEIGHT: f32 = 180.0;
 pub const RESTORE_LIST_HEIGHT: f32 = 180.0;
 pub const CONFIRM_ICON: f32 = 26.0;
+
+/// The bundled text face lacks Mac modifier glyphs; draw those two symbols directly.
+pub fn find_shortcut(ui: &mut egui::Ui, replace: bool) -> egui::Response {
+    let label = if replace { "Replace ▸" } else { "Find ·" };
+    let face = if replace {
+        bold(BUTTON)
+    } else {
+        font(SECONDARY)
+    };
+    let galley = ui.painter().layout_no_wrap(label.into(), face, TEXT_MUTED);
+    let letter = ui
+        .painter()
+        .layout_no_wrap("F".into(), font(CAPTION), TEXT_MUTED);
+    let symbol = CAPTION * FONT_SCALE * text_scale();
+    let symbols = if replace { 2.0 } else { 1.0 };
+    let width = galley.size().x + SPACE_8 * 2.0 + symbol * symbols + letter.size().x;
+    let (rect, response) = ui.allocate_exact_size(
+        egui::vec2(width, BUTTON_HEIGHT),
+        if replace {
+            egui::Sense::click()
+        } else {
+            egui::Sense::hover()
+        },
+    );
+    if replace {
+        ui.painter().rect(
+            rect,
+            RADIUS_CONTROL,
+            BG_CONTROL,
+            egui::Stroke::new(BORDER, BORDER_DEFAULT),
+            egui::StrokeKind::Inside,
+        );
+    }
+    let x = rect.left() + SPACE_4;
+    ui.painter().galley(
+        egui::pos2(x, rect.center().y - galley.size().y / 2.0),
+        galley.clone(),
+        TEXT_MUTED,
+    );
+    let start = egui::pos2(
+        x + galley.size().x + SPACE_4,
+        rect.center().y - symbol / 2.0,
+    );
+    let stroke = egui::Stroke::new(BORDER, TEXT_MUTED);
+    let point = |x: f32, y: f32| start + egui::vec2(x * symbol, y * symbol);
+    ui.painter().rect_stroke(
+        egui::Rect::from_min_max(point(0.25, 0.25), point(0.75, 0.75)),
+        0,
+        stroke,
+        egui::StrokeKind::Inside,
+    );
+    for (x, y) in [(0.0, 0.0), (0.65, 0.0), (0.0, 0.65), (0.65, 0.65)] {
+        ui.painter().rect_stroke(
+            egui::Rect::from_min_max(point(x, y), point(x + 0.35, y + 0.35)),
+            RADIUS_CONTROL,
+            stroke,
+            egui::StrokeKind::Inside,
+        );
+    }
+    if replace {
+        ui.painter().add(egui::Shape::line(
+            vec![
+                point(1.1, 0.15),
+                point(1.35, 0.15),
+                point(1.7, 0.85),
+                point(1.95, 0.85),
+            ],
+            stroke,
+        ));
+        ui.painter()
+            .line_segment([point(1.55, 0.15), point(1.95, 0.15)], stroke);
+    }
+    ui.painter().galley(
+        egui::pos2(
+            start.x + symbol * symbols + SPACE_4,
+            rect.center().y - letter.size().y / 2.0,
+        ),
+        letter,
+        TEXT_MUTED,
+    );
+    response.widget_info(|| {
+        egui::WidgetInfo::labeled(
+            egui::WidgetType::Button,
+            true,
+            if replace {
+                "Replace · Command Option F"
+            } else {
+                "Find · Command F"
+            },
+        )
+    });
+    response
+}
 
 #[cfg(test)]
 mod tests {

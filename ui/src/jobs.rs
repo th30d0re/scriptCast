@@ -190,7 +190,7 @@ impl Browser {
         let mut selected = self.jobs.selected.clone();
         if modifiers.shift {
             let anchor = self.selected.unwrap_or(i);
-            let matches = self.filters.matches(e);
+            let matches = self.find_visibility();
             selected.extend((anchor.min(i)..=anchor.max(i)).filter(|n| matches[*n]));
         } else if modifiers.command {
             if !selected.remove(&i) {

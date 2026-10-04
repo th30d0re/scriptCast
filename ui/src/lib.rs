@@ -4,6 +4,7 @@ pub mod cli;
 pub mod clip_transcripts;
 pub mod daw;
 pub mod episode;
+pub mod find;
 pub mod review;
 pub mod runner;
 pub mod script;

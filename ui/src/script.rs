@@ -88,9 +88,14 @@ fn load_json<T: DeserializeOwned>(
 /// Replace the exported body span, keeping all surrounding bytes and its final newline.
 /// Empty drafts and invalid/stale spans are errors, rather than panics or silent edits.
 pub fn splice(original: &[u8], turn: &ScriptTurn, new_body: &str) -> Result<Vec<u8>, String> {
-    if new_body.trim().is_empty() {
-        return Err("A turn's body cannot be empty.".into());
-    }
+    let starts = line_starts(original);
+    let (range, body) = body_edit(original, &starts, turn, new_body, true)?;
+    let mut result = original.to_vec();
+    result.splice(range, body);
+    Ok(result)
+}
+
+fn line_starts(original: &[u8]) -> Vec<usize> {
     let mut starts = vec![0];
     for (i, byte) in original.iter().enumerate() {
         if *byte == b'\n' {
@@ -99,6 +104,19 @@ pub fn splice(original: &[u8], turn: &ScriptTurn, new_body: &str) -> Result<Vec<
     }
     if starts.last() != Some(&original.len()) {
         starts.push(original.len());
+    }
+    starts
+}
+
+fn body_edit(
+    original: &[u8],
+    starts: &[usize],
+    turn: &ScriptTurn,
+    new_body: &str,
+    normalize_endings: bool,
+) -> Result<(std::ops::Range<usize>, Vec<u8>), String> {
+    if new_body.trim().is_empty() {
+        return Err("A turn's body cannot be empty.".into());
     }
     let line_count = starts.len() - 1;
     if turn.header_line == 0
@@ -127,18 +145,27 @@ pub fn splice(original: &[u8], turn: &ScriptTurn, new_body: &str) -> Result<Vec<
     if normalized.contains('\r') {
         return Err("Unsupported bare carriage return in draft.".into());
     }
-    let body = normalized.replace('\n', ending);
-    let mut result = original[..start].to_vec();
+    let body = if normalize_endings {
+        normalized.replace('\n', ending)
+    } else {
+        new_body.to_owned()
+    };
+
+    let mut result = Vec::new();
     // A header at EOF may have no terminator yet; inserting its first body needs one.
     if start == end && start > 0 && original[start - 1] != b'\n' {
         result.extend_from_slice(ending.as_bytes());
     }
     result.extend_from_slice(body.as_bytes());
-    if old_body.ends_with(b"\n") || (start == end && end < original.len()) {
+    if old_body.ends_with(b"\r\n") {
+        result.extend_from_slice(b"\r\n");
+    } else if old_body.ends_with(b"\n") {
+        result.push(b'\n');
+    } else if start == end && end < original.len() {
         result.extend_from_slice(ending.as_bytes());
     }
-    result.extend_from_slice(&original[end..]);
-    Ok(result)
+
+    Ok((start..end, result))
 }
 
 /// Refuse stale data before writing anything, checkpoint, then atomically replace the script.
@@ -295,6 +322,78 @@ impl RenderScope {
     pub fn synthesis_enabled(&self) -> bool {
         !self.synthesis.is_empty()
     }
+}
+
+/// One hash check, one checkpoint and one atomic write for a complete replacement batch.
+pub fn save_many(
+    episode: &Episode,
+    edits: &[(ScriptTurn, String)],
+    loaded_sha256: &str,
+) -> Result<Checkpoint, String> {
+    if edits.is_empty() {
+        return Err("No replacements to save.".into());
+    }
+    let path = episode
+        .script_path
+        .as_ref()
+        .ok_or("Script path unavailable")?;
+    let path = fs::canonicalize(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let original = fs::read(&path).map_err(|e| e.to_string())?;
+    check_hash(&original, loaded_sha256)?;
+    let starts = line_starts(&original);
+    let mut spans = Vec::with_capacity(edits.len());
+    let mut indices = Vec::with_capacity(edits.len());
+    for (turn, body) in edits {
+        preserve_clip_tag(&turn.body, body)?;
+        spans.push(body_edit(&original, &starts, turn, body, false)?);
+        indices.push(turn.index);
+    }
+    spans.sort_by_key(|(range, _)| range.start);
+    indices.sort_unstable();
+    if indices.windows(2).any(|pair| pair[0] == pair[1])
+        || spans
+            .windows(2)
+            .any(|pair| pair[0].0.end > pair[1].0.start || pair[0].0.start == pair[1].0.start)
+    {
+        return Err("Overlapping script edits. Reload to edit.".into());
+    }
+    let mut edited = original;
+    for (range, body) in spans.into_iter().rev() {
+        edited.splice(range, body);
+    }
+    let mode = fs::metadata(&path)
+        .map_err(|e| e.to_string())?
+        .permissions();
+    let cp = checkpoint::create_external(
+        &episode.dir,
+        "script-edit",
+        std::slice::from_ref(&path),
+        indices,
+    )?;
+    let temporary = path
+        .parent()
+        .ok_or("Script has no parent directory")?
+        .join(format!(
+            ".scriptcast-edit-{}-{}",
+            std::process::id(),
+            cp.version
+        ));
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temporary)
+        .map_err(|e| format!("{}: {e}", temporary.display()))?;
+    let result = (|| {
+        file.write_all(&edited).map_err(|e| e.to_string())?;
+        file.set_permissions(mode).map_err(|e| e.to_string())?;
+        file.sync_all().map_err(|e| e.to_string())?;
+        fs::rename(&temporary, &path).map_err(|e| e.to_string())?;
+        Ok(cp)
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temporary);
+    }
+    result
 }
 
 #[cfg(test)]
