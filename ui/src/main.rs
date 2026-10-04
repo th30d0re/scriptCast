@@ -1,6 +1,7 @@
 mod capture;
 mod inspector;
 mod jobs;
+mod settings;
 mod table;
 mod timeline;
 mod view;
@@ -69,6 +70,15 @@ struct Preferences {
     /// Output device choice, persisted by name; a gone device falls back to
     /// the default output with a notice.
     output_device: Option<String>,
+    /// Timeline pane height; `None` uses `t::TIMELINE_HEIGHT`.
+    #[serde(default)]
+    timeline_height: Option<f32>,
+    /// Inspector pane width for every mode; `None` uses each mode's default.
+    #[serde(default)]
+    inspector_width: Option<f32>,
+    /// Accent, speaker colours, and text scale.
+    #[serde(default)]
+    appearance: t::Appearance,
 }
 fn default_true() -> bool {
     true
@@ -82,6 +92,9 @@ impl Default for Preferences {
             auto_advance: true,
             gapless: true,
             output_device: None,
+            timeline_height: None,
+            inspector_width: None,
+            appearance: t::Appearance::default(),
         }
     }
 }
@@ -249,6 +262,8 @@ struct Browser {
     /// Probe cache for the inspector FILE field and the idle duration, keyed
     /// by turn id so it is recomputed only when the selection changes.
     selected_media: Option<(String, SelectedMedia)>,
+    /// Settings window (⌘, / gear).
+    settings_open: bool,
 }
 struct SelectedMedia {
     file_line: String,
@@ -256,7 +271,6 @@ struct SelectedMedia {
 }
 impl Browser {
     fn new(cc: &eframe::CreationContext<'_>, cli: &capture::Cli) -> Self {
-        t::apply(&cc.egui_ctx);
         let mut preferences = if cli.effective_fresh() {
             Preferences::default()
         } else {
@@ -267,6 +281,12 @@ impl Browser {
         if cli.no_gapless {
             preferences.gapless = false;
         }
+        if let Some((timeline_height, inspector_width)) = cli.layout {
+            preferences.timeline_height = Some(timeline_height);
+            preferences.inspector_width = Some(inspector_width);
+        }
+        t::apply(&cc.egui_ctx);
+        t::set_appearance(&cc.egui_ctx, preferences.appearance);
         let muted = cli.effective_muted();
         let (audio, audio_notice) = match AudioOut::open(preferences.output_device.as_deref()) {
             Ok(mut audio) => {
@@ -298,6 +318,7 @@ impl Browser {
             audio_notice,
             muted,
             device_list: AudioOut::outputs(),
+            settings_open: cli.settings,
             ..Self::default()
         };
         if let Some(path) = cli
@@ -889,6 +910,9 @@ impl Browser {
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::J)) {
             self.jobs.mode = Some(InspectorMode::Jobs);
         }
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Comma)) {
+            self.settings_open = true;
+        }
         let (open, reload, search, up, down, escape, space) = ctx.input_mut(|i| {
             (
                 i.consume_key(egui::Modifiers::COMMAND, egui::Key::O),
@@ -910,12 +934,16 @@ impl Browser {
             self.focus_search = true;
         }
         if escape {
-            self.pending = None;
-            self.error = None;
-            self.missing_audio_card = false;
-            self.device_card_dismissed = true;
-            if esc_action(self.transport).1 == EscAction::Stop {
-                self.stop_audio();
+            if self.settings_open {
+                self.settings_open = false;
+            } else {
+                self.pending = None;
+                self.error = None;
+                self.missing_audio_card = false;
+                self.device_card_dismissed = true;
+                if esc_action(self.transport).1 == EscAction::Stop {
+                    self.stop_audio();
+                }
             }
         }
         if space {
@@ -979,61 +1007,11 @@ impl Browser {
         actions.spacing_mut().item_spacing.x = t::SPACE_8;
         // This row is laid out right-to-left: Settings, Logic, Live, Reload, Open.
         let settings =
-            t::icon_button(&mut actions, "settings-16-text", true).on_hover_text("Settings");
-        if self.jobs.configure {
-            egui::Popup::open_id(ui.ctx(), egui::Popup::default_response_id(&settings));
+            t::icon_button(&mut actions, "settings-16-text", true).on_hover_text("Settings (⌘,)");
+        if settings.clicked() || self.jobs.configure {
+            self.settings_open = true;
             self.jobs.configure = false;
         }
-        egui::Popup::menu(&settings).show(|ui| {
-            ui.set_max_width(t::CLI_POPOVER_WIDTH);
-            ui.label(t::heading("Settings", t::SECTION_TITLE));
-            ui.label(t::text(
-                "Folder with scriptCast commands",
-                t::SECONDARY,
-                t::TEXT_PRIMARY,
-            ));
-            ui.label(t::text(
-                self.preferences
-                    .cli_dir
-                    .as_deref()
-                    .filter(|path| !path.as_os_str().is_empty())
-                    .map_or_else(
-                        || "Unset — project virtualenvs, login PATH, then checkout".into(),
-                        |p| p.display().to_string(),
-                    ),
-                t::SECONDARY,
-                t::TEXT_MUTED,
-            ));
-            if t::secondary_button(ui, "Choose folder…", None, true).clicked()
-                && let Some(path) = rfd::FileDialog::new()
-                    .set_title("Folder with scriptCast commands")
-                    .pick_folder()
-            {
-                self.preferences.cli_dir = Some(path);
-                self.export_command = None;
-                self.refresh_commands(ui.ctx());
-            }
-            if t::secondary_button(ui, "Clear", None, self.preferences.cli_dir.is_some()).clicked()
-            {
-                self.preferences.cli_dir = None;
-                self.export_command = None;
-                self.refresh_commands(ui.ctx());
-            }
-            ui.add_space(t::SPACE_8);
-            ui.label(t::heading("Playback", t::SECTION_TITLE));
-            let mut gapless = self.preferences.gapless;
-            if ui
-                .checkbox(
-                    &mut gapless,
-                    egui::RichText::new("Gapless auto-advance")
-                        .font(t::font(t::BODY))
-                        .color(t::TEXT_PRIMARY),
-                )
-                .changed()
-            {
-                self.preferences.gapless = gapless;
-            }
-        });
         let export = self
             .export_command
             .get_or_insert_with(|| Err("Resolving CLI commands…".into()))
@@ -1622,7 +1600,7 @@ impl Browser {
                     let x = track.left() + i as f32 * bar_space;
                     let y = track.center().y - h / 2.0;
                     let colour = if x + t::WAVE_BAR / 2.0 < centre_x {
-                        t::ACCENT
+                        t::accent()
                     } else {
                         t::TEXT_MUTED
                     };
@@ -1878,7 +1856,7 @@ impl Browser {
                         pos2(bar.left() + (bar.width() - width) * phase, bar.top()),
                         vec2(width, bar.height()),
                     );
-                    ui.painter().rect_filled(progress, 0, t::ACCENT);
+                    ui.painter().rect_filled(progress, 0, t::accent());
                     cancel = t::secondary_button(ui, "Cancel", None, true).clicked();
                     ui.label(t::text(
                         "Your files remain local. Cancel keeps the current episode open.",
@@ -1998,8 +1976,13 @@ impl Browser {
         self.playback(&mut view::region(ui, "playback", playback, t::BG_RAISED));
         self.status(&mut view::region(ui, "status", status, t::BG_WINDOW));
         if self.episode.is_some() {
-            let timeline =
-                Rect::from_min_size(workspace.min, vec2(workspace.width(), t::TIMELINE_HEIGHT));
+            let timeline_max = (workspace.height() * t::TIMELINE_MAX_FRACTION).max(t::TIMELINE_MIN);
+            let timeline_h = self
+                .preferences
+                .timeline_height
+                .unwrap_or(t::TIMELINE_HEIGHT)
+                .clamp(t::TIMELINE_MIN, timeline_max);
+            let timeline = Rect::from_min_size(workspace.min, vec2(workspace.width(), timeline_h));
             let filter = Rect::from_min_size(
                 timeline.left_bottom(),
                 vec2(workspace.width(), t::FILTER_BAR_HEIGHT),
@@ -2032,14 +2015,29 @@ impl Browser {
             if let Some(i) = clicked {
                 self.multi_select(i, ctx.input(|i| i.modifiers));
             }
-            // The Selected turn inspector takes the right 376 px of the review
-            // row whenever a turn is selected.
+            let h_split = view::splitter_horizontal(
+                ui,
+                "timeline_splitter",
+                timeline.bottom(),
+                workspace.left(),
+                workspace.right(),
+            );
+            if h_split.reset {
+                self.preferences.timeline_height = None;
+            } else if h_split.drag_delta != 0.0 {
+                let next = (timeline_h + h_split.drag_delta).clamp(t::TIMELINE_MIN, timeline_max);
+                self.preferences.timeline_height = Some(next);
+            }
+            // The inspector takes the right side of the review row whenever a
+            // turn is selected (or Jobs mode is open); width is resizable.
+            // The inspector takes the right of the review row whenever a turn is
+            // selected: its mode's default width, or the operator's dragged width.
             let mode = self.jobs.mode.unwrap_or(InspectorMode::SelectedTurn);
             let (table_rect, inspector_rect) = match selected_turn.is_some()
                 || mode == InspectorMode::Jobs
             {
                 true => {
-                    let width = mode.width().min(review.width() / 2.0);
+                    let width = mode.panel_width(self.preferences.inspector_width, review.width());
                     let inspector =
                         Rect::from_min_max(pos2(review.right() - width, review.top()), review.max);
                     (
@@ -2120,11 +2118,32 @@ impl Browser {
                     }
                 }
             }
+            if let Some(inspector) = inspector_rect {
+                let width = inspector.width();
+                let max_w = (review.width() * t::INSPECTOR_MAX_FRACTION).max(t::INSPECTOR_MIN);
+                let v_split = view::splitter_vertical(
+                    ui,
+                    "inspector_splitter",
+                    inspector.left(),
+                    review.top(),
+                    review.bottom(),
+                );
+                if v_split.reset {
+                    self.preferences.inspector_width = None;
+                } else if v_split.drag_delta != 0.0 {
+                    // Inspector is on the right: drag left widens it.
+                    let next = (width - v_split.drag_delta)
+                        .clamp(t::INSPECTOR_MIN, max_w)
+                        .min(review.width());
+                    self.preferences.inspector_width = Some(next);
+                }
+            }
         } else {
             self.empty(&mut view::region(ui, "empty", workspace, t::BG_WINDOW));
         }
         self.workspace_card(&ctx);
         self.confirmation_dialog(&ctx);
+        self.settings_window(&ctx);
     }
 }
 impl eframe::App for Browser {
@@ -2323,13 +2342,26 @@ mod tests {
     fn cli_folder_preferences_round_trip_and_old_preferences_still_load() {
         let old: Preferences = serde_json::from_str("{}").unwrap();
         assert!(old.cli_dir.is_none());
+        assert!(old.timeline_height.is_none());
+        assert!(old.inspector_width.is_none());
+        assert_eq!(old.appearance, t::Appearance::default());
         let preferences = Preferences {
             cli_dir: Some(PathBuf::from("/tmp/scriptcast-b2/my cli folder")),
+            timeline_height: Some(420.0),
+            inspector_width: Some(480.0),
+            appearance: t::Appearance {
+                accent: [1, 2, 3],
+                text_scale: 1.1,
+                ..t::Appearance::default()
+            },
             ..Preferences::default()
         };
         let saved = serde_json::to_string(&preferences).unwrap();
         let restored: Preferences = serde_json::from_str(&saved).unwrap();
         assert_eq!(restored.cli_dir, preferences.cli_dir);
+        assert_eq!(restored.timeline_height, Some(420.0));
+        assert_eq!(restored.inspector_width, Some(480.0));
+        assert_eq!(restored.appearance, preferences.appearance);
     }
 
     #[test]

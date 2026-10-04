@@ -579,7 +579,11 @@ impl Browser {
                 t::SECTION_TITLE,
             ));
             ui.label(t::text(&self.jobs.subtitle, t::CAPTION, t::TEXT_MUTED));
-            ui.label(t::text(format!("{:?}", self.jobs.state), t::SECONDARY, t::ACCENT));
+            ui.label(t::text(
+                format!("{:?}", self.jobs.state),
+                t::SECONDARY,
+                t::accent(),
+            ));
 
             if self.jobs.busy() {
                 ui.add(egui::ProgressBar::new(0.0).animate(true).desired_height(t::PROGRESS_HEIGHT));

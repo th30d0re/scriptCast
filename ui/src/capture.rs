@@ -71,6 +71,10 @@ pub struct Cli {
     pub run: Option<String>,
     pub running_screenshot: Option<PathBuf>,
     pub no_gapless: bool,
+    /// Hidden capture aid: `(timeline_height, inspector_width)` in points.
+    pub layout: Option<(f32, f32)>,
+    /// Hidden capture aid: open the Settings window.
+    pub settings: bool,
 }
 
 impl Cli {
@@ -91,6 +95,8 @@ impl Cli {
             run: None,
             running_screenshot: None,
             no_gapless: false,
+            layout: None,
+            settings: false,
         };
         let mut positional_only = false;
         let mut args = args.into_iter();
@@ -150,6 +156,7 @@ impl Cli {
                 "--mute" => cli.mute = true,
                 "--simulate-device-loss" => cli.simulate_device_loss = true,
                 "--no-gapless" => cli.no_gapless = true,
+                "--settings" => cli.settings = true,
                 "--running-screenshot" => {
                     cli.running_screenshot = Some(PathBuf::from(
                         args.next().ok_or("--running-screenshot needs a path")?,
@@ -166,6 +173,13 @@ impl Cli {
                         .next()
                         .ok_or_else(|| "--size needs a value like 1440x900".to_string())?;
                     cli.size = parse_size(&value.to_string_lossy())?;
+                }
+                "--layout" => {
+                    let value = args.next().ok_or_else(|| {
+                        "--layout needs timeline_height x inspector_width (e.g. 420x480)"
+                            .to_string()
+                    })?;
+                    cli.layout = Some(parse_layout(&value.to_string_lossy())?);
                 }
                 "--select" => {
                     let value = args
@@ -225,6 +239,22 @@ fn parse_size(text: &str) -> Result<[f32; 2], String> {
         return Err(invalid());
     }
     Ok([width, height])
+}
+
+fn parse_layout(text: &str) -> Result<(f32, f32), String> {
+    let invalid =
+        || format!("--layout expects timeline_height x inspector_width (e.g. 420x480), got {text}");
+    let (h, w) = text.split_once(['x', 'X']).ok_or_else(invalid)?;
+    let timeline_height: f32 = h.parse().map_err(|_| invalid())?;
+    let inspector_width: f32 = w.parse().map_err(|_| invalid())?;
+    if !timeline_height.is_finite()
+        || !inspector_width.is_finite()
+        || timeline_height < 1.0
+        || inspector_width < 1.0
+    {
+        return Err(invalid());
+    }
+    Ok((timeline_height, inspector_width))
 }
 
 fn parse_select(text: &str) -> Result<usize, String> {
@@ -337,8 +367,22 @@ mod tests {
         assert_eq!(cli.screenshot, None);
         assert_eq!(cli.size, t::WINDOW_SIZE);
         assert!(!cli.fresh && !cli.help && cli.select.is_none());
+        assert!(cli.layout.is_none());
         assert!(!cli.effective_fresh());
         assert!(cli.persist());
+    }
+    #[test]
+    fn layout_parses_timeline_by_inspector() {
+        let cli = parse(&["--layout", "420x480"]).unwrap();
+        assert_eq!(cli.layout, Some((420.0, 480.0)));
+        assert!(parse(&["--layout", "x480"]).is_err());
+        assert!(parse(&["--layout"]).is_err());
+    }
+    #[test]
+    fn settings_flag_opens_hidden_capture_aid() {
+        let cli = parse(&["--settings"]).unwrap();
+        assert!(cli.settings);
+        assert!(!parse(&[] as &[&str]).unwrap().settings);
     }
     #[test]
     fn positional_episode_dir_still_works() {

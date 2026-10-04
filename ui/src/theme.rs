@@ -1,6 +1,12 @@
 //! Design tokens from the offline snapshot; all visual constants live here.
 use eframe::egui::{self, Color32, FontFamily, FontId, RichText};
+use serde::{Deserialize, Serialize};
+use std::sync::{LazyLock, RwLock};
+
 pub const FONT_SCALE: f32 = 1.0;
+/// Runtime text scale is clamped to this inclusive range (85%–130%).
+pub const TEXT_SCALE_MIN: f32 = 0.85;
+pub const TEXT_SCALE_MAX: f32 = 1.3;
 pub const BG_WINDOW: Color32 = Color32::from_rgb(23, 25, 28);
 pub const BG_SURFACE: Color32 = Color32::from_rgb(30, 32, 36);
 pub const BG_RAISED: Color32 = Color32::from_rgb(39, 42, 47);
@@ -15,16 +21,76 @@ pub const BORDER_DEFAULT: Color32 = Color32::from_rgb(54, 58, 65);
 pub const TEXT_PRIMARY: Color32 = Color32::from_rgb(237, 240, 244);
 pub const TEXT_MUTED: Color32 = Color32::from_rgb(164, 171, 182);
 pub const TEXT_SUBTLE: Color32 = Color32::from_rgb(113, 121, 133);
+/// Default accent; live colour is [`accent()`] / [`Appearance`].
 pub const ACCENT: Color32 = Color32::from_rgb(140, 175, 243);
 pub const ON_ACCENT: Color32 = Color32::from_rgb(21, 28, 41);
 pub const STATUS_PASSED: Color32 = Color32::from_rgb(154, 190, 176);
 pub const STATUS_FAILED: Color32 = Color32::from_rgb(240, 130, 135);
+/// Default speaker palette; live colours are [`speaker_colour`] / [`Appearance`].
 pub const SPEAKER: [Color32; 4] = [
     Color32::from_rgb(147, 177, 213),
     Color32::from_rgb(178, 160, 201),
     Color32::from_rgb(146, 183, 170),
     Color32::from_rgb(197, 178, 141),
 ];
+
+/// User-tunable colours and text size; persisted in preferences.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Appearance {
+    pub accent: [u8; 3],
+    pub speakers: [[u8; 3]; 4],
+    pub text_scale: f32,
+}
+
+impl Default for Appearance {
+    fn default() -> Self {
+        Self {
+            accent: [ACCENT.r(), ACCENT.g(), ACCENT.b()],
+            speakers: [
+                [SPEAKER[0].r(), SPEAKER[0].g(), SPEAKER[0].b()],
+                [SPEAKER[1].r(), SPEAKER[1].g(), SPEAKER[1].b()],
+                [SPEAKER[2].r(), SPEAKER[2].g(), SPEAKER[2].b()],
+                [SPEAKER[3].r(), SPEAKER[3].g(), SPEAKER[3].b()],
+            ],
+            text_scale: 1.0,
+        }
+    }
+}
+
+impl Appearance {
+    /// Clamp `text_scale` into [`TEXT_SCALE_MIN`]..=[`TEXT_SCALE_MAX`].
+    pub fn clamped(mut self) -> Self {
+        self.text_scale = self.text_scale.clamp(TEXT_SCALE_MIN, TEXT_SCALE_MAX);
+        self
+    }
+}
+
+static APPEARANCE: LazyLock<RwLock<Appearance>> =
+    LazyLock::new(|| RwLock::new(Appearance::default()));
+
+pub fn appearance() -> Appearance {
+    *APPEARANCE
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+pub fn set_appearance(ctx: &egui::Context, a: Appearance) {
+    let a = a.clamped();
+    *APPEARANCE
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = a;
+    apply_style(ctx);
+    ctx.request_repaint();
+}
+
+pub fn accent() -> Color32 {
+    let [r, g, b] = appearance().accent;
+    Color32::from_rgb(r, g, b)
+}
+
+fn colour_from_rgb(rgb: [u8; 3]) -> Color32 {
+    Color32::from_rgb(rgb[0], rgb[1], rgb[2])
+}
 pub const OPACITY_DISABLED: f32 = 0.45;
 pub const OPACITY_OVERVIEW_SECTION_OUTSIDE_VISIBLE_RANGE: f32 = 0.48;
 pub const RADIUS_OVERVIEW_SECTION: f32 = 1.0;
@@ -38,14 +104,21 @@ pub const RADIUS_DIALOG: f32 = 12.0;
 pub const TITLE_BAR_HEIGHT: f32 = 38.0;
 pub const EPISODE_HEADER_HEIGHT: f32 = 76.0;
 pub const TIMELINE_HEIGHT: f32 = 188.0;
+pub const TIMELINE_MIN: f32 = 140.0;
+/// Timeline may grow to this fraction of the workspace height.
+pub const TIMELINE_MAX_FRACTION: f32 = 0.7;
 pub const TIMELINE_OVERVIEW_HEIGHT: f32 = 17.0;
 pub const TIMELINE_VISIBLE_RANGE_HEIGHT: f32 = 21.0;
 pub const TIMELINE_RULER_HEIGHT: f32 = 18.0;
 pub const TIMELINE_LANE_HEIGHT: f32 = 20.0;
+/// Cap when the timeline is tall: extra space spreads across lanes up to this.
+pub const TIMELINE_LANE_MAX: f32 = 48.0;
 pub const TIMELINE_LANE_GAP: f32 = 4.0;
 pub const TIMELINE_LANE_LABEL_WIDTH: f32 = 66.0;
 pub const TIMELINE_LANES_TO_LABEL_GAP: f32 = 12.0;
 pub const TIMELINE_RULER_LEFT_PAD: f32 = 80.0;
+/// Drag hit thickness for pane splitters (centred on the boundary).
+pub const SPLITTER_HIT: f32 = 6.0;
 pub const WAVE_BAR: f32 = 1.5;
 pub const WAVE_GAP: f32 = 1.5;
 pub const WAVE_MIN: f32 = 1.0;
@@ -68,6 +141,9 @@ pub const TABLE_COL_GAP: f32 = 12.0;
 pub const INSPECTOR_WIDTH_SELECTED_TURN: f32 = 376.0;
 pub const INSPECTOR_WIDTH_VERIFICATION: f32 = 436.0;
 pub const INSPECTOR_WIDTH_JOB_RUNNER: f32 = 510.0;
+pub const INSPECTOR_MIN: f32 = 320.0;
+/// Inspector may grow to this fraction of the review row width.
+pub const INSPECTOR_MAX_FRACTION: f32 = 0.6;
 pub const INSPECTOR_HEADING_HEIGHT: f32 = 39.0;
 pub const PLAYBACK_BAR_HEIGHT: f32 = 64.0;
 pub const PLAYBACK_CURRENT_AUDIO_WIDTH: f32 = 226.0;
@@ -76,6 +152,7 @@ pub const PROGRESS_HEIGHT: f32 = 3.0;
 pub const STATUS_BAR_HEIGHT: f32 = 26.0;
 pub const BUTTON_HEIGHT: f32 = 30.0;
 pub const CLI_POPOVER_WIDTH: f32 = 360.0;
+pub const SETTINGS_WIDTH: f32 = 460.0;
 pub const BUTTON_PAD_X: f32 = 11.0;
 pub const BUTTON_ICON: f32 = 16.0;
 pub const BUTTON_ICON_GAP: f32 = 7.0;
@@ -195,18 +272,30 @@ pub fn icon(name: &str) -> egui::ImageSource<'static> {
     }
 }
 
-pub fn speaker_colour(i: usize) -> Color32 {
-    SPEAKER[i % SPEAKER.len()]
+/// Speaker colour from a concrete appearance (pure; safe for parallel tests).
+pub fn speaker_colour_for(a: &Appearance, i: usize) -> Color32 {
+    colour_from_rgb(a.speakers[i % a.speakers.len()])
 }
+
+pub fn speaker_colour(i: usize) -> Color32 {
+    speaker_colour_for(&appearance(), i)
+}
+
+fn text_scale() -> f32 {
+    appearance()
+        .text_scale
+        .clamp(TEXT_SCALE_MIN, TEXT_SCALE_MAX)
+}
+
 pub fn font(size: f32) -> FontId {
-    FontId::new(size * FONT_SCALE, FontFamily::Proportional)
+    FontId::new(size * FONT_SCALE * text_scale(), FontFamily::Proportional)
 }
 pub fn mono(size: f32) -> FontId {
-    FontId::new(size * FONT_SCALE, FontFamily::Monospace)
+    FontId::new(size * FONT_SCALE * text_scale(), FontFamily::Monospace)
 }
 pub fn bold(size: f32) -> FontId {
     FontId::new(
-        size * FONT_SCALE,
+        size * FONT_SCALE * text_scale(),
         FontFamily::Name("OpenDyslexic Bold".into()),
     )
 }
@@ -312,6 +401,13 @@ pub fn apply(ctx: &egui::Context) {
         vec!["OpenDyslexic3 Bold".into(), "OpenDyslexic Bold".into()],
     );
     ctx.set_fonts(fonts);
+    apply_style(ctx);
+    egui_extras::install_image_loaders(ctx);
+}
+
+/// Visuals and text styles only. Cheap enough to run on every Settings change
+/// (a colour-picker drag changes the appearance each frame); fonts stay installed.
+fn apply_style(ctx: &egui::Context) {
     let mut style = egui::Style {
         visuals: egui::Visuals::dark(),
         ..Default::default()
@@ -322,7 +418,7 @@ pub fn apply(ctx: &egui::Context) {
     style.visuals.faint_bg_color = BG_SURFACE;
     style.visuals.override_text_color = Some(TEXT_PRIMARY);
     style.visuals.selection.bg_fill = BG_SELECTED;
-    style.visuals.selection.stroke = egui::Stroke::new(BORDER, ACCENT);
+    style.visuals.selection.stroke = egui::Stroke::new(BORDER, accent());
     style.visuals.window_stroke = egui::Stroke::new(BORDER, BORDER_DEFAULT);
     style.visuals.window_corner_radius = egui::CornerRadius::same(RADIUS_WINDOW as u8);
     style.visuals.disabled_alpha = OPACITY_DISABLED;
@@ -338,7 +434,7 @@ pub fn apply(ctx: &egui::Context) {
         widget.fg_stroke = egui::Stroke::new(BORDER, TEXT_PRIMARY);
         widget.corner_radius = egui::CornerRadius::same(RADIUS_CONTROL as u8);
     }
-    style.visuals.widgets.hovered.bg_stroke.color = ACCENT;
+    style.visuals.widgets.hovered.bg_stroke.color = accent();
     style.visuals.widgets.active.bg_fill = BG_SELECTED;
     style.spacing.item_spacing = egui::vec2(SPACE_8, SPACE_6);
     style.spacing.button_padding = egui::vec2(BUTTON_PAD_X, 0.0);
@@ -353,7 +449,6 @@ pub fn apply(ctx: &egui::Context) {
     .into();
     ctx.set_theme(egui::Theme::Dark);
     ctx.set_style_of(egui::Theme::Dark, style);
-    egui_extras::install_image_loaders(ctx);
 }
 
 pub fn primary_button(
@@ -415,7 +510,7 @@ fn button(
         button
             .gap(BUTTON_ICON_GAP)
             .wrap_mode(egui::TextWrapMode::Extend)
-            .fill(if primary { ACCENT } else { BG_CONTROL })
+            .fill(if primary { accent() } else { BG_CONTROL })
             .stroke(egui::Stroke::new(BORDER, BORDER_DEFAULT))
             .corner_radius(RADIUS_CONTROL as u8)
             .min_size(egui::vec2(0.0, BUTTON_HEIGHT)),
@@ -434,5 +529,58 @@ mod tests {
         assert_eq!(fit_text_width(10.0, TABLE_COL_SPEAKER), TABLE_COL_SPEAKER);
         assert_eq!(fit_text_width(150.0, TABLE_COL_SPEAKER), 150.0);
         assert_eq!(fit_text_width(500.0, TABLE_COL_SPEAKER), TEXT_WIDTH_CAP);
+    }
+
+    #[test]
+    fn appearance_serde_round_trip() {
+        let a = Appearance {
+            accent: [10, 20, 30],
+            speakers: [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]],
+            text_scale: 1.15,
+        };
+        let json = serde_json::to_string(&a).unwrap();
+        let restored: Appearance = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored, a);
+    }
+
+    #[test]
+    fn text_scale_clamps_to_supported_range() {
+        assert_eq!(
+            Appearance {
+                text_scale: 0.5,
+                ..Appearance::default()
+            }
+            .clamped()
+            .text_scale,
+            TEXT_SCALE_MIN
+        );
+        assert_eq!(
+            Appearance {
+                text_scale: 2.0,
+                ..Appearance::default()
+            }
+            .clamped()
+            .text_scale,
+            TEXT_SCALE_MAX
+        );
+        assert_eq!(
+            Appearance {
+                text_scale: 1.0,
+                ..Appearance::default()
+            }
+            .clamped()
+            .text_scale,
+            1.0
+        );
+    }
+
+    #[test]
+    fn speaker_colour_for_reads_appearance() {
+        let mut a = Appearance::default();
+        a.speakers[0] = [1, 2, 3];
+        a.speakers[1] = [4, 5, 6];
+        assert_eq!(speaker_colour_for(&a, 0), Color32::from_rgb(1, 2, 3));
+        assert_eq!(speaker_colour_for(&a, 1), Color32::from_rgb(4, 5, 6));
+        assert_eq!(speaker_colour_for(&a, 4), Color32::from_rgb(1, 2, 3));
     }
 }
