@@ -144,6 +144,8 @@ pub const TABLE_HEADER_HEIGHT: f32 = 30.0;
 pub const TABLE_ROW_HEIGHT: f32 = 28.0;
 pub const TABLE_ROW_HEIGHT_2: f32 = 52.0;
 pub const INLINE_BUTTON_HEIGHT: f32 = 24.0;
+/// Space between the inline editor's buttons and the next table row.
+pub const INLINE_EDITOR_BOTTOM_MARGIN: f32 = 10.0;
 pub const TABLE_COL_TURN: f32 = 44.0;
 pub const TABLE_COL_TIME: f32 = 92.0;
 pub const TABLE_COL_SPEAKER: f32 = 82.0;
@@ -442,6 +444,9 @@ fn apply_style(ctx: &egui::Context) {
         visuals: egui::Visuals::dark(),
         ..Default::default()
     };
+    // A steady caret: blinking repaints every frame while an editor has focus,
+    // which keeps the app busy (and never lets a capture settle).
+    style.visuals.text_cursor.blink = false;
     style.visuals.panel_fill = BG_WINDOW;
     style.visuals.window_fill = BG_SURFACE;
     style.visuals.extreme_bg_color = BG_WINDOW;

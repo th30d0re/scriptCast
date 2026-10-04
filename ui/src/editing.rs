@@ -241,12 +241,23 @@ fn inline_actions_width(ui: &Ui) -> f32 {
         + t::SPACE_8 * 4.0
 }
 
+/// Rendered height of a Save draft / Cancel button: the bold label's row
+/// height plus button padding, never less than the token. OpenDyslexic's rows
+/// are taller than the token assumes, and an underestimate let the buttons
+/// spill into the next table row, which then took their clicks.
+fn inline_button_height(ui: &Ui) -> f32 {
+    let row = ui.fonts_mut(|f| f.row_height(&t::bold(t::SECONDARY)));
+    (row + ui.spacing().button_padding.y * 2.0).max(t::INLINE_BUTTON_HEIGHT)
+}
+
 pub fn inline_actions_height(ui: &Ui, width: f32, draft: Option<&Draft>) -> f32 {
-    if draft.is_some_and(Draft::changed) && width < inline_actions_width(ui) {
-        t::INLINE_BUTTON_HEIGHT * 2.0 + t::SPACE_4
+    let button = inline_button_height(ui);
+    let rows = if draft.is_some_and(Draft::changed) && width < inline_actions_width(ui) {
+        button * 2.0 + t::SPACE_4
     } else {
-        t::INLINE_BUTTON_HEIGHT
-    }
+        button
+    };
+    rows + t::INLINE_EDITOR_BOTTOM_MARGIN
 }
 
 fn draft_warning(ui: &mut Ui) {
