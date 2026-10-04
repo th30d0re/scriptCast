@@ -140,7 +140,23 @@ impl Browser {
                 }
 
                 ui.add_space(t::SPACE_8);
+                ui.label(t::heading("Editing", t::SECTION_TITLE));
+                ui.label(t::text("Edit transcripts in:", t::BODY, t::TEXT_PRIMARY));
+                ui.horizontal(|ui| {
+                    ui.selectable_value(
+                        &mut self.preferences.edit_mode,
+                        crate::editing::EditMode::Panel,
+                        "Side panel",
+                    );
+                    ui.selectable_value(
+                        &mut self.preferences.edit_mode,
+                        crate::editing::EditMode::Row,
+                        "Table row",
+                    );
+                });
+                ui.add_space(t::SPACE_8);
                 ui.label(t::heading("Commands", t::SECTION_TITLE));
+
                 ui.label(t::text(
                     "Folder with scriptCast commands",
                     t::SECONDARY,

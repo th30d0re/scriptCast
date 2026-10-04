@@ -1,4 +1,5 @@
 mod capture;
+mod editing;
 mod inspector;
 mod jobs;
 mod settings;
@@ -79,6 +80,8 @@ struct Preferences {
     /// Accent, speaker colours, and text scale.
     #[serde(default)]
     appearance: t::Appearance,
+    #[serde(default)]
+    edit_mode: editing::EditMode,
 }
 fn default_true() -> bool {
     true
@@ -95,6 +98,7 @@ impl Default for Preferences {
             timeline_height: None,
             inspector_width: None,
             appearance: t::Appearance::default(),
+            edit_mode: editing::EditMode::default(),
         }
     }
 }
@@ -221,6 +225,7 @@ fn neighbour_targets(visible: &[usize], current: Option<usize>) -> (Option<usize
 }
 #[derive(Default)]
 struct Browser {
+    editing: editing::Editing,
     jobs: jobs::Jobs,
     export_command: Option<Result<ExportCommand, String>>,
     live_task: Option<DawTask>,
@@ -285,6 +290,9 @@ impl Browser {
             preferences.timeline_height = Some(timeline_height);
             preferences.inspector_width = Some(inspector_width);
         }
+        if let Some(mode) = cli.edit_mode {
+            preferences.edit_mode = mode;
+        }
         t::apply(&cc.egui_ctx);
         t::set_appearance(&cc.egui_ctx, preferences.appearance);
         let muted = cli.effective_muted();
@@ -321,6 +329,7 @@ impl Browser {
             settings_open: cli.settings,
             ..Self::default()
         };
+        app.editing.capture_open = cli.edit;
         if let Some(path) = cli
             .episode
             .clone()
@@ -331,7 +340,7 @@ impl Browser {
         app
     }
     fn open(&mut self, path: PathBuf, ctx: &egui::Context) {
-        if self.jobs.busy() {
+        if self.jobs.busy() || self.editing.busy() {
             return;
         }
         let (sender, receiver) = mpsc::channel();
@@ -400,6 +409,7 @@ impl Browser {
             .episode
             .as_ref()
             .is_some_and(|old| old.dir == episode.dir);
+        let previous_row = self.selected;
         let selected_id = if same {
             self.selected
                 .and_then(|i| self.episode.as_ref()?.turns.get(i))
@@ -407,7 +417,9 @@ impl Browser {
         } else {
             None
         };
-        self.selected = selected_id.and_then(|id| episode.turns.iter().position(|t| t.id == id));
+        self.selected = selected_id
+            .and_then(|id| episode.turns.iter().position(|t| t.id == id))
+            .or_else(|| previous_row.filter(|i| same && *i < episode.turns.len()));
         if !same {
             self.filters = Filters::default();
             self.timeline = TimelineView::initial(episode.total_ms);
@@ -442,6 +454,9 @@ impl Browser {
             "scriptCast — {}",
             episode.manifest.episode_id
         )));
+        self.editing.cancel();
+        self.editing.invalidate();
+        self.editing.manifest_len = Some(episode.turns.len());
         self.episode = Some(episode);
         self.error = None;
         self.jobs.selected.clear();
@@ -464,6 +479,9 @@ impl Browser {
         }
     }
     fn select(&mut self, index: usize) {
+        if !self.editing.allow_selection(index, false) {
+            return;
+        }
         let mut switch = false;
         if let Some(e) = &self.episode
             && let Some(turn) = e.turns.get(index)
@@ -754,6 +772,8 @@ impl Browser {
             eprintln!("scriptcast-ui: {message}");
         }
         if self.jobs.busy()
+            || self.editing.loading()
+            || self.editing.capture_open
             || self.jobs.auto_run.is_some()
             || self.jobs.auto_confirm.is_some()
             || self.pending.is_some()
@@ -832,6 +852,8 @@ impl Browser {
     }
     fn capture_settle(&mut self, ctx: &egui::Context) {
         if self.jobs.busy()
+            || self.editing.loading()
+            || self.editing.capture_open
             || self.jobs.auto_run.is_some()
             || self.jobs.auto_confirm.is_some()
             || self.pending.is_some()
@@ -901,7 +923,26 @@ impl Browser {
         ctx.request_repaint_after(capture::TICK);
     }
     fn shortcuts(&mut self, ctx: &egui::Context) {
-        if self.jobs.confirmation.is_some() || self.jobs.restore.is_some() {
+        let editor_focused = ctx.memory(|m| m.has_focus(editing::editor_id()));
+        let dialog = self.jobs.confirmation.is_some()
+            || self.jobs.restore.is_some()
+            || self.editing.pending_selection.is_some();
+        if !dialog && self.editing.draft.is_some() {
+            if ctx.input_mut(|i| {
+                i.consume_key(egui::Modifiers::COMMAND, egui::Key::S)
+                    || i.consume_key(egui::Modifiers::COMMAND, egui::Key::Enter)
+            }) {
+                self.save_draft(ctx);
+            }
+            if editor_focused
+                && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+            {
+                self.editing.cancel();
+                ctx.memory_mut(|m| m.surrender_focus(editing::editor_id()));
+                return;
+            }
+        }
+        if editing::suppress_shortcuts(editor_focused, ctx.text_edit_focused(), dialog) {
             return;
         }
         if ctx.text_edit_focused() {
@@ -912,6 +953,11 @@ impl Browser {
         }
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Comma)) {
             self.settings_open = true;
+        }
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::E))
+            && let Some(row) = self.selected
+        {
+            self.open_editor(row);
         }
         let (open, reload, search, up, down, escape, space) = ctx.input_mut(|i| {
             (
@@ -1682,6 +1728,8 @@ impl Browser {
         let rect = view::inset(ui.max_rect(), t::SPACE_20, 0.0);
         let status = if self.jobs.confirmation.is_some() || self.jobs.restore.is_some() {
             "Awaiting confirmation · no job has started".into()
+        } else if let Some(notice) = &self.editing.notice {
+            notice.clone()
         } else if let Some(notice) = &self.jobs.notice {
             notice.clone()
         } else if let Some(notice) = &self.daw_notice {
@@ -2002,6 +2050,10 @@ impl Browser {
                     self.selected.filter(|i| e.turns.get(*i).is_some()),
                 )
             };
+            let markers = self
+                .editing
+                .markers(self.episode.as_ref().unwrap().turns.len());
+            let edited = markers.clone().unwrap_or_default();
             let clicked = timeline::show(
                 &mut view::region(ui, "timeline", timeline, t::BG_WINDOW),
                 self.episode.as_ref().unwrap(),
@@ -2011,9 +2063,14 @@ impl Browser {
                 self.selected,
                 playing,
                 self.waveforms.as_ref(),
+                &edited,
             );
-            if let Some(i) = clicked {
-                self.multi_select(i, ctx.input(|i| i.modifiers));
+            if let Some((i, double)) = clicked {
+                if double {
+                    self.open_editor(i);
+                } else {
+                    self.multi_select(i, ctx.input(|i| i.modifiers));
+                }
             }
             let h_split = view::splitter_horizontal(
                 ui,
@@ -2032,6 +2089,7 @@ impl Browser {
             // turn is selected (or Jobs mode is open); width is resizable.
             // The inspector takes the right of the review row whenever a turn is
             // selected: its mode's default width, or the operator's dragged width.
+            let selected_turn = self.selected.or(selected_turn);
             let mode = self.jobs.mode.unwrap_or(InspectorMode::SelectedTurn);
             let (table_rect, inspector_rect) = match selected_turn.is_some()
                 || mode == InspectorMode::Jobs
@@ -2047,7 +2105,7 @@ impl Browser {
                 }
                 false => (review, None),
             };
-            let clicked = table::show(
+            let (clicked, edit_action) = table::show(
                 &mut view::region(ui, "table", table_rect, t::BG_SURFACE),
                 self.episode.as_ref().unwrap(),
                 &visible,
@@ -2056,10 +2114,21 @@ impl Browser {
                 self.scroll_to.take(),
                 self.filters.failed_only,
                 &self.jobs.selected,
+                &edited,
+                markers.is_none(),
+                &mut self.editing,
+                self.preferences.edit_mode,
+                !self.jobs.busy() && self.pending.is_none(),
             );
-            if let Some(i) = clicked {
-                self.multi_select(i, ctx.input(|i| i.modifiers));
+            self.edit_action(edit_action, &ctx);
+            if let Some((i, double)) = clicked {
+                if double {
+                    self.open_editor(i);
+                } else {
+                    self.multi_select(i, ctx.input(|i| i.modifiers));
+                }
             }
+            let selected_turn = self.selected.or(selected_turn);
             if let Some(rect) = inspector_rect
                 && mode == InspectorMode::Jobs
             {
@@ -2088,18 +2157,24 @@ impl Browser {
                         .as_ref()
                         .map(|(_, m)| m.file_line.clone())
                         .unwrap_or_default();
-                    let action = inspector::show(
+                    let position = self.audio_position();
+                    let (action, edit_action) = inspector::show(
                         &mut view::region(ui, "inspector", rect, t::BG_SURFACE),
                         InspectorMode::SelectedTurn,
                         self.episode.as_ref().unwrap(),
                         turn,
                         self.transport,
-                        self.audio_position(),
+                        position,
                         self.preferences.auto_advance,
                         can_previous,
                         can_next,
                         &file_line,
+                        &mut self.editing,
+                        self.preferences.edit_mode,
+                        edited.contains(&turn),
+                        !self.jobs.busy() && self.pending.is_none(),
                     );
+                    self.edit_action(edit_action, &ctx);
                     match action {
                         Some(inspector::Action::Previous) => {
                             if let Some(t) = neighbour_targets(&visible, Some(turn)).0 {
@@ -2144,12 +2219,14 @@ impl Browser {
         self.workspace_card(&ctx);
         self.confirmation_dialog(&ctx);
         self.settings_window(&ctx);
+        self.draft_guard(&ctx);
     }
 }
 impl eframe::App for Browser {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.poll_load(ctx);
         self.poll_jobs(ctx);
+        self.poll_editing(ctx);
         self.poll_daw();
         self.poll_audio(ctx);
         self.capture_logic(ctx);

@@ -122,7 +122,7 @@ pub struct Turn {
     pub verify: Option<VerifyResult>,
     pub verification: VerificationState,
 }
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Episode {
     pub dir: PathBuf,
     pub als_path: Option<PathBuf>,

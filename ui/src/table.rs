@@ -1,4 +1,7 @@
-use crate::view;
+use crate::{
+    editing::{self, EditMode, Editing},
+    view,
+};
 use eframe::egui::{self, Rect, Sense, Ui, pos2, vec2};
 use scriptcast_ui::{
     episode::{Episode, VerificationState as V},
@@ -93,8 +96,29 @@ pub fn show(
     scroll_to: Option<usize>,
     failed_only: bool,
     multi: &std::collections::BTreeSet<usize>,
-) -> Option<usize> {
-    let area = ui.max_rect();
+    edited: &[usize],
+    mismatch: bool,
+    editing: &mut Editing,
+    edit_mode: EditMode,
+    enabled: bool,
+) -> (Option<(usize, bool)>, Option<editing::Action>) {
+    let mut area = ui.max_rect();
+    if mismatch {
+        let banner = Rect::from_min_size(area.min, vec2(area.width(), t::EDITOR_BANNER_HEIGHT));
+        let mut banner_ui = view::region(
+            ui,
+            "script_count_banner",
+            banner.shrink(t::SPACE_8),
+            t::BG_RAISED,
+        );
+        banner_ui.label(t::text(
+            "Turns were added or removed since render. Re-render to sync.",
+            t::SECONDARY,
+            t::accent(),
+        ));
+        area.min.y = banner.bottom();
+    }
+
     let widths = ColumnWidths::measure(ui, episode);
     let head = Rect::from_min_size(area.min, vec2(area.width(), t::TABLE_HEADER_HEIGHT));
     ui.painter().rect_filled(head, 0, t::BG_WINDOW);
@@ -118,19 +142,60 @@ pub fn show(
     let mut scroll = egui::ScrollArea::vertical()
         .id_salt("turn_rows")
         .auto_shrink([false, false]);
+    let editor_row = if edit_mode == EditMode::Row {
+        editing
+            .draft
+            .as_ref()
+            .and_then(|d| visible.iter().position(|i| *i == d.turn))
+    } else {
+        None
+    };
+    let field_height = editing.draft.as_ref().map_or(t::EDITOR_MIN_HEIGHT, |d| {
+        editing::field_height(
+            &body_ui,
+            &d.text,
+            body.width() - t::SPACE_16 * 2.0,
+            (body.height() - t::EDITOR_ROW_CHROME).min(t::EDITOR_MAX_HEIGHT),
+        )
+    });
+    let editor_height = field_height + t::EDITOR_ROW_CHROME;
+    let row_top = |row: usize| {
+        row as f32 * t::TABLE_ROW_HEIGHT
+            + if editor_row.is_some_and(|e| row > e) {
+                editor_height
+            } else {
+                0.0
+            }
+    };
     if let Some(position) = scroll_to.and_then(|idx| visible.iter().position(|v| *v == idx)) {
-        scroll = scroll.vertical_scroll_offset(
-            (position as f32 * t::TABLE_ROW_HEIGHT - body.height() / 2.0).max(0.0),
-        );
+        scroll = scroll.vertical_scroll_offset((row_top(position) - t::TABLE_ROW_HEIGHT).max(0.0));
     }
     let mut clicked = None;
-    let result = scroll.show_rows(
-        &mut body_ui,
-        t::TABLE_ROW_HEIGHT,
-        visible.len(),
-        |ui, range| {
-            let displayed = range.clone();
-            for row in range {
+    let mut edit_action = None;
+    let mut displayed = 0..0;
+    let result = scroll.show_viewport(&mut body_ui, |ui, viewport| {
+        let total = row_top(visible.len());
+        ui.set_height(total);
+        let origin = ui.max_rect().min;
+        let width = ui.available_width();
+        // Each turn and the expanded editor are distinct variable-height items.
+        // Only intersecting items create widgets; the editor scrolls with its row.
+        for (row, &idx) in visible.iter().enumerate() {
+            let top = row_top(row);
+            let bottom = top + t::TABLE_ROW_HEIGHT;
+            if bottom >= viewport.top() && top <= viewport.bottom() {
+                if displayed.is_empty() {
+                    displayed.start = row;
+                }
+                displayed.end = row + 1;
+                let row_rect =
+                    Rect::from_min_size(origin + vec2(0.0, top), vec2(width, t::TABLE_ROW_HEIGHT));
+                let mut row_ui = ui.new_child(
+                    egui::UiBuilder::new()
+                        .id_salt(("row", idx))
+                        .max_rect(row_rect),
+                );
+                let ui = &mut row_ui;
                 let idx = visible[row];
                 let turn = &episode.turns[idx];
                 let speaker = &episode.speakers[turn.speaker_idx];
@@ -197,19 +262,57 @@ pub fn show(
                     t::mono(t::NUMERIC),
                     t::TEXT_MUTED,
                 );
-                let (label, colour) = view::verification_label(turn.verification);
+                let (label, colour) = if edited.contains(&idx) {
+                    ("Edited", t::accent())
+                } else {
+                    view::verification_label(turn.verification)
+                };
                 view::line(ui, cells[5], label, t::font(t::SECONDARY), colour);
                 let response = response.on_hover_text(format!(
                     "Turn {:03} · {}\n{}\n{}",
                     turn.index, speaker.name, turn.first_words, label
                 ));
-                if response.clicked() {
-                    clicked = Some(idx);
+                if response.clicked() || response.double_clicked() {
+                    clicked = Some((idx, response.double_clicked()));
                 }
             }
-            displayed
-        },
-    );
+            if editor_row == Some(row)
+                && bottom + editor_height >= viewport.top()
+                && bottom <= viewport.bottom()
+            {
+                let rect =
+                    Rect::from_min_size(origin + vec2(0.0, bottom), vec2(width, editor_height));
+                ui.painter().rect_filled(rect, 0, t::BG_SURFACE);
+                let mut editor_ui = ui.new_child(
+                    egui::UiBuilder::new()
+                        .id_salt("row_editor")
+                        .max_rect(rect.shrink(t::SPACE_16))
+                        .layout(egui::Layout::top_down(egui::Align::Min)),
+                );
+                editor_ui.set_clip_rect(rect.intersect(ui.clip_rect()));
+                let turn = &episode.turns[idx];
+                editor_ui.horizontal_wrapped(|ui| {
+                    ui.label(t::heading("Inline transcript edit", t::SECONDARY));
+                    ui.label(
+                        t::text("Draft", t::CAPTION, t::accent()).background_color(t::BG_CONTROL),
+                    );
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        ui.label(t::text(
+                            format!(
+                                "Turn {:03} · {}",
+                                turn.index, episode.speakers[turn.speaker_idx].name
+                            ),
+                            t::CAPTION,
+                            t::TEXT_MUTED,
+                        ));
+                    });
+                });
+                edit_action = editing::editor(&mut editor_ui, editing, field_height, true, enabled);
+                view::rule(ui, rect);
+            }
+        }
+    });
+
     if visible.is_empty() {
         view::line(
             ui,
@@ -219,10 +322,8 @@ pub fn show(
             t::TEXT_MUTED,
         );
     }
-    let first = (result.state.offset.y / t::TABLE_ROW_HEIGHT).floor() as usize;
-    let last = ((result.state.offset.y + result.inner_rect.height()) / t::TABLE_ROW_HEIGHT).ceil()
-        as usize;
-    let range = first.min(visible.len())..last.min(visible.len());
+    let _ = result;
+    let range = displayed;
     let summary = if failed_only {
         format!(
             "{} failures · {} passed · {} missing audio",
@@ -278,7 +379,7 @@ pub fn show(
         galley,
         t::TEXT_SUBTLE,
     );
-    clicked
+    (clicked, edit_action)
 }
 
 #[cfg(test)]

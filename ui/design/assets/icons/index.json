@@ -153,5 +153,13 @@
   "size_px": 16,
   "colour_token": "text",
   "note": "Not in the Figma file. Added 2026-10-03 for the header settings button; Lucide 24 px path, stroke scaled to match rotate-cw-16-text."
+ },
+ {
+  "file": "circle-alert-14-danger.svg",
+  "figma_asset": null,
+  "lucide": "circle-alert",
+  "size_px": 14,
+  "colour_token": "danger",
+  "note": "Phase D editor alert; Lucide circle-alert path, Figma inspector nodes 23:194–23:275."
  }
 ]

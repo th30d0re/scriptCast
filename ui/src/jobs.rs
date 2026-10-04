@@ -137,7 +137,9 @@ impl Browser {
             selected.insert(i);
         }
         self.select(i);
-        self.jobs.selected = selected;
+        if self.selected == Some(i) {
+            self.jobs.selected = selected;
+        }
     }
 
     fn job_error(&mut self, error: String) {
@@ -189,6 +191,7 @@ impl Browser {
                 }
                 Err(mpsc::TryRecvError::Disconnected) => {
                     self.jobs.resolving = None;
+                    self.export_command = Some(Err("CLI discovery stopped unexpectedly".into()));
                     self.job_error("CLI discovery stopped unexpectedly".into());
                 }
                 Err(mpsc::TryRecvError::Empty) => {}
@@ -351,7 +354,7 @@ impl Browser {
     }
 
     pub(crate) fn spec(&self, preset: &Preset) -> Result<JobSpec, String> {
-        if self.jobs.busy() {
+        if self.jobs.busy() || self.editing.busy() {
             return Err("Wait for the current job or restore to finish".into());
         }
         let e = self.episode.as_ref().ok_or("No episode")?;
@@ -359,7 +362,7 @@ impl Browser {
     }
 
     pub(crate) fn begin_job(&mut self, c: Confirmation, ctx: &egui::Context) {
-        if self.jobs.busy() {
+        if self.jobs.busy() || self.editing.busy() {
             return;
         }
         self.jobs.mode = Some(InspectorMode::Jobs);
@@ -418,6 +421,19 @@ impl Browser {
         affected: Option<Vec<usize>>,
         ctx: &egui::Context,
     ) {
+        let affected = if preset == Preset::PrecisionInsert {
+            affected.or_else(|| {
+                self.editing.changes.as_ref().map(|c| {
+                    let mut turns = c.inserted.clone();
+                    turns.extend(&c.modified);
+                    turns.sort_unstable();
+                    turns.dedup();
+                    turns
+                })
+            })
+        } else {
+            affected
+        };
         match self.spec(&preset) {
             Ok(spec) => {
                 let c = Confirmation {
@@ -436,7 +452,7 @@ impl Browser {
     }
 
     fn begin_restore(&mut self, cp: Checkpoint, ctx: &egui::Context) {
-        if self.jobs.busy() {
+        if self.jobs.busy() || self.editing.busy() {
             return;
         }
         let Some(e) = &self.episode else { return };
@@ -585,7 +601,7 @@ impl Browser {
                 t::accent(),
             ));
 
-            if self.jobs.busy() {
+            if self.jobs.busy() || self.editing.busy() {
                 ui.add(egui::ProgressBar::new(0.0).animate(true).desired_height(t::PROGRESS_HEIGHT));
             }
 
@@ -610,7 +626,7 @@ impl Browser {
                 });
 
             ui.horizontal_wrapped(|ui| {
-                let elapsed = if self.jobs.busy() {
+                let elapsed = if self.jobs.busy() || self.editing.busy() {
                     self.jobs.started.map(|s| s.elapsed()).unwrap_or_default()
                 } else {
                     self.jobs.elapsed
@@ -631,12 +647,17 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
             ui.label(t::heading("Checkpoints", t::SECTION_TITLE));
             for cp in self.jobs.checkpoints.clone() {
                 ui.horizontal_wrapped(|ui| {
+                    let kind = cp.kind.replace('-', " ");
                     ui.label(t::text(
-                        format!("v{:02} · {} · {}", cp.version, cp.preset, cp.created_at),
+                        format!(
+                            "v{:02} · {} · {} · {}",
+                            cp.version, kind, cp.preset, cp.created_at
+                        ),
                         t::CAPTION,
                         t::TEXT_PRIMARY,
                     ));
-                    if t::secondary_button(ui, "Restore", None, !self.jobs.busy()).clicked() {
+                    let can_restore = !self.jobs.busy() && !self.editing.busy();
+                    if t::secondary_button(ui, "Restore", None, can_restore).clicked() {
                         self.jobs.restore = Some(cp.clone());
                     }
                 });
@@ -823,7 +844,31 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                         if let Some(c) = &c {
                             ui.label(t::text(scope(c), t::BODY, t::TEXT_PRIMARY));
                             let turns = c.affected.clone().unwrap_or_else(|| c.preset.turns());
-                            if let Some(e) = &self.episode {
+if c.preset == Preset::PrecisionInsert && c.affected.is_some() {
+    if let Some(changes) = &self.editing.changes {
+        ui.label(t::text(format!("{} inserted · {} modified · {} deleted",
+            changes.inserted.len(), changes.modified.len(), changes.deleted.len()),
+            t::SECONDARY, t::TEXT_MUTED));
+    }
+    egui::ScrollArea::vertical().max_height(t::RESTORE_LIST_HEIGHT).show(ui, |ui| {
+        if let Some(script) = &self.editing.turns {
+            for turn in script.turns.iter().filter(|t| turns.contains(&t.index)) {
+                ui.label(t::text(format!("{:03} · {}", turn.index, turn.display_name),
+                    t::SECONDARY, t::TEXT_PRIMARY));
+            }
+        }
+    });
+    if let Some(e) = &self.episode {
+        let engines = e.speakers.iter().map(|s| s.engine.as_str())
+            .filter(|s| !s.is_empty()).collect::<std::collections::BTreeSet<_>>()
+            .into_iter().collect::<Vec<_>>().join(", ");
+        ui.label(t::text(format!("Engines: {}", if engines.is_empty() {
+            e.manifest.engine.as_str() } else { &engines }), t::SECONDARY, t::TEXT_MUTED));
+    }
+    ui.label(t::text("Later turns move: Precision insert recomputes positions.",
+        t::BODY, t::STATUS_FAILED));
+} else if let Some(e) = &self.episode {
+
                                 for t0 in e.turns.iter().filter(|t| turns.contains(&t.index)) {
                                     ui.label(t::text(
                                         format!(
@@ -841,7 +886,14 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                         }
                         if let Some(cp) = &restore {
                             egui::ScrollArea::vertical().max_height(t::RESTORE_LIST_HEIGHT).show(ui, |ui| {
-                                for p in &cp.files {
+ui.label(t::text(format!("Kind: {}", cp.kind.replace('-', " ")),
+    t::SECONDARY, t::TEXT_MUTED));
+for external in &cp.external_files {
+    ui.label(t::text(format!("Replace script: {}", external.path.display()),
+        t::BODY, t::STATUS_FAILED));
+}
+for p in &cp.files {
+
                                     ui.label(t::text(p.display().to_string(), t::SECONDARY, t::TEXT_PRIMARY));
                                 }
                             });

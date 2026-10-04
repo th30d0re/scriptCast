@@ -297,3 +297,73 @@ fn checkpoint_paths_refuse_symlink_escapes_before_writing() {
     audio.files[0] = destination;
     assert!(checkpoint::restore(&e.dir, &audio).is_err());
 }
+
+/// Operator-only live acceptance: refuses any destination outside the cloned D2 project.
+#[test]
+#[ignore = "requires the EP03 clone and export shim under /tmp/scriptcast-d2/live"]
+fn phase_d2_live_copy_save_changes_and_restore() {
+    let root = fs::canonicalize("/tmp/scriptcast-d2/live").unwrap();
+    let dir = root.join("outputs/ATO_EP03_five_levels");
+    let e = scriptcast_ui::episode::Episode::load(&dir).unwrap();
+    let export = ExportCommand {
+        source: ExportSource::Folder,
+        program: root.join(".venv-d2/bin/scriptcast-export"),
+    };
+    let loaded = script::load_turns(&export, &e).unwrap();
+    let script_path = fs::canonicalize(&loaded.script_path).unwrap();
+    assert!(script_path.starts_with(&root));
+    assert_eq!(
+        fs::canonicalize(e.script_path.as_ref().unwrap()).unwrap(),
+        script_path
+    );
+    let original = fs::read(&script_path).unwrap();
+    let turn = &loaded.turns[6];
+    let draft = format!(
+        "{} This sentence is a reversible Phase D2 copy-only test.",
+        turn.body
+    );
+    let cp = script::save(&e, turn, &draft, &loaded.script_sha256).unwrap();
+    assert_eq!(cp.kind, "script-edit");
+    let after_save = hash(&fs::read(&script_path).unwrap());
+    assert_ne!(after_save, loaded.script_sha256);
+    eprintln!("copy_script_before_save={}", loaded.script_sha256);
+    eprintln!("copy_script_after_save={after_save}");
+    let output = Command::new(&export.program)
+        .arg(&dir)
+        .arg("--changes-json")
+        .env("SCRIPTCAST_PROJECT", &root)
+        .output()
+        .unwrap();
+    fs::write(
+        "/tmp/scriptcast-d2/live-changes-after-save.json",
+        &output.stdout,
+    )
+    .unwrap();
+    // Restore even if the read-only export failed, before checking its outcome.
+    let before_restore = checkpoint::restore(&dir, &cp).unwrap();
+    let after_restore = hash(&fs::read(&script_path).unwrap());
+    eprintln!("copy_script_after_restore={after_restore}");
+    assert_eq!(fs::read(&script_path).unwrap(), original);
+    assert_eq!(after_restore, loaded.script_sha256);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let changes: Changes = serde_json::from_slice(&output.stdout).unwrap();
+    assert!(changes.inserted.contains(&6) || changes.modified.contains(&6));
+    let restored = script::load_turns(&export, &e).unwrap();
+    assert_eq!(restored.script_sha256, loaded.script_sha256);
+    let summary = serde_json::json!({
+        "turn": 6, "script": script_path, "checkpoint": cp.dir,
+        "pre_restore_checkpoint": before_restore.dir, "restored_bytes_equal": true,
+        "original_sha256": loaded.script_sha256, "restored_sha256": restored.script_sha256,
+        "changes_after_save": serde_json::from_slice::<serde_json::Value>(&output.stdout).unwrap(),
+    });
+    fs::write(
+        "/tmp/scriptcast-d2/live-roundtrip.json",
+        serde_json::to_vec_pretty(&summary).unwrap(),
+    )
+    .unwrap();
+    println!("{summary}");
+}

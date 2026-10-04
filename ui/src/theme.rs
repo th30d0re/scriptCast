@@ -129,6 +129,11 @@ pub const WAVE_FADE: f32 = 32.0;
 pub const WAVE_PLAYHEAD: f32 = 2.0;
 pub const FILTER_BAR_HEIGHT: f32 = 42.0;
 pub const SEARCH_WIDTH: f32 = 270.0;
+pub const EDITOR_MIN_HEIGHT: f32 = 120.0;
+pub const EDITOR_MAX_HEIGHT: f32 = 240.0;
+pub const EDITOR_CHROME_HEIGHT: f32 = 220.0;
+pub const EDITOR_ROW_CHROME: f32 = 200.0;
+pub const EDITOR_BANNER_HEIGHT: f32 = 52.0;
 pub const SEARCH_HEIGHT: f32 = 27.0;
 pub const TABLE_HEADER_HEIGHT: f32 = 30.0;
 pub const TABLE_ROW_HEIGHT: f32 = 28.0;
@@ -247,6 +252,9 @@ pub fn icon(name: &str) -> egui::ImageSource<'static> {
         }
         "play-16-on-accent" => egui::include_image!("../design/assets/icons/play-16-on-accent.svg"),
         "rotate-cw-16-text" => egui::include_image!("../design/assets/icons/rotate-cw-16-text.svg"),
+        "circle-alert-14-danger" => {
+            egui::include_image!("../design/assets/icons/circle-alert-14-danger.svg")
+        }
         "settings-16-text" => egui::include_image!("../design/assets/icons/settings-16-text.svg"),
         "search-14-text-muted" => {
             egui::include_image!("../design/assets/icons/search-14-text-muted.svg")
