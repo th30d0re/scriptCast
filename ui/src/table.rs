@@ -302,15 +302,20 @@ pub fn show(
         let active = read_position
             .filter(|_| playing == Some(idx))
             .and_then(|position| {
-                let words = episode.read_along.words(&episode.turns[idx].id)?;
-                read_along::active_range(
-                    &text,
-                    words,
-                    scriptcast_ui::word_timings::manifest_position(
-                        &episode.manifest.turns[idx],
-                        position,
-                    ),
-                )
+                let turn_id = &episode.turns[idx].id;
+                let position = scriptcast_ui::word_timings::manifest_position(
+                    &episode.manifest.turns[idx],
+                    position,
+                );
+                if clip.is_some() {
+                    // Row highlight only when script word count matches ensemble.
+                    let words = episode.clip_transcripts.words(turn_id)?;
+                    read_along::word_mapping(&text, &words)?;
+                    read_along::active_range(&text, &words, position)
+                } else {
+                    let words = episode.read_along.words(turn_id)?;
+                    read_along::active_range(&text, words, position)
+                }
             });
         let transcript = cache.measure(&body_ui, idx, &text, transcript_width, active);
         if editor_turn == Some(idx) {

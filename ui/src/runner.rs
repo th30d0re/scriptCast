@@ -24,6 +24,7 @@ pub enum Preset {
     RegenerateTurns(Vec<usize>),
     Verify,
     ReadAlong,
+    ClipTranscripts,
     Repair(Option<Vec<usize>>),
 }
 impl Preset {
@@ -34,6 +35,7 @@ impl Preset {
             Self::RegenerateTurns(_) => "regenerate-turns",
             Self::Verify => "verify",
             Self::ReadAlong => "read-along-timings",
+            Self::ClipTranscripts => "clip-transcripts",
             Self::Repair(_) => "repair",
         }
     }
@@ -44,6 +46,7 @@ impl Preset {
             Self::RegenerateTurns(_) => "Regenerate selected",
             Self::Verify => "Verify",
             Self::ReadAlong => "Read-along timings",
+            Self::ClipTranscripts => "Clip transcripts",
             Self::Repair(_) => "Repair",
         }
     }
@@ -51,6 +54,7 @@ impl Preset {
         match self {
             Self::Verify => "scriptcast-verify",
             Self::ReadAlong => "scriptcast-word-timings",
+            Self::ClipTranscripts => "scriptcast-clip-transcribe",
             Self::Repair(_) => "scriptcast-repair",
             _ => "scriptcast",
         }
@@ -68,6 +72,7 @@ impl Preset {
             "regenerate-turns" | "regenerate-selected" => Ok(Self::RegenerateTurns(turns)),
             "verify" => Ok(Self::Verify),
             "read-along-timings" => Ok(Self::ReadAlong),
+            "clip-transcripts" => Ok(Self::ClipTranscripts),
             "repair" => Ok(Self::Repair((!turns.is_empty()).then_some(turns))),
             _ => Err(format!("Unknown preset {name}")),
         }
@@ -77,7 +82,12 @@ impl Preset {
             "detect-changes" => Ok(Self::DetectChanges),
             "verify" => Ok(Self::Verify),
             "read-along-timings" => Ok(Self::ReadAlong),
-            _ => Err("--run refuses synthesizing presets; use detect-changes, verify or read-along-timings".into()),
+            "clip-transcripts" => Ok(Self::ClipTranscripts),
+            _ => Err(
+                "--run refuses synthesizing presets; use detect-changes, verify, \
+                 read-along-timings or clip-transcripts"
+                    .into(),
+            ),
         }
     }
 }
@@ -123,7 +133,7 @@ impl JobSpec {
         let out = e.dir.parent().ok_or("Episode has no output parent")?;
         let mut synthesizes = false;
         match p {
-            Preset::ReadAlong => {
+            Preset::ReadAlong | Preset::ClipTranscripts => {
                 args.extend([
                     e.dir.clone().into_os_string(),
                     "--script".into(),
@@ -192,6 +202,7 @@ impl JobSpec {
         let derived = match p {
             Preset::Verify => Some("stress.json"),
             Preset::ReadAlong => Some("word_timings.json"),
+            Preset::ClipTranscripts => Some("clip_transcripts.json"),
             _ => None,
         };
         let overwrites = derived

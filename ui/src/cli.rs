@@ -249,6 +249,7 @@ pub fn resolve_with(
         path: path.into(),
         pythonpath: None,
     };
+    let clip_transcribe = command == "scriptcast-clip-transcribe";
     if let Some(p) = cli_dir
         .filter(|p| !p.as_os_str().is_empty())
         .map(|p| p.join(command))
@@ -259,9 +260,15 @@ pub fn resolve_with(
     let venvs = project.map(venvs).unwrap_or_default();
     for venv in &venvs {
         let p = venv.join("bin").join(command);
-        if is_executable(&p) {
-            return Ok(direct(p, ExportSource::ProjectVenv));
+        if !is_executable(&p) {
+            continue;
         }
+        // Clip-transcribe console scripts are only usable when the venv has the
+        // Phonon stack and mlx-whisper; entry-module import is not enough.
+        if clip_transcribe && !probe_clip_engines(&venv.join("bin/python"), None, path) {
+            continue;
+        }
+        return Ok(direct(p, ExportSource::ProjectVenv));
     }
     if let Some(p) = env::split_paths(path)
         .map(|p| p.join(command))
@@ -271,15 +278,28 @@ pub fn resolve_with(
     }
     if let Some(dir) = exe.and_then(find_dev_checkout) {
         let module = module_for(&dir, command)?;
-        // Import the entry module (not just scriptcast) to check its dependencies.
-        // Venvs with an installed scriptcast come first: their interpreter has the
-        // full dependency set (e.g. misaki), which later lazy imports need.
         let mut ordered: Vec<&PathBuf> = venvs.iter().collect();
-        ordered.sort_by_key(|v| !is_executable(&v.join("bin/scriptcast")));
+        // Clip-transcribe: prefer interpreters that import fermion + mlx_whisper
+        // + engines. Other commands still prefer an installed scriptcast first.
+        if clip_transcribe {
+            ordered.sort_by_key(|v| !probe_clip_engines(&v.join("bin/python"), Some(&dir), path));
+        } else {
+            // Import the entry module (not just scriptcast) to check its
+            // dependencies. Venvs with an installed scriptcast come first:
+            // their interpreter has the full dependency set (e.g. misaki).
+            ordered.sort_by_key(|v| !is_executable(&v.join("bin/scriptcast")));
+        }
         let program = ordered
             .into_iter()
             .map(|p| p.join("bin/python"))
-            .find(|p| is_executable(p) && probe_module(p, &module, &dir, path))
+            .find(|p| {
+                is_executable(p)
+                    && if clip_transcribe {
+                        probe_clip_engines(p, Some(&dir), path)
+                    } else {
+                        probe_module(p, &module, &dir, path)
+                    }
+            })
             .unwrap_or_else(|| {
                 env::split_paths(path)
                     .map(|p| p.join("python3"))
@@ -304,17 +324,47 @@ pub fn resolve_with(
     ))
 }
 fn probe_module(p: &Path, module: &str, dir: &Path, path: &OsStr) -> bool {
-    let mut c = Command::new(p);
-    c.args([
-        "-c",
+    probe_python(
+        p,
         &format!("import importlib; importlib.import_module({module:?})"),
-    ])
-    .env("PYTHONPATH", dir)
-    .env("PATH", path)
-    .env("PYTHONDONTWRITEBYTECODE", "1")
-    .stdin(Stdio::null())
-    .stdout(Stdio::null())
-    .stderr(Stdio::null());
+        Some(dir),
+        path,
+        Duration::from_secs(2),
+    )
+}
+
+/// Clip-transcribe needs these imports at resolve time; engines load lazily.
+/// Measured cold import of fermion+mlx_whisper is about 2.8 s on this machine.
+fn probe_clip_engines(python: &Path, pythonpath: Option<&Path>, path: &OsStr) -> bool {
+    if !is_executable(python) {
+        return false;
+    }
+    probe_python(
+        python,
+        "import fermion, mlx_whisper, scriptcast.asr.engines",
+        pythonpath,
+        path,
+        Duration::from_secs(6),
+    )
+}
+
+fn probe_python(
+    p: &Path,
+    code: &str,
+    pythonpath: Option<&Path>,
+    path: &OsStr,
+    timeout: Duration,
+) -> bool {
+    let mut c = Command::new(p);
+    c.args(["-c", code])
+        .env("PATH", path)
+        .env("PYTHONDONTWRITEBYTECODE", "1")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    if let Some(dir) = pythonpath {
+        c.env("PYTHONPATH", dir);
+    }
     let Ok(mut child) = c.spawn() else {
         return false;
     };
@@ -325,7 +375,7 @@ fn probe_module(p: &Path, module: &str, dir: &Path, path: &OsStr) -> bool {
             Err(_) => return false,
             _ => {}
         }
-        if start.elapsed() > Duration::from_secs(2) {
+        if start.elapsed() > timeout {
             let _ = child.kill();
             let _ = child.wait();
             return false;

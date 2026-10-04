@@ -76,6 +76,47 @@ fn dev_interpreter_skips_missing_dependencies() {
     );
 }
 #[test]
+fn clip_transcribe_prefers_engine_venv_over_installed_scriptcast() {
+    let t = Scratch::new();
+    let project = t.0.join("project");
+    // Installed scriptcast first alphabetically would win under the old ordering.
+    t.exe("project/.venv-voice/bin/scriptcast", "exit 0");
+    t.exe(
+        "project/.venv-voice/bin/python",
+        r#"case "$*" in
+  *scriptcast.tools.clip_transcribe*) exit 0 ;;
+  *fermion*) exit 1 ;;
+  *) exit 1 ;;
+esac"#,
+    );
+    let fermion = t.exe(
+        "project/.venv-fermion/bin/python",
+        r#"case "$*" in
+  *fermion*mlx_whisper*scriptcast.asr.engines*) exit 0 ;;
+  *scriptcast.tools.clip_transcribe*) exit 0 ;;
+  *) exit 1 ;;
+esac"#,
+    );
+    fs::write(
+        t.0.join("pyproject.toml"),
+        "[project]\nname='scriptcast'\n[project.scripts]\n\
+         scriptcast-clip-transcribe='scriptcast.tools.clip_transcribe:main'\n",
+    )
+    .unwrap();
+    let r = resolve_with(
+        "scriptcast-clip-transcribe",
+        Some(&project),
+        None,
+        OsStr::new("/usr/bin"),
+        Some(&t.0.join("ui/target/app")),
+    )
+    .unwrap();
+    assert_eq!(r.program, fermion);
+    assert_eq!(r.prefix, ["-m", "scriptcast.tools.clip_transcribe"]);
+    assert!(matches!(r.source, ExportSource::DevCheckout(_)));
+}
+
+#[test]
 fn login_path_shell_noise_timeout_and_failure() {
     let t = Scratch::new();
     let shell = t.exe("shell", "printf 'startup noise\\n/first:/second'");

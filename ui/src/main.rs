@@ -2243,6 +2243,13 @@ impl Browser {
                         Some(inspector::Action::RunReadAlong) => {
                             self.request_job(scriptcast_ui::runner::Preset::ReadAlong, None, &ctx);
                         }
+                        Some(inspector::Action::RunClipTranscripts) => {
+                            self.request_job(
+                                scriptcast_ui::runner::Preset::ClipTranscripts,
+                                None,
+                                &ctx,
+                            );
+                        }
                         None => {}
                     }
                 }

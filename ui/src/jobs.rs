@@ -103,6 +103,15 @@ impl Browser {
         }
     }
 
+    pub(crate) fn has_clip_turns(&self) -> bool {
+        self.editing.turns.as_ref().is_some_and(|turns| {
+            turns
+                .turns
+                .iter()
+                .any(|turn| scriptcast_ui::script::clip_id(&turn.body).is_some())
+        })
+    }
+
     pub(crate) fn selected_turns(&self) -> Vec<usize> {
         let Some(e) = &self.episode else {
             return vec![];
@@ -332,6 +341,7 @@ impl Browser {
                 "scriptcast",
                 "scriptcast-verify",
                 "scriptcast-word-timings",
+                "scriptcast-clip-transcribe",
                 "scriptcast-repair",
                 "scriptcast-export",
             ]
@@ -539,22 +549,33 @@ impl Browser {
         });
         ui.separator();
         let turns = self.selected_turns();
+        let has_clips = self.has_clip_turns();
         let presets = [
             Preset::DetectChanges,
             Preset::PrecisionInsert,
             Preset::RegenerateTurns(turns.clone()),
             Preset::Verify,
             Preset::ReadAlong,
+            Preset::ClipTranscripts,
             Preset::Repair((!turns.is_empty()).then_some(turns)),
         ];
 
         egui::ScrollArea::vertical().id_salt("jobs_body").show(ui, |ui| {
             ui.horizontal_wrapped(|ui| {
                 for p in presets {
-                    let spec = self.spec(&p);
-                    let hint = spec.as_ref()
-                        .map(|s| format!("{}\n{}", s.resolved.description(), s.display()))
-                        .unwrap_or_else(|e| e.clone());
+                    let no_clips = p == Preset::ClipTranscripts && !has_clips;
+                    let spec = if no_clips {
+                        Err("Episode has no clip turns".into())
+                    } else {
+                        self.spec(&p)
+                    };
+                    let hint = if no_clips {
+                        "Episode has no clip turns".into()
+                    } else {
+                        spec.as_ref()
+                            .map(|s| format!("{}\n{}", s.resolved.description(), s.display()))
+                            .unwrap_or_else(|e| e.clone())
+                    };
                     if t::secondary_button(ui, p.label(), None, spec.is_ok())
                         .on_hover_text(&hint)
                         .on_disabled_hover_text(&hint)
@@ -932,6 +953,8 @@ for p in &cp.files {
                     "The listed files will be replaced. A pre-restore checkpoint is saved first."
                 } else if c.as_ref().unwrap().preset == Preset::ReadAlong {
                     "word_timings.json will be replaced. A checkpoint is saved first."
+                } else if c.as_ref().unwrap().preset == Preset::ClipTranscripts {
+                    "clip_transcripts.json will be replaced. A checkpoint is saved first."
                 } else if c.as_ref().unwrap().preset == Preset::Verify {
                     "stress.json will be replaced. A checkpoint is saved first."
                 } else {

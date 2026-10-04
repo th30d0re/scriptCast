@@ -138,6 +138,7 @@ pub struct Episode {
     pub warnings: Vec<String>,
     pub stress_mtime: Option<SystemTime>,
     pub read_along: crate::word_timings::ReadAlong,
+    pub clip_transcripts: crate::clip_transcripts::ClipTranscripts,
 }
 #[derive(Debug)]
 pub struct LoadError {
@@ -221,6 +222,8 @@ impl Episode {
         let manifest: Manifest =
             serde_json::from_slice(&manifest_bytes).map_err(|e| error(&manifest_path, e))?;
         let read_along = crate::word_timings::ReadAlong::load(&dir, &manifest_bytes);
+        let clip_transcripts =
+            crate::clip_transcripts::ClipTranscripts::load(&dir, &manifest_bytes);
         let mut warnings = Vec::new();
         check()?;
         let state: Option<RenderState> = optional(&dir.join("render_state.json"), &mut warnings);
@@ -401,6 +404,7 @@ impl Episode {
             warnings,
             stress_mtime,
             read_along,
+            clip_transcripts,
         })
     }
 

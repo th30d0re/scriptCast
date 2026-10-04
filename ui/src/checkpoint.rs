@@ -62,6 +62,8 @@ pub fn plan_files(p: &Preset, e: &Episode) -> Result<Vec<PlannedFile>, String> {
         paths.push(e.dir.join("stress.json"));
     } else if matches!(p, Preset::ReadAlong) {
         paths.push(e.dir.join("word_timings.json"));
+    } else if matches!(p, Preset::ClipTranscripts) {
+        paths.push(e.dir.join("clip_transcripts.json"));
     } else if !matches!(p, Preset::DetectChanges) {
         for name in [
             "episode_manifest.json",

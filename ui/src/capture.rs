@@ -31,7 +31,8 @@ Options:
   --size WxH         inner window size in points (default: 1440x900)
   --inspector MODE   selected, verification, or jobs
   --confirm PRESET   show confirmation; never auto-confirm
-  --run PRESET       run detect-changes, verify or read-along-timings; capture after exit
+  --run PRESET       run detect-changes, verify, read-along-timings or
+                     clip-transcripts; capture after exit
   --running-screenshot PATH  also save the active job (requires --run)
   --fresh            ignore persisted state and do not save state on exit
   --select N         select manifest turn N after loading, scrolled into view
