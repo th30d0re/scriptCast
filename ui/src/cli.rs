@@ -249,7 +249,11 @@ pub fn resolve_with(
         path: path.into(),
         pythonpath: None,
     };
-    let clip_transcribe = command == "scriptcast-clip-transcribe";
+    // Clip-transcribe and verify-ensemble need fermion + mlx_whisper.
+    let needs_clip_engines = matches!(
+        command,
+        "scriptcast-clip-transcribe" | "scriptcast-verify-ensemble"
+    );
     if let Some(p) = cli_dir
         .filter(|p| !p.as_os_str().is_empty())
         .map(|p| p.join(command))
@@ -263,9 +267,9 @@ pub fn resolve_with(
         if !is_executable(&p) {
             continue;
         }
-        // Clip-transcribe console scripts are only usable when the venv has the
-        // Phonon stack and mlx-whisper; entry-module import is not enough.
-        if clip_transcribe && !probe_clip_engines(&venv.join("bin/python"), None, path) {
+        // These console scripts are only usable when the venv has the Phonon
+        // stack and mlx-whisper; entry-module import is not enough.
+        if needs_clip_engines && !probe_clip_engines(&venv.join("bin/python"), None, path) {
             continue;
         }
         return Ok(direct(p, ExportSource::ProjectVenv));
@@ -279,9 +283,9 @@ pub fn resolve_with(
     if let Some(dir) = exe.and_then(find_dev_checkout) {
         let module = module_for(&dir, command)?;
         let mut ordered: Vec<&PathBuf> = venvs.iter().collect();
-        // Clip-transcribe: prefer interpreters that import fermion + mlx_whisper
-        // + engines. Other commands still prefer an installed scriptcast first.
-        if clip_transcribe {
+        // Prefer interpreters that import fermion + mlx_whisper + engines.
+        // Other commands still prefer an installed scriptcast first.
+        if needs_clip_engines {
             ordered.sort_by_key(|v| !probe_clip_engines(&v.join("bin/python"), Some(&dir), path));
         } else {
             // Import the entry module (not just scriptcast) to check its
@@ -294,7 +298,7 @@ pub fn resolve_with(
             .map(|p| p.join("bin/python"))
             .find(|p| {
                 is_executable(p)
-                    && if clip_transcribe {
+                    && if needs_clip_engines {
                         probe_clip_engines(p, Some(&dir), path)
                     } else {
                         probe_module(p, &module, &dir, path)

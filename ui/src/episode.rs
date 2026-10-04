@@ -139,6 +139,7 @@ pub struct Episode {
     pub stress_mtime: Option<SystemTime>,
     pub read_along: crate::word_timings::ReadAlong,
     pub clip_transcripts: crate::clip_transcripts::ClipTranscripts,
+    pub stress_ensemble: crate::stress_ensemble::StressEnsemble,
 }
 #[derive(Debug)]
 pub struct LoadError {
@@ -228,8 +229,29 @@ impl Episode {
         check()?;
         let state: Option<RenderState> = optional(&dir.join("render_state.json"), &mut warnings);
         check()?;
+        let stress_path = dir.join("stress.json");
+        let stress_bytes = match fs::read(&stress_path) {
+            Ok(bytes) => Some(bytes),
+            Err(e) => {
+                warnings.push(format!("{}: {e}", stress_path.display()));
+                None
+            }
+        };
         let verification: Option<Vec<VerifyResult>> =
-            optional(&dir.join("stress.json"), &mut warnings);
+            stress_bytes
+                .as_ref()
+                .and_then(|bytes| match serde_json::from_slice(bytes) {
+                    Ok(v) => Some(v),
+                    Err(e) => {
+                        warnings.push(format!("{}: {e}", stress_path.display()));
+                        None
+                    }
+                });
+        let stress_ensemble = crate::stress_ensemble::StressEnsemble::load(
+            &dir,
+            &manifest_bytes,
+            stress_bytes.as_deref(),
+        );
         let mut verification: HashMap<_, _> = verification
             .unwrap_or_default()
             .into_iter()
@@ -405,6 +427,7 @@ impl Episode {
             stress_mtime,
             read_along,
             clip_transcripts,
+            stress_ensemble,
         })
     }
 

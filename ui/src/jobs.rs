@@ -8,6 +8,61 @@ use scriptcast_ui::{
 use std::sync::mpsc::{self, Receiver};
 use std::time::{Duration, Instant};
 
+/// One Expected / Whisper / Phonon line; words absent from `reference` are emphasised.
+fn paint_opinion_line(ui: &mut Ui, label: &str, value: &str, reference: &str) {
+    let reference: std::collections::HashSet<&str> = reference.split_whitespace().collect();
+    let mut job = egui::text::LayoutJob::default();
+    job.append(
+        &format!("{label}: "),
+        0.0,
+        egui::TextFormat {
+            font_id: t::font(t::CAPTION),
+            color: t::TEXT_MUTED,
+            ..Default::default()
+        },
+    );
+    if value.trim().is_empty() {
+        job.append(
+            "—",
+            0.0,
+            egui::TextFormat {
+                font_id: t::font(t::BODY),
+                color: t::TEXT_SUBTLE,
+                ..Default::default()
+            },
+        );
+    } else {
+        for (index, word) in value.split_whitespace().enumerate() {
+            if index > 0 {
+                job.append(
+                    " ",
+                    0.0,
+                    egui::TextFormat {
+                        font_id: t::font(t::BODY),
+                        color: t::TEXT_PRIMARY,
+                        ..Default::default()
+                    },
+                );
+            }
+            let differs = !reference.contains(word);
+            job.append(
+                word,
+                0.0,
+                egui::TextFormat {
+                    font_id: t::font(t::BODY),
+                    color: if differs {
+                        t::STATUS_FAILED
+                    } else {
+                        t::TEXT_PRIMARY
+                    },
+                    ..Default::default()
+                },
+            );
+        }
+    }
+    ui.label(job);
+}
+
 #[derive(Clone, Debug)]
 pub(crate) struct Confirmation {
     pub preset: Preset,
@@ -342,6 +397,7 @@ impl Browser {
                 "scriptcast-verify",
                 "scriptcast-word-timings",
                 "scriptcast-clip-transcribe",
+                "scriptcast-verify-ensemble",
                 "scriptcast-repair",
                 "scriptcast-export",
             ]
@@ -557,6 +613,7 @@ impl Browser {
             Preset::Verify,
             Preset::ReadAlong,
             Preset::ClipTranscripts,
+            Preset::SecondOpinion,
             Preset::Repair((!turns.is_empty()).then_some(turns)),
         ];
 
@@ -710,6 +767,13 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
         let e = self.episode.as_ref().unwrap();
         let turn_data = &e.turns[turn];
         let v = turn_data.verify.clone();
+        let failed = matches!(
+            turn_data.verification,
+            scriptcast_ui::episode::VerificationState::Failed
+        );
+        let turn_id = turn_data.id.clone();
+        let ensemble = e.stress_ensemble.get(&turn_id).cloned();
+        let ensemble_notice = e.stress_ensemble.notice.clone();
         let label = format!("Verification · Turn {:03}", turn_data.index);
         let state = turn_data.verification;
         ui.add_space(t::SPACE_16);
@@ -769,6 +833,65 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                     t::BODY,
                     t::TEXT_MUTED,
                 ));
+            }
+            if failed {
+                ui.add_space(t::SPACE_16);
+                ui.label(t::heading("Second opinion", t::SECTION_TITLE));
+                if let Some(second) = &ensemble {
+                    ui.label(t::text(
+                        scriptcast_ui::stress_ensemble::StressEnsemble::summary_line(
+                            &second.summary,
+                        ),
+                        t::BODY,
+                        t::TEXT_PRIMARY,
+                    ));
+                    ui.horizontal_wrapped(|ui| {
+                        ui.label(
+                            egui::RichText::new(format!("Whisper {:.3}", second.score_whisper))
+                                .font(t::mono(t::SECONDARY))
+                                .color(t::TEXT_MUTED),
+                        );
+                        ui.label(
+                            egui::RichText::new(format!("Phonon {:.3}", second.score_phonon))
+                                .font(t::mono(t::SECONDARY))
+                                .color(t::TEXT_MUTED),
+                        );
+                    });
+                    for span in &second.spans {
+                        ui.add_space(t::SPACE_8);
+                        ui.horizontal_wrapped(|ui| {
+                            ui.label(t::text(
+                                scriptcast_ui::stress_ensemble::StressEnsemble::span_verdict_label(
+                                    &span.verdict,
+                                ),
+                                t::CAPTION,
+                                t::TEXT_MUTED,
+                            ));
+                        });
+                        paint_opinion_line(ui, "Expected", &span.expected, &span.whisper);
+                        paint_opinion_line(ui, "Whisper", &span.whisper, &span.expected);
+                        paint_opinion_line(ui, "Phonon", &span.phonon, &span.expected);
+                    }
+                } else {
+                    let hint = ensemble_notice.unwrap_or_else(|| {
+                        "No second opinion yet for failed turns. \
+                         Run Jobs → Second opinion (failed turns)."
+                            .into()
+                    });
+                    ui.label(t::text(hint, t::BODY, t::TEXT_MUTED));
+                    let s = self.spec(&Preset::SecondOpinion);
+                    let run_hint = s
+                        .as_ref()
+                        .map(|s| s.resolved.description())
+                        .unwrap_or_else(|e| e.clone());
+                    if t::secondary_button(ui, "Run…", None, s.is_ok())
+                        .on_hover_text(&run_hint)
+                        .on_disabled_hover_text(&run_hint)
+                        .clicked()
+                    {
+                        action = Some(Preset::SecondOpinion);
+                    }
+                }
             }
             ui.add_space(t::SPACE_16);
             ui.horizontal_wrapped(|ui| {
@@ -955,6 +1078,9 @@ for p in &cp.files {
                     "word_timings.json will be replaced. A checkpoint is saved first."
                 } else if c.as_ref().unwrap().preset == Preset::ClipTranscripts {
                     "clip_transcripts.json will be replaced. A checkpoint is saved first."
+                } else if c.as_ref().unwrap().preset == Preset::SecondOpinion {
+                    "stress_ensemble.json will be replaced. A checkpoint is saved first. \
+                     stress.json is not modified."
                 } else if c.as_ref().unwrap().preset == Preset::Verify {
                     "stress.json will be replaced. A checkpoint is saved first."
                 } else {
