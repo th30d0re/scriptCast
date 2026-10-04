@@ -547,7 +547,7 @@ mod tests {
     #[test]
     fn png_round_trip_has_full_dimensions() {
         let image = egui::ColorImage::new([8, 4], vec![egui::Color32::RED; 32]);
-        let path = PathBuf::from("/tmp/scriptcast-e").join(format!(
+        let path = PathBuf::from("/tmp/scriptcast-f").join(format!(
             "scriptcast-ui-capture-test-{}.png",
             std::process::id()
         ));

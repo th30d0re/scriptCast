@@ -177,6 +177,155 @@ pub fn field_height(ui: &Ui, text: &str, width: f32, available: f32) -> f32 {
         .clamp(t::EDITOR_MIN_HEIGHT, available.max(t::EDITOR_MIN_HEIGHT))
 }
 
+pub fn mode_toggle(ui: &mut Ui, mode: &mut EditMode) -> egui::Response {
+    let label = "Inline / Side panel";
+    let title_width = t::text_width(ui, label, t::bold(t::BUTTON));
+    let pill_width = t::text_width(ui, "Side panel", t::font(t::CAPTION)) + t::SPACE_8 * 2.0;
+    let (rect, mut response) = ui.allocate_exact_size(
+        egui::vec2(
+            title_width + pill_width + t::SPACE_8 * 3.0,
+            t::BUTTON_HEIGHT,
+        ),
+        egui::Sense::click(),
+    );
+    if response.clicked() {
+        *mode = if *mode == EditMode::Row {
+            EditMode::Panel
+        } else {
+            EditMode::Row
+        };
+        response.mark_changed();
+    }
+    let active = if *mode == EditMode::Row {
+        "Inline"
+    } else {
+        "Side panel"
+    };
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, label));
+    ui.painter()
+        .rect_filled(rect, t::RADIUS_CONTROL, t::accent());
+    let title = rect.shrink2(egui::vec2(t::SPACE_8, 0.0));
+    crate::view::line(ui, title, label, t::bold(t::BUTTON), t::ON_ACCENT);
+    let pill = egui::Rect::from_min_max(
+        egui::pos2(
+            rect.right() - pill_width - t::SPACE_8,
+            rect.top() + t::SPACE_4,
+        ),
+        rect.right_bottom() - egui::vec2(t::SPACE_8, t::SPACE_4),
+    );
+    ui.painter()
+        .rect_filled(pill, t::READ_ALONG_RADIUS, t::BG_WINDOW);
+    crate::view::line(
+        ui,
+        pill.shrink2(egui::vec2(t::SPACE_8, 0.0)),
+        active,
+        t::font(t::CAPTION),
+        t::accent(),
+    );
+    response.on_hover_text(format!("Editing: {active}. Switch editing location."))
+}
+
+pub fn inline_field_height(ui: &Ui, text: &str, width: f32) -> f32 {
+    t::wrapped_height(ui, text, t::font(t::BODY), width.max(t::SPACE_16))
+        .clamp(t::line_height(ui, t::font(t::BODY)), t::EDITOR_MAX_HEIGHT)
+}
+
+fn inline_actions_width(ui: &Ui) -> f32 {
+    t::text_width(ui, "Save draftCancel", t::bold(t::SECONDARY))
+        + t::BUTTON_PAD_X * 4.0
+        + t::text_width(ui, "Unsaved draft", t::font(t::SECONDARY))
+        + t::SPACE_14
+        + t::SPACE_8 * 4.0
+}
+
+pub fn inline_actions_height(ui: &Ui, width: f32, draft: Option<&Draft>) -> f32 {
+    if draft.is_some_and(Draft::changed) && width < inline_actions_width(ui) {
+        t::INLINE_BUTTON_HEIGHT * 2.0 + t::SPACE_4
+    } else {
+        t::INLINE_BUTTON_HEIGHT
+    }
+}
+
+fn draft_warning(ui: &mut Ui) {
+    ui.add(
+        egui::Image::new(t::icon("circle-alert-14-danger"))
+            .fit_to_exact_size(egui::Vec2::splat(t::SPACE_14)),
+    );
+    ui.label(t::text("Unsaved draft", t::SECONDARY, t::STATUS_FAILED));
+}
+
+pub fn inline_editor(
+    ui: &mut Ui,
+    editing: &mut Editing,
+    height: f32,
+    enabled: bool,
+) -> Option<Action> {
+    let busy = editing.busy();
+    let draft = editing.draft.as_mut()?;
+    let mut action = None;
+    ui.spacing_mut().item_spacing = egui::vec2(t::SPACE_8, t::SPACE_4);
+    ui.add_enabled_ui(!busy, |ui| {
+        let response = egui::ScrollArea::vertical()
+            .id_salt("inline_field_scroll")
+            .max_height(height)
+            .min_scrolled_height(height)
+            .show(ui, |ui| {
+                ui.add_sized(
+                    [ui.available_width(), height],
+                    egui::TextEdit::multiline(&mut draft.text)
+                        .id(editor_id())
+                        .font(t::font(t::BODY))
+                        .text_color(t::TEXT_PRIMARY)
+                        .frame(egui::Frame::NONE)
+                        .margin(egui::Vec2::ZERO)
+                        .desired_width(f32::INFINITY),
+                )
+            })
+            .inner;
+        if editing.focus_requested {
+            response.request_focus();
+            editing.focus_requested = false;
+        }
+    });
+    let wrap_warning = ui.available_width() < inline_actions_width(ui);
+    ui.horizontal(|ui| {
+        for (label, value, primary, allowed) in [
+            (
+                if busy { "Saving…" } else { "Save draft" },
+                Action::Save,
+                true,
+                enabled && !busy && draft.changed() && !draft.text.trim().is_empty(),
+            ),
+            ("Cancel", Action::Cancel, false, !busy),
+        ] {
+            let button = egui::Button::new(t::heading(label, t::SECONDARY).color(if primary {
+                t::ON_ACCENT
+            } else {
+                t::TEXT_PRIMARY
+            }))
+            .fill(if primary { t::accent() } else { t::BG_CONTROL })
+            .corner_radius(t::RADIUS_CONTROL as u8)
+            .min_size(egui::vec2(0.0, t::INLINE_BUTTON_HEIGHT));
+            if ui.add_enabled(allowed, button).clicked() {
+                action = Some(value);
+            }
+        }
+        if draft.changed() && !wrap_warning {
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.label(t::text("Unsaved draft", t::SECONDARY, t::STATUS_FAILED));
+                ui.add(
+                    egui::Image::new(t::icon("circle-alert-14-danger"))
+                        .fit_to_exact_size(egui::Vec2::splat(t::SPACE_14)),
+                );
+            });
+        }
+    });
+    if draft.changed() && wrap_warning {
+        ui.horizontal(draft_warning);
+    }
+    action
+}
+
 pub fn editor(
     ui: &mut Ui,
     editing: &mut Editing,
@@ -623,6 +772,43 @@ mod tests {
         assert_eq!(old.edit_mode, EditMode::Panel);
         let restored: Preferences =
             serde_json::from_str(&serde_json::to_string(&app.preferences).unwrap()).unwrap();
+        assert_eq!(restored.edit_mode, EditMode::Row);
+    }
+    #[test]
+    fn mode_toggle_writes_the_persisted_edit_mode() {
+        let ctx = egui::Context::default();
+        t::apply(&ctx);
+        let mut preferences = Preferences::default();
+        assert_eq!(preferences.edit_mode, EditMode::Panel);
+        let mut rect = egui::Rect::NOTHING;
+        let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
+            rect = mode_toggle(ui, &mut preferences.edit_mode).rect;
+        });
+        output.textures_delta.clear();
+        let pos = rect.center();
+        for pressed in [true, false] {
+            let mut output = ctx.run_ui(
+                egui::RawInput {
+                    events: vec![
+                        egui::Event::PointerMoved(pos),
+                        egui::Event::PointerButton {
+                            pos,
+                            button: egui::PointerButton::Primary,
+                            pressed,
+                            modifiers: egui::Modifiers::NONE,
+                        },
+                    ],
+                    ..Default::default()
+                },
+                |ui| {
+                    mode_toggle(ui, &mut preferences.edit_mode);
+                },
+            );
+            output.textures_delta.clear();
+        }
+        assert_eq!(preferences.edit_mode, EditMode::Row);
+        let restored: Preferences =
+            serde_json::from_str(&serde_json::to_string(&preferences).unwrap()).unwrap();
         assert_eq!(restored.edit_mode, EditMode::Row);
     }
     #[test]

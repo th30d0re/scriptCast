@@ -155,7 +155,7 @@ impl Browser {
                     ui.selectable_value(
                         &mut self.preferences.edit_mode,
                         crate::editing::EditMode::Row,
-                        "Table row",
+                        "Inline",
                     );
                 });
                 ui.add_space(t::SPACE_8);

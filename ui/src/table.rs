@@ -1,7 +1,6 @@
 use crate::{
     editing::{self, EditMode, Editing},
-    read_along::{self, Strip},
-    view,
+    read_along, view,
 };
 use eframe::egui::{self, Rect, Sense, Ui, pos2, vec2};
 use scriptcast_ui::{
@@ -87,11 +86,93 @@ fn columns(rect: Rect, widths: &ColumnWidths) -> [Rect; 6] {
         r
     })
 }
+#[derive(Default)]
+pub struct TextCache {
+    rows: std::collections::HashMap<usize, CachedText>,
+}
+struct CachedText {
+    text: String,
+    width: f32,
+    font: egui::FontId,
+    pixels_per_point: f32,
+    active: Option<std::ops::Range<usize>>,
+    transcript: read_along::Transcript,
+}
+impl TextCache {
+    fn measure(
+        &mut self,
+        ui: &Ui,
+        turn: usize,
+        text: &str,
+        width: f32,
+        active: Option<std::ops::Range<usize>>,
+    ) -> &read_along::Transcript {
+        let font = t::font(t::BODY);
+        let pixels_per_point = ui.ctx().pixels_per_point();
+        let valid = self.rows.get(&turn).is_some_and(|cached| {
+            cached.text == text
+                && cached.width == width
+                && cached.font == font
+                && cached.pixels_per_point == pixels_per_point
+                && cached.active == active
+        });
+        if !valid {
+            self.rows.insert(
+                turn,
+                CachedText {
+                    text: text.into(),
+                    width,
+                    font,
+                    pixels_per_point,
+                    active: active.clone(),
+                    transcript: read_along::Transcript::measure(ui, text, width, active),
+                },
+            );
+        }
+        &self.rows[&turn].transcript
+    }
+}
+
+/// Both expansions now live inside their turn; one prefix sum accounts for all row heights.
+struct RowOffsets(Vec<f32>);
+impl RowOffsets {
+    fn new(heights: impl IntoIterator<Item = f32>) -> Self {
+        let mut offsets = vec![0.0];
+        for height in heights {
+            offsets.push(offsets.last().unwrap() + height);
+        }
+        Self(offsets)
+    }
+    fn top(&self, row: usize) -> f32 {
+        self.0[row]
+    }
+    fn height(&self, row: usize) -> f32 {
+        self.0[row + 1] - self.0[row]
+    }
+    fn total(&self) -> f32 {
+        *self.0.last().unwrap()
+    }
+    fn scroll_to(&self, row: usize) -> f32 {
+        self.top(row)
+    }
+    fn visible(&self, top: f32, bottom: f32) -> std::ops::Range<usize> {
+        let count = self.0.len() - 1;
+        let start = self
+            .0
+            .partition_point(|offset| *offset <= top)
+            .saturating_sub(1)
+            .min(count);
+        let end = self.0.partition_point(|offset| *offset < bottom).min(count);
+        start..end.max(start)
+    }
+}
+
 #[expect(clippy::too_many_arguments)]
 pub fn show(
     ui: &mut Ui,
     episode: &Episode,
     visible: &[usize],
+    cache: &mut TextCache,
     selected: Option<usize>,
     playing: Option<usize>,
     read_position: Option<u64>,
@@ -128,7 +209,7 @@ pub fn show(
         "Turn",
         "Time",
         "Speaker",
-        "First words",
+        "Transcript",
         "Duration",
         "Verification",
     ]) {
@@ -145,208 +226,161 @@ pub fn show(
         .id_salt("turn_rows")
         .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysVisible)
         .auto_shrink([false, false]);
-    let editor_row = if edit_mode == EditMode::Row {
-        editing
-            .draft
-            .as_ref()
-            .and_then(|d| visible.iter().position(|i| *i == d.turn))
-    } else {
-        None
-    };
-    let field_height = editing.draft.as_ref().map_or(t::EDITOR_MIN_HEIGHT, |d| {
-        editing::field_height(
-            &body_ui,
-            &d.text,
-            body.width() - t::SPACE_16 * 2.0,
-            (body.height() - t::EDITOR_ROW_CHROME).min(t::EDITOR_MAX_HEIGHT),
-        )
+    let content_width = (body.width() - body_ui.spacing().scroll.allocated_width()).max(0.0);
+    let transcript_width = columns(
+        Rect::from_min_size(body.min, vec2(content_width, body.height())),
+        &widths,
+    )[3]
+    .width();
+    let editor_turn = (edit_mode == EditMode::Row)
+        .then(|| editing.draft.as_ref().map(|draft| draft.turn))
+        .flatten();
+    let field_height = editing.draft.as_ref().map_or(0.0, |draft| {
+        editing::inline_field_height(&body_ui, &draft.text, transcript_width)
     });
-    let editor_height = field_height + t::EDITOR_ROW_CHROME;
-    let read_row = read_position.and_then(|_| {
-        playing.and_then(|idx| {
-            episode.read_along.words(&episode.turns[idx].id)?;
-            visible.iter().position(|row| *row == idx)
-        })
+    let editor_height = field_height
+        + editing::inline_actions_height(&body_ui, transcript_width, editing.draft.as_ref())
+        + t::SPACE_4 * 3.0;
+    let heights = visible.iter().map(|&idx| {
+        let text = editing.body(idx).unwrap_or(&episode.turns[idx].first_words);
+        let active = read_position
+            .filter(|_| playing == Some(idx))
+            .and_then(|position| {
+                let words = episode.read_along.words(&episode.turns[idx].id)?;
+                read_along::active_range(
+                    text,
+                    words,
+                    scriptcast_ui::word_timings::manifest_position(
+                        &episode.manifest.turns[idx],
+                        position,
+                    ),
+                )
+            });
+        let transcript = cache.measure(&body_ui, idx, text, transcript_width, active);
+        if editor_turn == Some(idx) {
+            editor_height
+        } else {
+            transcript.height()
+        }
     });
-    let strip = read_row.map(|row| {
-        Strip::measure(
-            &body_ui,
-            episode
-                .read_along
-                .words(&episode.turns[visible[row]].id)
-                .unwrap(),
-            scriptcast_ui::word_timings::manifest_position(
-                &episode.manifest.turns[visible[row]],
-                read_position.unwrap(),
-            ),
-            body.width() - body_ui.spacing().scroll.allocated_width(),
-        )
-    });
-    let read_height = strip.as_ref().map_or(0.0, |strip| strip.height);
-    let row_top = |row: usize| {
-        read_along::row_top(
-            row,
-            editor_row.map(|row| (row, editor_height)),
-            read_row.map(|row| (row, read_height)),
-        )
-    };
+    let rows = RowOffsets::new(heights);
     if let Some(position) = scroll_to.and_then(|idx| visible.iter().position(|v| *v == idx)) {
-        scroll = scroll.vertical_scroll_offset((row_top(position) - t::TABLE_ROW_HEIGHT).max(0.0));
+        scroll = scroll.vertical_scroll_offset(rows.scroll_to(position));
     }
     let mut clicked = None;
     let mut edit_action = None;
     let mut displayed = 0..0;
-    let result = scroll.show_viewport(&mut body_ui, |ui, viewport| {
-        let total = row_top(visible.len());
-        ui.set_height(total);
+    scroll.show_viewport(&mut body_ui, |ui, viewport| {
+        ui.set_height(rows.total());
         let origin = ui.max_rect().min;
         let width = ui.available_width();
-        // Each turn and the expanded editor are distinct variable-height items.
+        // Each turn and its expanded editor share one variable-height item.
         // Only intersecting items create widgets; the editor scrolls with its row.
-        for (row, &idx) in visible.iter().enumerate() {
-            let top = row_top(row);
-            let bottom = top + t::TABLE_ROW_HEIGHT;
-            if bottom >= viewport.top() && top <= viewport.bottom() {
-                if displayed.is_empty() {
-                    displayed.start = row;
-                }
-                displayed.end = row + 1;
-                let row_rect =
-                    Rect::from_min_size(origin + vec2(0.0, top), vec2(width, t::TABLE_ROW_HEIGHT));
-                let mut row_ui = ui.new_child(
-                    egui::UiBuilder::new()
-                        .id_salt(("row", idx))
-                        .max_rect(row_rect),
-                );
-                let ui = &mut row_ui;
-                let idx = visible[row];
-                let turn = &episode.turns[idx];
-                let speaker = &episode.speakers[turn.speaker_idx];
-                let (rect, response) = ui.allocate_exact_size(
-                    vec2(ui.available_width(), t::TABLE_ROW_HEIGHT),
-                    Sense::click(),
-                );
-                let active = selected == Some(idx) || multi.contains(&idx);
-                ui.painter().rect_filled(
-                    rect,
-                    0,
-                    if active {
-                        t::BG_SELECTED
-                    } else if turn.verification == V::Failed {
-                        t::BG_DANGER_ROW
-                    } else {
-                        t::BG_SURFACE
-                    },
-                );
-                view::rule(ui, rect);
-                let cells = columns(rect, &widths);
-                let playing_row = playing == Some(idx);
-                view::line(
-                    ui,
-                    cells[0],
-                    &if playing_row {
-                        format!("▶{:03}", turn.index)
-                    } else {
-                        format!("{:03}", turn.index)
-                    },
-                    t::mono(t::NUMERIC),
-                    if active || playing_row {
-                        t::accent()
-                    } else {
-                        t::TEXT_MUTED
-                    },
-                );
-                view::line(
-                    ui,
-                    cells[1],
-                    &view::time(turn.start_ms),
-                    t::mono(t::NUMERIC),
-                    t::TEXT_MUTED,
-                );
-                let colour = t::speaker_colour(speaker.colour_idx);
-                view::line(
-                    ui,
-                    cells[2],
-                    &speaker.name,
-                    t::font(t::SPEAKER_LABEL),
-                    colour,
-                );
-                view::line(
-                    ui,
-                    cells[3],
-                    &turn.first_words,
-                    t::font(t::BODY),
-                    t::TEXT_PRIMARY,
-                );
-                view::line(
-                    ui,
-                    cells[4],
-                    &format!("{:.2} s", (turn.end_ms - turn.start_ms) as f64 / 1000.0),
-                    t::mono(t::NUMERIC),
-                    t::TEXT_MUTED,
-                );
-                let (label, colour) = if edited.contains(&idx) {
-                    ("Edited", t::accent())
+        displayed = rows.visible(viewport.top(), viewport.bottom());
+        for row in displayed.clone() {
+            let idx = visible[row];
+            let row_rect = Rect::from_min_size(
+                origin + vec2(0.0, rows.top(row)),
+                vec2(width, rows.height(row)),
+            );
+            let mut row_ui = ui.new_child(
+                egui::UiBuilder::new()
+                    .id_salt(("row", idx))
+                    .max_rect(row_rect),
+            );
+            let ui = &mut row_ui;
+            let turn = &episode.turns[idx];
+            let speaker = &episode.speakers[turn.speaker_idx];
+            let (rect, response) = ui.allocate_exact_size(row_rect.size(), Sense::click());
+            let active = selected == Some(idx) || multi.contains(&idx);
+            ui.painter().rect_filled(
+                rect,
+                0,
+                if active {
+                    t::BG_SELECTED
+                } else if turn.verification == V::Failed {
+                    t::BG_DANGER_ROW
                 } else {
-                    view::verification_label(turn.verification)
-                };
-                view::line(ui, cells[5], label, t::font(t::SECONDARY), colour);
-                let response = response.on_hover_text(format!(
-                    "Turn {:03} · {}\n{}\n{}",
-                    turn.index, speaker.name, turn.first_words, label
-                ));
-                if response.clicked() || response.double_clicked() {
-                    clicked = Some((idx, response.double_clicked()));
-                }
-            }
-            if read_row == Some(row)
-                && bottom + read_height >= viewport.top()
-                && bottom <= viewport.bottom()
-            {
-                let rect =
-                    Rect::from_min_size(origin + vec2(0.0, bottom), vec2(width, read_height));
-                strip.as_ref().unwrap().paint(ui, rect);
-                view::rule(ui, rect);
-            }
-            let bottom = bottom
-                + if read_row == Some(row) {
-                    read_height
+                    t::BG_SURFACE
+                },
+            );
+            view::rule(ui, rect);
+            let transcript = &cache.rows[&idx].transcript;
+            let cells = columns(rect, &widths);
+            let first_line_height = transcript
+                .galley
+                .rows
+                .first()
+                .map_or_else(|| t::line_height(ui, t::font(t::BODY)), |row| row.size.y);
+            let top_cells = cells.map(|mut cell| {
+                cell.max.y = cell.top() + first_line_height + t::SPACE_4 * 2.0;
+                cell
+            });
+            let playing_row = playing == Some(idx);
+            view::line(
+                ui,
+                top_cells[0],
+                &if playing_row {
+                    format!("▶{:03}", turn.index)
                 } else {
-                    0.0
-                };
-            if editor_row == Some(row)
-                && bottom + editor_height >= viewport.top()
-                && bottom <= viewport.bottom()
-            {
-                let rect =
-                    Rect::from_min_size(origin + vec2(0.0, bottom), vec2(width, editor_height));
-                ui.painter().rect_filled(rect, 0, t::BG_SURFACE);
+                    format!("{:03}", turn.index)
+                },
+                t::mono(t::NUMERIC),
+                if active || playing_row {
+                    t::accent()
+                } else {
+                    t::TEXT_MUTED
+                },
+            );
+            view::line(
+                ui,
+                top_cells[1],
+                &view::time(turn.start_ms),
+                t::mono(t::NUMERIC),
+                t::TEXT_MUTED,
+            );
+            view::line(
+                ui,
+                top_cells[2],
+                &speaker.name,
+                t::font(t::SPEAKER_LABEL),
+                t::speaker_colour(speaker.colour_idx),
+            );
+            if editor_turn == Some(idx) {
                 let mut editor_ui = ui.new_child(
                     egui::UiBuilder::new()
                         .id_salt("row_editor")
-                        .max_rect(rect.shrink(t::SPACE_16))
+                        .max_rect(cells[3].shrink2(vec2(0.0, t::SPACE_4)))
                         .layout(egui::Layout::top_down(egui::Align::Min)),
                 );
-                editor_ui.set_clip_rect(rect.intersect(ui.clip_rect()));
-                let turn = &episode.turns[idx];
-                editor_ui.horizontal_wrapped(|ui| {
-                    ui.label(t::heading("Inline transcript edit", t::SECONDARY));
-                    ui.label(
-                        t::text("Draft", t::CAPTION, t::accent()).background_color(t::BG_CONTROL),
-                    );
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.label(t::text(
-                            format!(
-                                "Turn {:03} · {}",
-                                turn.index, episode.speakers[turn.speaker_idx].name
-                            ),
-                            t::CAPTION,
-                            t::TEXT_MUTED,
-                        ));
-                    });
-                });
-                edit_action = editing::editor(&mut editor_ui, editing, field_height, true, enabled);
-                view::rule(ui, rect);
+                editor_ui.set_clip_rect(cells[3].intersect(ui.clip_rect()));
+                edit_action =
+                    editing::inline_editor(&mut editor_ui, editing, field_height, enabled);
+            } else {
+                transcript.paint(ui, cells[3]);
+            }
+            view::line(
+                ui,
+                top_cells[4],
+                &format!("{:.2} s", (turn.end_ms - turn.start_ms) as f64 / 1000.0),
+                t::mono(t::NUMERIC),
+                t::TEXT_MUTED,
+            );
+            let (label, colour) = if edited.contains(&idx) {
+                ("Edited", t::accent())
+            } else {
+                view::verification_label(turn.verification)
+            };
+            view::line(ui, top_cells[5], label, t::font(t::SECONDARY), colour);
+            let response = response.on_hover_text(format!(
+                "Turn {:03} · {}\n{}\n{}",
+                turn.index,
+                speaker.name,
+                editing.body(idx).unwrap_or(&turn.first_words),
+                label,
+            ));
+            if response.clicked() || response.double_clicked() {
+                clicked = Some((idx, response.double_clicked()));
             }
         }
     });
@@ -360,7 +394,6 @@ pub fn show(
             t::TEXT_MUTED,
         );
     }
-    let _ = result;
     let range = displayed;
     let summary = if failed_only {
         format!(
@@ -429,6 +462,35 @@ mod tests {
             &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/episode_small"),
         )
         .unwrap()
+    }
+    #[test]
+    fn prefix_sums_mix_one_and_two_line_heights_and_scroll_to() {
+        let heights = [
+            t::TABLE_ROW_HEIGHT,
+            t::TABLE_ROW_HEIGHT_2,
+            t::TABLE_ROW_HEIGHT,
+            t::TABLE_ROW_HEIGHT_2,
+        ];
+        let rows = RowOffsets::new(heights);
+        assert_eq!(
+            rows.total(),
+            t::TABLE_ROW_HEIGHT * 2.0 + t::TABLE_ROW_HEIGHT_2 * 2.0
+        );
+        assert_eq!(rows.height(0), t::TABLE_ROW_HEIGHT);
+        assert_eq!(rows.height(1), t::TABLE_ROW_HEIGHT_2);
+        assert_eq!(rows.top(0), 0.0);
+        assert_eq!(rows.top(1), t::TABLE_ROW_HEIGHT);
+        assert_eq!(rows.top(2), t::TABLE_ROW_HEIGHT + t::TABLE_ROW_HEIGHT_2);
+        assert_eq!(rows.scroll_to(2), rows.top(2));
+        assert_eq!(rows.scroll_to(3), rows.top(3));
+        // Viewport covering only the second (tall) row.
+        let top = rows.top(1);
+        let bottom = top + rows.height(1) - 1.0;
+        assert_eq!(rows.visible(top, bottom), 1..2);
+        // Viewport spanning a short row into the next tall row.
+        let top = rows.top(2) + 1.0;
+        let bottom = rows.top(3) + 10.0;
+        assert_eq!(rows.visible(top, bottom), 2..4);
     }
     #[test]
     fn columns_keep_at_least_the_design_token_width() {
