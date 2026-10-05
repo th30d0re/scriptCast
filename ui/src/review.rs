@@ -77,6 +77,24 @@ pub struct AcceptPair {
     pub word: String,
     pub heard: String,
     pub checked: bool,
+    /// Accepting this would let a very common word pass in every turn of the
+    /// project (operator, 2026-10-05: "in" heard as "it" slipped in this way).
+    pub risky: bool,
+}
+
+/// Short, frequent words an accepted hearing would wave through project-wide.
+const COMMON_WORDS: &[&str] = &[
+    "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "from", "had", "has", "have",
+    "he", "her", "his", "i", "if", "in", "into", "is", "it", "its", "me", "my", "no", "not", "of",
+    "on", "or", "our", "she", "so", "that", "the", "their", "them", "then", "there", "they",
+    "this", "to", "up", "us", "was", "we", "were", "what", "when", "which", "who", "will", "with",
+    "you", "your",
+];
+
+/// True when accepting `word` heard as `heard` is likely to hide real errors.
+pub fn risky_accept(word: &str, heard: &str) -> bool {
+    let common = |w: &str| w.chars().count() <= 2 || COMMON_WORDS.contains(&w);
+    common(word) || common(heard)
 }
 
 #[derive(Clone, Debug)]
@@ -93,12 +111,19 @@ pub struct DecisionForm {
 impl DecisionForm {
     pub fn for_turn(turn_id: &str, expected: &str, heard: &str) -> Self {
         let pairs = replace_pairs(expected, heard);
+        // Pre-tick only a lone, uncommon pair. Several pairs from one span, or a
+        // common word, must be chosen deliberately.
+        let single = pairs.len() == 1;
         let accepts = pairs
             .into_iter()
-            .map(|(word, heard)| AcceptPair {
-                word,
-                heard,
-                checked: true,
+            .map(|(word, heard)| {
+                let risky = risky_accept(&word, &heard);
+                AcceptPair {
+                    checked: single && !risky,
+                    word,
+                    heard,
+                    risky,
+                }
             })
             .collect();
         Self {
@@ -322,7 +347,8 @@ mod tests {
         let form = DecisionForm::for_turn("t1", "alpha beta gamma", "alfa better gamma");
         assert!(form.single_accept().is_none());
         assert_eq!(form.accepts.len(), 2);
-        assert!(form.accepts.iter().all(|p| p.checked));
+        // Several pairs from one span start unticked: the operator chooses each.
+        assert!(form.accepts.iter().all(|p| !p.checked));
     }
 
     #[test]
@@ -377,5 +403,17 @@ mod tests {
         };
         let args = add_args(&request, &form);
         assert!(!args.iter().any(|a| a == "--accept"));
+    }
+
+    #[test]
+    fn common_or_multi_pair_accepts_start_unticked() {
+        let form = DecisionForm::for_turn("t", "trained in the loop", "trained it the loop");
+        assert_eq!(form.accepts.len(), 1);
+        assert!(form.accepts[0].risky);
+        assert!(!form.accepts[0].checked);
+        let form = DecisionForm::for_turn("t", "alpha beta gamma", "alfa better gamma");
+        assert!(form.accepts.iter().all(|p| !p.checked));
+        let form = DecisionForm::for_turn("t", "the potestas clause", "the potty clause");
+        assert!(form.accepts[0].checked && !form.accepts[0].risky);
     }
 }

@@ -1030,6 +1030,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                     .single_accept()
                     .map(|p| (p.word.clone(), p.heard.clone()))
                 {
+                    let risky = form.accepts[0].risky;
                     let checked = &mut form.accepts[0].checked;
                     ui.checkbox(
                         checked,
@@ -1039,9 +1040,17 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                             t::TEXT_PRIMARY,
                         ),
                     );
+                    if risky {
+                        ui.label(t::text(RISKY_ACCEPT_NOTE, t::CAPTION, t::STATUS_FAILED));
+                    }
                 } else if !form.accepts.is_empty() {
                     ui.label(t::text(
                         "Accept hearings for future verifications:",
+                        t::CAPTION,
+                        t::TEXT_MUTED,
+                    ));
+                    ui.label(t::text(
+                        "Several words differ: tick only the hearings you are sure of.",
                         t::CAPTION,
                         t::TEXT_MUTED,
                     ));
@@ -1054,6 +1063,9 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                                 t::TEXT_PRIMARY,
                             ),
                         );
+                        if pair.risky {
+                            ui.label(t::text(RISKY_ACCEPT_NOTE, t::CAPTION, t::STATUS_FAILED));
+                        }
                     }
                 }
             }
@@ -1410,6 +1422,10 @@ for p in &cp.files {
 #[cfg(test)]
 #[path = "../tests/common/mod.rs"]
 mod common;
+
+/// Shown under an accept checkbox whose word is too common to allow project-wide.
+const RISKY_ACCEPT_NOTE: &str =
+    "Common word: accepting it would let this hearing pass in every turn of the project.";
 
 #[cfg(test)]
 mod tests {

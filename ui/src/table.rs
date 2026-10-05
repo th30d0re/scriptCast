@@ -536,14 +536,7 @@ pub fn show(
                     scriptcast_ui::find::occurrences(idx, raw, matcher, options)
                 });
                 let current = find.current.and_then(|i| find.matches.get(i));
-                paint_matches(
-                    ui,
-                    text_rect,
-                    transcript,
-                    &row_text,
-                    &highlights,
-                    current,
-                );
+                paint_matches(ui, text_rect, transcript, &row_text, &highlights, current);
                 transcript.paint(ui, text_rect);
             }
             view::line(
