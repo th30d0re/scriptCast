@@ -49,7 +49,7 @@ impl ColumnWidths {
             turn: t::fit_text_width(
                 header("Turn")
                     .max(mono(format!("{max_index:03}")))
-                    .max(mono(format!("▶{max_index:03}"))),
+                    .max(mono(format!("▶ {max_index:03}"))),
                 t::TABLE_COL_TURN,
             ),
             time: t::fit_text_width(
@@ -397,7 +397,7 @@ pub fn show(
                 ui,
                 top_cells[0],
                 &if playing_row {
-                    format!("▶{:03}", turn.index)
+                    format!("▶ {:03}", turn.index)
                 } else {
                     format!("{:03}", turn.index)
                 },
