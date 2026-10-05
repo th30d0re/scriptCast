@@ -1185,7 +1185,6 @@ impl Browser {
             None,
             logic_reason.is_none(),
         )
-        .on_hover_text(&logic_hint)
         .on_disabled_hover_text(&logic_hint)
         .clicked();
         let live_reason = if self.live_task.is_some() {
@@ -1200,7 +1199,6 @@ impl Browser {
                 .map_or_else(String::new, |p| format!("Open {} in Live", p.display()))
         });
         let live = t::secondary_button(&mut actions, "Open in Live", None, live_reason.is_none())
-            .on_hover_text(&live_hint)
             .on_disabled_hover_text(&live_hint)
             .clicked();
         reload |= t::secondary_button(
@@ -1249,12 +1247,10 @@ impl Browser {
         );
         view::line(&ui, title, name, t::bold(t::EPISODE_NAME), t::TEXT_PRIMARY);
         view::line(&ui, meta, &metadata, t::font(t::SECONDARY), t::TEXT_MUTED);
-        ui.interact(identity, ui.id().with("metadata"), Sense::hover())
-            .on_hover_text(if warnings.is_empty() {
-                metadata
-            } else {
-                format!("{metadata}\n\nWarnings:\n{warnings}")
-            });
+        if !warnings.is_empty() {
+            ui.interact(identity, ui.id().with("metadata"), Sense::hover())
+                .on_hover_text(format!("Warnings:\n{warnings}"));
+        }
         let ctx = ui.ctx().clone();
         if live && let Some(path) = self.episode.as_ref().and_then(daw::live_target) {
             self.daw_notice = Some(Ok(format!("Opening {} in Live", daw::filename(&path))));
@@ -1540,16 +1536,7 @@ impl Browser {
                 }
             });
 
-        let mut response = combo.response;
-        if let Some(Ok(audio)) = &self.audio {
-            let khz = audio.stream_rate() as f64 / 1000.0;
-            let tip = if khz.fract() == 0.0 {
-                format!("Output at {} kHz", khz as u64)
-            } else {
-                format!("Output at {:.1} kHz", khz)
-            };
-            response = response.on_hover_text(tip);
-        }
+        let response = combo.response;
 
         if response.clicked() {
             self.device_list = AudioOut::outputs();
@@ -1795,8 +1782,6 @@ impl Browser {
             t::font(t::CAPTION),
             color,
         );
-        ui.interact(left, ui.id().with("status_details"), Sense::hover())
-            .on_hover_text(&status);
     }
     fn poll_daw(&mut self) {
         for task in [&mut self.live_task, &mut self.logic_task] {

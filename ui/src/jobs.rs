@@ -637,7 +637,6 @@ impl Browser {
                             .unwrap_or_else(|e| e.clone())
                     };
                     if t::secondary_button(ui, p.label(), None, spec.is_ok())
-                        .on_hover_text(&hint)
                         .on_disabled_hover_text(&hint)
                         .clicked()
                     {
@@ -898,7 +897,6 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                         .map(|s| s.resolved.description())
                         .unwrap_or_else(|e| e.clone());
                     if t::secondary_button(ui, "Run…", None, s.is_ok())
-                        .on_hover_text(&run_hint)
                         .on_disabled_hover_text(&run_hint)
                         .clicked()
                     {
@@ -929,7 +927,6 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                         None,
                         s.is_ok(),
                     )
-                    .on_hover_text(&hint)
                     .on_disabled_hover_text(&hint)
                     .clicked()
                     {
@@ -1022,7 +1019,6 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                 .unwrap_or_else(|| "scriptcast-review unresolved".into());
             ui.add_space(t::SPACE_8);
             let save_clicked = t::primary_button(ui, "Save decision", None, can_save)
-                .on_hover_text(&save_hint)
                 .on_disabled_hover_text(&save_hint)
                 .clicked();
             if form.outcome == scriptcast_ui::review::Outcome::RecognizerMisheard {

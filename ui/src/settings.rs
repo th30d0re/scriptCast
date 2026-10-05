@@ -92,7 +92,6 @@ impl Browser {
                                 egui::Button::new(t::text("×", t::SECTION_TITLE, t::TEXT_MUTED))
                                     .frame(false),
                             )
-                            .on_hover_text("Close")
                             .clicked()
                         {
                             close = true;

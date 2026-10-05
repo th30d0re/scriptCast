@@ -593,17 +593,6 @@ pub fn show(
             } else {
                 view::line(ui, top_cells[5], label, t::font(t::SECONDARY), colour);
             }
-            let response = response.on_hover_text(format!(
-                "Turn {:03} · {}\n{}\n{}",
-                turn.index,
-                speaker.name,
-                editing.body(idx).unwrap_or(&turn.first_words),
-                if maybe_misheard {
-                    format!("{label} · maybe misheard")
-                } else {
-                    label.to_string()
-                },
-            ));
             if response.clicked() || response.double_clicked() {
                 clicked = Some((idx, response.double_clicked()));
             }

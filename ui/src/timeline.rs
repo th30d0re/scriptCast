@@ -256,12 +256,6 @@ pub fn show(
                 let colour = t::speaker_colour(speaker.colour_idx);
                 let label = Rect::from_min_size(lane.min, vec2(label_width, lane.height()));
                 view::line(ui, label, &speaker.name, t::font(t::SPEAKER_LABEL), colour);
-                ui.interact(
-                    label,
-                    ui.id().with(("speaker", speaker_idx)),
-                    Sense::hover(),
-                )
-                .on_hover_text(&speaker.name);
                 let track = Rect::from_min_max(pos2(ruler.left(), lane.top()), lane.right_bottom());
                 for (idx, turn) in episode.turns.iter().enumerate().filter(|(_, turn)| {
                     turn.speaker_idx == speaker_idx

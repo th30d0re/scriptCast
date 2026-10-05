@@ -225,7 +225,7 @@ pub fn mode_toggle(ui: &mut Ui, mode: &mut EditMode) -> egui::Response {
         t::font(t::CAPTION),
         t::accent(),
     );
-    response.on_hover_text(format!("Editing: {active}. Switch editing location."))
+    response
 }
 
 pub fn inline_field_height(ui: &Ui, text: &str, width: f32) -> f32 {

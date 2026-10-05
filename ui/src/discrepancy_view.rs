@@ -334,7 +334,6 @@ impl Browser {
                 .map(|s| s.resolved.description())
                 .unwrap_or_else(|e| e.clone());
             if t::secondary_button(ui, "Run…", None, s.is_ok())
-                .on_hover_text(&run_hint)
                 .on_disabled_hover_text(&run_hint)
                 .clicked()
             {
