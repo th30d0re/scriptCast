@@ -30,6 +30,10 @@ pub const ACCENT: Color32 = Color32::from_rgb(140, 175, 243);
 pub const ON_ACCENT: Color32 = Color32::from_rgb(21, 28, 41);
 pub const STATUS_PASSED: Color32 = Color32::from_rgb(154, 190, 176);
 pub const STATUS_FAILED: Color32 = Color32::from_rgb(240, 130, 135);
+/// Text on a danger pill (not-heard marks in side-panel mode).
+pub const ON_DANGER: Color32 = Color32::from_rgb(255, 252, 250);
+/// Fill for not-heard pills (same hue family as [`STATUS_FAILED`]).
+pub const DANGER_PILL: Color32 = Color32::from_rgb(196, 72, 82);
 /// Default speaker palette; live colours are [`speaker_colour`] / [`Appearance`].
 pub const SPEAKER: [Color32; 4] = [
     Color32::from_rgb(147, 177, 213),
@@ -220,6 +224,10 @@ pub const READ_ALONG_TEXT: f32 = 13.0;
 pub const READ_ALONG_RADIUS: f32 = 3.0;
 pub const READ_ALONG_PAD_X: f32 = 4.0;
 pub const READ_ALONG_PAD_Y: f32 = 2.0;
+/// "not heard" label inside a danger pill (design ~9 px).
+pub const NOT_HEARD_LABEL: f32 = TEXT_9;
+/// Soft character budget for the inline "N words not heard: …" line.
+pub const NOT_HEARD_SUMMARY_MAX: usize = 72;
 /// Vertical pad inside the audio-clip badge (Figma 48:139).
 pub const AUDIO_CLIP_BADGE_PAD: f32 = 7.0;
 /// Space above and below the Audio clip badge, so it clears the surrounding text.

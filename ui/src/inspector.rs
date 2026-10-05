@@ -454,7 +454,7 @@ fn ensemble_block(
         }
     }
     let width = ui.available_width();
-    let measured = read_along::Transcript::measure(ui, ensemble, width, active);
+    let measured = read_along::Transcript::measure_simple(ui, ensemble, width, active);
     let height = measured.galley.size().y + t::SPACE_4 * 2.0;
     let (rect, _) = ui.allocate_exact_size(vec2(width, height), Sense::hover());
     measured.paint(ui, rect);

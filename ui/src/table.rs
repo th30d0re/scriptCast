@@ -4,9 +4,43 @@ use crate::{
 };
 use eframe::egui::{self, Rect, Sense, Ui, pos2, vec2};
 use scriptcast_ui::{
-    episode::{Episode, VerificationState as V},
-    script, theme as t,
+    episode::{Episode, Turn, VerificationState as V},
+    not_heard, script, theme as t,
 };
+
+/// True when a turn's WAV is newer than `stress.json` (audio re-rendered since verify).
+fn turn_stress_stale(episode: &Episode, turn: &Turn) -> bool {
+    let Some(stress_time) = episode.stress_mtime else {
+        return false;
+    };
+    turn.wav_paths.iter().any(|path| {
+        std::fs::metadata(path)
+            .and_then(|meta| meta.modified())
+            .ok()
+            .is_some_and(|wav_time| wav_time > stress_time)
+    })
+}
+
+/// Display-text byte ranges for words Whisper did not hear on a Failed turn.
+fn not_heard_ranges(episode: &Episode, turn: &Turn, display: &str) -> Vec<(usize, usize)> {
+    if turn.verification != V::Failed || turn_stress_stale(episode, turn) {
+        return Vec::new();
+    }
+    let Some(verify) = turn.verify.as_ref() else {
+        return Vec::new();
+    };
+    if verify.expected.trim().is_empty() {
+        return Vec::new();
+    }
+    not_heard::not_heard_in_display(&verify.expected, &verify.heard, display)
+}
+
+fn not_heard_style(edit_mode: EditMode) -> read_along::NotHeardStyle {
+    match edit_mode {
+        EditMode::Row => read_along::NotHeardStyle::Inline,
+        EditMode::Panel => read_along::NotHeardStyle::Pill,
+    }
+}
 
 /// Fixed column widths sized from measured text, with the design tokens as
 /// minimums (OpenDyslexic is much wider than the design's Inter).
@@ -102,40 +136,56 @@ struct CachedText {
     font: egui::FontId,
     pixels_per_point: f32,
     active: Option<std::ops::Range<usize>>,
+    not_heard: Vec<(usize, usize)>,
+    not_heard_style: Option<read_along::NotHeardStyle>,
     transcript: read_along::Transcript,
 }
+
+struct MeasureArgs<'a> {
+    turn: usize,
+    text: &'a str,
+    width: f32,
+    active: Option<std::ops::Range<usize>>,
+    not_heard: &'a [(usize, usize)],
+    not_heard_style: Option<read_along::NotHeardStyle>,
+}
+
 impl TextCache {
-    fn measure(
-        &mut self,
-        ui: &Ui,
-        turn: usize,
-        text: &str,
-        width: f32,
-        active: Option<std::ops::Range<usize>>,
-    ) -> &read_along::Transcript {
+    fn measure(&mut self, ui: &Ui, args: MeasureArgs<'_>) -> &read_along::Transcript {
         let font = t::font(t::BODY);
         let pixels_per_point = ui.ctx().pixels_per_point();
-        let valid = self.rows.get(&turn).is_some_and(|cached| {
-            cached.text == text
-                && cached.width == width
+        let valid = self.rows.get(&args.turn).is_some_and(|cached| {
+            cached.text == args.text
+                && cached.width == args.width
                 && cached.font == font
                 && cached.pixels_per_point == pixels_per_point
-                && cached.active == active
+                && cached.active == args.active
+                && cached.not_heard == args.not_heard
+                && cached.not_heard_style == args.not_heard_style
         });
         if !valid {
             self.rows.insert(
-                turn,
+                args.turn,
                 CachedText {
-                    text: text.into(),
-                    width,
+                    text: args.text.into(),
+                    width: args.width,
                     font,
                     pixels_per_point,
-                    active: active.clone(),
-                    transcript: read_along::Transcript::measure(ui, text, width, active),
+                    active: args.active.clone(),
+                    not_heard: args.not_heard.to_vec(),
+                    not_heard_style: args.not_heard_style,
+                    transcript: read_along::Transcript::measure(
+                        ui,
+                        args.text,
+                        args.width,
+                        args.active,
+                        args.not_heard,
+                        args.not_heard_style,
+                    ),
                 },
             );
         }
-        &self.rows[&turn].transcript
+        &self.rows[&args.turn].transcript
     }
 }
 
@@ -287,11 +337,19 @@ pub fn show(
         .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysVisible)
         .auto_shrink([false, false]);
     let content_width = (body.width() - body_ui.spacing().scroll.allocated_width()).max(0.0);
-    let transcript_width = columns(
+    let layout_width = columns(
         Rect::from_min_size(body.min, vec2(content_width, body.height())),
         &widths,
     )[3]
     .width();
+    // Prefer last painted cell width so wrap matches the clip rect (avoids
+    // end-of-line clipping of not-heard labels when scrollbar math differs).
+    let width_id = egui::Id::new("turn_table_transcript_w");
+    let transcript_width = body_ui.ctx().data(|d| {
+        d.get_temp::<f32>(width_id)
+            .map(|painted| painted.min(layout_width))
+            .unwrap_or(layout_width)
+    });
     let editor_turn = (edit_mode == EditMode::Row)
         .then(|| editing.draft.as_ref().map(|draft| draft.turn))
         .flatten();
@@ -327,7 +385,19 @@ pub fn show(
                     read_along::active_range(&text, words, position)
                 }
             });
-        let transcript = cache.measure(&body_ui, idx, &text, transcript_width, active);
+        let marks = not_heard_ranges(episode, &episode.turns[idx], &text);
+        let mark_style = (!marks.is_empty()).then(|| not_heard_style(edit_mode));
+        let transcript = cache.measure(
+            &body_ui,
+            MeasureArgs {
+                turn: idx,
+                text: &text,
+                width: transcript_width,
+                active,
+                not_heard: &marks,
+                not_heard_style: mark_style,
+            },
+        );
         if editor_turn == Some(idx) {
             editor_height
         } else {
@@ -381,8 +451,29 @@ pub fn show(
                 },
             );
             view::rule(ui, rect);
-            let transcript = &cache.rows[&idx].transcript;
             let cells = columns(rect, &widths);
+            ui.ctx()
+                .data_mut(|d| d.insert_temp(width_id, cells[3].width()));
+            let (row_text, row_active, row_marks, row_style) = {
+                let cached = &cache.rows[&idx];
+                (
+                    cached.text.clone(),
+                    cached.active.clone(),
+                    cached.not_heard.clone(),
+                    cached.not_heard_style,
+                )
+            };
+            let transcript = cache.measure(
+                ui,
+                MeasureArgs {
+                    turn: idx,
+                    text: &row_text,
+                    width: cells[3].width(),
+                    active: row_active,
+                    not_heard: &row_marks,
+                    not_heard_style: row_style,
+                },
+            );
             let first_line_height = transcript
                 .galley
                 .rows
@@ -449,7 +540,7 @@ pub fn show(
                     ui,
                     text_rect,
                     transcript,
-                    &cache.rows[&idx].text,
+                    &row_text,
                     &highlights,
                     current,
                 );
