@@ -116,3 +116,12 @@ Captured from Figma frames `4:18121` (A, direct inline editing) and `23:2` (B, s
 - **Mode toggle.** A filter-bar segmented button "Inline / Side panel" sits after "Failed only", showing the active mode as a small pill ("Inline"). It is the same setting as Settings → Editing.
 - **Playback bar.** The second line of the current-audio block reads "Turn 004 · Jordan · Paused" when paused.
 - **B, read-along.** The current word is highlighted **inside the playing row's Transcript text**: an accent pill, radius 3, padding 4×2, semibold, in on-accent text. There is no extra read-along row under the playing row.
+
+## Update 2026-10-04 (later): failed turns show the words that were not heard
+
+Captured from Figma `4:18121` (A) and `23:2` (B) into `screens/03g-failed-turns/`.
+
+- **Source.** For a failed turn, compare the expected text with Whisper's heard text from `stress.json` (the same normalised-token diff the verifier uses). Expected words that were deleted or replaced are "not heard".
+- **A, inline.** Not-heard words are drawn in danger colour, semibold (bold face), inside the Transcript text. Under the text, in the row, a danger line reads: `N words not heard: "<words>"` (quoted, joined by spaces, truncated with … if long).
+- **B, side panel.** Not-heard words sit on a danger pill (danger background, on-danger text) followed by a small "not heard" label inside the pill. They coexist with the read-along accent pill on the current word.
+- **Scope.** Only rows whose verification is Failed get this. Passed and unverified rows are unchanged. When a turn's audio has been re-rendered since verification (stale `stress.json`), show nothing rather than wrong marks.
