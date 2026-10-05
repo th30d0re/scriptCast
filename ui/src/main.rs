@@ -1712,7 +1712,8 @@ impl Browser {
     fn status(&self, ui: &mut Ui) {
         let rect = view::inset(ui.max_rect(), t::SPACE_20, 0.0);
         let status = if self.discrepancy_open {
-            "[ Previous difference ] Next difference Space Play/pause · Cmd+Return Save decision".into()
+            "[ Previous difference ] Next difference Space Play/pause · Cmd+Return Save decision"
+                .into()
         } else if self.jobs.confirmation.is_some() || self.jobs.restore.is_some() {
             "Awaiting confirmation · no job has started".into()
         } else if let Some(notice) = &self.editing.notice {

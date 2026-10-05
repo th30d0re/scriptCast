@@ -318,8 +318,8 @@ pub fn show(
                     position,
                 );
                 if clip.is_some() {
-                    // Row highlight only when script word count matches ensemble.
-                    let words = episode.clip_transcripts.words(turn_id)?;
+                    // Prefer script_words (v2) so digit years still highlight in-row.
+                    let words = episode.clip_transcripts.row_words(turn_id)?;
                     read_along::word_mapping(&text, &words)?;
                     read_along::active_range(&text, &words, position)
                 } else {

@@ -192,3 +192,91 @@ def test_atomic_success_uses_os_replace(episode, monkeypatch):
     assert ct.main([str(directory), "--script", str(script)]) == 0
     assert seen and seen[0][1] == "clip_transcripts.json"
     assert (directory / "clip_transcripts.json").is_file()
+
+
+@pytest.mark.parametrize(
+    ("token", "expected"),
+    [
+        ("1954", ["nineteen", "fifty", "four"]),
+        ("1968", ["nineteen", "sixty", "eight"]),
+        ("2012", ["twenty", "twelve"]),
+        ("21", ["twenty", "one"]),
+        ("0", ["zero"]),
+        ("100", ["one", "hundred"]),
+        ("4000", ["four", "thousand"]),
+    ],
+)
+def test_spoken_number_tokens(token, expected):
+    assert ct.spoken_number_tokens(token) == expected
+    assert ct._year_two_thousand_tokens("2012") == [
+        "two",
+        "thousand",
+        "twelve",
+    ]
+
+
+def test_align_script_words_year_filler_and_gaps():
+    from types import SimpleNamespace
+
+    turn = SimpleNamespace(
+        turn_index=1,
+        clean_text="[clip:demo] In 1954 he said hello world.",
+    )
+    ensemble = [
+        {"text": "In", "start_ms": 0, "end_ms": 100, "engine": "phonon-2"},
+        {"text": "nineteen", "start_ms": 100, "end_ms": 200, "engine": "phonon-2"},
+        {"text": "fifty", "start_ms": 200, "end_ms": 300, "engine": "phonon-2"},
+        {"text": "four", "start_ms": 300, "end_ms": 400, "engine": "phonon-2"},
+        {"text": "he", "start_ms": 400, "end_ms": 500, "engine": "phonon-2"},
+        {"text": "said", "start_ms": 500, "end_ms": 600, "engine": "phonon-2"},
+        {"text": "uh", "start_ms": 600, "end_ms": 700, "engine": "phonon-2"},
+        {"text": "hallo", "start_ms": 700, "end_ms": 800, "engine": "phonon-2"},
+        {"text": "world", "start_ms": 900, "end_ms": 1000, "engine": "phonon-2"},
+    ]
+    aligned = ct.align_script_words(turn, ensemble, duration=1.2)
+    by_text = {word["text"].strip(".,!?"): word for word in aligned}
+    assert [w["text"] for w in aligned] == [
+        "In",
+        "1954",
+        "he",
+        "said",
+        "hello",
+        "world.",
+    ]
+    assert by_text["1954"]["matched"] is True
+    assert by_text["1954"]["start_ms"] == 100
+    assert by_text["1954"]["end_ms"] == 400
+    assert by_text["In"]["matched"] is True
+    assert by_text["he"]["matched"] is True
+    assert by_text["said"]["matched"] is True
+    assert by_text["world"]["matched"] is True
+    # Filler "uh" is ASR-only; misheard "hello"/"hallo" is unmatched and gap-filled.
+    assert by_text["hello"]["matched"] is False
+    assert by_text["1954"]["end_ms"] <= by_text["he"]["start_ms"]
+    assert by_text["said"]["end_ms"] <= by_text["hello"]["start_ms"]
+    assert by_text["hello"]["end_ms"] <= by_text["world"]["start_ms"]
+
+
+def test_version_2_includes_script_words_keeps_old_fields(episode):
+    directory, script, _, turns, _ = episode
+    assert ct.main([str(directory), "--script", str(script)]) == 0
+    data = json.loads((directory / "clip_transcripts.json").read_text())
+    assert data["version"] == 2
+    entry = data["turns"][turns[1].turn_id]
+    assert [word["text"] for word in entry["words"]] == [
+        "First",
+        "half",
+        "second",
+        "half",
+    ]
+    assert entry["clip_id"] == "atwater_1981"
+    assert entry["whisper_disagreement_pct"] == 20.0
+    assert entry["listen_manually"] is True
+    assert "script_words" in entry
+    assert len(entry["script_words"]) == 3  # historical audio here
+    assert {key for key in entry["script_words"][0]} >= {
+        "text",
+        "start_ms",
+        "end_ms",
+        "matched",
+    }

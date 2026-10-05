@@ -289,7 +289,14 @@ pub fn show(
                             read_along::active_range(ensemble, &words, ms)
                         }
                     });
-                    ensemble_block(ui, clip, ensemble, active, !row_maps);
+                    ensemble_block(
+                        ui,
+                        clip,
+                        ensemble,
+                        active,
+                        !row_maps,
+                        clip.has_script_words(),
+                    );
                 } else if read_along && let Some(prompt) = clip_transcript_prompt(episode, &turn.id)
                 {
                     ui.label(t::text(prompt, t::SECONDARY, t::TEXT_MUTED));
@@ -392,13 +399,20 @@ fn ensemble_block(
     ensemble: &str,
     active: Option<std::ops::Range<usize>>,
     follow_recording: bool,
+    has_script_words: bool,
 ) {
     // Status lines first so disagreement / follow-recording stay above the fold
     // when the merged text is long.
     ui.spacing_mut().item_spacing.y = t::SPACE_5;
     t::field_label(ui, "Ensemble transcript");
     ui.spacing_mut().item_spacing.y = t::SPACE_8;
-    if follow_recording {
+    if has_script_words {
+        ui.label(t::text(
+            "Row highlighting is aligned to your transcript; unmatched words are approximate.",
+            t::CAPTION,
+            t::TEXT_MUTED,
+        ));
+    } else if follow_recording {
         ui.label(t::text(
             "Highlighting follows the recording's transcript",
             t::CAPTION,
