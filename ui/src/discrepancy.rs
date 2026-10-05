@@ -65,7 +65,7 @@ pub fn normalize_tokens(text: &str) -> Vec<String> {
         .collect()
 }
 
-fn is_number_token(w: &str) -> bool {
+pub(crate) fn is_number_token(w: &str) -> bool {
     if w.chars().all(|c| c.is_ascii_digit()) {
         return true;
     }
@@ -114,8 +114,8 @@ const NUMBER_WORDS: &[&str] = &[
     "nineties",
 ];
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Tag {
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Tag {
     Equal,
     Replace,
     Delete,
@@ -123,7 +123,7 @@ enum Tag {
 }
 
 /// SequenceMatcher-style opcodes over token slices (same approach as review.rs).
-fn opcodes(a: &[String], b: &[String]) -> Vec<(Tag, usize, usize, usize, usize)> {
+pub(crate) fn opcodes(a: &[String], b: &[String]) -> Vec<(Tag, usize, usize, usize, usize)> {
     let (n, m) = (a.len(), b.len());
     let mut dp = vec![vec![0usize; m + 1]; n + 1];
     for i in (0..n).rev() {

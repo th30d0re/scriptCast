@@ -6,6 +6,7 @@ pub mod daw;
 pub mod discrepancy;
 pub mod episode;
 pub mod find;
+pub mod not_heard;
 pub mod review;
 pub mod runner;
 pub mod script;
