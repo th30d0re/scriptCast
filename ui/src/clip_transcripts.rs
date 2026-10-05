@@ -14,6 +14,15 @@ pub struct ClipWord {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+pub struct ScriptWord {
+    pub text: String,
+    pub start_ms: u64,
+    pub end_ms: u64,
+    #[serde(default)]
+    pub matched: bool,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct CoverageWarning {
     #[serde(default)]
     pub excerpt: String,
@@ -25,6 +34,8 @@ pub struct CoverageWarning {
 pub struct ClipTurn {
     pub clip_id: String,
     pub words: Vec<ClipWord>,
+    #[serde(default)]
+    pub script_words: Vec<ScriptWord>,
     #[serde(default)]
     pub coverage_warnings: Vec<CoverageWarning>,
     #[serde(default)]
@@ -53,6 +64,21 @@ impl ClipTurn {
                 end_ms: w.end_ms,
             })
             .collect()
+    }
+
+    pub fn as_script_words(&self) -> Vec<Word> {
+        self.script_words
+            .iter()
+            .map(|w| Word {
+                text: w.text.clone(),
+                start_ms: w.start_ms,
+                end_ms: w.end_ms,
+            })
+            .collect()
+    }
+
+    pub fn has_script_words(&self) -> bool {
+        !self.script_words.is_empty()
     }
 
     pub fn all_phonon2(&self) -> bool {
@@ -96,6 +122,20 @@ fn manifest_hash(bytes: &[u8]) -> String {
         .collect()
 }
 
+fn times_ok(words: impl Iterator<Item = (u64, u64)>) -> bool {
+    let mut previous: Option<u64> = None;
+    for (start, end) in words {
+        if end < start {
+            return false;
+        }
+        if previous.is_some_and(|prev| start < prev) {
+            return false;
+        }
+        previous = Some(start);
+    }
+    true
+}
+
 impl ClipTranscripts {
     pub fn load(dir: &Path, manifest: &[u8]) -> Self {
         let bytes = match fs::read(dir.join("clip_transcripts.json")) {
@@ -125,9 +165,9 @@ impl ClipTranscripts {
             });
         }
         for turn in file.turns.values() {
-            if turn.words.iter().any(|w| w.end_ms < w.start_ms)
-                || turn.words.windows(2).any(|w| w[1].start_ms < w[0].start_ms)
-            {
+            let ensemble_ok = times_ok(turn.words.iter().map(|w| (w.start_ms, w.end_ms)));
+            let script_ok = times_ok(turn.script_words.iter().map(|w| (w.start_ms, w.end_ms)));
+            if !ensemble_ok || !script_ok {
                 return Err("Invalid clip word time bounds or order".into());
             }
         }
@@ -147,6 +187,18 @@ impl ClipTranscripts {
             None
         } else {
             Some(turn.as_words())
+        }
+    }
+
+    /// Prefer script-aligned timings for in-row highlighting when present (v2).
+    pub fn row_words(&self, turn_id: &str) -> Option<Vec<Word>> {
+        let turn = self.get(turn_id)?;
+        if !turn.script_words.is_empty() {
+            Some(turn.as_script_words())
+        } else if !turn.words.is_empty() {
+            Some(turn.as_words())
+        } else {
+            None
         }
     }
 }
@@ -197,6 +249,57 @@ mod tests {
             Some("Clip transcripts are out of date (episode re-rendered)")
         );
         assert!(ClipTranscripts::from_bytes(b"{", manifest).is_err());
+    }
+
+    #[test]
+    fn v1_without_script_words_keeps_ensemble_row_lookup() {
+        let manifest = b"manifest v1";
+        let bytes = serde_json::to_vec(&serde_json::json!({
+            "manifest_sha256": manifest_hash(manifest),
+            "turns": {
+                "t1": {
+                    "clip_id": "demo",
+                    "words": [
+                        {"text": "Hello", "start_ms": 0, "end_ms": 100, "engine": "phonon-2"}
+                    ]
+                }
+            }
+        }))
+        .unwrap();
+        let loaded = ClipTranscripts::from_bytes(&bytes, manifest).unwrap();
+        let turn = loaded.get("t1").unwrap();
+        assert!(!turn.has_script_words());
+        assert_eq!(loaded.row_words("t1").unwrap()[0].text, "Hello");
+    }
+
+    #[test]
+    fn v2_row_words_prefer_script_words() {
+        let manifest = b"manifest v2";
+        let bytes = serde_json::to_vec(&serde_json::json!({
+            "version": 2,
+            "manifest_sha256": manifest_hash(manifest),
+            "turns": {
+                "t1": {
+                    "clip_id": "demo",
+                    "words": [
+                        {"text": "nineteen", "start_ms": 100, "end_ms": 200, "engine": "x"},
+                        {"text": "fifty", "start_ms": 200, "end_ms": 300, "engine": "x"},
+                        {"text": "four", "start_ms": 300, "end_ms": 400, "engine": "x"}
+                    ],
+                    "script_words": [
+                        {"text": "1954", "start_ms": 100, "end_ms": 400, "matched": true}
+                    ]
+                }
+            }
+        }))
+        .unwrap();
+        let loaded = ClipTranscripts::from_bytes(&bytes, manifest).unwrap();
+        let row = loaded.row_words("t1").unwrap();
+        assert_eq!(row.len(), 1);
+        assert_eq!(row[0].text, "1954");
+        assert_eq!(row[0].start_ms, 100);
+        assert_eq!(row[0].end_ms, 400);
+        assert_eq!(loaded.words("t1").unwrap().len(), 3);
     }
 
     #[test]

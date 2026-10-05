@@ -21,6 +21,15 @@ pub fn settings_layout(screen_height: f32, title_height: f32, done_height: f32) 
     }
 }
 
+/// Bundle version plus short git hash from `build.rs` (copyable in Settings).
+pub fn version_line() -> String {
+    format!(
+        "scriptCast {} ({})",
+        env!("CARGO_PKG_VERSION"),
+        env!("SCRIPTCAST_GIT")
+    )
+}
+
 impl Browser {
     pub(crate) fn settings_window(&mut self, ctx: &egui::Context) {
         if !self.settings_open {
@@ -60,6 +69,7 @@ impl Browser {
             t::SPACE_20 * 2.0,
             t::BUTTON_HEIGHT + t::SPACE_16,
         );
+        let version = version_line();
 
         let response = egui::Modal::new(egui::Id::new("settings"))
             .backdrop_color(t::BG_SCRIM)
@@ -260,6 +270,9 @@ impl Browser {
                 if t::primary_button(ui, "Done", None, true).clicked() {
                     close = true;
                 }
+                ui.add(
+                    egui::Label::new(t::text(&version, t::CAPTION, t::TEXT_MUTED)).selectable(true),
+                );
             });
 
         if close || response.should_close() {
@@ -311,5 +324,16 @@ mod tests {
         assert!(layout.scroll_max_height < 600.0);
         let chrome = 40.0_f32 + 46.0;
         assert!(layout.title_on_screen && chrome < 600.0);
+    }
+
+    #[test]
+    fn version_line_includes_package_version() {
+        let line = version_line();
+        assert!(!line.is_empty());
+        assert!(
+            line.contains(env!("CARGO_PKG_VERSION")),
+            "version line missing package version: {line}"
+        );
+        assert!(line.starts_with("scriptCast "));
     }
 }
