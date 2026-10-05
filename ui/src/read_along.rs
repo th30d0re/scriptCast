@@ -232,7 +232,16 @@ impl Transcript {
                         0.0,
                         label_fmt.clone(),
                     );
-                    last.end = label.end;
+                    // Thin space with leading padding gives the pill a right margin
+                    // equal to its left one without covering the next word.
+                    let tail = append_section(
+                        &mut job,
+                        &mut job_chars,
+                        "\u{2009}",
+                        t::READ_ALONG_PAD_X,
+                        label_fmt.clone(),
+                    );
+                    last.end = tail.end.max(label.end);
                     danger_job.extend(danger_parts);
                 }
                 continue;

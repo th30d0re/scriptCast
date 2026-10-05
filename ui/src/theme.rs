@@ -222,7 +222,7 @@ pub const BUTTON: f32 = 12.0;
 pub const BODY: f32 = 12.0;
 pub const READ_ALONG_TEXT: f32 = 13.0;
 pub const READ_ALONG_RADIUS: f32 = 3.0;
-pub const READ_ALONG_PAD_X: f32 = 4.0;
+pub const READ_ALONG_PAD_X: f32 = 6.0;
 pub const READ_ALONG_PAD_Y: f32 = 2.0;
 /// "not heard" label inside a danger pill (design ~9 px).
 pub const NOT_HEARD_LABEL: f32 = TEXT_9;
