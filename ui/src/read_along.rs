@@ -201,7 +201,14 @@ impl Transcript {
                                 t::READ_ALONG_PAD_X,
                                 active_fmt.clone(),
                             );
-                            accent_job.push(range);
+                            let tail = append_section(
+                                &mut job,
+                                &mut job_chars,
+                                "\u{2009}",
+                                t::READ_ALONG_PAD_X,
+                                active_fmt.clone(),
+                            );
+                            accent_job.push(range.start..tail.end);
                         } else {
                             let range = append_section(
                                 &mut job,
@@ -257,7 +264,14 @@ impl Transcript {
                         t::READ_ALONG_PAD_X,
                         active_fmt.clone(),
                     );
-                    accent_job.push(range);
+                    let tail = append_section(
+                        &mut job,
+                        &mut job_chars,
+                        "\u{2009}",
+                        t::READ_ALONG_PAD_X,
+                        active_fmt.clone(),
+                    );
+                    accent_job.push(range.start..tail.end);
                 }
                 (SpanKind::NotHeard, Some(NotHeardStyle::Inline)) => {
                     append_section(
