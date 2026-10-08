@@ -672,8 +672,11 @@ pub const PIPELINE_WIDTH: f32 = 690.0;
 pub const PREVIEW_HEIGHT: f32 = 300.0;
 pub const PREVIEW_TURNS_WIDTH: f32 = 710.0;
 pub const PREVIEW_SPEAKERS_WIDTH: f32 = 340.0;
-pub const QUIT_WIDTH: f32 = 560.0;
+/// Content width. With `DIALOG_PADDING` on each side the framed alert is 440.
+pub const QUIT_WIDTH: f32 = 392.0;
 pub const PATH_CHOOSE_WIDTH: f32 = 80.0;
+pub const SWITCH_WIDTH: f32 = 36.0;
+pub const SWITCH_HEIGHT: f32 = 20.0;
 
 #[cfg(test)]
 mod tests {

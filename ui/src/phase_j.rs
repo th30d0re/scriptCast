@@ -89,30 +89,568 @@ fn modal(id: &str) -> egui::Modal {
                 .inner_margin(t::DIALOG_PADDING),
         )
 }
+fn paint_well(ui: &Ui, rect: egui::Rect) {
+    ui.painter().rect(
+        rect,
+        t::RADIUS_CONTROL,
+        t::BG_CONTROL,
+        egui::Stroke::new(t::BORDER, t::BORDER_DEFAULT),
+        egui::StrokeKind::Inside,
+    );
+}
 fn path_field(ui: &mut Ui, label: &str, value: &mut String, folder: bool) -> bool {
     ui.label(t::text(label, t::CAPTION, t::TEXT_MUTED));
-    ui.horizontal(|ui| {
-        let mut changed = ui
-            .add(
-                egui::TextEdit::singleline(value)
-                    .desired_width(ui.available_width() - t::PATH_CHOOSE_WIDTH),
-            )
-            .changed();
-        if ui.button("Choose…").clicked() {
-            let dialog = rfd::FileDialog::new();
-            let selected = if folder {
-                dialog.pick_folder()
-            } else {
-                dialog.pick_file()
-            };
-            if let Some(path) = selected {
-                *value = path.display().to_string();
-                changed = true;
-            }
+    let (rect, _) = ui.allocate_exact_size(
+        egui::vec2(ui.available_width(), t::BUTTON_HEIGHT),
+        egui::Sense::hover(),
+    );
+    paint_well(ui, rect);
+    let choose_w = t::text_width(ui, "Choose…", t::font(t::BODY)) + t::SPACE_16;
+    let choose = egui::Rect::from_min_size(
+        egui::pos2(rect.right() - choose_w, rect.top()),
+        egui::vec2(choose_w, rect.height()),
+    );
+    let edit = egui::Rect::from_min_max(rect.min, choose.left_bottom())
+        .shrink2(egui::vec2(t::SPACE_8, 0.0));
+    let mut changed = ui
+        .place(
+            edit,
+            egui::TextEdit::singleline(value)
+                .frame(egui::Frame::NONE)
+                .desired_width(edit.width()),
+        )
+        .changed();
+    let button = ui.place(
+        choose,
+        egui::Button::new(t::text("Choose…", t::BODY, t::accent())).frame(false),
+    );
+    if button.clicked() {
+        let dialog = rfd::FileDialog::new();
+        let selected = if folder {
+            dialog.pick_folder()
+        } else {
+            dialog.pick_file()
+        };
+        if let Some(path) = selected {
+            *value = path.display().to_string();
+            changed = true;
         }
-        changed
-    })
-    .inner
+    }
+    changed
+}
+fn text_well(ui: &mut Ui, value: &mut String) -> bool {
+    let (rect, _) = ui.allocate_exact_size(
+        egui::vec2(ui.available_width(), t::BUTTON_HEIGHT),
+        egui::Sense::hover(),
+    );
+    paint_well(ui, rect);
+    let edit = rect.shrink2(egui::vec2(t::SPACE_8, 0.0));
+    ui.place(
+        edit,
+        egui::TextEdit::singleline(value)
+            .frame(egui::Frame::NONE)
+            .desired_width(edit.width()),
+    )
+    .changed()
+}
+macro_rules! two_columns {
+    ($ui:expr, $left:expr, $right:expr) => {{
+        let gap = t::SPACE_16;
+        $ui.allocate_ui_with_layout(
+            egui::vec2($ui.available_width(), 0.0),
+            egui::Layout::left_to_right(egui::Align::Min),
+            |ui| {
+                ui.spacing_mut().item_spacing.x = gap;
+                let width = ((ui.available_width() - gap) / 2.0).max(0.0);
+                ui.vertical(|ui| {
+                    ui.set_width(width);
+                    $left(ui);
+                });
+                ui.vertical(|ui| {
+                    ui.set_width(width);
+                    $right(ui);
+                });
+            },
+        );
+    }};
+}
+fn link_button(ui: &mut Ui, label: &str) -> bool {
+    ui.add(egui::Button::new(t::text(label, t::BODY, t::accent())).frame(false))
+        .clicked()
+}
+fn full_frame(fill: egui::Color32, stroke: egui::Color32) -> egui::Frame {
+    egui::Frame::new()
+        .fill(fill)
+        .stroke(egui::Stroke::new(t::BORDER, stroke))
+        .corner_radius(t::RADIUS_CONTROL as u8)
+        .inner_margin(t::SPACE_8)
+}
+fn span(ui: &mut Ui, frame: egui::Frame, body: impl FnOnce(&mut Ui)) {
+    frame.show(ui, |ui| {
+        ui.set_min_width(ui.available_width());
+        body(ui);
+    });
+}
+fn right_row(ui: &mut Ui, left: impl FnOnce(&mut Ui), right: impl FnOnce(&mut Ui)) {
+    ui.horizontal(|ui| {
+        ui.set_min_width(ui.available_width());
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            right(ui);
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                left(ui);
+            });
+        });
+    });
+}
+fn switch_toggle(ui: &mut Ui, on: &mut bool) -> egui::Response {
+    let (rect, mut response) = ui.allocate_exact_size(
+        egui::vec2(t::SWITCH_WIDTH, t::SWITCH_HEIGHT),
+        egui::Sense::click(),
+    );
+    if response.clicked() && ui.is_enabled() {
+        *on = !*on;
+        response.mark_changed();
+    }
+    let track = if *on { t::accent() } else { t::BG_CONTROL };
+    ui.painter()
+        .rect_filled(rect, t::SWITCH_HEIGHT / 2.0, track);
+    ui.painter().rect_stroke(
+        rect,
+        t::SWITCH_HEIGHT / 2.0,
+        egui::Stroke::new(t::BORDER, t::BORDER_DEFAULT),
+        egui::StrokeKind::Inside,
+    );
+    let knob = t::SWITCH_HEIGHT - t::SPACE_4;
+    let x = if *on {
+        rect.right() - t::SPACE_2 - knob / 2.0
+    } else {
+        rect.left() + t::SPACE_2 + knob / 2.0
+    };
+    ui.painter()
+        .circle_filled(egui::pos2(x, rect.center().y), knob / 2.0, t::TEXT_PRIMARY);
+    response
+}
+fn danger_outline(ui: &mut Ui, label: &str) -> egui::Response {
+    ui.add(
+        egui::Button::new(
+            egui::RichText::new(label)
+                .font(t::bold(t::BUTTON))
+                .color(t::STATUS_FAILED),
+        )
+        .fill(egui::Color32::TRANSPARENT)
+        .stroke(egui::Stroke::new(t::BORDER, t::STATUS_FAILED))
+        .corner_radius(t::RADIUS_CONTROL as u8)
+        .min_size(egui::vec2(0.0, t::BUTTON_HEIGHT)),
+    )
+}
+fn row_height(ui: &Ui) -> f32 {
+    t::line_height(ui, t::font(t::BODY)) + t::SPACE_8
+}
+fn paint_cell(ui: &Ui, rect: egui::Rect, value: &str, color: egui::Color32, align_right: bool) {
+    let font = t::font(t::BODY);
+    let used = if align_right {
+        let width = t::text_width(ui, value, font.clone());
+        egui::Rect::from_min_max(
+            egui::pos2((rect.right() - width).max(rect.left()), rect.top()),
+            rect.max,
+        )
+    } else {
+        rect
+    };
+    crate::view::line(ui, used, value, font, color);
+}
+fn hline(ui: &mut Ui) {
+    let (rect, _) = ui.allocate_exact_size(
+        egui::vec2(ui.available_width(), t::BORDER),
+        egui::Sense::hover(),
+    );
+    ui.painter().hline(
+        rect.x_range(),
+        rect.center().y,
+        egui::Stroke::new(t::BORDER, t::BORDER_DEFAULT),
+    );
+}
+fn render_block_reason(preview: Option<&Preview>, valid: bool) -> Option<String> {
+    let Some(preview) = preview else {
+        return Some("Run a dry run to validate these settings before rendering.".into());
+    };
+    if !valid {
+        return Some("Run a dry run to validate these settings before rendering.".into());
+    }
+    let blocking: Vec<_> = preview.warnings.iter().filter(|w| w.blocking).collect();
+    if blocking.is_empty() {
+        return None;
+    }
+    let mut text = blocking
+        .iter()
+        .find_map(|w| {
+            w.speaker_id
+                .as_ref()
+                .map(|id| format!("Assign a voice to {id} to enable rendering."))
+        })
+        .unwrap_or_else(|| blocking[0].message.clone());
+    if preview.warnings.iter().any(|w| !w.blocking) {
+        text.push_str(" Skipped text does not block.");
+    }
+    Some(text)
+}
+fn warning_rows(ui: &mut Ui, preview: &Preview, voices: &str, script: &str) {
+    for warning in &preview.warnings {
+        let blocking = warning.blocking;
+        let fill = if blocking {
+            t::BG_DANGER_ROW
+        } else {
+            t::BG_SURFACE
+        };
+        let stroke = if blocking {
+            t::STATUS_FAILED
+        } else {
+            t::BORDER_DEFAULT
+        };
+        let message = warning.message.clone();
+        let kind = warning.kind.clone();
+        let line = warning.line;
+        span(ui, full_frame(fill, stroke), |ui| {
+            right_row(
+                ui,
+                |ui| {
+                    ui.add(
+                        egui::Label::new(t::text(
+                            &message,
+                            t::BODY,
+                            if blocking {
+                                t::STATUS_FAILED
+                            } else {
+                                t::TEXT_PRIMARY
+                            },
+                        ))
+                        .wrap(),
+                    );
+                },
+                |ui| {
+                    if blocking
+                        && kind == "unknown_speaker"
+                        && link_button(ui, "Open voices editor ↗")
+                    {
+                        reveal(Path::new(voices));
+                    } else if let Some(line) = line
+                        && link_button(ui, &format!("Review line {line} ↗"))
+                    {
+                        reveal(Path::new(script));
+                    }
+                },
+            );
+        });
+    }
+}
+fn data_row(
+    ui: &mut Ui,
+    height: f32,
+    fill: Option<egui::Color32>,
+    cells: &[(&str, bool, egui::Color32)],
+) {
+    let (rect, _) = ui.allocate_exact_size(
+        egui::vec2(ui.available_width(), height),
+        egui::Sense::hover(),
+    );
+    if let Some(fill) = fill {
+        ui.painter().rect_filled(rect, 0.0, fill);
+    }
+    let widths = if cells.len() == 4 {
+        let turn = 56.0;
+        let time = 110.0;
+        let speaker = 110.0;
+        [
+            turn,
+            time,
+            speaker,
+            (rect.width() - turn - time - speaker).max(0.0),
+        ]
+    } else {
+        let turns = 56.0;
+        let engine = 110.0;
+        [(rect.width() - turns - engine).max(0.0), engine, turns, 0.0]
+    };
+    let mut x = rect.left();
+    for (i, (text, right, color)) in cells.iter().enumerate() {
+        let cell = egui::Rect::from_min_size(
+            egui::pos2(x, rect.top()),
+            egui::vec2(widths[i], rect.height()),
+        );
+        paint_cell(
+            ui,
+            cell.shrink2(egui::vec2(t::SPACE_4, 0.0)),
+            text,
+            *color,
+            *right,
+        );
+        x += widths[i];
+    }
+}
+fn preview_panels(ui: &mut Ui, preview: &Preview) {
+    let row_h = row_height(ui);
+    let fit = (t::PREVIEW_HEIGHT / row_h).floor().max(1.0);
+    let view_h = fit * row_h;
+    let shown = preview.turns.len().min(fit as usize);
+    let gap = t::SPACE_12;
+    let width = ((ui.available_width() - gap)
+        / (t::PREVIEW_TURNS_WIDTH + t::PREVIEW_SPEAKERS_WIDTH))
+        .max(0.0);
+    let turns_w = width * t::PREVIEW_TURNS_WIDTH;
+    let speakers_w = width * t::PREVIEW_SPEAKERS_WIDTH;
+    ui.horizontal_top(|ui| {
+        ui.vertical(|ui| {
+            ui.set_width(turns_w);
+            span(ui, full_frame(t::BG_SURFACE, t::BORDER_DEFAULT), |ui| {
+                right_row(
+                    ui,
+                    |ui| {
+                        ui.label(t::heading("Parsed turns", t::SECTION_TITLE));
+                    },
+                    |ui| {
+                        ui.label(t::text(
+                            format!("First {shown} of {}", preview.turns.len()),
+                            t::CAPTION,
+                            t::TEXT_MUTED,
+                        ));
+                    },
+                );
+                data_row(
+                    ui,
+                    row_h,
+                    None,
+                    &[
+                        ("Turn", false, t::TEXT_MUTED),
+                        ("Time · planned", false, t::TEXT_MUTED),
+                        ("Speaker", false, t::TEXT_MUTED),
+                        ("First words", false, t::TEXT_MUTED),
+                    ],
+                );
+                egui::ScrollArea::vertical()
+                    .id_salt("preview_turns")
+                    .max_height(view_h)
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                        ui.set_min_width(ui.available_width());
+                        for (i, turn) in preview.turns.iter().enumerate() {
+                            let time = progress::clock(Duration::from_millis(turn.timestamp_ms));
+                            let index = format!("{:03}", turn.index);
+                            data_row(
+                                ui,
+                                row_h,
+                                (i % 2 == 1).then_some(t::BG_WINDOW),
+                                &[
+                                    (&index, false, t::TEXT_PRIMARY),
+                                    (&time, false, t::TEXT_MUTED),
+                                    (&turn.speaker_name, false, t::TEXT_PRIMARY),
+                                    (&turn.first_words, false, t::TEXT_PRIMARY),
+                                ],
+                            );
+                        }
+                    });
+            });
+        });
+        ui.vertical(|ui| {
+            ui.set_width(speakers_w);
+            span(ui, full_frame(t::BG_SURFACE, t::BORDER_DEFAULT), |ui| {
+                right_row(
+                    ui,
+                    |ui| {
+                        ui.label(t::heading("Speaker summary", t::SECTION_TITLE));
+                    },
+                    |ui| {
+                        ui.label(t::text(
+                            format!("{} voices", preview.speakers.len()),
+                            t::CAPTION,
+                            t::TEXT_MUTED,
+                        ));
+                    },
+                );
+                data_row(
+                    ui,
+                    row_h,
+                    None,
+                    &[
+                        ("Speaker", false, t::TEXT_MUTED),
+                        ("Engine", false, t::TEXT_MUTED),
+                        ("Turns", true, t::TEXT_MUTED),
+                    ],
+                );
+                let total: usize = preview.speakers.iter().map(|s| s.turns).sum();
+                let total_label = total.to_string();
+                let list_h = (view_h - row_h).max(row_h);
+                let speaker_rows_h = preview.speakers.len() as f32 * row_h;
+                let bars = if speaker_rows_h > list_h {
+                    egui::containers::scroll_area::ScrollBarVisibility::AlwaysVisible
+                } else {
+                    egui::containers::scroll_area::ScrollBarVisibility::VisibleWhenNeeded
+                };
+                egui::ScrollArea::vertical()
+                    .id_salt("preview_speakers")
+                    .max_height(list_h)
+                    .min_scrolled_height(list_h)
+                    .auto_shrink([false, false])
+                    .scroll_bar_visibility(bars)
+                    .show(ui, |ui| {
+                        ui.set_min_width(ui.available_width());
+                        ui.set_min_height(preview.speakers.len() as f32 * row_h);
+                        for (i, speaker) in preview.speakers.iter().enumerate() {
+                            let unknown = speaker.engine.is_none();
+                            let turns = speaker.turns.to_string();
+                            let engine = speaker.engine.as_deref().unwrap_or("Unassigned");
+                            let color = if unknown {
+                                t::STATUS_FAILED
+                            } else {
+                                t::TEXT_PRIMARY
+                            };
+                            data_row(
+                                ui,
+                                row_h,
+                                if unknown {
+                                    Some(t::BG_DANGER_ROW)
+                                } else if i % 2 == 1 {
+                                    Some(t::BG_WINDOW)
+                                } else {
+                                    None
+                                },
+                                &[
+                                    (speaker.name.as_str(), false, color),
+                                    (engine, false, color),
+                                    (turns.as_str(), true, color),
+                                ],
+                            );
+                        }
+                    });
+                hline(ui);
+                data_row(
+                    ui,
+                    row_h,
+                    None,
+                    &[
+                        ("Total", false, t::TEXT_PRIMARY),
+                        ("", false, t::TEXT_PRIMARY),
+                        (total_label.as_str(), true, t::TEXT_PRIMARY),
+                    ],
+                );
+            });
+        });
+    });
+}
+enum StepLook {
+    Muted(&'static str),
+    Passed(String),
+    Accent(String),
+    Failed(String),
+    Verify { failing: usize },
+}
+struct StepQuery<'a> {
+    index: usize,
+    enabled: bool,
+    current: Option<usize>,
+    state: &'a State,
+    failing: usize,
+    max_passes: usize,
+    turns: Option<usize>,
+    progress: Option<&'a Progress>,
+}
+fn step_look(query: StepQuery<'_>) -> StepLook {
+    if !query.enabled {
+        return StepLook::Muted("Skipped");
+    }
+    let done = match query.current {
+        Some(current) => query.index < current,
+        None => *query.state == State::Complete,
+    };
+    if done {
+        if query.index == 0 {
+            return StepLook::Passed(match query.turns {
+                Some(n) => format!("✓ {n} rendered"),
+                None => "✓ Complete".into(),
+            });
+        }
+        if query.index == 1 && query.failing > 0 {
+            return StepLook::Verify {
+                failing: query.failing,
+            };
+        }
+        return StepLook::Passed("✓ Complete".into());
+    }
+    if query.current == Some(query.index) {
+        if matches!(query.state, State::RepairStopped | State::Failed(_)) {
+            return StepLook::Failed(if query.failing > 0 {
+                format!("Stopped · {} still failing", query.failing)
+            } else {
+                "Stopped".into()
+            });
+        }
+        if query.index == 2 {
+            let pass = query
+                .progress
+                .map(|p| p.pass)
+                .filter(|p| *p > 0)
+                .unwrap_or(1);
+            let live = query.progress.map(|p| p.failing).unwrap_or(query.failing);
+            return StepLook::Accent(format!(
+                "Running · pass {pass} of {} · {live} still failing",
+                query.max_passes
+            ));
+        }
+        if let Some(stage) = query
+            .progress
+            .map(|p| p.stage.as_str())
+            .filter(|s| !s.is_empty())
+        {
+            return StepLook::Accent(format!("Running · {stage}"));
+        }
+        return StepLook::Accent("Running".into());
+    }
+    StepLook::Muted("Queued")
+}
+fn paint_step_status(ui: &mut Ui, look: StepLook) {
+    match look {
+        StepLook::Muted(text) => {
+            ui.label(t::text(text, t::CAPTION, t::TEXT_MUTED));
+        }
+        StepLook::Passed(text) => {
+            ui.label(t::text(text, t::CAPTION, t::STATUS_PASSED));
+        }
+        StepLook::Accent(text) => {
+            ui.label(t::text(text, t::CAPTION, t::accent()));
+        }
+        StepLook::Failed(text) => {
+            ui.label(t::text(text, t::CAPTION, t::STATUS_FAILED));
+        }
+        StepLook::Verify { failing } => {
+            let mut job = egui::text::LayoutJob::default();
+            let font = t::font(t::CAPTION);
+            job.append(
+                "Complete · ",
+                0.0,
+                egui::TextFormat {
+                    font_id: font.clone(),
+                    color: t::STATUS_PASSED,
+                    ..Default::default()
+                },
+            );
+            job.append(
+                &format!("{failing} failed"),
+                0.0,
+                egui::TextFormat {
+                    font_id: font,
+                    color: t::STATUS_FAILED,
+                    ..Default::default()
+                },
+            );
+            ui.label(job);
+        }
+    }
+}
+fn pipeline_banner(state: &State) -> Option<(&'static str, egui::Color32)> {
+    match state {
+        State::Running => Some(("Running", t::accent())),
+        State::RepairStopped | State::Failed(_) => Some(("Stopped", t::STATUS_FAILED)),
+        State::Ready | State::Complete => None,
+    }
 }
 impl Browser {
     pub(crate) fn init_phase_j(&mut self, cli: &capture::Cli) {
@@ -620,129 +1158,66 @@ impl Browser {
         let mut close = false;
         modal("new_episode").show(ctx, |ui| {
             ui.set_width(t::NEW_EPISODE_WIDTH);
-            ui.label(t::heading("New episode", t::STATE_TITLE));
-            ui.add_enabled_ui(self.phase.dry_job.is_none(), |ui| {
-                ui.columns(2, |cols| {
-                    if path_field(
-                        &mut cols[0],
-                        "Script file",
-                        &mut self.phase.options.script,
-                        false,
-                    ) {
-                        script_changed = true;
-                        self.phase.options.episode_id = Path::new(&self.phase.options.script)
-                            .file_stem()
-                            .unwrap_or_default()
-                            .to_string_lossy()
-                            .into_owned();
+            let turns = self.phase.preview.as_ref().map_or(0, |p| p.turns.len());
+            let speakers = self.phase.preview.as_ref().map_or(0, |p| p.speakers.len());
+            right_row(
+                ui,
+                |ui| {
+                    ui.label(t::heading("New episode", t::STATE_TITLE));
+                },
+                |ui| {
+                    if self.phase.preview.is_some() {
+                        ui.label(t::text(
+                            format!("{turns} turns · {speakers} speakers · 48 kHz"),
+                            t::CAPTION,
+                            t::TEXT_MUTED,
+                        ));
                     }
-                    cols[1].label(t::text("Episode id", t::CAPTION, t::TEXT_MUTED));
-                    cols[1].text_edit_singleline(&mut self.phase.options.episode_id);
-                });
-                ui.columns(2, |cols| {
-                    path_field(
-                        &mut cols[0],
-                        "Voices file",
-                        &mut self.phase.options.voices,
-                        false,
-                    );
-                    path_field(
-                        &mut cols[1],
-                        "Output folder",
-                        &mut self.phase.options.output,
-                        true,
-                    );
-                });
+                },
+            );
+            ui.add_enabled_ui(self.phase.dry_job.is_none(), |ui| {
+                two_columns!(
+                    ui,
+                    |ui: &mut Ui| {
+                        script_changed |=
+                            path_field(ui, "Script file", &mut self.phase.options.script, false);
+                    },
+                    |ui: &mut Ui| {
+                        ui.label(t::text("Episode id", t::CAPTION, t::TEXT_MUTED));
+                        text_well(ui, &mut self.phase.options.episode_id);
+                        ui.label(t::text(
+                            "From filename · editable",
+                            t::CAPTION,
+                            t::TEXT_SUBTLE,
+                        ));
+                    }
+                );
+                two_columns!(
+                    ui,
+                    |ui: &mut Ui| {
+                        path_field(ui, "Voices file", &mut self.phase.options.voices, false);
+                    },
+                    |ui: &mut Ui| {
+                        path_field(ui, "Output folder", &mut self.phase.options.output, true);
+                    }
+                );
                 ui.horizontal(|ui| {
                     dry = ui.button("Dry run").clicked();
                     ui.label(t::text(
-                        "Preview · planned timing, not measured audio",
+                        "Preview result · planned timing, not measured audio",
                         t::CAPTION,
                         t::TEXT_MUTED,
                     ));
                 });
             });
             if let Some(preview) = &self.phase.preview {
-                for warning in &preview.warnings {
-                    ui.horizontal_wrapped(|ui| {
-                        ui.colored_label(
-                            if warning.blocking {
-                                t::STATUS_FAILED
-                            } else {
-                                t::TEXT_MUTED
-                            },
-                            &warning.message,
-                        );
-                        if warning.kind == "unknown_speaker"
-                            && ui.button("Open voices file").clicked()
-                        {
-                            reveal(Path::new(&self.phase.options.voices));
-                        }
-                    });
-                }
-                ui.horizontal_top(|ui| {
-                    ui.vertical(|ui| {
-                        ui.set_width(t::PREVIEW_TURNS_WIDTH);
-
-                        ui.label(t::heading("Parsed turns", t::SECTION_TITLE));
-                        egui::ScrollArea::vertical()
-                            .id_salt("preview_turns")
-                            .max_height(t::PREVIEW_HEIGHT)
-                            .show(ui, |ui| {
-                                egui::Grid::new("planned_turns")
-                                    .striped(true)
-                                    .show(ui, |ui| {
-                                        for heading in
-                                            ["Turn", "Time · planned", "Speaker", "First words"]
-                                        {
-                                            ui.label(heading);
-                                        }
-                                        ui.end_row();
-                                        for turn in &preview.turns {
-                                            ui.label(format!("{:03}", turn.index));
-                                            ui.label(progress::clock(Duration::from_millis(
-                                                turn.timestamp_ms,
-                                            )));
-                                            ui.label(&turn.speaker_name);
-                                            ui.label(&turn.first_words);
-                                            ui.end_row();
-                                        }
-                                    });
-                            });
-                    });
-                    ui.vertical(|ui| {
-                        ui.set_width(t::PREVIEW_SPEAKERS_WIDTH);
-                        ui.label(t::heading("Speaker summary", t::SECTION_TITLE));
-                        egui::ScrollArea::vertical()
-                            .id_salt("preview_speakers")
-                            .max_height(t::PREVIEW_HEIGHT)
-                            .show(ui, |ui| {
-                                egui::Grid::new("planned_speakers")
-                                    .striped(true)
-                                    .show(ui, |ui| {
-                                        for heading in ["Speaker", "Engine", "Turns"] {
-                                            ui.label(heading);
-                                        }
-                                        ui.end_row();
-                                        for speaker in &preview.speakers {
-                                            let color = if speaker.engine.is_none() {
-                                                t::STATUS_FAILED
-                                            } else {
-                                                t::TEXT_PRIMARY
-                                            };
-                                            for text in [
-                                                &speaker.name,
-                                                speaker.engine.as_deref().unwrap_or("Unassigned"),
-                                                &speaker.turns.to_string(),
-                                            ] {
-                                                ui.colored_label(color, text);
-                                            }
-                                            ui.end_row();
-                                        }
-                                    });
-                            });
-                    });
-                });
+                warning_rows(
+                    ui,
+                    preview,
+                    &self.phase.options.voices,
+                    &self.phase.options.script,
+                );
+                preview_panels(ui, preview);
             }
             ui.add_enabled_ui(self.phase.dry_job.is_none(), |ui| {
                 ui.collapsing("Render options", |ui| {
@@ -769,25 +1244,30 @@ impl Browser {
             let ready = valid
                 && self.phase.preview.as_ref().is_some_and(Preview::can_render)
                 && self.phase.dry_job.is_none();
-            if !ready {
-                ui.colored_label(
-                    t::STATUS_FAILED,
-                    if valid {
-                        "Resolve blocking warnings to enable rendering."
-                    } else {
-                        "Run a dry run to validate these settings before rendering."
-                    },
-                );
-            }
             if let Some(error) = &self.phase.error {
                 ui.colored_label(t::STATUS_FAILED, error);
             }
-            ui.horizontal(|ui| {
-                close = ui.button("Cancel").clicked();
-                let count = self.phase.preview.as_ref().map_or(0, |p| p.turns.len());
-                render =
-                    t::primary_button(ui, &format!("Render {count} turns"), None, ready).clicked();
-            });
+            let count = self.phase.preview.as_ref().map_or(0, |p| p.turns.len());
+            let reason = if ready {
+                None
+            } else {
+                render_block_reason(self.phase.preview.as_ref(), valid)
+            };
+            right_row(
+                ui,
+                |ui| {
+                    if let Some(reason) = reason {
+                        ui.add(
+                            egui::Label::new(t::text(reason, t::CAPTION, t::STATUS_FAILED)).wrap(),
+                        );
+                    }
+                },
+                |ui| {
+                    render = t::primary_button(ui, &format!("Render {count} turns"), None, ready)
+                        .clicked();
+                    close = ui.button("Cancel").clicked();
+                },
+            );
         });
         if script_changed && Path::new(&self.phase.options.script).is_file() {
             self.show_new_episode(Some(PathBuf::from(&self.phase.options.script)));
@@ -881,129 +1361,182 @@ impl Browser {
         let mut review = false;
         let mut proceed = false;
         let locked = self.jobs.busy() || self.phase.pipeline.state != State::Ready;
+        let progress = self
+            .jobs
+            .durable
+            .as_ref()
+            .map(|active| active.progress.clone())
+            .or_else(|| self.phase.step_fixture.clone());
+        let turns = self.episode.as_ref().map(|e| e.turns.len());
+        let gap_ms = self.phase.pipeline.gap_ms;
+        let length_text = self.episode.as_ref().map(|e| {
+            let length = relayout_length(
+                e.manifest.turns.iter().map(|turn| {
+                    turn.segments
+                        .iter()
+                        .map(|s| s.speech_duration_ms.unwrap_or(s.duration_ms))
+                        .sum()
+                }),
+                gap_ms,
+            );
+            format!(
+                "new length {}",
+                progress::clock(Duration::from_millis(length))
+            )
+        });
         modal("pipeline").show(ctx, |ui| {
             ui.set_width(t::PIPELINE_WIDTH);
-            ui.label(t::heading("Finish episode", t::STATE_TITLE));
+            ui.set_min_width(t::PIPELINE_WIDTH);
+            right_row(
+                ui,
+                |ui| {
+                    ui.label(t::heading("Finish episode", t::STATE_TITLE));
+                },
+                |ui| {
+                    if let Some((label, color)) = pipeline_banner(&self.phase.pipeline.state) {
+                        ui.label(t::text(label, t::CAPTION, color));
+                        let (rect, _) = ui.allocate_exact_size(
+                            egui::vec2(t::SPACE_8, t::SPACE_8),
+                            egui::Sense::hover(),
+                        );
+                        ui.painter().circle_filled(rect.center(), t::SPACE_4, color);
+                    }
+                },
+            );
             if let Some(e) = &self.episode {
                 ui.label(t::text(
                     format!(
-                        "{} · {} turns · {} speakers",
+                        "{} · {} turns · {} speakers · {} kHz",
                         e.manifest.episode_id,
                         e.turns.len(),
-                        e.speakers.len()
+                        e.speakers.len(),
+                        e.manifest.sample_rate / 1000
                     ),
                     t::CAPTION,
                     t::TEXT_MUTED,
                 ));
             }
             ui.label(t::text(
-                if locked {
-                    "Settings are locked while the run is active."
-                } else {
-                    "Choose the steps to run in sequence."
-                },
+                "All six steps included. Toggles and settings are locked while the run is active.",
                 t::BODY,
                 t::TEXT_MUTED,
             ));
             for (i, step) in Step::ALL.iter().enumerate() {
+                if i > 0 {
+                    hline(ui);
+                }
                 let active = self.phase.pipeline.current == Some(i);
                 egui::Frame::new()
                     .fill(if active {
                         t::BG_SELECTED
                     } else {
-                        t::BG_SURFACE
+                        egui::Color32::TRANSPARENT
                     })
-                    .inner_margin(t::SPACE_12)
+                    .inner_margin(t::SPACE_8)
                     .show(ui, |ui| {
+                        let row_w = ui.available_width();
+                        ui.set_min_width(row_w);
+                        let col_w =
+                            (row_w - t::SWITCH_WIDTH - ui.spacing().item_spacing.x).max(0.0);
                         ui.horizontal(|ui| {
-                            ui.add_enabled(
-                                !locked,
-                                egui::Checkbox::new(
-                                    &mut self.phase.pipeline.enabled[i],
-                                    step.label(),
-                                ),
-                            );
-                            let status = if !self.phase.pipeline.enabled[i] {
-                                "Skipped"
-                            } else if active && self.phase.pipeline.state == State::RepairStopped {
-                                "Stopped"
-                            } else if active {
-                                "Running"
-                            } else if self.phase.pipeline.current.is_some_and(|c| i < c)
-                                || self.phase.pipeline.state == State::Complete
-                            {
-                                "Complete"
-                            } else {
-                                "Queued"
-                            };
-                            ui.label(t::text(status, t::CAPTION, t::TEXT_MUTED));
-                        });
-                        ui.label(t::text(
-                            [
-                                "Synthesize one WAV per turn.",
-                                "Check speech against the script and flag mismatches.",
-                                "Retry failed turns; verify each replacement before accepting it.",
-                                "Recalculate turn positions using the selected gap between turns.",
-                                "Join the laid-out turns and write the final episode MP3.",
-                                "Export turn times, speakers and text as a searchable index.",
-                            ][i],
-                            t::CAPTION,
-                            t::TEXT_MUTED,
-                        ));
-                        if i == 2
-                            && active
-                            && self.phase.pipeline.state == State::Running
-                            && let Some(progress) = self
-                                .jobs
-                                .durable
-                                .as_ref()
-                                .map(|a| &a.progress)
-                                .or(self.phase.step_fixture.as_ref())
-                        {
-                            ui.colored_label(
-                                t::accent(),
-                                format!(
-                                    "Pass {} of {} · {} still failing",
-                                    progress.pass, self.phase.pipeline.max_passes, progress.failing
-                                ),
-                            );
-                        }
-                        if i == 2 {
                             ui.add_enabled_ui(!locked, |ui| {
-                                ui.horizontal(|ui| {
-                                    ui.label("Max passes");
-                                    ui.add(
-                                        egui::DragValue::new(&mut self.phase.pipeline.max_passes)
-                                            .range(1..=100),
-                                    );
-                                });
+                                switch_toggle(ui, &mut self.phase.pipeline.enabled[i]);
                             });
-                        }
-                        if i == 3 {
-                            ui.add_enabled(
-                                !locked,
-                                egui::Slider::new(&mut self.phase.pipeline.gap_ms, 0..=1000)
-                                    .text("Gap ms"),
-                            );
-                            if let Some(e) = &self.episode {
-                                let length = relayout_length(
-                                    e.manifest.turns.iter().map(|turn| {
-                                        turn.segments
-                                            .iter()
-                                            .map(|s| s.speech_duration_ms.unwrap_or(s.duration_ms))
-                                            .sum()
-                                    }),
-                                    self.phase.pipeline.gap_ms,
+                            ui.vertical(|ui| {
+                                ui.set_width(col_w);
+                                let look = step_look(StepQuery {
+                                    index: i,
+                                    enabled: self.phase.pipeline.enabled[i],
+                                    current: self.phase.pipeline.current,
+                                    state: &self.phase.pipeline.state,
+                                    failing: self.phase.pipeline.failing,
+                                    max_passes: self.phase.pipeline.max_passes,
+                                    turns,
+                                    progress: progress.as_ref(),
+                                });
+                                right_row(
+                                    ui,
+                                    |ui| {
+                                        ui.label(t::heading(step.label(), t::SECTION_TITLE));
+                                    },
+                                    |ui| paint_step_status(ui, look),
                                 );
-                                ui.colored_label(
-                                    t::accent(),
-                                    format!(
-                                        "new length {}",
-                                        progress::clock(Duration::from_millis(length))
-                                    ),
-                                );
-                            }
-                        }
+                                ui.label(t::text(
+                                    [
+                                        "Synthesize one WAV per turn.",
+                                        "Check speech against the script and flag mismatches.",
+                                        "Retry failed turns; verify each replacement before accepting it.",
+                                        "Recalculate turn positions using the selected gap between turns.",
+                                        "Join the laid-out turns and write the final episode MP3.",
+                                        "Export turn times, speakers and text as a searchable index.",
+                                    ][i],
+                                    t::CAPTION,
+                                    t::TEXT_MUTED,
+                                ));
+                                if i == 2 {
+                                    ui.add_enabled_ui(!locked, |ui| {
+                                        ui.horizontal(|ui| {
+                                            ui.label("Max passes");
+                                            ui.add(
+                                                egui::DragValue::new(
+                                                    &mut self.phase.pipeline.max_passes,
+                                                )
+                                                .range(1..=100),
+                                            );
+                                            if locked {
+                                                ui.label(t::text(
+                                                    "Locked for this run",
+                                                    t::CAPTION,
+                                                    t::TEXT_MUTED,
+                                                ));
+                                            }
+                                        });
+                                    });
+                                }
+                                if i == 3 {
+                                    let label_w = length_text.as_ref().map_or(0.0, |text| {
+                                        t::text_width(ui, text, t::font(t::CAPTION))
+                                    });
+                                    let slider_w = (col_w
+                                        - label_w
+                                        - ui.spacing().item_spacing.x)
+                                        .max(t::SPACE_20);
+                                    ui.add_enabled_ui(!locked, |ui| {
+                                        ui.spacing_mut().slider_width = slider_w;
+                                        ui.horizontal(|ui| {
+                                            ui.spacing_mut().slider_width = slider_w;
+                                            ui.add(
+                                                egui::Slider::new(
+                                                    &mut self.phase.pipeline.gap_ms,
+                                                    0..=1000,
+                                                )
+                                                .show_value(false),
+                                            );
+                                            if let Some(text) = &length_text {
+                                                ui.label(t::text(text, t::CAPTION, t::accent()));
+                                            }
+                                        });
+                                    });
+                                    ui.allocate_ui_with_layout(
+                                        egui::vec2(slider_w, row_height(ui)),
+                                        egui::Layout::left_to_right(egui::Align::Center),
+                                        |ui| {
+                                            ui.label(t::text("0 ms", t::CAPTION, t::TEXT_MUTED));
+                                            ui.with_layout(
+                                                egui::Layout::right_to_left(egui::Align::Center),
+                                                |ui| {
+                                                    ui.label(t::text(
+                                                        "1000 ms",
+                                                        t::CAPTION,
+                                                        t::TEXT_MUTED,
+                                                    ));
+                                                },
+                                            );
+                                        },
+                                    );
+                                }
+                            });
+                        });
                     });
             }
             if self.phase.pipeline.state == State::RepairStopped {
@@ -1022,9 +1555,11 @@ impl Browser {
             if let State::Failed(message) = &self.phase.pipeline.state {
                 ui.colored_label(t::STATUS_FAILED, message);
             }
-            egui::CollapsingHeader::new("Log · last 4 output lines")
-                .default_open(true)
-                .show(ui, |ui| {
+            span(
+                ui,
+                full_frame(t::BG_WINDOW, t::BORDER_DEFAULT),
+                |ui| {
+                    ui.label(t::text("Log · last 4 output lines", t::CAPTION, t::TEXT_MUTED));
                     for line in self
                         .jobs
                         .log
@@ -1033,19 +1568,39 @@ impl Browser {
                     {
                         ui.label(egui::RichText::new(line).font(t::mono(t::CAPTION)));
                     }
-                });
+                },
+            );
             if let Some(e) = &self.phase.error {
                 ui.colored_label(t::STATUS_FAILED, e);
             }
-            ui.horizontal(|ui| {
-                run =
-                    t::primary_button(ui, "Run pipeline", None, !locked && self.episode.is_some())
-                        .clicked();
-                if self.jobs.busy() && ui.button("Cancel run").clicked() {
-                    self.cancel_job();
-                }
-                close = ui.button("Close").clicked();
-            });
+            let running =
+                self.jobs.busy() || matches!(self.phase.pipeline.state, State::Running);
+            right_row(
+                ui,
+                |ui| {
+                    ui.add(
+                        egui::Label::new(t::text(
+                            "Original audio kept in a checkpoint. Output replaced only after a safe write.",
+                            t::CAPTION,
+                            t::TEXT_MUTED,
+                        ))
+                        .wrap(),
+                    );
+                },
+                |ui| {
+                    if running {
+                        if ui.button("Cancel run").clicked() {
+                            self.cancel_job();
+                        }
+                    } else if !locked {
+                        run = t::primary_button(ui, "Run pipeline", None, self.episode.is_some())
+                            .clicked();
+                        close = ui.button("Close").clicked();
+                    } else {
+                        close = ui.button("Close").clicked();
+                    }
+                },
+            );
         });
         if run {
             self.start_pipeline();
@@ -1071,18 +1626,52 @@ impl Browser {
         let mut keep = false;
         let mut stop = false;
         let mut cancel = false;
+        let body = if let Some(progress) = self.render_progress() {
+            let episode = self
+                .episode
+                .as_ref()
+                .map(|e| e.manifest.episode_id.as_str())
+                .unwrap_or("This episode");
+            format!(
+                "{episode} is on turn {} of {}. Keep rendering in the background? \
+                 scriptCast will pick it up again when you reopen it.",
+                progress.n, progress.total
+            )
+        } else {
+            "Keep rendering in the background? scriptCast will pick it up again when you reopen it."
+                .into()
+        };
         modal("quit_render").show(ctx, |ui| {
             ui.set_width(t::QUIT_WIDTH);
-            ui.label(t::heading("A render is still running", t::STATE_TITLE));
-            if let Some(status) = self.phase_status() { ui.label(t::text(status, t::BODY, t::TEXT_MUTED)); }
-            ui.label(t::text("Keep rendering in the background? scriptCast will pick it up again when you reopen it.",
-                t::BODY, t::TEXT_MUTED));
-            stop = ui.button(egui::RichText::new("Stop render").color(t::STATUS_FAILED)).clicked();
+            ui.set_min_width(t::QUIT_WIDTH);
+            ui.set_max_width(t::QUIT_WIDTH);
             ui.horizontal(|ui| {
-                cancel = ui.button("Cancel").clicked();
-                keep = t::primary_button(ui, "Keep rendering", None, self.jobs.preparing.is_none())
-                    .on_disabled_hover_text("Wait for the checkpoint to finish and the job to start").clicked();
+                ui.add(
+                    egui::Image::new(t::icon("shield-check-26-accent"))
+                        .fit_to_exact_size(egui::vec2(t::SPACE_22, t::SPACE_22)),
+                );
+                ui.label(t::heading("A render is still running", t::STATE_TITLE));
             });
+            ui.add(egui::Label::new(t::text(body, t::BODY, t::TEXT_MUTED)).wrap());
+            right_row(
+                ui,
+                |ui| {
+                    stop = danger_outline(ui, "Stop render").clicked();
+                },
+                |ui| {
+                    keep = t::primary_button(
+                        ui,
+                        "Keep rendering",
+                        None,
+                        self.jobs.preparing.is_none(),
+                    )
+                    .on_disabled_hover_text(
+                        "Wait for the checkpoint to finish and the job to start",
+                    )
+                    .clicked();
+                    cancel = ui.button("Cancel").clicked();
+                },
+            );
         });
         if cancel {
             self.phase.quit_alert = false;

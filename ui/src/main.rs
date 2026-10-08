@@ -1731,7 +1731,24 @@ impl Browser {
         }
     }
     fn status(&mut self, ui: &mut Ui) {
-        let rect = view::inset(ui.max_rect(), t::SPACE_20, 0.0);
+        let full = ui.max_rect();
+        let fraction = self.render_progress().map(|progress| {
+            if progress.total == 0 {
+                0.0
+            } else {
+                (progress.n as f32 / progress.total as f32).clamp(0.0, 1.0)
+            }
+        });
+        let bar_h = if fraction.is_some() {
+            t::PROGRESS_HEIGHT
+        } else {
+            0.0
+        };
+        let rect = view::inset(
+            Rect::from_min_max(full.min, pos2(full.right(), full.bottom() - bar_h)),
+            t::SPACE_20,
+            0.0,
+        );
         let status = if let Some(status) = self.phase_status() {
             status
         } else if self.discrepancy_open {
@@ -1796,8 +1813,17 @@ impl Browser {
                 .max_rect(rect)
                 .layout(Layout::right_to_left(Align::Center)),
         );
-        if self.jobs.durable.is_some() && row.button("Cancel").clicked() {
-            self.cancel_job();
+        if self.jobs.durable.is_some() || fraction.is_some() {
+            row.spacing_mut().interact_size.y = t::STATUS_BAR_HEIGHT - t::SPACE_8;
+            if row
+                .add(
+                    egui::Button::new(t::text("Cancel", t::CAPTION, t::TEXT_PRIMARY))
+                        .min_size(egui::vec2(64.0, t::STATUS_BAR_HEIGHT - t::SPACE_8)),
+                )
+                .clicked()
+            {
+                self.cancel_job();
+            }
         }
         let right = if self.discrepancy_open {
             "Audio unchanged · Draft"
@@ -1821,6 +1847,16 @@ impl Browser {
             t::font(t::CAPTION),
             color,
         );
+        if let Some(fraction) = fraction {
+            let bar = Rect::from_min_max(
+                pos2(full.left(), full.bottom() - bar_h),
+                full.right_bottom(),
+            );
+            ui.painter().rect_filled(bar, 0.0, t::BG_CONTROL);
+            let mut filled = bar;
+            filled.max.x = bar.left() + bar.width() * fraction;
+            ui.painter().rect_filled(filled, 0.0, t::accent());
+        }
     }
     fn poll_daw(&mut self) {
         for task in [&mut self.live_task, &mut self.logic_task] {
@@ -2028,8 +2064,16 @@ impl Browser {
         let rect = ui.max_rect();
         ui.painter().rect_filled(rect, 0, t::BG_WINDOW);
         let header = Rect::from_min_size(rect.min, vec2(rect.width(), t::EPISODE_HEADER_HEIGHT));
+        let progress_h = if self.render_progress().is_some() {
+            t::PROGRESS_HEIGHT
+        } else {
+            0.0
+        };
         let status = Rect::from_min_max(
-            pos2(rect.left(), rect.bottom() - t::STATUS_BAR_HEIGHT),
+            pos2(
+                rect.left(),
+                rect.bottom() - t::STATUS_BAR_HEIGHT - progress_h,
+            ),
             rect.max,
         );
         let playback = Rect::from_min_max(

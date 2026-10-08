@@ -11,13 +11,13 @@
   "state": "Running",
   "max_passes": 3,
   "gap_ms": 250,
-  "failing": 6,
+  "failing": 2,
   "events": [
     {
       "event": "pass",
       "pass": 2,
       "max_passes": 3,
-      "failing": 6
+      "failing": 2
     }
   ],
   "log": [

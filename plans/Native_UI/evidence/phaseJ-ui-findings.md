@@ -80,3 +80,42 @@ copy, and passes `--fresh --mute` for every capture. It does not execute any ren
   the final manifest replaces those estimates. This fallback is covered by fixtures, not a real render.
 - Python progress flags, real rendering/resume/export/pipeline integration, and judgments by ear are unverified
   and outside this branch's authorized acceptance work.
+
+## Visual round 1
+
+Compared `ui/design/J1-new-episode.png`, `J2-render-in-progress.png`, `J3-quit-while-rendering.png`, and
+`J4-pipeline.png` with the sheet code. This session cannot launch the GUI, so `capture-phaseJ.sh` was not
+re-run and no new `phaseJ-*.png` files were written. Pixel comparison is still the orchestrator's capture.
+
+Layout changes, and nothing else:
+
+- J1: header is title left and `N turns · N speakers · 48 kHz` right (48 kHz is the planned rate; the dry-run
+  schema has no sample rate). Script / Episode id and Voices / Output folder are equal columns with each label
+  directly above its field. `Choose…` is painted inside the right end of the path field. Each warning is a
+  full-width bordered row: blocking uses the danger fill and border with `Open voices editor` on the right;
+  other warnings use a neutral border and `Review line N`. Parsed turns and Speaker summary are separate
+  bordered panels. Turn scrolling is clipped to a whole number of row heights. The speaker panel keeps a
+  Total row, and an unknown speaker row uses the danger tint. The footer puts the blocking reason on the left
+  and Cancel plus Render on the right.
+- J2: while render progress is present, the status strip grows by `PROGRESS_HEIGHT` and paints an accent bar
+  across the window. Cancel stays at the right, including fixture progress that has no durable job.
+- J3: shield icon before the title, one body paragraph, `Stop render` as a danger outline on the left, Cancel
+  and Keep rendering on the right. Content width is 392 so the framed alert is 440 with dialog padding.
+- J4: each step is a full-width row separated by a divider, with a switch instead of a checkbox and status
+  text on the right (green complete, red failing counts, accent `Running · …`, muted Queued). The header shows
+  a dot plus Running or Stopped. The relayout slider fills the row beside `new length mm:ss`, with `0 ms` and
+  `1000 ms` under the track. The footer keeps the checkpoint sentence on the left, `Cancel run` while a run is
+  active, and `Run pipeline` plus Close when the pipeline is idle.
+
+Checks from `ui/`, cargo output in `/tmp/phasej-cargo.txt`:
+
+- `cargo fmt --all`: passed.
+- `cargo clippy --all-targets -- -D warnings`: passed.
+- `cargo test`: 197 passed, 0 failed, 6 ignored.
+- `git diff --check`: passed. New and edited Rust lines stay within 120 characters.
+
+Screenshot settling is still for the orchestrator.
+
+## Visual round 2
+
+Verify status is one right-aligned LayoutJob, `Complete · N failed`, with the count in red. `pipeline-running.json` failing count is 2, matching its verify log line. The relayout slider width is `slider_width` set to the row width minus the `new length` label, with `0 ms` and `1000 ms` under the track ends. Speaker rows scroll inside the panel (`min_height` of every speaker) and Total stays pinned under that list. `cargo fmt`, `clippy -D warnings`, and `cargo test` passed (197 passed, 0 failed, 6 ignored); output in `/tmp/phasej-cargo.txt`.
