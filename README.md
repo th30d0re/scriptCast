@@ -186,6 +186,7 @@ flowchart TD
 | `scriptcast-reference` | Turn a raw recording into a voice reference clip and its exact transcript. |
 | `scriptcast-audition` | Score a candidate reference clip on how reliably it clones (render candidate references against a speaker). |
 | `scriptcast-calibrate` | Find a spelling that makes the TTS engine say a heteronym the intended way. |
+| `scriptcast-project` | Show, validate, and edit project configuration: voices, clips, pronunciations, accepted hearings, speaker rates, and `scriptcast.toml`. |
 
 ## Configuration
 

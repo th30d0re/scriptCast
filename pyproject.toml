@@ -27,6 +27,7 @@ dependencies = [
     "scipy",
     "soundfile",
     "pyyaml",
+    "ruamel.yaml",
 ]
 
 [project.optional-dependencies]
@@ -67,6 +68,7 @@ scriptcast-clip = "scriptcast.tools.make_clip:main"
 scriptcast-reference = "scriptcast.tools.make_reference:main"
 scriptcast-audition = "scriptcast.tools.audition_voice:main"
 scriptcast-calibrate = "scriptcast.tools.calibrate_pronunciation:main"
+scriptcast-project = "scriptcast.tools.project_config:main"
 
 [tool.setuptools.packages.find]
 include = ["scriptcast*"]
