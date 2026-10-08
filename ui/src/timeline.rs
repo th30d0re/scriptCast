@@ -76,6 +76,7 @@ pub fn show(
     playing: Option<(usize, u64)>,
     waveforms: Option<&Waveforms>,
     edited: &[usize],
+    progress: Option<&scriptcast_ui::progress::Progress>,
 ) -> Option<(usize, bool)> {
     let rect = ui.max_rect();
     let content = view::inset(rect, t::SPACE_20, t::SPACE_10);
@@ -276,8 +277,12 @@ pub fn show(
                     }
                     // The playing segment wears the selected style (screen 03).
                     let active = selected == Some(idx) || playing.is_some_and(|(t, _)| t == idx);
+                    let rendering = progress.is_some_and(|p| p.current == Some(turn.index));
+                    let pending = progress.is_some_and(|p| !p.completed.contains(&turn.index))
+                        && turn.verification == VerificationState::MissingAudio;
+                    let active = active || rendering;
                     let failed = turn.verification == VerificationState::Failed;
-                    let opacity = if matches[idx] {
+                    let opacity = if matches[idx] && !pending {
                         1.0
                     } else {
                         t::OPACITY_DISABLED

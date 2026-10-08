@@ -1,0 +1,29 @@
+{
+  "enabled": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "current": 2,
+  "state": "RepairStopped",
+  "max_passes": 3,
+  "gap_ms": 250,
+  "failing": 3,
+  "events": [
+    {
+      "event": "pass",
+      "pass": 3,
+      "max_passes": 3,
+      "failing": 3
+    }
+  ],
+  "log": [
+    "verify complete: 3 failed",
+    "repair pass 3/3: checking replacements",
+    "repair exhausted: 3 failed",
+    "pipeline paused: awaiting choice"
+  ]
+}
