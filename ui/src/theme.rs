@@ -688,6 +688,14 @@ pub const NEW_TURN_ROW_HEIGHT: f32 = 420.0;
 pub const CLIP_PICKER_WIDTH: f32 = 300.0;
 pub const CLIP_PICKER_HEIGHT: f32 = 300.0;
 
+pub const PROJECT_DATA_WIDTH: f32 = 1000.0;
+pub const PROJECT_DATA_HEIGHT: f32 = 580.0;
+pub const PROJECT_PICKER_FRACTION: f32 = 0.24;
+pub const PROJECT_VOICES_FRACTION: f32 = 0.3;
+pub const PROJECT_CLIPS_FRACTION: f32 = 0.6;
+pub const PROJECT_WAVE_HEIGHT: f32 = 96.0;
+pub const PROJECT_WAVE_AMPLITUDE: f32 = 0.45;
+
 #[cfg(test)]
 mod tests {
     use super::*;

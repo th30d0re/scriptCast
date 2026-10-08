@@ -27,6 +27,9 @@ pub const USAGE: &str = "Usage: scriptcast-ui [EPISODE_DIR] [OPTIONS]
 Open a rendered scriptCast episode directory in the episode browser.
 
 Options:
+  --project-picker [ROOT] open the project picker
+  --project-data TAB open project data (voices, clips, pronunciations, accepted-hearings, speaker-rates)
+  --settings-project open project settings
   --new-episode PATH open the New Episode sheet
   --dry-run-json PATH preview fixture (with --new-episode)
   --progress-fixture PATH load a progress JSONL fixture
@@ -74,6 +77,10 @@ window while playing. A saved screenshot exits 0; any failure (including a
 
 #[derive(Clone, Debug)]
 pub struct Cli {
+    pub project_picker: bool,
+    pub project_root: Option<PathBuf>,
+    pub project_data: Option<String>,
+    pub project_select: Option<String>,
     pub new_episode: Option<PathBuf>,
     pub dry_run_json: Option<PathBuf>,
     pub progress_fixture: Option<PathBuf>,
@@ -127,6 +134,10 @@ impl Cli {
             episode: None,
             screenshot: None,
             size: t::WINDOW_SIZE,
+            project_picker: false,
+            project_root: None,
+            project_data: None,
+            project_select: None,
             fresh: false,
             select: None,
             review: None,
@@ -156,7 +167,8 @@ impl Cli {
             inspector_hidden: false,
         };
         let mut positional_only = false;
-        let mut args = args.into_iter();
+        let mut args = args.into_iter().peekable();
+        let mut selection = None;
         while let Some(arg) = args.next() {
             let is_flag = !positional_only && {
                 let text = arg.to_string_lossy();
@@ -173,6 +185,35 @@ impl Cli {
                 continue;
             }
             match arg.to_string_lossy().as_ref() {
+                "--project-picker" => {
+                    cli.project_picker = true;
+                    if args
+                        .peek()
+                        .is_some_and(|a| !a.to_string_lossy().starts_with('-'))
+                    {
+                        cli.project_root = args.next().map(PathBuf::from);
+                    }
+                }
+                "--project-data" => {
+                    let tab = args
+                        .next()
+                        .ok_or("Missing project data tab")?
+                        .to_string_lossy()
+                        .into_owned();
+                    if ![
+                        "voices",
+                        "clips",
+                        "pronunciations",
+                        "accepted-hearings",
+                        "speaker-rates",
+                    ]
+                    .contains(&tab.as_str())
+                    {
+                        return Err("Unknown project data tab".into());
+                    }
+                    cli.project_data = Some(tab.replace('-', "_"));
+                }
+                "--settings-project" => cli.project_data = Some("toml".into()),
                 "--new-episode" => {
                     cli.new_episode = Some(args.next().ok_or("Missing script")?.into())
                 }
@@ -320,7 +361,7 @@ impl Cli {
                     let value = args
                         .next()
                         .ok_or_else(|| "--select needs a turn number".to_string())?;
-                    cli.select = Some(parse_select(&value.to_string_lossy())?);
+                    selection = Some(value.to_string_lossy().into_owned());
                 }
                 "--review" => {
                     let value = args
@@ -351,6 +392,13 @@ impl Cli {
                     cli.at = Some(parse_at(&value.to_string_lossy())?);
                 }
                 other => return Err(format!("unknown option {other}")),
+            }
+        }
+        if let Some(value) = selection {
+            if cli.project_data.is_some() {
+                cli.project_select = Some(value);
+            } else {
+                cli.select = Some(parse_select(&value)?);
             }
         }
         if cli.edit && cli.select.is_none() {
@@ -711,5 +759,31 @@ mod tests {
         let decoded = image::load_from_memory(&bytes).unwrap();
         assert_eq!((decoded.width(), decoded.height()), (8, 4));
         std::fs::remove_file(&path).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod project_capture_tests {
+    use super::Cli;
+    #[test]
+    fn project_flags_preserve_id_selection_in_either_order() {
+        for args in [
+            vec!["--project-data", "voices", "--select", "aisha"],
+            vec!["--select", "aisha", "--project-data", "voices"],
+        ] {
+            let cli = Cli::parse(args.into_iter().map(Into::into)).unwrap();
+            assert_eq!(cli.project_select.as_deref(), Some("aisha"));
+            assert_eq!(cli.select, None);
+        }
+        let cli =
+            Cli::parse(["--project-picker", "/tmp/project", "--mute"].map(Into::into)).unwrap();
+        assert!(cli.project_picker && cli.mute);
+        assert_eq!(
+            cli.project_root.unwrap(),
+            std::path::Path::new("/tmp/project")
+        );
+        let cli = Cli::parse(["--project-picker", "--settings-project"].map(Into::into)).unwrap();
+        assert!(cli.project_root.is_none());
+        assert_eq!(cli.project_data.as_deref(), Some("toml"));
     }
 }

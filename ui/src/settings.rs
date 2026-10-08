@@ -107,6 +107,10 @@ impl Browser {
                         ui.set_width(ui.available_width());
                         ui.spacing_mut().item_spacing.y = t::SPACE_8;
 
+                        egui::CollapsingHeader::new("Project")
+                            .default_open(self.project.tab == "toml")
+                            .show(ui, |ui| self.project_settings_section(ui));
+                        ui.separator();
                         ui.label(t::heading("Appearance", t::SECTION_TITLE));
                         ui.label(t::text(
                             "Very dark accents reduce contrast on accent button text.",
@@ -276,6 +280,10 @@ impl Browser {
 
         if close || response.should_close() {
             self.settings_open = false;
+            if !self.dirty_project_files().is_empty() {
+                self.project.data_open = true;
+                self.project.close_prompt = true;
+            }
         }
         if auto_changed {
             self.preferences.auto_advance = auto_advance;

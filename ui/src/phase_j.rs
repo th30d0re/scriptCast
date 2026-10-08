@@ -726,7 +726,7 @@ impl Browser {
             self.phase.validated = None;
         }
     }
-    fn apply_project_defaults(&mut self, project: PathBuf) {
+    pub(crate) fn apply_project_defaults(&mut self, project: PathBuf) {
         let config = std::fs::read_to_string(project.join("scriptcast.toml")).unwrap_or_default();
         let config: toml::Value =
             toml::from_str(&config).unwrap_or(toml::Value::Table(Default::default()));
@@ -954,7 +954,12 @@ impl Browser {
     pub(crate) fn poll_phase_j(&mut self, ctx: &egui::Context) {
         let quit = ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Q));
         if !self.phase.allow_close && (quit || ctx.input(|i| i.viewport().close_requested())) {
-            if self.jobs.busy() {
+            if !self.dirty_project_files().is_empty() || self.project.saving.is_some() {
+                ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+                self.project.data_open = true;
+                self.project.close_prompt = true;
+                self.project.quit_after_close = true;
+            } else if self.jobs.busy() {
                 ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
                 self.phase.quit_alert = true;
             } else if quit {

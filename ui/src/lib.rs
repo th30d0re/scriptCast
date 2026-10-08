@@ -21,3 +21,5 @@ pub mod tags;
 pub mod theme;
 pub mod waveform;
 pub mod word_timings;
+
+pub mod project;

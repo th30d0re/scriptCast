@@ -6,6 +6,7 @@ mod inspector;
 mod jobs;
 mod phase_j;
 mod phase_k;
+mod phase_l;
 mod read_along;
 mod settings;
 mod table;
@@ -70,6 +71,7 @@ struct Preferences {
     cli_dir: Option<PathBuf>,
     last_episode: Option<PathBuf>,
     recent: Vec<RecentEpisode>,
+    recent_projects: Vec<scriptcast_ui::project::RecentProject>,
     /// Play the next visible turn when the current one finishes (screen 03).
     auto_advance: bool,
     #[serde(default = "default_true")]
@@ -108,6 +110,7 @@ impl Default for Preferences {
             cli_dir: None,
             last_episode: None,
             recent: Vec::new(),
+            recent_projects: Vec::new(),
             auto_advance: true,
             gapless: true,
             read_along: true,
@@ -246,6 +249,7 @@ fn neighbour_targets(visible: &[usize], current: Option<usize>) -> (Option<usize
 }
 #[derive(Default)]
 struct Browser {
+    project: phase_l::PhaseL,
     phase: phase_j::PhaseJ,
     editing: editing::Editing,
     find: find_replace::FindReplace,
@@ -365,11 +369,24 @@ impl Browser {
             audio_notice,
             muted,
             device_list: AudioOut::outputs(),
-            settings_open: cli.settings,
+            settings_open: cli.settings || cli.project_data.as_deref() == Some("toml"),
             pending_review: cli.review.is_some(),
             ..Self::default()
         };
         app.init_phase_j(cli);
+        app.project.picker = cli.project_picker;
+        app.project.select_id = cli.project_select.clone().unwrap_or_default();
+        if let Some(tab) = &cli.project_data {
+            app.project.tab = tab.clone();
+            app.project.data_open = tab != "toml";
+        }
+        if let Some(root) = cli
+            .project_root
+            .clone()
+            .or_else(|| std::env::var_os("SCRIPTCAST_PROJECT").map(PathBuf::from))
+        {
+            app.load_project(root, &cc.egui_ctx);
+        }
         app.editing.capture_open = cli.edit;
         app.editing.k.context_capture = cli.context_menu.is_some();
         app.editing.k.capture_insert = cli.new_turn_after.is_some();
@@ -383,16 +400,17 @@ impl Browser {
             app.find.replace_open = true;
         }
 
-        if let Some(path) = cli
-            .episode
-            .clone()
-            .or_else(|| app.preferences.last_episode.clone())
-        {
+        if let Some(path) = cli.episode.clone().or_else(|| {
+            (!cli.project_picker)
+                .then(|| app.preferences.last_episode.clone())
+                .flatten()
+        }) {
             app.open(path, &cc.egui_ctx);
         }
         app
     }
     fn open(&mut self, path: PathBuf, ctx: &egui::Context) {
+        self.project.picker = false;
         if self.jobs.busy() || self.editing.busy() {
             return;
         }
@@ -926,7 +944,10 @@ impl Browser {
         }
     }
     fn capture_settle(&mut self, ctx: &egui::Context) {
-        if self.jobs.busy()
+        if self.project.pending.is_some()
+            || self.project.media_pending.is_some()
+            || self.project.saving.is_some()
+            || self.jobs.busy()
             || self.editing.loading()
             || self.editing.capture_open
             || self.jobs.auto_run.is_some()
@@ -998,6 +1019,20 @@ impl Browser {
         ctx.request_repaint_after(capture::TICK);
     }
     fn shortcuts(&mut self, ctx: &egui::Context) {
+        if ctx.input_mut(|i| {
+            i.consume_key(
+                egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
+                egui::Key::O,
+            )
+        }) {
+            self.project.picker = true;
+        }
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Semicolon)) {
+            self.open_project_data(ctx);
+        }
+        if self.project.data_open {
+            return;
+        }
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::N)) {
             self.show_new_episode(None);
         }
@@ -1185,6 +1220,10 @@ impl Browser {
         );
         actions.spacing_mut().item_spacing.x = t::SPACE_8;
         actions.menu_button("Episode", |ui| {
+            if ui.button("Project Data…     ⌘;").clicked() {
+                self.open_project_data(ui.ctx());
+                ui.close();
+            }
             if ui
                 .add_enabled(self.episode.is_some(), egui::Button::new("Finish Episode…"))
                 .clicked()
@@ -1194,6 +1233,14 @@ impl Browser {
             }
         });
         actions.menu_button("File", |ui| {
+            if ui.button("Open Project…     ⌘⇧O").clicked() {
+                self.project.picker = true;
+                ui.close();
+            }
+            if ui.button("Project Data…     ⌘;").clicked() {
+                self.open_project_data(ui.ctx());
+                ui.close();
+            }
             if ui.button("New Episode…     ⌘N").clicked() {
                 self.show_new_episode(None);
                 ui.close();
@@ -2088,6 +2135,13 @@ impl Browser {
         self.phase_k_poll(&ctx);
         self.phase_k_windows(&ctx);
         self.shortcuts(&ctx);
+        if self.project.picker || self.episode.is_none() {
+            self.project_picker(ui);
+            self.project_data_window(&ctx);
+            self.settings_window(&ctx);
+            self.phase_j_sheets(&ctx);
+            return;
+        }
         let rect = ui.max_rect();
         ui.painter().rect_filled(rect, 0, t::BG_WINDOW);
         let header = Rect::from_min_size(rect.min, vec2(rect.width(), t::EPISODE_HEADER_HEIGHT));
@@ -2374,6 +2428,7 @@ impl Browser {
         } else {
             self.empty(&mut view::region(ui, "empty", workspace, t::BG_WINDOW));
         }
+        self.project_data_window(&ctx);
         self.workspace_card(&ctx);
         self.confirmation_dialog(&ctx);
         self.replace_dialog(&ctx);
@@ -2385,6 +2440,7 @@ impl Browser {
 impl eframe::App for Browser {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.poll_load(ctx);
+        self.poll_project(ctx);
         self.poll_jobs(ctx);
         self.poll_phase_j(ctx);
         self.poll_editing(ctx);
