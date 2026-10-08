@@ -21,8 +21,13 @@ pub struct PhaseL {
     pub engine_change: Option<(String, String, Vec<String>)>,
     pub rename: Option<(String, String)>,
     pub media_path: Option<PathBuf>,
-    pub media_pending: Option<Receiver<Result<scriptcast_ui::waveform::Envelope, String>>>,
+    /// Millisecond start/end of the decode in flight or cached. `None` end means the whole file.
+    pub media_key: Option<(PathBuf, i64, i64)>,
+    pub decode_requests: u32,
+    pub media_pending: Option<Receiver<Result<(scriptcast_ui::waveform::Envelope, f64), String>>>,
     pub media: Option<Result<scriptcast_ui::waveform::Envelope, String>>,
+    pub media_origin: f64,
+    pub media_span: Option<(f64, f64)>,
     pub audition: Option<scriptcast_ui::audio::AudioOut>,
     pub audition_end: f64,
     pub root: Option<PathBuf>,
@@ -41,6 +46,8 @@ pub struct PhaseL {
     pub tab: String,
     pub select_id: String,
     pub draft: Option<Report>,
+    /// Name rect and engine-chip rect for each speaker row painted this frame.
+    pub speaker_rows: Vec<(egui::Rect, egui::Rect)>,
 }
 impl Browser {
     pub(crate) fn load_project(&mut self, root: PathBuf, ctx: &egui::Context) {
@@ -96,7 +103,16 @@ impl Browser {
             .and_then(|rx| rx.try_recv().ok())
         {
             self.project.media_pending = None;
-            self.project.media = Some(result);
+            match result {
+                Ok((envelope, origin)) => {
+                    let len = envelope.peaks.len() as f64
+                        * f64::from(scriptcast_ui::waveform::BUCKET_SECS);
+                    self.project.media_origin = origin;
+                    self.project.media_span = Some((origin, len));
+                    self.project.media = Some(Ok(envelope));
+                }
+                Err(error) => self.project.media = Some(Err(error)),
+            }
         }
         if let Some(audio) = &mut self.project.audition
             && audio.position().as_secs_f64() >= self.project.audition_end
@@ -174,6 +190,31 @@ impl Browser {
             Err(error) => self.project.error = error.messages(),
         }
     }
+    pub(crate) fn create_scriptcast_toml(&mut self, ctx: &egui::Context) {
+        let Some(root) = self.project.root.clone() else {
+            return;
+        };
+        if self.project.pending.is_some() || self.project.saving.is_some() {
+            return;
+        }
+        let (tx, rx) = mpsc::channel();
+        self.project.pending = Some(rx);
+        self.project.error.clear();
+        let folder = self.preferences.cli_dir.clone();
+        let ctx = ctx.clone();
+        std::thread::spawn(move || {
+            let result = (|| {
+                let resolved = cli::resolve("scriptcast-project", Some(&root), folder.as_deref())
+                    .map_err(ToolError::Failed)?;
+                let snapshot = project::init_project(&resolved, &root)?;
+                let rows =
+                    project::discover_episodes(&snapshot.report).map_err(ToolError::Failed)?;
+                Ok((snapshot, rows))
+            })();
+            let _ = tx.send(result);
+            ctx.request_repaint();
+        });
+    }
     pub(crate) fn choose_project(&mut self, ctx: &egui::Context) {
         if let Some(root) = rfd::FileDialog::new()
             .set_title("Open project folder")
@@ -206,180 +247,165 @@ impl Browser {
         let mut load = None;
         let mut open = None;
         let mut new_script = None;
+        let mut create_toml = false;
         let ctx = ui.ctx().clone();
-        egui::Frame::new().inner_margin(t::SPACE_16).show(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.heading(
-                    self.project
-                        .root
-                        .as_ref()
-                        .and_then(|p| p.file_name())
-                        .map(|s| s.to_string_lossy().into_owned())
-                        .unwrap_or_else(|| "Projects".into()),
-                );
-                ui.menu_button("File", |ui| {
-                    if ui.button("Open Project…     ⌘⇧O").clicked() {
-                        self.choose_project(&ctx);
-                        ui.close();
-                    }
-                    if ui.button("Project Data…     ⌘;").clicked() {
-                        self.open_project_data(&ctx);
-                        ui.close();
-                    }
-                    if ui.button("Settings…     ⌘,").clicked() {
-                        self.settings_open = true;
-                        ui.close();
+        let rect = ui.max_rect();
+        ui.painter().rect_filled(rect, 0.0, t::BG_WINDOW);
+        let header =
+            egui::Rect::from_min_size(rect.min, egui::vec2(rect.width(), t::EPISODE_HEADER_HEIGHT));
+        self.project_header(
+            &mut crate::view::region(ui, "project_header", header, t::BG_SURFACE),
+            true,
+        );
+        let body = crate::view::inset(
+            egui::Rect::from_min_max(header.left_bottom(), rect.max),
+            t::SPACE_16,
+            t::SPACE_16,
+        );
+        let split = body.left() + body.width() * t::PROJECT_PICKER_FRACTION;
+        let left_rect =
+            egui::Rect::from_min_max(body.min, egui::pos2(split - t::SPACE_8, body.bottom()));
+        let right_rect =
+            egui::Rect::from_min_max(egui::pos2(split + t::SPACE_8, body.top()), body.max);
+        let mut left = bordered_panel(ui, "recent_panel", left_rect);
+        left.label(t::heading("Recent projects", t::SECTION_TITLE));
+        egui::ScrollArea::vertical()
+            .id_salt("recent_projects")
+            .show(&mut left, |ui| {
+                for recent in &self.preferences.recent_projects {
+                    let selected = self.project.root.as_ref() == Some(&recent.root);
+                    let fill = if selected {
+                        t::BG_SELECTED
+                    } else {
+                        t::BG_RAISED
+                    };
+                    egui::Frame::new()
+                        .fill(fill)
+                        .stroke(egui::Stroke::new(t::BORDER, t::BORDER_DEFAULT))
+                        .corner_radius(t::RADIUS_CARD)
+                        .inner_margin(t::SPACE_8)
+                        .show(ui, |ui| {
+                            ui.set_min_width(ui.available_width());
+                            if ui
+                                .selectable_label(
+                                    selected,
+                                    t::text(&recent.name, t::BODY, t::TEXT_PRIMARY),
+                                )
+                                .clicked()
+                            {
+                                load = Some(recent.root.clone());
+                            }
+                            ui.label(t::text(
+                                recent.root.display().to_string(),
+                                t::CAPTION,
+                                t::TEXT_MUTED,
+                            ));
+                            let date = chrono::DateTime::from_timestamp(recent.opened as i64, 0)
+                                .map(|d| {
+                                    d.with_timezone(&chrono::Local)
+                                        .format("%d %b %Y, %H:%M")
+                                        .to_string()
+                                })
+                                .unwrap_or_default();
+                            ui.label(t::text(
+                                format!("Last opened · {date}"),
+                                t::CAPTION,
+                                t::TEXT_MUTED,
+                            ));
+                        });
+                    ui.add_space(t::SPACE_8);
+                }
+            });
+        if t::secondary_button(&mut left, "Open project folder…", None, true).clicked() {
+            self.choose_project(&ctx);
+        }
+        if self
+            .project
+            .snapshot
+            .as_ref()
+            .is_some_and(|s| s.report.toml.missing)
+        {
+            egui::Frame::new()
+                .fill(t::BG_RAISED)
+                .stroke(egui::Stroke::new(t::BORDER, t::BORDER_DEFAULT))
+                .corner_radius(t::RADIUS_CARD)
+                .inner_margin(t::SPACE_12)
+                .show(&mut left, |ui| {
+                    ui.label(t::text(
+                        "Not a scriptCast project",
+                        t::BODY,
+                        t::TEXT_PRIMARY,
+                    ));
+                    ui.label(t::text(
+                        "This folder has no scriptcast.toml.",
+                        t::CAPTION,
+                        t::TEXT_MUTED,
+                    ));
+                    if t::primary_button(ui, "Create scriptcast.toml here", None, true).clicked() {
+                        create_toml = true;
                     }
                 });
-                if ui.button("Project settings").clicked() {
-                    self.open_project_data(&ctx);
-                }
-                if ui.button("New episode…").clicked() {
-                    self.show_new_episode(None);
-                    if let Some(root) = self.project.root.clone() {
-                        self.apply_project_defaults(root);
+        }
+        let mut right = bordered_panel(ui, "episode_panel", right_rect);
+        right.label(t::heading("Episodes", t::SECTION_TITLE));
+        if self.project.pending.is_some() {
+            right.spinner();
+            right.label(t::text("Loading project…", t::BODY, t::TEXT_MUTED));
+        }
+        for error in &self.project.error {
+            right.label(t::text(error, t::CAPTION, t::STATUS_FAILED));
+        }
+        let summary_h = t::PROJECT_ROW_HEIGHT * 3.0;
+        let table_h = (right.available_height() - summary_h).max(t::PROJECT_ROW_HEIGHT);
+        egui::ScrollArea::vertical()
+            .id_salt("project_episodes")
+            .max_height(table_h)
+            .show(&mut right, |ui| {
+                episode_header_row(ui);
+                for (index, row) in self.project.rows.iter().enumerate() {
+                    let (rect, response) = ui.allocate_exact_size(
+                        egui::vec2(ui.available_width(), t::PROJECT_ROW_HEIGHT),
+                        egui::Sense::click(),
+                    );
+                    if self.project.selected == Some(index) {
+                        ui.painter()
+                            .rect_filled(rect, t::RADIUS_CONTROL, t::BG_SELECTED);
                     }
-                }
-            });
-            if let Some(root) = &self.project.root {
-                ui.label(t::text(
-                    root.display().to_string(),
-                    t::CAPTION,
-                    t::TEXT_MUTED,
-                ));
-            }
-            ui.separator();
-            two_columns(ui, t::PROJECT_PICKER_FRACTION, |columns| {
-                let left = &mut columns[0];
-                left.heading("Recent projects");
-                for recent in &self.preferences.recent_projects {
-                    egui::Frame::group(left.style()).show(left, |ui| {
-                        if ui
-                            .selectable_label(
-                                self.project.root.as_ref() == Some(&recent.root),
-                                &recent.name,
-                            )
-                            .clicked()
-                        {
-                            load = Some(recent.root.clone());
+                    if response.clicked() {
+                        self.project.selected = Some(index);
+                    }
+                    if response.double_clicked() {
+                        if let Some(output) = &row.output {
+                            open = Some(output.clone());
+                        } else {
+                            new_script = Some(row.script.clone());
                         }
-                        ui.label(t::text(
-                            recent.root.display().to_string(),
-                            t::CAPTION,
-                            t::TEXT_MUTED,
-                        ));
-                        let date = chrono::DateTime::from_timestamp(recent.opened as i64, 0)
-                            .map(|d| {
-                                d.with_timezone(&chrono::Local)
-                                    .format("%d %b %Y, %H:%M")
-                                    .to_string()
-                            })
-                            .unwrap_or_default();
-                        ui.label(t::text(
-                            format!("Last opened · {date}"),
-                            t::CAPTION,
-                            t::TEXT_MUTED,
-                        ));
-                    });
+                    }
+                    paint_episode_row(ui, rect, row);
                 }
-                if left.button("Open project folder…").clicked() {
-                    self.choose_project(&ctx);
-                }
-                if self
-                    .project
-                    .snapshot
-                    .as_ref()
-                    .is_some_and(|s| s.report.toml.missing)
-                {
-                    egui::Frame::group(left.style()).show(left, |ui| {
-                        ui.label("Not a scriptCast project");
-                        ui.label("This folder has no scriptcast.toml.");
-                        ui.add_enabled(false, egui::Button::new("Create scriptcast.toml here"));
-                        ui.label(
-                            "The project tool needs a create operation for a comment-only file.",
-                        );
-                    });
-                }
-                let right = &mut columns[1];
-                right.heading("Episodes");
-                if self.project.pending.is_some() {
-                    right.spinner();
-                    right.label("Loading project…");
-                }
-                for error in &self.project.error {
-                    right.colored_label(t::STATUS_FAILED, error);
-                }
-                egui::ScrollArea::both()
-                    .id_salt("project_episodes")
-                    .show(right, |ui| {
-                        egui::Grid::new("project_episode_table")
-                            .striped(true)
-                            .show(ui, |ui| {
-                                for label in [
-                                    "Episode id",
-                                    "Script file",
-                                    "Turns",
-                                    "Duration",
-                                    "Last rendered",
-                                    "Verification",
-                                    "Status",
-                                ] {
-                                    ui.label(label);
-                                }
-                                ui.end_row();
-                                for (index, row) in self.project.rows.iter().enumerate() {
-                                    let response = ui.selectable_label(
-                                        self.project.selected == Some(index),
-                                        &row.id,
-                                    );
-                                    if response.clicked() {
-                                        self.project.selected = Some(index);
-                                    }
-                                    if response.double_clicked() {
-                                        if let Some(output) = &row.output {
-                                            open = Some(output.clone());
-                                        } else {
-                                            new_script = Some(row.script.clone());
-                                        }
-                                    }
-                                    ui.label(
-                                        row.script
-                                            .file_name()
-                                            .unwrap_or_default()
-                                            .to_string_lossy(),
-                                    );
-                                    ui.label(
-                                        row.turns
-                                            .map(|n| n.to_string())
-                                            .unwrap_or_else(|| "—".into()),
-                                    );
-                                    ui.label(
-                                        row.duration_ms
-                                            .map(|n| format!("{}:{:02}", n / 60000, n / 1000 % 60))
-                                            .unwrap_or_else(|| "—".into()),
-                                    );
-                                    ui.label(&row.rendered);
-                                    ui.label(&row.verification);
-                                    ui.label(row.status.label());
-                                    ui.end_row();
-                                }
-                            });
-                    });
-                if let Some(row) = self.project.selected.and_then(|i| self.project.rows.get(i)) {
-                    egui::Frame::group(right.style()).show(right, |ui| {
-                        ui.heading(&row.id);
-                        ui.label(row.script.display().to_string());
-                        ui.label(&row.verification);
-                        ui.label(row.status.label());
-                    });
-                }
-                right.label(t::text(
-                    "Double-click an episode row to open it.",
-                    t::CAPTION,
-                    t::TEXT_MUTED,
-                ));
             });
-        });
+        right.label(t::text(
+            "Double-click an episode row to open it.",
+            t::CAPTION,
+            t::TEXT_MUTED,
+        ));
+        if let Some(row) = self.project.selected.and_then(|i| self.project.rows.get(i)) {
+            egui::Frame::new()
+                .fill(t::BG_RAISED)
+                .stroke(egui::Stroke::new(t::BORDER, t::BORDER_DEFAULT))
+                .corner_radius(t::RADIUS_CARD)
+                .inner_margin(t::SPACE_12)
+                .show(&mut right, |ui| {
+                    ui.label(t::heading(&row.id, t::SECTION_TITLE));
+                    ui.label(t::text(
+                        row.script.display().to_string(),
+                        t::CAPTION,
+                        t::TEXT_MUTED,
+                    ));
+                    ui.label(t::text(&row.verification, t::BODY, t::TEXT_PRIMARY));
+                    status_chip(ui, row.status);
+                });
+        }
         if let Some(root) = load {
             self.load_project(root, &ctx);
         }
@@ -390,11 +416,345 @@ impl Browser {
         if let Some(script) = new_script {
             self.show_new_episode(Some(script));
         }
+        if create_toml {
+            self.create_scriptcast_toml(&ctx);
+        }
+    }
+    fn project_header(&mut self, ui: &mut Ui, new_episode: bool) {
+        let rect = ui.max_rect();
+        crate::view::rule(ui, rect);
+        let mut row = ui.new_child(
+            egui::UiBuilder::new()
+                .max_rect(crate::view::inset(rect, t::SPACE_20, 0.0))
+                .layout(egui::Layout::left_to_right(egui::Align::Center)),
+        );
+        row.spacing_mut().item_spacing.x = t::SPACE_12;
+        row.add(
+            egui::Image::new(t::icon("audio-lines-22-accent"))
+                .fit_to_exact_size(egui::Vec2::splat(t::SPACE_22)),
+        );
+        let name = self
+            .project
+            .root
+            .as_ref()
+            .and_then(|p| p.file_name())
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "Projects".into());
+        row.label(t::heading(name, t::BRAND));
+        if let Some(root) = &self.project.root {
+            row.label(t::text(
+                root.display().to_string(),
+                t::CAPTION,
+                t::TEXT_MUTED,
+            ));
+        }
+        let rest = row.available_rect_before_wrap();
+        let mut actions = row.new_child(
+            egui::UiBuilder::new()
+                .id_salt("project_header_actions")
+                .max_rect(rest)
+                .layout(egui::Layout::right_to_left(egui::Align::Center)),
+        );
+        actions.spacing_mut().item_spacing.x = t::SPACE_8;
+        if new_episode && t::primary_button(&mut actions, "New episode…", None, true).clicked() {
+            self.show_new_episode(None);
+            if let Some(root) = self.project.root.clone() {
+                self.apply_project_defaults(root);
+            }
+        }
+        if !new_episode && t::secondary_button(&mut actions, "Close", None, true).clicked() {
+            self.request_close_project_data();
+        }
+        if t::secondary_button(&mut actions, "Project settings", None, true).clicked() {
+            self.settings_open = true;
+            self.project.tab = "toml".into();
+        }
+    }
+    pub(crate) fn request_close_project_data(&mut self) {
+        if self.dirty_project_files().is_empty() {
+            self.project.data_open = false;
+        } else {
+            self.project.close_prompt = true;
+        }
     }
 }
 
+fn bordered_panel(ui: &mut Ui, id: &str, rect: egui::Rect) -> Ui {
+    ui.painter()
+        .rect_filled(rect, t::RADIUS_CARD, t::BG_SURFACE);
+    ui.painter().rect_stroke(
+        rect,
+        t::RADIUS_CARD,
+        egui::Stroke::new(t::BORDER, t::BORDER_DEFAULT),
+        egui::StrokeKind::Inside,
+    );
+    let mut panel = crate::view::region(
+        ui,
+        id,
+        crate::view::inset(rect, t::SPACE_12, t::SPACE_12),
+        t::BG_SURFACE,
+    );
+    panel.set_width(panel.available_width());
+    panel
+}
+fn episode_header_row(ui: &mut Ui) {
+    let (rect, _) = ui.allocate_exact_size(
+        egui::vec2(ui.available_width(), t::TABLE_HEADER_HEIGHT),
+        egui::Sense::hover(),
+    );
+    let labels = [
+        "Episode id",
+        "Script file",
+        "Turns",
+        "Duration",
+        "Last rendered",
+        "Verification",
+        "Status",
+    ];
+    for (index, label) in labels.iter().enumerate() {
+        let cell = column_rect(rect, index, &t::PROJECT_EPISODE_SPLIT);
+        crate::view::line(ui, cell, label, t::font(t::CAPTION), t::TEXT_MUTED);
+    }
+}
+fn paint_episode_row(ui: &Ui, rect: egui::Rect, row: &scriptcast_ui::project::ProjectEpisode) {
+    let script = row.script.file_name().unwrap_or_default().to_string_lossy();
+    let turns = row
+        .turns
+        .map(|n| n.to_string())
+        .unwrap_or_else(|| "—".into());
+    let duration = row
+        .duration_ms
+        .map(crate::view::duration)
+        .unwrap_or_else(|| "—".into());
+    let rendered = if row.rendered == "—" {
+        "—".into()
+    } else {
+        project::format_rendered(&row.rendered)
+    };
+    let values = [
+        row.id.as_str(),
+        script.as_ref(),
+        turns.as_str(),
+        duration.as_str(),
+        rendered.as_str(),
+        row.verification.as_str(),
+    ];
+    for (index, value) in values.iter().enumerate() {
+        let cell = column_rect(rect, index, &t::PROJECT_EPISODE_SPLIT);
+        let first = value.lines().next().unwrap_or("");
+        crate::view::line(ui, cell, first, t::font(t::BODY), t::TEXT_PRIMARY);
+        if let Some(second) = value.lines().nth(1) {
+            let below =
+                egui::Rect::from_min_max(egui::pos2(cell.left(), cell.center().y), cell.max);
+            crate::view::line(ui, below, second, t::font(t::CAPTION), t::TEXT_MUTED);
+        }
+    }
+    let chip = column_rect(rect, 6, &t::PROJECT_EPISODE_SPLIT);
+    paint_status_chip(ui, chip, row.status);
+}
+fn clip_column(rect: egui::Rect, index: usize) -> egui::Rect {
+    column_rect(rect, index, &t::PROJECT_CLIP_SPLIT)
+}
+fn column_rect(rect: egui::Rect, index: usize, fractions: &[f32]) -> egui::Rect {
+    let mut x = rect.left();
+    for (i, fraction) in fractions.iter().enumerate() {
+        let width = rect.width() * fraction;
+        if i == index {
+            return egui::Rect::from_min_size(
+                egui::pos2(x, rect.top()),
+                egui::vec2(width, rect.height()),
+            );
+        }
+        x += width;
+    }
+    rect
+}
+fn paint_status_chip(ui: &Ui, rect: egui::Rect, status: scriptcast_ui::project::EpisodeStatus) {
+    let (fill, colour) = match status {
+        scriptcast_ui::project::EpisodeStatus::Rendered => (t::BG_CONTROL, t::STATUS_PASSED),
+        scriptcast_ui::project::EpisodeStatus::Interrupted => (t::BG_DANGER, t::STATUS_FAILED),
+        scriptcast_ui::project::EpisodeStatus::NotRendered => (t::BG_CONTROL, t::TEXT_MUTED),
+    };
+    let galley =
+        ui.painter()
+            .layout_no_wrap(status.label().to_owned(), t::font(t::CAPTION), colour);
+    let chip = egui::Rect::from_min_size(
+        egui::pos2(rect.left(), rect.center().y - t::INLINE_BUTTON_HEIGHT / 2.0),
+        egui::vec2(galley.size().x + t::SPACE_8 * 2.0, t::INLINE_BUTTON_HEIGHT),
+    );
+    ui.painter().rect_filled(chip, t::RADIUS_CONTROL, fill);
+    ui.painter().galley(
+        egui::pos2(
+            chip.left() + t::SPACE_8,
+            chip.center().y - galley.size().y / 2.0,
+        ),
+        galley,
+        colour,
+    );
+}
+fn status_chip(ui: &mut Ui, status: scriptcast_ui::project::EpisodeStatus) {
+    let galley = ui.painter().layout_no_wrap(
+        status.label().to_owned(),
+        t::font(t::CAPTION),
+        t::TEXT_PRIMARY,
+    );
+    let (rect, _) = ui.allocate_exact_size(
+        egui::vec2(galley.size().x + t::SPACE_8 * 2.0, t::INLINE_BUTTON_HEIGHT),
+        egui::Sense::hover(),
+    );
+    paint_status_chip(ui, rect, status);
+}
+fn stored_path(root: &std::path::Path, path: PathBuf) -> String {
+    let path = std::fs::canonicalize(&path).unwrap_or(path);
+    let root = std::fs::canonicalize(root).unwrap_or_else(|_| root.to_path_buf());
+    path.strip_prefix(&root)
+        .map(|relative| relative.display().to_string())
+        .unwrap_or_else(|_| path.display().to_string())
+}
+fn field_label(key: &str) -> &'static str {
+    match key {
+        "reference_audio" => "Reference audio",
+        "reference_text" => "Reference text · required",
+        "character_profile" => "Character profile · optional",
+        "speed" => "Speed",
+        "kokoro_voice" => "Kokoro voice",
+        "lang_code" => "Language code",
+        "exaggeration" => "Exaggeration",
+        "temperature" => "Temperature",
+        "cfg_weight" => "CFG weight",
+        "elevenlabs_voice_id" => "ElevenLabs voice id",
+        "name" => "Name",
+        "citation" => "Citation",
+        "origin_url" => "Origin URL",
+        "content_note" => "Content note",
+        "start" => "Start",
+        "end" => "End",
+        "voices" => "Voices",
+        "pronunciations" => "Pronunciations",
+        "speaker_rates" => "Speaker rates",
+        "clips" => "Clips",
+        "clip_sources" => "Clip sources",
+        "references" => "References",
+        "scripts" => "Scripts",
+        "outputs" => "Outputs",
+        "omnivoice_python" => "OmniVoice Python",
+        "tail_ms" => "Tail (ms)",
+        _ => "Field",
+    }
+}
+fn engine_chip_style(engine: &str) -> (&'static str, egui::Color32, egui::Color32) {
+    match engine {
+        "omnivoice" => ("OmniVoice", t::accent(), t::ON_ACCENT),
+        "archive" => ("archive", t::BG_CONTROL, t::TEXT_MUTED),
+        "kokoro" | "mlx_kokoro" => ("Kokoro", t::BG_CONTROL, t::TEXT_PRIMARY),
+        "mlx_chatterbox" => ("Chatterbox", t::BG_CONTROL, t::TEXT_PRIMARY),
+        "elevenlabs" => ("ElevenLabs", t::BG_CONTROL, t::TEXT_PRIMARY),
+        _ => ("engine", t::BG_CONTROL, t::TEXT_MUTED),
+    }
+}
+/// Dot, name, chip, and turn count painted inside `row`. Returns the name and chip rects.
+fn paint_speaker_row(
+    ui: &Ui,
+    row: egui::Rect,
+    index: usize,
+    name: &str,
+    engine: &str,
+    count: usize,
+    invalid: bool,
+) -> (egui::Rect, egui::Rect) {
+    let dot = egui::pos2(row.left() + t::SPACE_12, row.center().y);
+    ui.painter()
+        .circle_filled(dot, t::SPACE_4, t::speaker_colour(index));
+    let count_galley =
+        ui.painter()
+            .layout_no_wrap(count.to_string(), t::font(t::CAPTION), t::TEXT_MUTED);
+    let count_rect = egui::Rect::from_min_size(
+        egui::pos2(
+            row.right() - t::SPACE_8 - count_galley.size().x,
+            row.center().y - count_galley.size().y / 2.0,
+        ),
+        count_galley.size(),
+    );
+    ui.painter()
+        .galley(count_rect.min, count_galley, t::TEXT_MUTED);
+    let (label, fill, colour) = engine_chip_style(engine);
+    let chip_galley = ui
+        .painter()
+        .layout_no_wrap(label.to_owned(), t::font(t::CAPTION), colour);
+    let chip_size = egui::vec2(
+        chip_galley.size().x + t::SPACE_8 * 2.0,
+        t::INLINE_BUTTON_HEIGHT,
+    );
+    let mut chip_left = count_rect.left() - t::SPACE_8 - chip_size.x;
+    if invalid {
+        chip_left -= t::SPACE_8 + t::SPACE_8;
+    }
+    let chip_rect = egui::Rect::from_min_size(
+        egui::pos2(chip_left, row.center().y - chip_size.y / 2.0),
+        chip_size,
+    );
+    ui.painter().rect_filled(chip_rect, t::RADIUS_CONTROL, fill);
+    ui.painter().galley(
+        egui::pos2(
+            chip_rect.left() + t::SPACE_8,
+            chip_rect.center().y - chip_galley.size().y / 2.0,
+        ),
+        chip_galley,
+        colour,
+    );
+    if invalid {
+        ui.painter().circle_filled(
+            egui::pos2(chip_rect.right() + t::SPACE_8, row.center().y),
+            t::SPACE_4,
+            t::STATUS_FAILED,
+        );
+    }
+    let name_left = dot.x + t::SPACE_8;
+    let name_rect = egui::Rect::from_min_max(
+        egui::pos2(name_left, row.top()),
+        egui::pos2((chip_rect.left() - t::SPACE_8).max(name_left), row.bottom()),
+    );
+    crate::view::line(ui, name_rect, name, t::font(t::BODY), t::TEXT_PRIMARY);
+    (name_rect, chip_rect)
+}
+fn speed_slider(ui: &mut Ui, fields: &mut serde_json::Map<String, serde_json::Value>) {
+    let width = ui.available_width();
+    ui.allocate_ui_with_layout(
+        egui::vec2(width, t::BUTTON_HEIGHT),
+        egui::Layout::left_to_right(egui::Align::Center),
+        |ui| {
+            ui.label(t::text(field_label("speed"), t::BODY, t::TEXT_PRIMARY));
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.label(t::text("1.0 · default", t::CAPTION, t::TEXT_MUTED));
+            });
+        },
+    );
+    let value_box = ui.spacing().interact_size.x;
+    let track = (width - value_box - ui.spacing().item_spacing.x).max(t::SPACE_20);
+    let previous = ui.spacing().slider_width;
+    ui.spacing_mut().slider_width = track;
+    let mut number = fields
+        .get("speed")
+        .and_then(serde_json::Value::as_f64)
+        .unwrap_or(1.0);
+    let response = ui.add(egui::Slider::new(&mut number, 0.5..=1.5).text(""));
+    ui.spacing_mut().slider_width = previous;
+    if response.changed() {
+        fields.insert("speed".into(), serde_json::json!(number));
+    }
+    ui.allocate_ui_with_layout(
+        egui::vec2(track, t::BUTTON_HEIGHT),
+        egui::Layout::left_to_right(egui::Align::Center),
+        |ui| {
+            ui.label(t::text("0.5", t::CAPTION, t::TEXT_MUTED));
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.label(t::text("1.5", t::CAPTION, t::TEXT_MUTED));
+            });
+        },
+    );
+}
 fn text_field(ui: &mut Ui, fields: &mut serde_json::Map<String, serde_json::Value>, key: &str) {
-    ui.label(key.replace('_', " "));
+    ui.label(t::text(field_label(key), t::BODY, t::TEXT_PRIMARY));
     let mut value = fields
         .get(key)
         .and_then(serde_json::Value::as_str)
@@ -416,7 +776,7 @@ fn number_field(
     default: f64,
 ) {
     ui.horizontal(|ui| {
-        ui.label(key.replace('_', " "));
+        ui.label(t::text(field_label(key), t::BODY, t::TEXT_PRIMARY));
         let mut number = fields
             .get(key)
             .and_then(serde_json::Value::as_f64)
@@ -432,7 +792,8 @@ fn number_field(
     });
 }
 impl Browser {
-    pub(crate) fn project_data_window(&mut self, ctx: &egui::Context) {
+    pub(crate) fn project_data_screen(&mut self, ui: &mut Ui) {
+        let ctx = ui.ctx().clone();
         if !self.project.data_open {
             return;
         }
@@ -446,7 +807,7 @@ impl Browser {
         }
         if self.project.close_after_save && self.project.saving.is_none() {
             if let Some(file) = self.dirty_project_files().first().cloned() {
-                self.save_project_tab(&file, ctx);
+                self.save_project_tab(&file, &ctx);
             } else {
                 self.project.close_after_save = false;
                 self.project.close_prompt = false;
@@ -457,56 +818,96 @@ impl Browser {
                 return;
             }
         }
-        let mut open = true;
         let mut save = false;
         let mut reload = false;
         let mut tab = self.project.tab.clone();
+        if tab == "toml" {
+            tab = "voices".into();
+        }
         let mut selected = self.project.select_id.clone();
         let mut draft = self.project.draft.take();
-        egui::Window::new("Project data")
-            .open(&mut open)
-            .default_width(t::PROJECT_DATA_WIDTH)
-            .show(ctx, |ui| {
-                if let Some(root) = &self.project.root {
-                    ui.label(root.display().to_string());
-                }
-                let dirty = draft
-                    .as_ref()
-                    .zip(self.project.snapshot.as_ref())
-                    .is_some_and(|(d, s)| d != &s.report);
-                if dirty {
-                    ui.colored_label(t::accent(), "Unsaved changes");
-                }
-                ui.horizontal(|ui| {
-                    for (key, label) in [
-                        ("voices", "Voices"),
-                        ("clips", "Clips"),
-                        ("pronunciations", "Pronunciations"),
-                        ("accepted_hearings", "Accepted hearings"),
-                        ("speaker_rates", "Speaker rates"),
-                    ] {
-                        ui.selectable_value(&mut tab, key.into(), label);
-                    }
-                    ui.selectable_value(&mut tab, "toml".into(), "Project settings");
-                });
-                ui.separator();
-                for message in &self.project.error {
-                    ui.colored_label(t::STATUS_FAILED, message);
-                }
-                if self.project.stale && ui.button("Reload from disk (discards drafts)").clicked() {
-                    reload = true;
-                }
-                if tab != self.project.tab {
-                    selected.clear();
-                }
-                let Some(report) = &mut draft else {
-                    ui.label(if self.project.pending.is_some() {
-                        "Loading project…"
+        let rect = ui.max_rect();
+        ui.painter().rect_filled(rect, 0.0, t::BG_WINDOW);
+        let header =
+            egui::Rect::from_min_size(rect.min, egui::vec2(rect.width(), t::EPISODE_HEADER_HEIGHT));
+        self.project_header(
+            &mut crate::view::region(ui, "data_header", header, t::BG_SURFACE),
+            false,
+        );
+        let tab_bar = egui::Rect::from_min_size(
+            header.left_bottom(),
+            egui::vec2(rect.width(), t::FILTER_BAR_HEIGHT),
+        );
+        let mut tabs = crate::view::region(ui, "data_tabs", tab_bar, t::BG_WINDOW);
+        tabs.horizontal(|ui| {
+            ui.add_space(t::SPACE_16);
+            for (key, label) in [
+                ("voices", "Voices"),
+                ("clips", "Clips"),
+                ("pronunciations", "Pronunciations"),
+                ("accepted_hearings", "Accepted hearings"),
+                ("speaker_rates", "Speaker rates"),
+            ] {
+                let active = tab == key;
+                let text = t::text(
+                    label,
+                    t::BUTTON,
+                    if active {
+                        t::ON_ACCENT
                     } else {
-                        "Open a project first."
-                    });
-                    return;
-                };
+                        t::TEXT_PRIMARY
+                    },
+                );
+                if ui
+                    .add(
+                        egui::Button::new(text)
+                            .fill(if active { t::accent() } else { t::BG_CONTROL })
+                            .corner_radius(t::RADIUS_CONTROL),
+                    )
+                    .clicked()
+                {
+                    tab = key.into();
+                }
+            }
+            if draft
+                .as_ref()
+                .zip(self.project.snapshot.as_ref())
+                .is_some_and(|(d, s)| d != &s.report)
+            {
+                ui.label(t::text("Unsaved changes", t::CAPTION, t::accent()));
+            }
+        });
+        let footer = egui::Rect::from_min_max(
+            egui::pos2(rect.left(), rect.bottom() - t::PROJECT_FOOTER_HEIGHT),
+            rect.max,
+        );
+        let content = egui::Rect::from_min_max(tab_bar.left_bottom(), footer.right_top());
+        let mut content_ui = crate::view::region(
+            ui,
+            "data_body",
+            crate::view::inset(content, t::SPACE_16, t::SPACE_12),
+            t::BG_WINDOW,
+        );
+        {
+            let ui = &mut content_ui;
+            for message in &self.project.error {
+                ui.colored_label(t::STATUS_FAILED, message);
+            }
+            if self.project.stale && ui.button("Reload from disk (discards drafts)").clicked() {
+                reload = true;
+            }
+            if tab != self.project.tab {
+                selected.clear();
+            }
+            if draft.is_none() {
+                ui.label(if self.project.pending.is_some() {
+                    "Loading project…"
+                } else {
+                    "Open a project first."
+                });
+            }
+            let report = draft.as_mut();
+            if let Some(report) = report {
                 for message in &report.section(&tab).problems {
                     ui.colored_label(t::STATUS_FAILED, message);
                 }
@@ -514,7 +915,7 @@ impl Browser {
                     ui.disable();
                 }
                 egui::ScrollArea::vertical()
-                    .max_height(t::PROJECT_DATA_HEIGHT)
+                    .max_height(ui.available_height())
                     .show(ui, |ui| match tab.as_str() {
                         "voices" => self.voice_editor(ui, report, &mut selected),
                         "clips" => self.clip_editor(ui, report, &mut selected),
@@ -524,28 +925,73 @@ impl Browser {
                                 t::CAPTION,
                                 t::TEXT_MUTED,
                             ));
+                            ui.horizontal(|ui| {
+                                for label in
+                                    ["Script word", "Heard as", "Review date", "Review risk"]
+                                {
+                                    ui.label(t::text(label, t::CAPTION, t::TEXT_MUTED));
+                                }
+                            });
                             for entry in &mut report.accepted_hearings.entries {
                                 let word = entry["word"].as_str().unwrap_or("").to_owned();
-                                let date = entry["review_ts"].as_str().unwrap_or("—").to_owned();
+                                let date = entry["review_ts"]
+                                    .as_str()
+                                    .map(project::format_review_date)
+                                    .unwrap_or_else(|| "—".into());
                                 let risky = entry["risky"].as_bool().unwrap_or(false);
                                 if let Some(heard) = entry["heard"].as_array_mut() {
                                     heard.retain(|hearing| {
                                         let mut delete = false;
                                         ui.horizontal(|ui| {
-                                            ui.label(format!(
-                                                "{word} → {}",
-                                                hearing.as_str().unwrap_or("")
+                                            ui.label(t::text(&word, t::BODY, t::TEXT_PRIMARY));
+                                            ui.label(t::text(
+                                                hearing.as_str().unwrap_or(""),
+                                                t::BODY,
+                                                t::TEXT_PRIMARY,
                                             ));
-                                            ui.label(&date);
+                                            ui.label(t::text(&date, t::BODY, t::TEXT_MUTED));
                                             if risky {
-                                                ui.colored_label(t::STATUS_FAILED, "Common word");
+                                                ui.label(t::text(
+                                                    "Common word",
+                                                    t::CAPTION,
+                                                    t::STATUS_FAILED,
+                                                ));
+                                            } else {
+                                                ui.label(t::text(
+                                                    "Reviewed",
+                                                    t::CAPTION,
+                                                    t::TEXT_MUTED,
+                                                ));
                                             }
-                                            delete = ui.button("Delete").clicked();
+                                            ui.with_layout(
+                                                egui::Layout::right_to_left(egui::Align::Center),
+                                                |ui| {
+                                                    delete = ui
+                                                        .add(
+                                                            egui::Button::new(t::text(
+                                                                "Delete",
+                                                                t::BUTTON,
+                                                                t::STATUS_FAILED,
+                                                            ))
+                                                            .fill(t::BG_WINDOW)
+                                                            .stroke(egui::Stroke::new(
+                                                                t::BORDER,
+                                                                t::STATUS_FAILED,
+                                                            )),
+                                                        )
+                                                        .clicked();
+                                                },
+                                            );
                                         });
                                         !delete
                                     });
                                 }
                             }
+                            report.accepted_hearings.entries.retain(|entry| {
+                                entry["heard"]
+                                    .as_array()
+                                    .is_some_and(|heard| !heard.is_empty())
+                            });
                         }
                         "pronunciations" => {
                             report.pronunciations.entries.retain_mut(|entry| {
@@ -609,231 +1055,323 @@ impl Browser {
                         "toml" => toml_fields(ui, report),
                         _ => {}
                     });
-                ui.separator();
-                ui.label(t::text(
-                    "Comments in the file are kept.",
-                    t::CAPTION,
-                    t::TEXT_MUTED,
-                ));
-                ui.horizontal(|ui| {
-                    if ui.button("Revert").clicked()
-                        && let Some(snapshot) = &self.project.snapshot
-                    {
-                        match tab.as_str() {
-                            "voices" => report.voices = snapshot.report.voices.clone(),
-                            "clips" => report.clips = snapshot.report.clips.clone(),
-                            "pronunciations" => {
-                                report.pronunciations = snapshot.report.pronunciations.clone()
-                            }
-                            "accepted_hearings" => {
-                                report.accepted_hearings = snapshot.report.accepted_hearings.clone()
-                            }
-                            "toml" => report.toml = snapshot.report.toml.clone(),
-                            _ => {}
+            }
+        }
+        let save_name = draft
+            .as_ref()
+            .map(|report| {
+                report
+                    .section(&tab)
+                    .path
+                    .file_name()
+                    .map(|name| name.to_string_lossy().into_owned())
+                    .unwrap_or_else(|| tab.clone())
+            })
+            .unwrap_or_else(|| tab.clone());
+        let reason = draft.as_ref().and_then(|report| {
+            self.project
+                .snapshot
+                .as_ref()
+                .and_then(|snapshot| save_reason(&tab, &snapshot.report, report))
+        });
+        let dirty_tab = draft.as_ref().is_some_and(|report| {
+            self.project
+                .snapshot
+                .as_ref()
+                .is_some_and(|s| s.report.section(&tab) != report.section(&tab))
+        });
+        let mut footer_ui = crate::view::region(ui, "data_footer", footer, t::BG_SURFACE);
+        footer_ui.horizontal(|ui| {
+            ui.add_space(t::SPACE_16);
+            ui.label(t::text(
+                "Comments in the file are kept.",
+                t::CAPTION,
+                t::TEXT_MUTED,
+            ));
+            if let Some(reason) = &reason {
+                ui.label(t::text(reason, t::CAPTION, t::STATUS_FAILED));
+            }
+            if self.project.stale
+                && t::secondary_button(ui, "Reload from disk", None, true).clicked()
+            {
+                reload = true;
+            }
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                save = t::primary_button(
+                    ui,
+                    &format!("Save {save_name}"),
+                    None,
+                    reason.is_none() && dirty_tab && self.project.saving.is_none(),
+                )
+                .clicked();
+                if t::secondary_button(ui, "Revert", None, true).clicked()
+                    && let Some(snapshot) = &self.project.snapshot
+                    && let Some(report) = draft.as_mut()
+                {
+                    match tab.as_str() {
+                        "voices" => report.voices = snapshot.report.voices.clone(),
+                        "clips" => report.clips = snapshot.report.clips.clone(),
+                        "pronunciations" => {
+                            report.pronunciations = snapshot.report.pronunciations.clone()
                         }
+                        "accepted_hearings" => {
+                            report.accepted_hearings = snapshot.report.accepted_hearings.clone()
+                        }
+                        "toml" => report.toml = snapshot.report.toml.clone(),
+                        _ => {}
                     }
-                    let reason = self
-                        .project
-                        .snapshot
-                        .as_ref()
-                        .and_then(|snapshot| save_reason(&tab, &snapshot.report, report));
-                    let dirty_tab = self
-                        .project
-                        .snapshot
-                        .as_ref()
-                        .is_some_and(|s| s.report.section(&tab) != report.section(&tab));
-                    save = ui
-                        .add_enabled(
-                            reason.is_none() && dirty_tab && self.project.saving.is_none(),
-                            egui::Button::new(format!("Save {tab}")),
-                        )
-                        .clicked();
-                    if let Some(reason) = reason {
-                        ui.colored_label(t::STATUS_FAILED, reason);
-                    }
-                });
+                }
             });
+        });
         self.project.draft = draft;
         self.project.tab = tab;
         self.project.select_id = selected;
         if save {
-            self.save_project_tab(&self.project.tab.clone(), ctx);
+            self.save_project_tab(&self.project.tab.clone(), &ctx);
         }
         if reload && let Some(root) = self.project.root.clone() {
             self.project.stale = false;
             self.project.draft = self.project.snapshot.as_ref().map(|s| s.report.clone());
-            self.load_project(root, ctx);
+            self.load_project(root, &ctx);
         }
-        if !open {
-            if self.dirty_project_files().is_empty() {
-                self.project.data_open = false;
-            } else {
-                self.project.close_prompt = true;
-            }
-        }
-        self.project_close_dialog(ctx);
-        self.project_voice_dialogs(ctx);
+        self.project_close_dialog(&ctx);
+        self.project_voice_dialogs(&ctx);
     }
     fn voice_editor(&mut self, ui: &mut Ui, report: &mut Report, selected: &mut String) {
-        two_columns(ui, t::PROJECT_VOICES_FRACTION, |columns| {
-            columns[0].heading("Speakers");
-            for (index, speaker) in report.voices.speakers.iter().enumerate() {
-                let id = speaker["id"].as_str().unwrap_or("");
-                let fields = speaker["fields"].as_object();
-                let invalid = fields.is_some_and(|f| !project::required_errors(f).is_empty())
-                    || speaker["problems"]
-                        .as_array()
-                        .is_some_and(|p| !p.is_empty());
-                let count = self
-                    .episode
-                    .as_ref()
-                    .map(|episode| {
-                        episode
-                            .turns
-                            .iter()
-                            .filter(|turn| episode.speakers[turn.speaker_idx].id == id)
-                            .count()
+        bordered_columns(
+            ui,
+            t::PROJECT_VOICES_FRACTION,
+            ["speakers_list", "speaker_form"],
+            |columns| {
+                let invalid_count = report
+                    .voices
+                    .speakers
+                    .iter()
+                    .filter(|speaker| {
+                        speaker["fields"]
+                            .as_object()
+                            .is_some_and(|fields| !project::required_errors(fields).is_empty())
+                            || speaker["problems"]
+                                .as_array()
+                                .is_some_and(|problems| !problems.is_empty())
                     })
-                    .unwrap_or(0);
-                columns[0].horizontal(|ui| {
-                    ui.colored_label(t::speaker_colour(index), "●");
+                    .count();
+                columns[0].label(t::text(
+                    format!(
+                        "Speakers  {} · {invalid_count} invalid",
+                        report.voices.speakers.len()
+                    ),
+                    t::BODY,
+                    t::TEXT_PRIMARY,
+                ));
+                self.project.speaker_rows.clear();
+                for (index, speaker) in report.voices.speakers.iter().enumerate() {
+                    let id = speaker["id"].as_str().unwrap_or("");
+                    let fields = speaker["fields"].as_object();
+                    let invalid = fields.is_some_and(|f| !project::required_errors(f).is_empty())
+                        || speaker["problems"]
+                            .as_array()
+                            .is_some_and(|p| !p.is_empty());
+                    let count = self
+                        .episode
+                        .as_ref()
+                        .map(|episode| {
+                            episode
+                                .turns
+                                .iter()
+                                .filter(|turn| episode.speakers[turn.speaker_idx].id == id)
+                                .count()
+                        })
+                        .unwrap_or(0);
+                    let width = columns[0].available_width();
+                    let (rect, response) = columns[0].allocate_exact_size(
+                        egui::vec2(width, t::PROJECT_ROW_HEIGHT),
+                        egui::Sense::click(),
+                    );
+                    if selected == id {
+                        columns[0]
+                            .painter()
+                            .rect_filled(rect, t::RADIUS_CONTROL, t::BG_SELECTED);
+                    }
+                    if response.clicked() {
+                        *selected = id.into();
+                    }
                     let name = fields
                         .and_then(|f| f.get("name"))
                         .and_then(serde_json::Value::as_str)
                         .unwrap_or(id);
-                    if ui.selectable_label(selected == id, name).clicked() {
-                        *selected = id.into();
+                    let engine = fields
+                        .and_then(|f| f.get("engine"))
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or("kokoro");
+                    let hits =
+                        paint_speaker_row(&columns[0], rect, index, name, engine, count, invalid);
+                    self.project.speaker_rows.push(hits);
+                }
+                if columns[0].button("+ Add speaker").clicked() {
+                    let mut n = report.voices.speakers.len() + 1;
+                    while report
+                        .voices
+                        .speakers
+                        .iter()
+                        .any(|s| s["id"] == format!("speaker_{n}"))
+                    {
+                        n += 1;
                     }
-                    ui.label(
-                        fields
-                            .and_then(|f| f.get("engine"))
-                            .and_then(serde_json::Value::as_str)
-                            .unwrap_or("kokoro"),
+                    let id = format!("speaker_{n}");
+                    report.voices.speakers.push(
+                        serde_json::json!({"id":id, "fields":{"name":"", "engine":"omnivoice"}}),
                     );
-                    ui.label(count.to_string());
-                    if invalid {
-                        ui.colored_label(t::STATUS_FAILED, "●");
-                    }
-                });
-            }
-            if columns[0].button("+ Add speaker").clicked() {
-                let mut n = report.voices.speakers.len() + 1;
-                while report
+                    *selected = id;
+                }
+                if selected.is_empty()
+                    && let Some(first) = report.voices.speakers.first()
+                {
+                    *selected = first["id"].as_str().unwrap_or("").into();
+                }
+                let Some(speaker) = report
                     .voices
                     .speakers
-                    .iter()
-                    .any(|s| s["id"] == format!("speaker_{n}"))
-                {
-                    n += 1;
+                    .iter_mut()
+                    .find(|s| s["id"].as_str() == Some(selected))
+                else {
+                    return;
+                };
+                let Some(fields) = speaker["fields"].as_object_mut() else {
+                    return;
+                };
+                let ui = &mut columns[1];
+                let id_width = ui.available_width();
+                ui.allocate_ui_with_layout(
+                    egui::vec2(id_width, t::BUTTON_HEIGHT),
+                    egui::Layout::left_to_right(egui::Align::Center),
+                    |ui| {
+                        ui.label(t::text(
+                            format!("Id · {selected}"),
+                            t::BODY,
+                            t::TEXT_PRIMARY,
+                        ));
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            if t::secondary_button(ui, "Rename…", None, true).clicked() {
+                                self.project.rename = Some((selected.clone(), selected.clone()));
+                            }
+                        });
+                    },
+                );
+                text_field(ui, fields, "name");
+                let engine = fields
+                    .get("engine")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("kokoro")
+                    .to_owned();
+                let mut next_engine = engine.clone();
+                egui::ComboBox::from_id_salt("speaker_engine")
+                    .selected_text(&engine)
+                    .show_ui(ui, |ui| {
+                        for (key, label) in [
+                            ("omnivoice", "OmniVoice"),
+                            ("kokoro", "Kokoro"),
+                            ("mlx_chatterbox", "Chatterbox"),
+                            ("elevenlabs", "ElevenLabs"),
+                            ("archive", "Archive"),
+                        ] {
+                            ui.selectable_value(&mut next_engine, key.into(), label);
+                        }
+                    });
+                if next_engine != engine {
+                    self.project.engine_change = Some((
+                        selected.clone(),
+                        next_engine.clone(),
+                        project::removed_engine_fields(fields, &next_engine),
+                    ));
                 }
-                let id = format!("speaker_{n}");
-                report
-                    .voices
-                    .speakers
-                    .push(serde_json::json!({"id":id, "fields":{"name":"", "engine":"omnivoice"}}));
-                *selected = id;
-            }
-            if selected.is_empty()
-                && let Some(first) = report.voices.speakers.first()
-            {
-                *selected = first["id"].as_str().unwrap_or("").into();
-            }
-            let Some(speaker) = report
-                .voices
-                .speakers
-                .iter_mut()
-                .find(|s| s["id"].as_str() == Some(selected))
-            else {
-                return;
-            };
-            let Some(fields) = speaker["fields"].as_object_mut() else {
-                return;
-            };
-            let ui = &mut columns[1];
-            ui.horizontal(|ui| {
-                ui.label(format!("Id · {selected}"));
-                if ui.button("Rename…").clicked() {
-                    self.project.rename = Some((selected.clone(), selected.clone()));
+                if engine == "archive" {
+                    ui.label("Archive speakers play registered clips; no voice fields.");
                 }
-            });
-            text_field(ui, fields, "name");
-            let engine = fields
-                .get("engine")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("kokoro")
-                .to_owned();
-            let mut next_engine = engine.clone();
-            egui::ComboBox::from_id_salt("speaker_engine")
-                .selected_text(&engine)
-                .show_ui(ui, |ui| {
-                    for (key, label) in [
-                        ("omnivoice", "OmniVoice"),
-                        ("kokoro", "Kokoro"),
-                        ("mlx_chatterbox", "Chatterbox"),
-                        ("elevenlabs", "ElevenLabs"),
-                        ("archive", "Archive"),
-                    ] {
-                        ui.selectable_value(&mut next_engine, key.into(), label);
+                for key in project::engine_fields(&engine) {
+                    if [
+                        "name",
+                        "engine",
+                        "reference_audio_expressive",
+                        "reference_text_expressive",
+                    ]
+                    .contains(key)
+                    {
+                        continue;
                     }
-                });
-            if next_engine != engine {
-                self.project.engine_change = Some((
-                    selected.clone(),
-                    next_engine.clone(),
-                    project::removed_engine_fields(fields, &next_engine),
-                ));
-            }
-            if engine == "archive" {
-                ui.label("Archive speakers play registered clips; no voice fields.");
-            }
-            for key in project::engine_fields(&engine) {
-                if [
-                    "name",
-                    "engine",
-                    "reference_audio_expressive",
-                    "reference_text_expressive",
-                ]
-                .contains(key)
-                {
-                    continue;
+                    if *key == "reference_audio" {
+                        ui.label(t::text(field_label(key), t::BODY, t::TEXT_PRIMARY));
+                        let mut value = fields
+                            .get(*key)
+                            .and_then(serde_json::Value::as_str)
+                            .unwrap_or("")
+                            .to_owned();
+                        let path = report.root.join(&value);
+                        let duration = self.reference_duration(&path);
+                        let row_width = ui.available_width();
+                        ui.allocate_ui_with_layout(
+                            egui::vec2(row_width, t::BUTTON_HEIGHT),
+                            egui::Layout::right_to_left(egui::Align::Center),
+                            |ui| {
+                                if let Some(duration) = duration {
+                                    ui.label(t::text(duration, t::CAPTION, t::TEXT_MUTED));
+                                }
+                                if ui
+                                    .add_enabled(path.is_file(), egui::Button::new("Play"))
+                                    .clicked()
+                                {
+                                    self.audition_project_media(&path, 0.0, None);
+                                }
+                                if t::secondary_button(ui, "Choose…", None, true).clicked()
+                                    && let Some(picked) = rfd::FileDialog::new()
+                                        .set_directory(&report.root)
+                                        .pick_file()
+                                {
+                                    let stored = stored_path(&report.root, picked);
+                                    fields.insert((*key).into(), stored.clone().into());
+                                    value = stored;
+                                }
+                                if ui
+                                    .add(
+                                        egui::TextEdit::singleline(&mut value)
+                                            .desired_width(ui.available_width()),
+                                    )
+                                    .changed()
+                                {
+                                    fields.insert((*key).into(), value.clone().into());
+                                }
+                            },
+                        );
+                        self.load_project_media(path.clone(), None, ui.ctx());
+                        if let Some(Err(error)) = &self.project.media {
+                            ui.label(t::text(
+                                format!("Cannot decode reference audio: {error}"),
+                                t::CAPTION,
+                                t::STATUS_FAILED,
+                            ));
+                        }
+                    } else if *key == "speed" {
+                        speed_slider(ui, fields);
+                    } else {
+                        match *key {
+                            "exaggeration" => number_field(ui, fields, key, 0.0),
+                            "temperature" => number_field(ui, fields, key, 0.6),
+                            "cfg_weight" => number_field(ui, fields, key, 0.7),
+                            _ => text_field(ui, fields, key),
+                        }
+                    }
+                    if let Some(error) = project::required_errors(fields).get(*key) {
+                        ui.colored_label(t::STATUS_FAILED, error);
+                    }
                 }
-                match *key {
-                    "speed" => number_field(ui, fields, key, 1.0),
-                    "exaggeration" => number_field(ui, fields, key, 0.0),
-                    "temperature" => number_field(ui, fields, key, 0.6),
-                    "cfg_weight" => number_field(ui, fields, key, 0.7),
-                    _ => text_field(ui, fields, key),
+                if engine == "omnivoice" {
+                    ui.collapsing("Expressive reference audio + text · optional pair", |ui| {
+                        text_field(ui, fields, "reference_audio_expressive");
+                        text_field(ui, fields, "reference_text_expressive");
+                    });
                 }
-                if *key == "reference_audio"
-                    && ui.button("Choose reference audio…").clicked()
-                    && let Some(path) = rfd::FileDialog::new()
-                        .set_directory(&report.root)
-                        .pick_file()
-                {
-                    fields.insert((*key).into(), path.display().to_string().into());
-                }
-                if let Some(error) = project::required_errors(fields).get(*key) {
-                    ui.colored_label(t::STATUS_FAILED, error);
-                }
-            }
-            if let Some(path) = fields
-                .get("reference_audio")
-                .and_then(serde_json::Value::as_str)
-            {
-                let path = report.root.join(path);
-                self.load_project_media(path.clone(), ui.ctx());
-                self.media_play_button(ui, &path, 0.0, None);
-                if let Some(Err(error)) = &self.project.media {
-                    ui.label(format!("Cannot decode reference audio: {error}"));
-                }
-            }
-            if engine == "omnivoice" {
-                ui.collapsing("Expressive reference audio + text · optional pair", |ui| {
-                    text_field(ui, fields, "reference_audio_expressive");
-                    text_field(ui, fields, "reference_text_expressive");
-                });
-            }
-        });
+            },
+        );
     }
     fn clip_editor(&mut self, ui: &mut Ui, report: &mut Report, selected: &mut String) {
         ui.horizontal(|ui| {
@@ -844,11 +1382,6 @@ impl Browser {
             ui.add_enabled(false, egui::Button::new("+ Register clip…"))
                 .on_disabled_hover_text("Coming in Phase M (clip maker)");
         });
-        ui.label(t::text(
-            "Coming in Phase M (clip maker)",
-            t::CAPTION,
-            t::TEXT_MUTED,
-        ));
         let query = self.project.search.to_lowercase();
         if selected.is_empty()
             && let Some(clip) = report.clips.clips.first()
@@ -856,59 +1389,107 @@ impl Browser {
             *selected = clip["id"].as_str().unwrap_or("").into();
         }
         two_columns(ui, t::PROJECT_CLIPS_FRACTION, |columns| {
-            egui::ScrollArea::both()
+            egui::ScrollArea::vertical()
                 .id_salt("clips_table")
                 .show(&mut columns[0], |ui| {
-                    egui::Grid::new("clips_grid").striped(true).show(ui, |ui| {
-                        for label in [
-                            "Id",
-                            "Source file",
-                            "Start",
-                            "End",
-                            "Duration",
-                            "Citation",
-                            "Play",
-                        ] {
-                            ui.label(label);
+                    let (header, _) = ui.allocate_exact_size(
+                        egui::vec2(ui.available_width(), t::TABLE_HEADER_HEIGHT),
+                        egui::Sense::hover(),
+                    );
+                    for (index, label) in [
+                        "Id",
+                        "Source file",
+                        "Start",
+                        "End",
+                        "Duration",
+                        "Citation",
+                        "Play",
+                    ]
+                    .iter()
+                    .enumerate()
+                    {
+                        crate::view::line(
+                            ui,
+                            clip_column(header, index),
+                            label,
+                            t::font(t::CAPTION),
+                            t::TEXT_MUTED,
+                        );
+                    }
+                    for clip in &report.clips.clips {
+                        let id = clip["id"].as_str().unwrap_or("");
+                        let source = clip["source"].as_str().unwrap_or("");
+                        if !format!("{id} {source}").to_lowercase().contains(&query) {
+                            continue;
                         }
-                        ui.end_row();
-                        for clip in &report.clips.clips {
-                            let id = clip["id"].as_str().unwrap_or("");
-                            let source = clip["source"].as_str().unwrap_or("");
-                            if !format!("{id} {source}").to_lowercase().contains(&query) {
-                                continue;
-                            }
-                            if ui.selectable_label(selected == id, id).clicked() {
-                                *selected = id.into();
-                            }
-                            ui.vertical(|ui| {
-                                ui.label(source);
-                                if clip["source_exists"] == false {
-                                    ui.colored_label(t::STATUS_FAILED, "Missing source");
-                                }
-                            });
-                            let start = clip["start"].as_f64().unwrap_or(0.0);
-                            let end = clip["end"].as_f64().unwrap_or(start);
-                            ui.label(format!("{start:.3}"));
-                            ui.label(format!("{end:.3}"));
-                            ui.label(format!("{:.1} s", end - start));
-                            ui.label(clip["citation"].as_str().unwrap_or("—"));
-                            if ui
-                                .add_enabled(
-                                    clip["source_exists"] == true,
-                                    egui::Button::new("Play"),
-                                )
-                                .clicked()
-                            {
-                                self.audition_project_media(
-                                    &report.root.join(source),
-                                    start,
-                                    Some(end),
-                                );
-                            }
-                            ui.end_row();
+                        let (rect, response) = ui.allocate_exact_size(
+                            egui::vec2(ui.available_width(), t::PROJECT_ROW_HEIGHT),
+                            egui::Sense::click(),
+                        );
+                        if selected == id {
+                            ui.painter()
+                                .rect_filled(rect, t::RADIUS_CONTROL, t::BG_SELECTED);
                         }
-                    });
+                        if response.clicked() {
+                            *selected = id.into();
+                        }
+                        let start = clip["start"].as_f64().unwrap_or(0.0);
+                        let end = clip["end"].as_f64().unwrap_or(start);
+                        let missing = clip["source_exists"] == false;
+                        let cells = [
+                            id.to_owned(),
+                            source.to_owned(),
+                            format!("{start:.3}"),
+                            format!("{end:.3}"),
+                            format!("{:.1} s", end - start),
+                            clip["citation"].as_str().unwrap_or("—").to_owned(),
+                        ];
+                        for (index, value) in cells.iter().enumerate() {
+                            let colour = if index == 1 && missing {
+                                t::STATUS_FAILED
+                            } else {
+                                t::TEXT_PRIMARY
+                            };
+                            crate::view::line(
+                                ui,
+                                clip_column(rect, index),
+                                value,
+                                t::font(t::BODY),
+                                colour,
+                            );
+                        }
+                        if missing {
+                            let note = clip_column(rect, 1);
+                            let below = egui::Rect::from_min_max(
+                                egui::pos2(note.left(), note.center().y),
+                                note.max,
+                            );
+                            crate::view::line(
+                                ui,
+                                below,
+                                "Missing source",
+                                t::font(t::CAPTION),
+                                t::STATUS_FAILED,
+                            );
+                        }
+                        let play = clip_column(rect, 6);
+                        let mut play_ui = ui.new_child(
+                            egui::UiBuilder::new()
+                                .id_salt(("clip_play", id))
+                                .max_rect(play),
+                        );
+                        if play_ui
+                            .add_enabled(clip["source_exists"] == true, egui::Button::new("Play"))
+                            .on_disabled_hover_text("Missing source")
+                            .clicked()
+                        {
+                            self.audition_project_media(
+                                &report.root.join(source),
+                                start,
+                                Some(end),
+                            );
+                        }
+                    }
                 });
             let ui = &mut columns[1];
             if let Some(clip) = report
@@ -918,38 +1499,90 @@ impl Browser {
                 .find(|c| c["id"].as_str() == Some(selected))
             {
                 ui.heading(selected.as_str());
-                let path = report.root.join(clip["source"].as_str().unwrap_or(""));
-                self.load_project_media(path.clone(), ui.ctx());
-                let mut start = clip["start"].as_f64().unwrap_or(0.0);
-                let mut end = clip["end"].as_f64().unwrap_or(0.0);
-                if self.clip_waveform(ui, &mut start, &mut end) {
-                    clip["start"] = start.into();
-                    clip["end"] = end.into();
-                }
-                self.media_play_button(ui, &path, start, Some(end));
-                if let Some(fields) = clip.as_object_mut() {
+                ui.label(t::text(
+                    clip["source"].as_str().unwrap_or(""),
+                    t::CAPTION,
+                    t::TEXT_MUTED,
+                ));
+                let source = clip["fields"]
+                    .get("source")
+                    .and_then(serde_json::Value::as_str)
+                    .or_else(|| clip["source"].as_str())
+                    .unwrap_or("")
+                    .to_owned();
+                let path = report.root.join(&source);
+                let mut start = clip["fields"]["start"]
+                    .as_f64()
+                    .or_else(|| clip["start"].as_f64())
+                    .unwrap_or(0.0);
+                let mut end = clip["fields"]["end"]
+                    .as_f64()
+                    .or_else(|| clip["end"].as_f64())
+                    .unwrap_or(0.0);
+                self.load_project_media(path.clone(), Some((start, end)), ui.ctx());
+                let dragged = self.clip_waveform(ui, &mut start, &mut end);
+                let before_fields = clip.get("fields").cloned();
+                if let Some(fields) = clip.get_mut("fields").and_then(|v| v.as_object_mut()) {
+                    if dragged {
+                        fields.insert("start".into(), start.into());
+                        fields.insert("end".into(), end.into());
+                    }
                     number_field(ui, fields, "start", 0.0);
                     number_field(ui, fields, "end", 0.0);
                     for key in ["citation", "origin_url", "content_note"] {
                         text_field(ui, fields, key);
                     }
+                    start = fields
+                        .get("start")
+                        .and_then(serde_json::Value::as_f64)
+                        .unwrap_or(start);
+                    end = fields
+                        .get("end")
+                        .and_then(serde_json::Value::as_f64)
+                        .unwrap_or(end);
                 }
+                if clip.get("fields") != before_fields.as_ref()
+                    && let Some(fields) = clip.get("fields").cloned()
+                    && let Some(object) = clip.as_object_mut()
+                {
+                    for key in [
+                        "source",
+                        "start",
+                        "end",
+                        "citation",
+                        "origin_url",
+                        "content_note",
+                    ] {
+                        if let Some(value) = fields.get(key) {
+                            object.insert((*key).into(), value.clone());
+                        }
+                    }
+                }
+                self.media_play_button(ui, &path, start, Some(end));
                 if start < 0.0 || end <= start {
                     ui.colored_label(
                         t::STATUS_FAILED,
                         "End must be after start; start must be nonnegative.",
                     );
                 }
-                ui.label("Used in:");
-                if let Some(turns) = &self.editing.turns {
-                    for turn in &turns.turns {
-                        if scriptcast_ui::script::clip_id(&turn.body) == Some(selected) {
-                            ui.label(format!("{} · {}", turn.turn_id, turn.display_name));
+                ui.label(t::text("Used in:", t::BODY, t::TEXT_PRIMARY));
+                let uses = self.clip_usages(selected);
+                egui::Frame::new()
+                    .stroke(egui::Stroke::new(t::BORDER, t::BORDER_DEFAULT))
+                    .corner_radius(t::RADIUS_CONTROL)
+                    .inner_margin(t::SPACE_8)
+                    .show(ui, |ui| {
+                        if uses.is_empty() {
+                            ui.label(t::text(
+                                "Open an episode to see its clip turns.",
+                                t::CAPTION,
+                                t::TEXT_MUTED,
+                            ));
                         }
-                    }
-                } else {
-                    ui.label("Open an episode to see its clip turns.");
-                }
+                        for line in uses {
+                            ui.label(t::text(line, t::BODY, t::TEXT_PRIMARY));
+                        }
+                    });
             }
         });
     }
@@ -962,6 +1595,21 @@ fn save_reason(tab: &str, before: &Report, report: &Report) -> Option<String> {
             .any(|file| *file != "toml" && before.section(file) != report.section(file))
     {
         return Some("Save or revert other tabs before changing project paths.".into());
+    }
+    if tab == "clips" {
+        for clip in &report.clips.clips {
+            let start = clip["fields"]["start"]
+                .as_f64()
+                .or_else(|| clip["start"].as_f64())
+                .unwrap_or(0.0);
+            let end = clip["fields"]["end"]
+                .as_f64()
+                .or_else(|| clip["end"].as_f64())
+                .unwrap_or(0.0);
+            if start < 0.0 || end <= start {
+                return Some("End must be after start; start must be nonnegative.".into());
+            }
+        }
     }
     if tab == "voices" {
         for speaker in &report.voices.speakers {
@@ -1067,6 +1715,28 @@ impl Browser {
     }
 }
 
+fn bordered_columns(ui: &mut Ui, fraction: f32, ids: [&str; 2], body: impl FnOnce(&mut [Ui; 2])) {
+    let rect = ui.available_rect_before_wrap();
+    let split = rect.left() + rect.width() * fraction;
+    let left = egui::Rect::from_min_max(rect.min, egui::pos2(split - t::SPACE_8, rect.bottom()));
+    let right = egui::Rect::from_min_max(egui::pos2(split + t::SPACE_8, rect.top()), rect.max);
+    let mut columns = [
+        bordered_panel(ui, ids[0], left),
+        bordered_panel(ui, ids[1], right),
+    ];
+    body(&mut columns);
+    ui.advance_cursor_after_rect(rect);
+}
+fn media_request_key(path: &std::path::Path, window: Option<(f64, f64)>) -> (PathBuf, i64, i64) {
+    match window {
+        Some((start, end)) => (
+            path.to_path_buf(),
+            (start * 1000.0).round() as i64,
+            (end * 1000.0).round() as i64,
+        ),
+        None => (path.to_path_buf(), 0, -1),
+    }
+}
 fn two_columns(ui: &mut Ui, fraction: f32, body: impl FnOnce(&mut [Ui; 2])) {
     let rect = ui.available_rect_before_wrap();
     let split = rect.left() + rect.width() * fraction;
@@ -1081,17 +1751,64 @@ fn two_columns(ui: &mut Ui, fraction: f32, body: impl FnOnce(&mut [Ui; 2])) {
     ui.advance_cursor_after_rect(used);
 }
 impl Browser {
-    fn load_project_media(&mut self, path: PathBuf, ctx: &egui::Context) {
-        if self.project.media_path.as_ref() == Some(&path) {
+    fn clip_usages(&self, clip_id: &str) -> Vec<String> {
+        let Some(episode) = &self.episode else {
+            return vec![];
+        };
+        episode
+            .turns
+            .iter()
+            .filter(|turn| scriptcast_ui::script::clip_id(&turn.first_words) == Some(clip_id))
+            .map(|turn| {
+                let name = episode
+                    .speakers
+                    .get(turn.speaker_idx)
+                    .map(|speaker| speaker.name.as_str())
+                    .unwrap_or("");
+                format!(
+                    "{:03}  {} · {name}",
+                    turn.index, episode.manifest.episode_id
+                )
+            })
+            .collect()
+    }
+    fn reference_duration(&self, path: &std::path::Path) -> Option<String> {
+        if self.project.media_key.as_ref() != Some(&media_request_key(path, None)) {
+            return None;
+        }
+        let envelope = self.project.media.as_ref()?.as_ref().ok()?;
+        Some(format!(
+            "{:.1} s",
+            envelope.peaks.len() as f32 * scriptcast_ui::waveform::BUCKET_SECS
+        ))
+    }
+    fn load_project_media(
+        &mut self,
+        path: PathBuf,
+        window: Option<(f64, f64)>,
+        ctx: &egui::Context,
+    ) {
+        let key = media_request_key(&path, window);
+        if self.project.media_key.as_ref() == Some(&key)
+            && (self.project.media_pending.is_some() || self.project.media.is_some())
+        {
             return;
         }
         self.project.media_path = Some(path.clone());
+        self.project.media_key = Some(key);
+        self.project.decode_requests += 1;
         self.project.media = None;
+        self.project.media_span = None;
         let (tx, rx) = mpsc::channel();
         self.project.media_pending = Some(rx);
         let ctx = ctx.clone();
         std::thread::spawn(move || {
-            let _ = tx.send(scriptcast_ui::waveform::envelope(&[path]));
+            let result = if let Some((start, end)) = window {
+                scriptcast_ui::waveform::clip_envelope(&path, start, end)
+            } else {
+                scriptcast_ui::waveform::envelope(&[path]).map(|envelope| (envelope, 0.0))
+            };
+            let _ = tx.send(result);
             ctx.request_repaint();
         });
     }
@@ -1117,7 +1834,19 @@ impl Browser {
                     audio.seek(std::time::Duration::from_secs_f64(start));
                     self.project.audition_end = end.unwrap_or(f64::INFINITY);
                 }
-                Err(error) => self.project.error = vec![error],
+                Err(error) => {
+                    let Some(stop) = end else {
+                        self.project.error = vec![error];
+                        return;
+                    };
+                    match scriptcast_ui::waveform::ffmpeg_wav(path, start, stop - start) {
+                        Ok(bytes) => match audio.play_wav_bytes(bytes) {
+                            Ok(()) => self.project.audition_end = f64::INFINITY,
+                            Err(play) => self.project.error = vec![play],
+                        },
+                        Err(ffmpeg) => self.project.error = vec![format!("{error}; {ffmpeg}")],
+                    }
+                }
             }
         }
     }
@@ -1167,8 +1896,10 @@ impl Browser {
                 return false;
             }
         };
-        let duration =
-            envelope.peaks.len() as f64 * f64::from(scriptcast_ui::waveform::BUCKET_SECS);
+        let origin = self.project.media_origin;
+        let duration = (envelope.peaks.len() as f64
+            * f64::from(scriptcast_ui::waveform::BUCKET_SECS))
+        .max(f64::from(scriptcast_ui::waveform::BUCKET_SECS));
         let (rect, _) = ui.allocate_exact_size(
             egui::vec2(ui.available_width(), t::PROJECT_WAVE_HEIGHT),
             egui::Sense::hover(),
@@ -1190,8 +1921,11 @@ impl Browser {
                 egui::Stroke::new(t::WAVE_BAR, t::TEXT_MUTED),
             );
         }
-        let x0 = rect.left() + (*start / duration).clamp(0.0, 1.0) as f32 * rect.width();
-        let x1 = rect.left() + (*end / duration).clamp(0.0, 1.0) as f32 * rect.width();
+        let x_at = |time: f64| {
+            rect.left() + ((time - origin) / duration).clamp(0.0, 1.0) as f32 * rect.width()
+        };
+        let x0 = x_at(*start);
+        let x1 = x_at(*end);
         ui.painter().rect_stroke(
             egui::Rect::from_min_max(egui::pos2(x0, rect.top()), egui::pos2(x1, rect.bottom())),
             t::RADIUS_CONTROL,
@@ -1210,8 +1944,8 @@ impl Browser {
             if response.dragged()
                 && let Some(pos) = response.interact_pointer_pos()
             {
-                let seconds =
-                    f64::from(((pos.x - rect.left()) / rect.width()).clamp(0.0, 1.0)) * duration;
+                let seconds = origin
+                    + f64::from(((pos.x - rect.left()) / rect.width()).clamp(0.0, 1.0)) * duration;
                 if key == "start" {
                     *start = seconds.min(*end);
                 } else {
@@ -1301,21 +2035,36 @@ fn toml_fields(ui: &mut Ui, report: &mut Report) {
                 }
             });
         } else {
-            text_field(ui, &mut report.toml.values, key);
-            if ui.button(format!("Choose {key}…")).clicked() {
-                let dialog = rfd::FileDialog::new().set_directory(&report.root);
-                let path = if ["clip_sources", "references", "scripts", "outputs"].contains(&key) {
-                    dialog.pick_folder()
-                } else {
-                    dialog.pick_file()
-                };
-                if let Some(path) = path {
-                    report
-                        .toml
-                        .values
-                        .insert(key.into(), path.display().to_string().into());
+            ui.label(t::text(field_label(key), t::BODY, t::TEXT_PRIMARY));
+            let mut value = report
+                .toml
+                .values
+                .get(key)
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("")
+                .to_owned();
+            ui.horizontal(|ui| {
+                if ui
+                    .add(egui::TextEdit::singleline(&mut value).desired_width(ui.available_width()))
+                    .changed()
+                {
+                    report.toml.values.insert(key.into(), value.clone().into());
                 }
-            }
+                if t::secondary_button(ui, "Choose…", None, true).clicked() {
+                    let dialog = rfd::FileDialog::new().set_directory(&report.root);
+                    let path =
+                        if ["clip_sources", "references", "scripts", "outputs"].contains(&key) {
+                            dialog.pick_folder()
+                        } else {
+                            dialog.pick_file()
+                        };
+                    if let Some(path) = path {
+                        let stored = stored_path(&report.root, path);
+                        report.toml.values.insert(key.into(), stored.clone().into());
+                        value = stored;
+                    }
+                }
+            });
         }
     }
 }
@@ -1397,7 +2146,7 @@ mod tests {
                     )),
                     ..Default::default()
                 },
-                |ui| browser.project_data_window(ui.ctx()),
+                |ui| browser.project_data_screen(ui),
             );
             assert!(!output.shapes.is_empty());
             assert!(
@@ -1406,6 +2155,56 @@ mod tests {
             );
             assert!(browser.project.audition.is_none());
             output.textures_delta.clear();
+        }
+    }
+    #[test]
+    fn clip_decode_is_requested_once_across_frames() {
+        let ctx = egui::Context::default();
+        t::apply(&ctx);
+        let mut browser = draft_browser();
+        browser.project.tab = "clips".into();
+        browser.project.select_id = "jalachantelle_2026a".into();
+        let input = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                t::WINDOW_SIZE.into(),
+            )),
+            ..Default::default()
+        };
+        for _ in 0..4 {
+            let mut output = ctx.run_ui(input.clone(), |ui| browser.project_data_screen(ui));
+            output.textures_delta.clear();
+            browser.poll_project(&ctx);
+        }
+        assert_eq!(browser.project.decode_requests, 1);
+        assert!(browser.dirty_project_files().is_empty());
+    }
+    #[test]
+    fn speaker_row_chip_overlaps_name() {
+        let ctx = egui::Context::default();
+        t::apply(&ctx);
+        let mut browser = draft_browser();
+        browser.project.tab = "voices".into();
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    t::WINDOW_SIZE.into(),
+                )),
+                ..Default::default()
+            },
+            |ui| browser.project_data_screen(ui),
+        );
+        output.textures_delta.clear();
+        assert!(
+            browser.project.speaker_rows.len() > 1,
+            "expected every speaker row"
+        );
+        for (name, chip) in &browser.project.speaker_rows {
+            assert!(
+                name.top() < chip.bottom() && chip.top() < name.bottom(),
+                "name {name:?} and chip {chip:?} do not share a row"
+            );
         }
     }
     #[test]

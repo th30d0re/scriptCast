@@ -695,6 +695,11 @@ pub const PROJECT_VOICES_FRACTION: f32 = 0.3;
 pub const PROJECT_CLIPS_FRACTION: f32 = 0.6;
 pub const PROJECT_WAVE_HEIGHT: f32 = 96.0;
 pub const PROJECT_WAVE_AMPLITUDE: f32 = 0.45;
+pub const PROJECT_ROW_HEIGHT: f32 = 44.0;
+pub const PROJECT_FOOTER_HEIGHT: f32 = 56.0;
+pub const PROJECT_SOURCE_WIDTH: f32 = 220.0;
+pub const PROJECT_EPISODE_SPLIT: [f32; 7] = [0.16, 0.16, 0.08, 0.10, 0.16, 0.20, 0.14];
+pub const PROJECT_CLIP_SPLIT: [f32; 7] = [0.16, 0.28, 0.10, 0.10, 0.10, 0.16, 0.10];
 
 #[cfg(test)]
 mod tests {

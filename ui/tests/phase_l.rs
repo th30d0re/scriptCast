@@ -29,6 +29,25 @@ fn real_show_schema_preserves_readings_rates_and_problems() {
     for key in TOML_KEYS {
         assert!(report.toml.values.contains_key(key));
     }
+    assert!(
+        report.voices.speakers.iter().all(|speaker| {
+            speaker["fields"].is_object() && speaker["fields"]["name"].is_string()
+        })
+    );
+    assert!(
+        report
+            .clips
+            .clips
+            .iter()
+            .all(|clip| { clip["fields"].is_object() && clip["fields"].get("source").is_some() })
+    );
+    assert!(
+        report
+            .pronunciations
+            .entries
+            .iter()
+            .all(|entry| { entry["fields"].is_object() && entry["fields"] == entry["readings"] })
+    );
 }
 #[test]
 fn changed_fields_include_only_actual_changes() {
@@ -147,6 +166,14 @@ fn discovery_reads_rendered_outputs_and_unrendered_scripts() {
         "Aisha (00:00)\nHello.\nAisha (00:01)\nAgain.\n",
     )
     .unwrap();
+    std::fs::write(temp.join("scripts/other.md"), "Bob (00:00)\nHi.\n").unwrap();
+    let manifest = temp.join("outputs/one/episode_manifest.json");
+    let text = std::fs::read_to_string(&manifest).unwrap();
+    std::fs::write(
+        manifest,
+        text.replace("\"script.md\"", "\"scripts/new.md\""),
+    )
+    .unwrap();
     let mut report = fixture();
     report.root = temp.clone();
     report
@@ -155,15 +182,87 @@ fn discovery_reads_rendered_outputs_and_unrendered_scripts() {
         .insert("scripts".into(), "scripts".into());
     let rows = discover_episodes(&report).unwrap();
     assert_eq!(rows.len(), 2);
-    let new = rows.iter().find(|r| r.id == "new").unwrap();
-    assert_eq!(new.status, EpisodeStatus::NotRendered);
-    assert_eq!(new.turns, Some(2));
-    assert!(rows.iter().any(|r| r.status == EpisodeStatus::Rendered));
+    let rendered = rows
+        .iter()
+        .find(|r| r.status == EpisodeStatus::Rendered)
+        .unwrap();
+    assert!(same_file(&rendered.script, &temp.join("scripts/new.md")));
+    assert!(rendered.turns.is_some());
+    let other = rows.iter().find(|r| r.id == "other").unwrap();
+    assert_eq!(other.status, EpisodeStatus::NotRendered);
+    assert!(
+        !rows
+            .iter()
+            .any(|r| r.status == EpisodeStatus::NotRendered && r.id == "new")
+    );
+    assert_eq!(format_review_date("2026-10-05T01:33:56Z"), "05 Oct 2026");
+    let rendered_at = format_rendered("2026-10-05T14:32:20Z");
+    assert!(rendered_at.contains("Oct 2026"));
+    assert!(rendered_at.contains('\n'));
     std::fs::remove_dir_all(temp).unwrap();
 }
 
 #[test]
-fn real_tool_partial_speed_edit_exposes_contract_conflict_without_writing() {
+fn speaker_and_clip_ops_send_the_complete_mapping() {
+    let report = fixture();
+    let before = report.voices.clone();
+    let mut after = before.clone();
+    let speaker = after
+        .speakers
+        .iter_mut()
+        .find(|speaker| speaker["id"] == "aisha")
+        .unwrap();
+    let mut fields = speaker["fields"].as_object().unwrap().clone();
+    fields.insert("speed".into(), json!(1.04));
+    let reference_text = fields["reference_text"].clone();
+    speaker["fields"] = json!(fields);
+    let ops = voice_ops(&before, &after).unwrap();
+    assert_eq!(ops.len(), 1);
+    assert_eq!(ops[0]["op"], "set_speaker");
+    assert_eq!(ops[0]["id"], "aisha");
+    assert_eq!(ops[0]["fields"]["speed"], 1.04);
+    assert_eq!(
+        ops[0]["fields"]["name"],
+        before.speakers.iter().find(|s| s["id"] == "aisha").unwrap()["fields"]["name"]
+    );
+    assert_eq!(ops[0]["fields"]["reference_text"], reference_text);
+    assert!(ops[0]["fields"].as_object().unwrap().len() > 2);
+
+    let clips = report.clips.clone();
+    let mut edited = clips.clone();
+    edited.clips[0]["fields"]["content_note"] = "Kept with the source.".into();
+    let ops = clip_ops(&clips, &edited).unwrap();
+    assert_eq!(ops.len(), 1);
+    assert_eq!(ops[0]["op"], "set_clip");
+    assert_eq!(ops[0]["fields"]["content_note"], "Kept with the source.");
+    assert_eq!(
+        ops[0]["fields"]["source"],
+        clips.clips[0]["fields"]["source"]
+    );
+}
+
+fn one_added_line(before: &str, after: &str) -> Option<String> {
+    let before: Vec<&str> = before.lines().collect();
+    let after: Vec<&str> = after.lines().collect();
+    if after.len() != before.len() + 1 {
+        return None;
+    }
+    let mut index = 0;
+    let mut added = None;
+    for line in &after {
+        if index < before.len() && *line == before[index] {
+            index += 1;
+        } else if added.is_none() {
+            added = Some((*line).to_owned());
+        } else {
+            return None;
+        }
+    }
+    (index == before.len()).then_some(added).flatten()
+}
+
+#[test]
+fn real_tool_speed_edit_changes_exactly_one_line() {
     use scriptcast_ui::cli::{ExportSource, Resolved};
     use std::{fs, path::Path};
     let python = Path::new("/tmp/scriptcast-l/venv/bin/python");
@@ -193,15 +292,8 @@ fn real_tool_partial_speed_edit_exposes_contract_conflict_without_writing() {
         pythonpath: Some(checkout),
     };
     let snapshot = load(&resolved, &root).unwrap();
-    let before = fs::read(root.join("voices.yaml")).unwrap();
-    let result = edit(
-        &resolved,
-        &snapshot,
-        "voices",
-        &[json!({"file":"voices","op":"set_speaker","id":"aisha","fields":{"speed":1.04}})],
-    );
-    assert!(matches!(result, Err(ToolError::Validation(_))));
-    assert_eq!(fs::read(root.join("voices.yaml")).unwrap(), before);
+    let voices = root.join("voices.yaml");
+    let before = fs::read(&voices).unwrap();
     let mut stale = snapshot.clone();
     stale.hashes.insert("voices".into(), "0".repeat(64));
     assert!(matches!(
@@ -213,7 +305,50 @@ fn real_tool_partial_speed_edit_exposes_contract_conflict_without_writing() {
         ),
         Err(ToolError::Stale)
     ));
-    assert_eq!(fs::read(root.join("voices.yaml")).unwrap(), before);
+    assert_eq!(fs::read(&voices).unwrap(), before);
+    let speaker = snapshot
+        .report
+        .voices
+        .speakers
+        .iter()
+        .find(|speaker| speaker["id"] == "aisha")
+        .expect("aisha");
+    let mut fields = speaker["fields"].as_object().unwrap().clone();
+    fields.insert("speed".into(), json!(1.04));
+    let saved = edit(
+        &resolved,
+        &snapshot,
+        "voices",
+        &[json!({"file":"voices","op":"set_speaker","id":"aisha","fields":fields})],
+    )
+    .unwrap_or_else(|error| panic!("speed edit failed: {}", error.messages().join("; ")));
+    let after = String::from_utf8(fs::read(&voices).unwrap()).unwrap();
+    let before_text = String::from_utf8(before).unwrap();
+    let added = one_added_line(&before_text, &after)
+        .unwrap_or_else(|| panic!("expected one inserted line\n{before_text}\n---\n{after}"));
+    assert!(
+        added.contains("speed") && added.contains("1.04"),
+        "inserted line was {added}"
+    );
+    assert_eq!(
+        saved
+            .report
+            .voices
+            .speakers
+            .iter()
+            .find(|speaker| speaker["id"] == "aisha")
+            .unwrap()["fields"]["speed"],
+        1.04
+    );
+    let empty = root.join("empty-init");
+    fs::create_dir_all(&empty).unwrap();
+    let created = init_project(&resolved, &empty).unwrap();
+    let toml = fs::read_to_string(empty.join("scriptcast.toml")).unwrap();
+    assert_eq!(
+        toml,
+        "# scriptCast project settings. Every key is optional; see the README Configuration table.\n"
+    );
+    assert!(!created.report.toml.missing);
     fs::remove_dir_all(root).unwrap();
 }
 

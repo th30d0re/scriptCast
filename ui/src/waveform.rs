@@ -17,35 +17,103 @@ pub struct Envelope {
 pub fn envelope(paths: &[PathBuf]) -> Result<Envelope, String> {
     let mut peaks = Vec::new();
     for path in paths {
-        let file = File::open(path).map_err(|e| e.to_string())?;
-        let reader = BufReader::new(file);
-        let decoder = Decoder::new(reader).map_err(|e| e.to_string())?;
-
-        let channels = decoder.channels();
-        let sample_rate = decoder.sample_rate();
-        // 10 ms bucket
-        let items_per_bucket = ((sample_rate.get() as usize) * (channels.get() as usize)) / 100;
-
-        let mut current_peak = 0.0_f32;
-        let mut count = 0;
-
-        for sample in decoder {
-            let val = sample.abs();
-            if val > current_peak {
-                current_peak = val;
-            }
-            count += 1;
-            if count == items_per_bucket {
-                peaks.push(current_peak);
-                current_peak = 0.0;
-                count = 0;
-            }
-        }
-        if count > 0 {
-            peaks.push(current_peak);
-        }
+        peaks.extend(peaks_of_file(path)?);
     }
     Ok(Envelope { peaks })
+}
+
+fn peaks_of_file(path: &std::path::Path) -> Result<Vec<f32>, String> {
+    let file = File::open(path).map_err(|e| e.to_string())?;
+    peaks_of_reader(BufReader::new(file)).map_err(|e| format!("{}: {e}", path.display()))
+}
+
+fn peaks_of_reader(
+    reader: impl std::io::Read + std::io::Seek + Send + Sync + 'static,
+) -> Result<Vec<f32>, String> {
+    let decoder = Decoder::new(reader).map_err(|e| e.to_string())?;
+    let channels = decoder.channels();
+    let sample_rate = decoder.sample_rate();
+    // 10 ms bucket
+    let items_per_bucket = ((sample_rate.get() as usize) * (channels.get() as usize)) / 100;
+    let mut peaks = Vec::new();
+    let mut current_peak = 0.0_f32;
+    let mut count = 0;
+    for sample in decoder {
+        let val = sample.abs();
+        if val > current_peak {
+            current_peak = val;
+        }
+        count += 1;
+        if count == items_per_bucket {
+            peaks.push(current_peak);
+            current_peak = 0.0;
+            count = 0;
+        }
+    }
+    if count > 0 {
+        peaks.push(current_peak);
+    }
+    Ok(peaks)
+}
+
+/// Seconds of source audio kept on either side of a clip when ffmpeg builds the waveform.
+pub const CLIP_CONTEXT_SECS: f64 = 2.0;
+
+/// Decode `[start, start + len)` to a mono 48 kHz WAV in memory.
+/// `ffmpeg is not available` when the binary is missing.
+pub fn ffmpeg_wav(path: &std::path::Path, start: f64, len: f64) -> Result<Vec<u8>, String> {
+    if !start.is_finite() || !len.is_finite() || start < 0.0 || len <= 0.0 {
+        return Err("Invalid audio range".into());
+    }
+    let output = match std::process::Command::new("ffmpeg")
+        .args(["-v", "error", "-ss"])
+        .arg(format!("{start:.3}"))
+        .arg("-t")
+        .arg(format!("{len:.3}"))
+        .arg("-i")
+        .arg(path)
+        .args(["-f", "wav", "-ac", "1", "-ar", "48000", "-"])
+        .stdin(std::process::Stdio::null())
+        .output()
+    {
+        Ok(output) => output,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Err("ffmpeg is not available".into());
+        }
+        Err(error) => return Err(error.to_string()),
+    };
+    if !output.status.success() {
+        let detail = String::from_utf8_lossy(&output.stderr).trim().to_owned();
+        return Err(if detail.is_empty() {
+            format!("ffmpeg exited {}", output.status)
+        } else {
+            format!("ffmpeg: {detail}")
+        });
+    }
+    if output.stdout.is_empty() {
+        return Err("ffmpeg produced no audio".into());
+    }
+    Ok(output.stdout)
+}
+
+/// Full-file peaks when rodio can decode the source. Otherwise a padded window via ffmpeg.
+/// The `f64` is the window's start in the source, or `0` for a full-file decode.
+pub fn clip_envelope(
+    path: &std::path::Path,
+    start: f64,
+    end: f64,
+) -> Result<(Envelope, f64), String> {
+    match peaks_of_file(path) {
+        Ok(peaks) => Ok((Envelope { peaks }, 0.0)),
+        Err(native) => {
+            let ss = (start - CLIP_CONTEXT_SECS).max(0.0);
+            let len = (end - ss).max(end - start) + CLIP_CONTEXT_SECS;
+            let bytes =
+                ffmpeg_wav(path, ss, len).map_err(|ffmpeg| format!("{native}; {ffmpeg}"))?;
+            let peaks = peaks_of_reader(std::io::Cursor::new(bytes))?;
+            Ok((Envelope { peaks }, ss))
+        }
+    }
 }
 
 pub fn bars(env: &Envelope, n: usize) -> Vec<f32> {
@@ -234,6 +302,20 @@ mod tests {
             "Expected ~{} buckets, got {}",
             expected_buckets,
             env.peaks.len()
+        );
+    }
+
+    #[test]
+    fn ffmpeg_names_a_missing_binary_or_a_missing_source() {
+        let error = ffmpeg_wav(
+            std::path::Path::new("/tmp/scriptcast-no-such-clip.mp4"),
+            0.0,
+            1.0,
+        )
+        .unwrap_err();
+        assert!(
+            error.contains("ffmpeg is not available") || error.contains("ffmpeg"),
+            "{error}"
         );
     }
 }

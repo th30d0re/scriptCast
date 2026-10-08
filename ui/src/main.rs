@@ -1031,6 +1031,9 @@ impl Browser {
             self.open_project_data(ctx);
         }
         if self.project.data_open {
+            if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+                self.request_close_project_data();
+            }
             return;
         }
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::N)) {
@@ -2135,9 +2138,14 @@ impl Browser {
         self.phase_k_poll(&ctx);
         self.phase_k_windows(&ctx);
         self.shortcuts(&ctx);
+        if self.project.data_open {
+            self.project_data_screen(ui);
+            self.settings_window(&ctx);
+            self.phase_j_sheets(&ctx);
+            return;
+        }
         if self.project.picker || self.episode.is_none() {
             self.project_picker(ui);
-            self.project_data_window(&ctx);
             self.settings_window(&ctx);
             self.phase_j_sheets(&ctx);
             return;
@@ -2428,7 +2436,6 @@ impl Browser {
         } else {
             self.empty(&mut view::region(ui, "empty", workspace, t::BG_WINDOW));
         }
-        self.project_data_window(&ctx);
         self.workspace_card(&ctx);
         self.confirmation_dialog(&ctx);
         self.replace_dialog(&ctx);

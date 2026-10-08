@@ -205,7 +205,8 @@ pub fn required_errors(fields: &Map<String, Value>) -> BTreeMap<String, String> 
     errors
 }
 
-/// Changed fields are represented separately from replacement semantics in the current Python tool.
+/// Keys whose values differ. TOML `set` ops use this list. Speaker, clip, and pronunciation
+/// ops send the complete mapping so unchanged keys stay byte-identical.
 pub fn changed_fields(
     before: &Map<String, Value>,
     after: &Map<String, Value>,
@@ -290,6 +291,38 @@ impl EpisodeStatus {
         }
     }
 }
+/// Manifest `source_file` is relative to the project root. An absolute path is used as given.
+pub fn script_from_manifest(root: &std::path::Path, source_file: &str) -> PathBuf {
+    let raw = std::path::Path::new(source_file);
+    if raw.is_absolute() {
+        raw.to_path_buf()
+    } else {
+        root.join(raw)
+    }
+}
+pub fn same_file(left: &std::path::Path, right: &std::path::Path) -> bool {
+    match (fs::canonicalize(left), fs::canonicalize(right)) {
+        (Ok(left), Ok(right)) => left == right,
+        _ => left == right,
+    }
+}
+/// Local wall time, two lines: `05 Oct 2026` then `10:32`.
+pub fn format_rendered(raw: &str) -> String {
+    let Ok(stamp) = chrono::DateTime::parse_from_rfc3339(raw) else {
+        return raw.to_owned();
+    };
+    stamp
+        .with_timezone(&chrono::Local)
+        .format("%d %b %Y\n%H:%M")
+        .to_string()
+}
+/// Calendar date of the timestamp, in UTC so `2026-10-05T01:33:56Z` stays 05 Oct 2026.
+pub fn format_review_date(raw: &str) -> String {
+    let Ok(stamp) = chrono::DateTime::parse_from_rfc3339(raw) else {
+        return raw.to_owned();
+    };
+    stamp.format("%d %b %Y").to_string()
+}
 pub fn episode_status(has_manifest: bool, has_unfinished_job: bool) -> EpisodeStatus {
     if has_unfinished_job {
         EpisodeStatus::Interrupted
@@ -369,9 +402,7 @@ pub fn discover_episodes(report: &Report) -> Result<Vec<ProjectEpisode>, String>
                 .filter(|t| t.verification == VerificationState::Failed)
                 .count();
             let unchecked = episode.turns.len() - passed - failed;
-            let script = episode
-                .script_path
-                .unwrap_or_else(|| root.join(&episode.manifest.source_file));
+            let script = script_from_manifest(root, &episode.manifest.source_file);
             rows.push(ProjectEpisode {
                 id: episode.manifest.episode_id,
                 script,
@@ -401,11 +432,7 @@ pub fn discover_episodes(report: &Report) -> Result<Vec<ProjectEpisode>, String>
             if !path.extension().is_some_and(|e| e == "md" || e == "txt") {
                 continue;
             }
-            let canonical = fs::canonicalize(&path).unwrap_or(path.clone());
-            if rows
-                .iter()
-                .any(|row| fs::canonicalize(&row.script).unwrap_or(row.script.clone()) == canonical)
-            {
+            if rows.iter().any(|row| same_file(&row.script, &path)) {
                 continue;
             }
             rows.push(ProjectEpisode {
@@ -444,12 +471,13 @@ impl Report {
 }
 pub fn small_list_ops(file: &str, before: &Section, after: &Section) -> Result<Vec<Value>, String> {
     match file {
-        "voices" => rename_ops(before, after),
+        "voices" => voice_ops(before, after),
+        "clips" => clip_ops(before, after),
         "toml" => Ok(toml_ops(before, after)),
         "pronunciations" => Ok(pronunciation_ops(before, after)),
         "accepted_hearings" => Ok(hearing_ops(before, after)),
         "speaker_rates" => Err("Speaker rates are read-only.".into()),
-        _ => Err("The project tool replaces omitted fields. Safe partial edits need a tool contract update.".into()),
+        other => Err(format!("Unknown project file {other}")),
     }
 }
 
@@ -537,22 +565,115 @@ pub fn load(
     Ok(after)
 }
 
-/// Renaming is safe in the current tool; replacement speaker edits require a contract decision.
+/// Id changes become `rename_speaker`. Field edits are separate complete `set_speaker` ops.
 pub fn rename_ops(before: &Section, after: &Section) -> Result<Vec<Value>, String> {
     let mut ops = vec![];
     for new in &after.speakers {
-        let old_id = new.get("original_id").unwrap_or(&new["id"]);
-        let old = before.speakers.iter().find(|old| &old["id"] == old_id);
-        if old.is_none_or(|old| old["fields"] != new["fields"]) {
-            return Err(
-                "The project tool replaces omitted fields. Safe partial speaker edits need a tool update.".into()
-            );
-        }
-        if old_id != &new["id"] {
-            ops.push(json!({"file":"voices", "op":"rename_speaker", "id":old_id, "to":new["id"]}));
+        let old_id = new
+            .get("original_id")
+            .and_then(Value::as_str)
+            .unwrap_or_else(|| new["id"].as_str().unwrap_or(""));
+        let new_id = new["id"].as_str().unwrap_or("");
+        let known = before
+            .speakers
+            .iter()
+            .any(|old| old["id"].as_str() == Some(old_id));
+        if known && old_id != new_id {
+            ops.push(json!({"file":"voices", "op":"rename_speaker", "id":old_id, "to":new_id}));
         }
     }
     Ok(ops)
+}
+
+fn loaded_speaker_id(speaker: &Value) -> &str {
+    speaker
+        .get("original_id")
+        .and_then(Value::as_str)
+        .unwrap_or_else(|| speaker["id"].as_str().unwrap_or(""))
+}
+
+/// `set_speaker` receives every key in `fields`. Absent keys are removed by the tool.
+pub fn voice_ops(before: &Section, after: &Section) -> Result<Vec<Value>, String> {
+    let mut ops = vec![];
+    for old in &before.speakers {
+        let id = old["id"].as_str().unwrap_or("");
+        if !after
+            .speakers
+            .iter()
+            .any(|speaker| loaded_speaker_id(speaker) == id)
+        {
+            ops.push(json!({"file":"voices", "op":"delete_speaker", "id":id}));
+        }
+    }
+    ops.extend(rename_ops(before, after)?);
+    for new in &after.speakers {
+        let id = new["id"].as_str().unwrap_or("");
+        let fields = new
+            .get("fields")
+            .and_then(Value::as_object)
+            .ok_or_else(|| format!("Speaker {id} is missing fields"))?;
+        let loaded = loaded_speaker_id(new);
+        let previous = before
+            .speakers
+            .iter()
+            .find(|old| old["id"].as_str() == Some(loaded));
+        if previous.is_none_or(|old| old.get("fields") != new.get("fields")) {
+            ops.push(json!({"file":"voices", "op":"set_speaker", "id":id, "fields":fields}));
+        }
+    }
+    Ok(ops)
+}
+
+fn clip_fields(clip: &Value) -> Result<Map<String, Value>, String> {
+    let id = clip["id"].as_str().unwrap_or("");
+    clip.get("fields")
+        .and_then(Value::as_object)
+        .cloned()
+        .ok_or_else(|| format!("Clip {id} is missing fields"))
+}
+
+/// `set_clip` receives the complete clip mapping from `fields`.
+pub fn clip_ops(before: &Section, after: &Section) -> Result<Vec<Value>, String> {
+    let mut ops = vec![];
+    for old in &before.clips {
+        if !after.clips.iter().any(|clip| clip["id"] == old["id"]) {
+            ops.push(json!({"file":"clips", "op":"delete_clip", "id":old["id"]}));
+        }
+    }
+    for new in &after.clips {
+        let id = new["id"].as_str().unwrap_or("");
+        let fields = clip_fields(new)?;
+        let previous = before.clips.iter().find(|old| old["id"] == new["id"]);
+        let changed = match previous {
+            None => true,
+            Some(old) => clip_fields(old)? != fields,
+        };
+        if changed {
+            ops.push(json!({"file":"clips", "op":"set_clip", "id":id, "fields":fields}));
+        }
+    }
+    Ok(ops)
+}
+
+/// Create `scriptcast.toml` through `scriptcast-project init`. The UI does not write the file.
+pub fn init_project(
+    resolved: &crate::cli::Resolved,
+    root: &std::path::Path,
+) -> Result<Snapshot, ToolError> {
+    let output = resolved
+        .base_command()
+        .args(["init", "--root"])
+        .arg(root)
+        .current_dir(root)
+        .output()
+        .map_err(|e| ToolError::Failed(e.to_string()))?;
+    tool_result(
+        output.status.code(),
+        &output.stdout,
+        &output.stderr,
+        &interpreter_label(resolved),
+    )?;
+    load(resolved, root)
 }
 
 pub fn unfinished_jobs(dir: &std::path::Path) -> bool {

@@ -15,7 +15,7 @@ use std::{
     collections::VecDeque,
     fmt,
     fs::File,
-    io::BufReader,
+    io::{BufReader, Cursor},
     path::{Path, PathBuf},
     sync::mpsc::{self, Receiver, Sender},
     time::{Duration, Instant},
@@ -289,6 +289,26 @@ impl AudioOut {
         };
         self.queue.clear();
         self.queue.push(turn, dur);
+        self.player = Some(player);
+        self.base = Duration::ZERO;
+        self.started = Instant::now();
+        self.paused_at = None;
+        Ok(())
+    }
+
+    /// Play a WAV already held in memory. Used after ffmpeg extracts a clip.
+    pub fn play_wav_bytes(&mut self, bytes: Vec<u8>) -> Result<(), String> {
+        self.stop();
+        let source = Decoder::new(Cursor::new(bytes)).map_err(|e| e.to_string())?;
+        let total = source.total_duration().unwrap_or(Duration::ZERO);
+        let player = Player::connect_new(self.sink.mixer());
+        if self.muted {
+            player.set_volume(0.0);
+        }
+        player.append(source);
+        player.play();
+        self.queue.clear();
+        self.queue.push(0, total);
         self.player = Some(player);
         self.base = Duration::ZERO;
         self.started = Instant::now();
@@ -616,16 +636,28 @@ impl AudioOut {
         if !start.is_finite() || !end.is_finite() || start < 0.0 || end <= start {
             return Err("Invalid clip range".into());
         }
-        let file = File::open(path).map_err(|e| e.to_string())?;
-        let source = Decoder::new(BufReader::new(file)).map_err(|e| e.to_string())?;
-        let source = source
-            .skip_duration(Duration::from_secs_f64(start))
-            .take_duration(Duration::from_secs_f64(end - start));
         let player = Player::connect_new(self.sink.mixer());
         if self.muted {
             player.set_volume(0.0);
         }
-        player.append(source);
+        match File::open(path).and_then(|file| {
+            Decoder::new(BufReader::new(file))
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))
+        }) {
+            Ok(source) => {
+                player.append(
+                    source
+                        .skip_duration(Duration::from_secs_f64(start))
+                        .take_duration(Duration::from_secs_f64(end - start)),
+                );
+            }
+            Err(native) => {
+                let bytes = crate::waveform::ffmpeg_wav(path, start, end - start)
+                    .map_err(|ffmpeg| format!("{native}; {ffmpeg}"))?;
+                let source = Decoder::new(Cursor::new(bytes)).map_err(|e| e.to_string())?;
+                player.append(source);
+            }
+        }
         player.play();
         Ok(player)
     }
