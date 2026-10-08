@@ -16,7 +16,9 @@
 - `load_voices` stops at the first speaker error. File-level `problems` carry that loader message. When the message names `Speaker '…'`, the same string is also stored on that speaker.
 - A missing file is `{"path", "missing": true, …}` with empty collections. It is not a validation failure. `validate` still exits 1 when any section or item `problems` list is non-empty, or when `toml.unknown_keys` is non-empty.
 - Speaker-rate JSON in the real project is a per-speaker object (`ms_per_word`, `ms_per_mark`). The contract example shows a bare number. `show` emits the JSON values as stored. The fixture test covers a bare number (`aisha: 2.9`) and an object.
-- Real clip entries include `linger`, `speaker`, and `transcript_source` in addition to the contract fields. `show` emits only the contract fields. Keys omitted from `fields` are still removed. Keys whose values are unchanged keep their original lines.
+- Each clip in `show` keeps the top-level convenience keys and also has `fields` with every key from the file (`linger`, `speaker`, `transcript_source`, and the rest), in file types. Speaker `fields` and pronunciation `fields` likewise hold every key. Pronunciation entries still include `readings` with the same object.
+- `set_speaker`, `set_clip`, and `set_entry` take the complete mapping. A key absent from the op is removed. Unchanged keys stay byte-identical. This is stated in `scriptcast-project --help`, `scriptcast-project edit --help`, the README Configuration section, and here.
+- `scriptcast-project init --root PATH` writes `scriptcast.toml` containing only `# scriptCast project settings. Every key is optional; see the README Configuration table.` when that file is absent, then prints `show --json`. If the file exists, init exits 2 and does not change it.
 - `risky` copies `COMMON_WORDS` from `ui/src/review.rs` and uses the same rule on the raw YAML strings: length ≤ 2, or membership in that list (case-sensitive, matching the Rust slice).
 - `review_ts` is the hearing comment when a word has one hearing, or the shared timestamp when every hearing under that word has the same comment. Differing timestamps yield `null` (the `pati` fixture).
 - Ops errors are `op[i]: …` with `i` starting at 0. Loader failures after a structurally valid op are `file: message` and write nothing. `--expect-sha256` is required for every touched file. A missing hash exits 1. A mismatch exits 3. A missing file hashes as the empty byte string.
@@ -29,7 +31,7 @@
 
 ## Verification
 
-- `PYTHONPATH=. /tmp/scriptcast-l/venv/bin/python -m pytest -q > /tmp/l-py.log 2>&1` (the `/tmp/scriptcast-l/venv` interpreter, because the system interpreter has no `ruamel.yaml`): **361 passed**, 4 warnings. The log is `/tmp/l-py.log`.
+- `PYTHONPATH=. /tmp/scriptcast-l/venv/bin/python -m pytest -q > /tmp/l-py.log 2>&1` (the `/tmp/scriptcast-l/venv` interpreter, because the system interpreter has no `ruamel.yaml`): **363 passed**, 4 warnings. The log is `/tmp/l-py.log`.
 - `test_added_key_keeps_double_quoted_siblings` covers `set_speaker`, `set_clip`, and `set_entry`: a double-quoted block gains one line (`speed`, `content_note`, or `noun`) and every other byte stays put.
 - `misaki` is not installed on the system interpreter. It was installed into `/tmp/scriptcast-l/venv` only, so the existing pronunciation tests could run. System `click` stayed 8.1.7. The first full run before that install was 349 passed and the same 11 `ModuleNotFoundError: misaki` failures already reported for phase K; the 8 new tests were in the passing set.
 - New tests cover every op, byte-identical regions outside the edit, the omnivoice `reference_text` loader message with an unchanged file, exit 3 on a stale hash, a three-file batch that rolls back when voices fail, TOML comment retention, an unknown TOML key, missing-file `show`, `risky` flags, and the real loaders reading every edited file.

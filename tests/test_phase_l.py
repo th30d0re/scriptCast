@@ -659,6 +659,112 @@ lead:
     assert (tmp_path / "pronunciations.yaml").read_text(encoding="utf-8") == pronunciations + '  noun: "ledd"\n'
 
 
+def test_show_fields_hold_every_key_and_round_trip(tmp_path: Path):
+    voices = """\
+speakers:
+  aisha:
+    name: "Aisha"
+    engine: "archive"
+    note: "keep-me"
+"""
+    clips = """\
+clips:
+  speech:
+    source: "archive/sources/speech.m4a"
+    start: 1.0
+    end: 2.0
+    citation: "A book"
+    linger: 12
+    speaker: "Lee Atwater"
+    transcript_source: "The published excerpt."
+"""
+    pronunciations = """\
+lead:
+  always: "led"
+  noun: "ledd"
+"""
+    (tmp_path / "voices.yaml").write_text(voices, encoding="utf-8")
+    (tmp_path / "archive").mkdir()
+    (tmp_path / "archive" / "clips.yaml").write_text(clips, encoding="utf-8")
+    (tmp_path / "pronunciations.yaml").write_text(pronunciations, encoding="utf-8")
+    code, out, err = _run(["show", "--json", "--root", str(tmp_path)])
+    assert code == 0, err
+    report = json.loads(out)
+    speaker = report["voices"]["speakers"][0]
+    assert speaker["fields"] == {"name": "Aisha", "engine": "archive", "note": "keep-me"}
+    clip = report["clips"]["clips"][0]
+    assert clip["source"] == "archive/sources/speech.m4a"
+    assert clip["fields"] == {
+        "source": "archive/sources/speech.m4a",
+        "start": 1.0,
+        "end": 2.0,
+        "citation": "A book",
+        "linger": 12,
+        "speaker": "Lee Atwater",
+        "transcript_source": "The published excerpt.",
+    }
+    entry = report["pronunciations"]["entries"][0]
+    assert entry["fields"] == {"always": "led", "noun": "ledd"}
+    assert entry["readings"] == entry["fields"]
+
+    fields = dict(speaker["fields"])
+    fields["speed"] = 1.04
+    code, _out, err = _edit(
+        tmp_path,
+        [{"file": "voices", "op": "set_speaker", "id": "aisha", "fields": fields}],
+        ["voices"],
+    )
+    assert code == 0, err
+    updated = (tmp_path / "voices.yaml").read_text(encoding="utf-8")
+    import difflib
+    diff = [
+        line for line in difflib.unified_diff(voices.splitlines(), updated.splitlines(), lineterm="")
+        if line.startswith(("+", "-")) and not line.startswith(("+++", "---"))
+    ]
+    assert diff == ["+    speed: 1.04"]
+
+    code, _out, err = _edit(
+        tmp_path,
+        [{"file": "clips", "op": "set_clip", "id": "speech", "fields": clip["fields"]}],
+        ["clips"],
+    )
+    assert code == 0, err
+    assert (tmp_path / "archive" / "clips.yaml").read_text(encoding="utf-8") == clips
+    assert 'linger: 12' in clips
+    assert 'speaker: "Lee Atwater"' in clips
+    assert 'transcript_source: "The published excerpt."' in clips
+
+
+def test_init_writes_header_and_refuses_a_second_time(tmp_path: Path):
+    code, out, err = _run(["init", "--root", str(tmp_path)])
+    assert code == 0, err
+    header = "# scriptCast project settings. Every key is optional; see the README Configuration table.\n"
+    assert (tmp_path / "scriptcast.toml").read_text(encoding="utf-8") == header
+    report = json.loads(out)
+    assert report["schema"] == 1
+    assert "missing" not in report["toml"]
+    assert report["toml"]["values"] == {}
+    assert report["voices"]["missing"] is True
+    before = (tmp_path / "scriptcast.toml").read_bytes()
+    code, out, err = _run(["init", "--root", str(tmp_path)])
+    assert code == 2
+    assert out == ""
+    assert "already exists" in err
+    assert (tmp_path / "scriptcast.toml").read_bytes() == before
+
+    from io import StringIO
+    from contextlib import redirect_stdout
+    help_out = StringIO()
+    try:
+        with redirect_stdout(help_out):
+            main(["edit", "--help"])
+    except SystemExit as exc:
+        assert exc.code == 0
+    text = help_out.getvalue()
+    assert "complete mapping" in text
+    assert "byte-identical" in text
+
+
 def _tracked(root: Path) -> list[Path]:
     return [
         root / "voices.yaml",
