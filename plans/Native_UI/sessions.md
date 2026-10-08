@@ -6,6 +6,7 @@ Resume these for follow-ups in the same area instead of starting a new agent:
 
 | Workstream | Worker / model | Session id | Last used | Notes |
 |---|---|---|---|---|
+| Phase L UI | Codex gpt-6-astra medium; Cursor auto | 01a11d3a-34bf-70d0-9395-31a37877f81b; a35e0385-09bb-48dc-adee-f21f73dedb32 | 2026-10-08 | worktree phase-l; merged |
 | Phase L Python (scriptcast-project) | Cursor auto | ed3cdcae-5436-4f86-b4c9-d60a5968fa51 | 2026-10-08 | worktree phase-l-py; merged |
 | Phase K UI (Codex start, Cursor finish + visual) | Codex gpt-6-astra medium; Cursor auto | 01a11c7f-d367-7220-8619-fe06e74c1b41; 8b3ab914-e69b-4d0d-bd04-48e2f5133cdc | 2026-10-08 | worktree phase-k; merged |
 | Phase K Python (edit-json, tags-json, speakers-json) | Codex gpt-5.6-sol medium | 01a11c26-1ca7-7362-b0e4-95ab6658a302 | 2026-10-08 | worktree phase-k-py; merged |
