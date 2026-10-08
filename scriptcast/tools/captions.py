@@ -123,6 +123,35 @@ def build_captions(asr_words: list[dict], script_turns, manifest: dict, *, max_c
     return [c for c in captions if c["end_ms"] > c["start_ms"]]
 
 
+def _caption_clock(ms: int, decimal: str) -> str:
+    hours, rem = divmod(int(ms), 3_600_000)
+    minutes, rem = divmod(rem, 60_000)
+    seconds, millis = divmod(rem, 1_000)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}{decimal}{millis:03d}"
+
+
+def render_srt(captions: list[dict]) -> str:
+    """SRT whose cue times are the stored start_ms / end_ms values."""
+    blocks = []
+    for index, caption in enumerate(captions, start=1):
+        start = _caption_clock(caption["start_ms"], ",")
+        end = _caption_clock(caption["end_ms"], ",")
+        blocks.append(f"{index}\n{start} --> {end}\n{caption['text']}")
+    if not blocks:
+        return ""
+    return "\n\n".join(blocks) + "\n"
+
+
+def render_webvtt(captions: list[dict]) -> str:
+    """WebVTT whose cue times are the stored start_ms / end_ms values."""
+    blocks = ["WEBVTT"]
+    for caption in captions:
+        start = _caption_clock(caption["start_ms"], ".")
+        end = _caption_clock(caption["end_ms"], ".")
+        blocks.append(f"{start} --> {end}\n{caption['text']}")
+    return "\n\n".join(blocks) + "\n"
+
+
 def transcribe(audio: Path, model: str) -> list[dict]:
     try:
         import mlx_whisper

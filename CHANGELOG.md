@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - Unreleased
 
 ### Added
+- `scriptcast-craft cue` writes a 1080×1920, 30 fps cue sheet from the episode manifest clock. `scriptcast-craft timeline` places silent Craft picture on that clock in FCPXML 1.10 and writes SRT and WebVTT beside it from the captions JSON. Dialogue wavs and `scriptcast-captions` JSON are unchanged.
 - Dynamic density scaling for cards, optimizing font sizes and layout for large text content while staying within the safe zone. Added "hero" art slot support across all cards. Added runtime visual overflow guards.
 - Quiver SVG generation, animation, and model-list client with bounded retries, a manifest-backed asset cache, offline checks, and `scriptcast-video svg` dry runs. All four cards render public-relative `svgAsset` artwork inside the safe zone; a hand-written SVG example is included.
 - Episode Remotion assembly and `scriptcast-video render`: script-order archive resolution, card windows, muted excerpts with last-frame holds, per-run media staging, `--plan-only`, and `--dry-run`.
