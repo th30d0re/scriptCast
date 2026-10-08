@@ -33,6 +33,7 @@ fails when one comes back "wrong" or "garbled". Skip it with `--no-stress`.
 from __future__ import annotations
 
 import argparse
+import time
 import difflib
 import json
 import sys
@@ -43,6 +44,7 @@ from pathlib import Path
 
 from scriptcast.markup import tokenize_markup
 from scriptcast.parser import parse_transcript
+from scriptcast.progress import Progress
 from scriptcast.archive import clip_id_in
 from scriptcast.pronunciation import find_heteronyms
 from scriptcast.tools.stress_check import check_segment
@@ -228,7 +230,7 @@ def _diff(
     return " ".join(out)
 
 
-def main() -> int:
+def _build_arg_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser()
     ap.add_argument("episode_dir", type=Path)
     ap.add_argument("--transcript", type=Path, required=True)
@@ -248,7 +250,14 @@ def main() -> int:
         action="store_true",
         help="Ignore accepted hearings and vocabulary hints.",
     )
-    args = ap.parse_args()
+    ap.add_argument(
+        "--progress-jsonl", type=Path, default=None,
+        help="Append machine-readable progress events to PATH.",
+    )
+    return ap
+
+
+def _run(args, progress: Progress) -> int:
 
     logging.disable(logging.WARNING)
     import mlx_whisper  # imported here so --help works without the model stack
@@ -261,6 +270,10 @@ def main() -> int:
     )
 
     manifest = json.loads((args.episode_dir / "episode_manifest.json").read_text())
+    engine_by_speaker = {
+        speaker["speaker_id"]: speaker.get("engine")
+        for speaker in manifest.get("speakers", [])
+    }
     script_turns = tokenize_markup(parse_transcript(args.transcript))
     by_id = {t.turn_id: t for t in script_turns}
     wanted = (
@@ -290,7 +303,7 @@ def main() -> int:
         print(f"note: {len(orphans)} manifest turn(s) are no longer in the script; "
               f"the manifest is stale. Re-render or relayout to drop them.")
 
-    results = []
+    candidates = []
     for turn in manifest["turns"]:
         source = by_id.get(turn["turn_id"])
         if source is None:
@@ -304,6 +317,21 @@ def main() -> int:
         expected = " ".join(chunks).strip()
         if not expected:
             continue
+        candidates.append((turn, source, chunks, expected))
+
+    progress.start("verify", len(candidates))
+    results = []
+    for n, (turn, source, chunks, expected) in enumerate(candidates, start=1):
+        turn_started_at = time.monotonic()
+        progress.emit(
+            "turn_start",
+            turn_index=source.turn_index,
+            turn_id=source.turn_id,
+            speaker_id=source.speaker_id,
+            engine=engine_by_speaker.get(source.speaker_id, manifest.get("engine")),
+            n=n,
+            total=len(candidates),
+        )
         heard_parts: list[str] = []
         stress: list[dict] = []
         segments = sorted(turn["segments"], key=lambda seg: seg["chunk_index"])
@@ -359,9 +387,19 @@ def main() -> int:
         if accepted_hits or hints_used:
             entry["feedback"] = {"accepted": accepted_hits, "hints": hints_used}
         results.append(entry)
+        progress.emit(
+            "turn_done",
+            turn_index=source.turn_index,
+            turn_id=source.turn_id,
+            n=n,
+            total=len(candidates),
+            seconds=round(time.monotonic() - turn_started_at, 3),
+        )
 
     if not results:
         print("no turns matched")
+        progress.emit("result", passed=0, failed=0)
+        progress.done()
         return 0
 
     scores = sorted(r["score"] for r in results)
@@ -377,6 +415,7 @@ def main() -> int:
               + " | ".join(f"{k} {n}" for k, n in tally.items()))
 
     flagged = sorted((r for r in results if r["failed"]), key=lambda r: r["score"])
+    progress.emit("result", passed=len(results) - len(flagged), failed=len(flagged))
     for r in flagged:
         tag = f"  REPEATS {r['repetition']!r}" if r["repetition"] else ""
         print(f"\n  {r['score']:.3f}  run {r['worst_run']:>2}  turn {r['turn']:>3}  "
@@ -399,9 +438,17 @@ def main() -> int:
               f"run longer than {args.max_run} words, a repetition, or a heteronym "
               f"spoken wrong). Re-check with a larger model before regenerating:")
         print(f"  --model small --turns {','.join(str(r['turn']) for r in flagged)}")
+        progress.done(ok=False)
         return 1
     print(f"verify-render: nothing flagged.")
+    progress.done()
     return 0
+
+
+def main() -> int:
+    args = _build_arg_parser().parse_args()
+    with Progress(args.progress_jsonl) as progress:
+        return _run(args, progress)
 
 
 if __name__ == "__main__":

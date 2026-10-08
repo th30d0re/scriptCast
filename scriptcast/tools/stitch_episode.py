@@ -17,8 +17,10 @@ import json
 import subprocess
 from pathlib import Path
 
+from scriptcast.progress import Progress
 
-def main() -> int:
+
+def _build_arg_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser()
     ap.add_argument("episode_dir", type=Path)
     ap.add_argument("--pad-ms", type=int, default=None,
@@ -32,7 +34,14 @@ def main() -> int:
                          "other; sequential layout is the default.")
     ap.set_defaults(sequential=True)
     ap.add_argument("--bitrate", default="128k")
-    args = ap.parse_args()
+    ap.add_argument(
+        "--progress-jsonl", type=Path, default=None,
+        help="Append machine-readable progress events to PATH.",
+    )
+    return ap
+
+
+def _run(args, progress: Progress) -> int:
 
     ep = args.episode_dir
     manifest = json.loads((ep / "episode_manifest.json").read_text())
@@ -44,6 +53,8 @@ def main() -> int:
     )
     if not segments:
         raise SystemExit("no segments in manifest")
+    progress.start("stitch", len(segments))
+    progress.emit("stage", name="stitch")
 
     # Build one filter_complex: trim each clip to its speech duration, delay it to
     # its scheduled start, then mix. Silence falls out of the scheduling for free.
@@ -76,7 +87,14 @@ def main() -> int:
 
     end_ms = cursor if args.sequential else max(s["start_ms"] for s in segments)
     print(f"wrote {out}  ({len(segments)} clips, timeline ends ~{end_ms // 60000}m{end_ms // 1000 % 60}s)")
+    progress.done(outputs={"mp3": str(out)})
     return 0
+
+
+def main() -> int:
+    args = _build_arg_parser().parse_args()
+    with Progress(args.progress_jsonl) as progress:
+        return _run(args, progress)
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ import hashlib
 import json
 import logging
 import shutil
+import sys
 import time
 from datetime import datetime
 from collections import Counter
@@ -27,6 +28,7 @@ from scriptcast.models import SegmentResult, Turn, VoiceConfig
 from scriptcast.parser import parse_transcript
 from scriptcast.platform_check import require_apple_silicon
 from scriptcast.post_processor import _measure_speech_duration, process_segment
+from scriptcast.progress import Progress
 from scriptcast.project import DEFAULTS, current
 from scriptcast.pronunciation import speech_text_for
 from scriptcast.render_state import (
@@ -66,8 +68,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--transcript",
         type=Path,
-        required=True,
-        help="Path to markdown transcript",
+        default=None,
+        help="Path to markdown transcript (required unless --export-only)",
     )
     parser.add_argument(
         "--episode-id",
@@ -118,10 +120,33 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         help="Parse + manifest only, no audio",
     )
     parser.add_argument(
+        "--json-out",
+        type=Path,
+        default=None,
+        help="With --dry-run, write the machine-readable parse report to PATH",
+    )
+    output_mode = parser.add_mutually_exclusive_group()
+    output_mode.add_argument(
         "--overwrite",
         "-verwrite",
         action="store_true",
         help="Bypass resume/overwrite prompt",
+    )
+    output_mode.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume existing output without prompting",
+    )
+    parser.add_argument(
+        "--export-only",
+        action="store_true",
+        help="Regenerate exports from an existing manifest without synthesis",
+    )
+    parser.add_argument(
+        "--progress-jsonl",
+        type=Path,
+        default=None,
+        help="Append machine-readable progress events to PATH",
     )
     parser.add_argument(
         "--speech-threshold",
@@ -262,7 +287,10 @@ def _has_existing_output(episode_out_dir: Path) -> bool:
 
 
 def _prepare_episode_output(
-    episode_out_dir: Path, overwrite: bool, incremental: bool = False
+    episode_out_dir: Path,
+    overwrite: bool,
+    incremental: bool = False,
+    resume_requested: bool = False,
 ) -> bool:
     """Decide whether to resume, wipe, or ask, for an episode that already exists.
 
@@ -277,7 +305,7 @@ def _prepare_episode_output(
         episode_out_dir.mkdir(parents=True, exist_ok=True)
         return False
 
-    if incremental:
+    if incremental or resume_requested:
         episode_out_dir.mkdir(parents=True, exist_ok=True)
         return True
 
@@ -512,6 +540,7 @@ async def render_loop(
     trim_edges: bool = True,
     regenerate_turn_indices: set[int] | None = None,
     regenerate_turn_ids: set[str] | None = None,
+    progress: Progress | None = None,
 ) -> list[SegmentResult]:
     del episode_id
     if regenerate_turn_indices is None:
@@ -530,11 +559,23 @@ async def render_loop(
         if sample_budget_ms is not None and emitted_ms >= sample_budget_ms:
             break
 
+        turn_started_at = time.monotonic()
+        voice_config = voices[turn.speaker_id]
+        if progress is not None:
+            progress.emit(
+                "turn_start",
+                turn_index=turn.turn_index,
+                turn_id=turn.turn_id,
+                speaker_id=turn.speaker_id,
+                engine=voice_config.engine,
+                n=turns_done,
+                total=total_turns,
+            )
+
         jobs = _speech_jobs(turn, gap_ms)
         non_speech_gap_ms = _non_speech_turn_gap_ms(turn, gap_ms)
         stop_rendering = False
 
-        voice_config = voices[turn.speaker_id]
         engine = engines[voice_config.engine]
 
         force_regenerate = (
@@ -559,6 +600,15 @@ async def render_loop(
                 if not jobs:
                     emitted_ms += non_speech_gap_ms
                 _print_turn_progress(turn, total_turns, turns_done, started_at)
+                if progress is not None:
+                    progress.emit(
+                        "turn_done",
+                        turn_index=turn.turn_index,
+                        turn_id=turn.turn_id,
+                        n=turns_done,
+                        total=total_turns,
+                        seconds=round(time.monotonic() - turn_started_at, 3),
+                    )
                 if stop_rendering:
                     break
                 continue
@@ -626,6 +676,15 @@ async def render_loop(
             emitted_ms += non_speech_gap_ms
 
         _print_turn_progress(turn, total_turns, turns_done, started_at)
+        if progress is not None:
+            progress.emit(
+                "turn_done",
+                turn_index=turn.turn_index,
+                turn_id=turn.turn_id,
+                n=turns_done,
+                total=total_turns,
+                seconds=round(time.monotonic() - turn_started_at, 3),
+            )
         if stop_rendering:
             break
 
@@ -864,21 +923,181 @@ def _run_migration(
     print(f"Migration complete: {renamed} file(s) renamed, {skipped} skipped.")
 
 
-def main() -> None:
-    require_apple_silicon()
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(levelname)s:%(name)s:%(message)s",
-    )
+def _dry_run_json(
+    path: Path,
+    episode_id: str,
+    transcript_path: Path,
+    voices_path: Path,
+    turns: list[Turn],
+    voices: dict[str, VoiceConfig],
+) -> None:
+    import re
 
-    parser = _build_arg_parser()
-    args = parser.parse_args()
+    header = re.compile(r"^\s*.+?\s*\(\d{1,2}:\d{2}\)\s*$")
+    warnings: list[dict[str, object]] = []
+    for line_no, line in enumerate(
+        transcript_path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        if header.match(line):
+            break
+        if line.strip():
+            warnings.append(
+                {
+                    "kind": "preamble_skipped",
+                    "line": line_no,
+                    "speaker_id": None,
+                    "blocking": False,
+                    "message": "Non-speaker preamble line was skipped.",
+                }
+            )
 
+    counts = Counter(turn.speaker_id for turn in turns)
+    speakers: list[dict[str, object]] = []
+    seen: set[str] = set()
+    for turn in turns:
+        if turn.speaker_id in seen:
+            continue
+        seen.add(turn.speaker_id)
+        voice = voices.get(turn.speaker_id)
+        speakers.append(
+            {
+                "id": turn.speaker_id,
+                "name": turn.display_name,
+                "engine": voice.engine if voice else None,
+                "turns": counts[turn.speaker_id],
+            }
+        )
+        if voice is None:
+            warnings.append(
+                {
+                    "kind": "unknown_speaker",
+                    "line": turn.line_span[0],
+                    "speaker_id": turn.speaker_id,
+                    "blocking": True,
+                    "message": f"No voice config found for speaker: {turn.speaker_id}",
+                }
+            )
+
+    report = {
+        "schema": 1,
+        "episode_id": episode_id,
+        "transcript": str(transcript_path),
+        "voices": str(voices_path.expanduser().resolve()),
+        "turns": [
+            {
+                "index": turn.turn_index,
+                "turn_id": turn.turn_id,
+                "speaker_id": turn.speaker_id,
+                "speaker_name": turn.display_name,
+                "timestamp_ms": turn.timestamp_ms,
+                "first_words": " ".join(turn.clean_text.split()[:12]),
+                "clip_id": _turn_clip_id(turn),
+            }
+            for turn in turns
+        ],
+        "speakers": speakers,
+        "warnings": warnings,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+
+
+def _segments_from_manifest(
+    manifest: dict[str, object], episode_out_dir: Path
+) -> tuple[list[SegmentResult], dict[tuple[str, int], int]]:
+    results: list[SegmentResult] = []
+    positions: dict[tuple[str, int], int] = {}
+    for turn in manifest["turns"]:  # type: ignore[index]
+        for segment in turn["segments"]:
+            key = (turn["turn_id"], segment["chunk_index"])
+            positions[key] = segment["start_ms"]
+            results.append(
+                SegmentResult(
+                    turn_index=turn["turn_index"],
+                    turn_id=turn["turn_id"],
+                    chunk_index=segment["chunk_index"],
+                    speaker_id=turn["speaker_id"],
+                    wav_path=episode_out_dir / segment["segment_wav"],
+                    duration_ms=segment["duration_ms"],
+                    speech_duration_ms=segment["speech_duration_ms"],
+                    sample_rate=manifest["sample_rate"],  # type: ignore[index]
+                    gap_after_ms=segment["gap_after_ms"],
+                    checksum=segment["checksum"],
+                )
+            )
+    return results, positions
+
+
+def _run_export_only(args, episode_out_dir: Path, progress: Progress) -> None:
+    manifest_path = episode_out_dir / "episode_manifest.json"
+    if not manifest_path.exists():
+        message = f"Existing manifest not found: {manifest_path}"
+        print(message, file=sys.stderr)
+        progress.error(message)
+        raise SystemExit(2)
+    state_path = episode_out_dir / "render_state.json"
+    if not state_path.exists():
+        raise SystemExit(f"Existing render state not found: {state_path}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    json.loads(state_path.read_text(encoding="utf-8"))
+    segment_results, position_map = _segments_from_manifest(manifest, episode_out_dir)
+    episode_id = args.episode_id
+    progress.start("render", len(manifest["turns"]))
+    outputs = {"manifest": str(manifest_path)}
+
+    progress.emit("stage", name="layout")
+    als_path = episode_out_dir / f"{episode_id}.als"
+    if not args.skip_als:
+        progress.emit("stage", name="als")
+        generate_als(segment_results, als_path, position_map=position_map)
+        outputs["als"] = str(als_path)
+        if args.ableton_project_als:
+            target = args.ableton_project_als.expanduser().resolve()
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(als_path, target)
+
+    if args.fcpxml:
+        progress.emit("stage", name="fcpxml")
+        fcpxml_path = episode_out_dir / f"{episode_id}.fcpxml"
+        generate_fcpxml(
+            segment_results,
+            fcpxml_path,
+            position_map=position_map,
+            episode_id=episode_id,
+        )
+        outputs["fcpxml"] = str(fcpxml_path)
+
+    if args.logic or args.logic_dry_run:
+        progress.emit("stage", name="logic")
+        script, output = export_to_logic(
+            segment_results,
+            position_map=position_map,
+            project_name=episode_id,
+            dry_run=args.logic_dry_run,
+        )
+        if args.logic_dry_run:
+            script_path = episode_out_dir / f"{episode_id}_logic_export.applescript"
+            script_path.write_text(script, encoding="utf-8")
+            outputs["logic"] = str(script_path)
+        elif output:
+            print(f"Logic export output: {output}")
+    progress.done(outputs=outputs)
+
+
+def _run(args, progress: Progress) -> None:
+    project = current()
+    if args.export_only:
+        if not args.episode_id:
+            raise SystemExit("--export-only requires --episode-id")
+        output_root = (args.out_dir or project.outputs).expanduser().resolve()
+        _run_export_only(args, output_root / args.episode_id, progress)
+        return
+    if args.transcript is None:
+        raise SystemExit("--transcript is required unless --export-only is used")
     transcript_path = args.transcript.expanduser().resolve()
     if not transcript_path.exists():
         raise SystemExit(f"Transcript not found: {transcript_path}")
 
-    project = current()
     episode_id = args.episode_id or transcript_path.stem
     output_root = (args.out_dir or project.outputs).expanduser().resolve()
     episode_out_dir = output_root / episode_id
@@ -886,6 +1105,7 @@ def main() -> None:
 
     turns = tokenize_markup(parse_transcript(transcript_path))
     turns = _filter_turns(turns, args.max_turns)
+    progress.start("render", len(turns))
 
     voices_path = args.voices or project.voices
     try:
@@ -895,6 +1115,16 @@ def main() -> None:
             f"Voices file not found: {voices_path}. "
             "Pass --voices or set `voices` in scriptcast.toml."
         ) from None
+    if args.dry_run and args.json_out is not None:
+        _dry_run_json(
+            args.json_out,
+            episode_id,
+            transcript_path,
+            voices_path,
+            turns,
+            voices,
+        )
+        return
     _validate_voices(turns, voices)
 
     # Load previous render state for change detection and position preservation
@@ -986,7 +1216,10 @@ def main() -> None:
 
     incremental = bool(args.precision_insert or args.regenerate_turns)
     resume = _prepare_episode_output(
-        episode_out_dir, args.overwrite, incremental=incremental
+        episode_out_dir,
+        args.overwrite,
+        incremental=incremental,
+        resume_requested=args.resume,
     )
     # If regenerating specific turns or doing precision insert, force resume mode
     if regenerate_turn_indices or use_precision_insert:
@@ -1021,6 +1254,7 @@ def main() -> None:
             trim_edges=not args.no_trim,
             regenerate_turn_indices=regenerate_turn_indices,
             regenerate_turn_ids=regenerate_turn_ids,
+            progress=progress,
         )
     )
 
@@ -1031,18 +1265,22 @@ def main() -> None:
     )
 
     als_path = episode_out_dir / f"{episode_id}.als"
+    progress.emit("stage", name="layout")
     if not args.skip_als:
+        progress.emit("stage", name="als")
         generate_als(segment_results, als_path, position_map=position_map)
     else:
         print("Skipping ALS generation (--skip-als).")
 
     fcpxml_path = episode_out_dir / f"{episode_id}.fcpxml"
     if args.fcpxml:
+        progress.emit("stage", name="fcpxml")
         generate_fcpxml(segment_results, fcpxml_path, position_map=position_map, episode_id=episode_id)
         print(f"FCPXML generated: {fcpxml_path}")
 
     logic_script: str | None = None
     if args.logic or args.logic_dry_run:
+        progress.emit("stage", name="logic")
         try:
             script, output = export_to_logic(
                 segment_results,
@@ -1127,6 +1365,26 @@ def main() -> None:
         _generate_comparison_als_files(
             segment_results, episode_out_dir, episode_id, compare_thresholds
         )
+
+    outputs = {"manifest": str(manifest_path)}
+    if not args.skip_als:
+        outputs["als"] = str(als_path)
+    if args.fcpxml:
+        outputs["fcpxml"] = str(fcpxml_path)
+    if logic_script:
+        outputs["logic"] = logic_script
+    progress.done(outputs=outputs)
+
+
+def main() -> None:
+    require_apple_silicon()
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s:%(name)s:%(message)s",
+    )
+    args = _build_arg_parser().parse_args()
+    with Progress(args.progress_jsonl) as progress:
+        _run(args, progress)
 
 
 if __name__ == "__main__":

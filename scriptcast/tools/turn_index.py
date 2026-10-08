@@ -16,6 +16,7 @@ import logging
 from pathlib import Path
 
 from scriptcast.parser import parse_transcript
+from scriptcast.progress import Progress
 
 
 def _mmss(ms: int) -> str:
@@ -23,15 +24,24 @@ def _mmss(ms: int) -> str:
     return f"{total // 60:02d}:{total % 60:02d}"
 
 
-def main() -> int:
+def _build_arg_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser()
     ap.add_argument("episode_dir", type=Path)
     ap.add_argument("--transcript", type=Path, required=True)
     ap.add_argument("--words", type=int, default=12)
-    args = ap.parse_args()
+    ap.add_argument(
+        "--progress-jsonl", type=Path, default=None,
+        help="Append machine-readable progress events to PATH.",
+    )
+    return ap
+
+
+def _run(args, progress: Progress) -> int:
 
     logging.disable(logging.WARNING)
     manifest = json.loads((args.episode_dir / "episode_manifest.json").read_text())
+    progress.start("index", len(manifest["turns"]))
+    progress.emit("stage", name="index")
     by_id = {t.turn_id: t for t in parse_transcript(args.transcript)}
 
     out = args.episode_dir / "TURN_INDEX.csv"
@@ -56,7 +66,14 @@ def main() -> int:
                 ]
             )
     print(f"wrote {out} ({len(manifest['turns'])} turns)")
+    progress.done(outputs={"index": str(out)})
     return 0
+
+
+def main() -> int:
+    args = _build_arg_parser().parse_args()
+    with Progress(args.progress_jsonl) as progress:
+        return _run(args, progress)
 
 
 if __name__ == "__main__":

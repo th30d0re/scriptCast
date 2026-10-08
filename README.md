@@ -166,7 +166,7 @@ flowchart TD
 
 <details><summary>Useful render flags</summary>
 
-`--dry-run` (parse and manifest only), `--overwrite`, `--gap-ms`, `--regenerate-turns 5,10-15`, `--precision-insert`, `--detect-changes`, `--fcpxml`, `--logic` / `--logic-dry-run`, `--skip-als`, `--ableton-project-als`, `--tail-ms`, `--speech-threshold`, `--no-trim`, `--max-turns`, `--sample-seconds`.
+`--dry-run` (parse and manifest only), `--json-out`, `--progress-jsonl`, `--resume`, `--export-only`, `--overwrite`, `--gap-ms`, `--regenerate-turns 5,10-15`, `--precision-insert`, `--detect-changes`, `--fcpxml`, `--logic` / `--logic-dry-run`, `--skip-als`, `--ableton-project-als`, `--tail-ms`, `--speech-threshold`, `--no-trim`, `--max-turns`, `--sample-seconds`.
 
 </details>
 

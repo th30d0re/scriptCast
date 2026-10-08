@@ -23,14 +23,22 @@ from pathlib import Path
 
 from scriptcast.als_generator import generate_als
 from scriptcast.models import SegmentResult
+from scriptcast.progress import Progress
 
 
-def main() -> int:
+def _build_arg_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser()
     ap.add_argument("episode_dir", type=Path)
     ap.add_argument("--gap-ms", type=int, required=True,
                     help="Uniform silence between consecutive clips, in ms.")
-    args = ap.parse_args()
+    ap.add_argument(
+        "--progress-jsonl", type=Path, default=None,
+        help="Append machine-readable progress events to PATH.",
+    )
+    return ap
+
+
+def _run(args, progress: Progress) -> int:
 
     ep = args.episode_dir
     manifest_path = ep / "episode_manifest.json"
@@ -40,6 +48,8 @@ def main() -> int:
         ((turn, seg) for turn in manifest["turns"] for seg in turn["segments"]),
         key=lambda pair: (pair[0]["turn_index"], pair[1]["chunk_index"]),
     )
+    progress.start("relayout", len(ordered))
+    progress.emit("stage", name="layout")
 
     cursor = 0
     results: list[SegmentResult] = []
@@ -107,7 +117,14 @@ def main() -> int:
         print(f"cleared {len(stale)} stale Ableton waveform caches (.asd)")
     print(f"re-timed {len(results)} clips at {args.gap_ms}ms gaps -> {als}")
     print(f"timeline: {cursor // 60000}m{cursor // 1000 % 60}s")
+    progress.done(outputs={"manifest": str(manifest_path), "als": str(als)})
     return 0
+
+
+def main() -> int:
+    args = _build_arg_parser().parse_args()
+    with Progress(args.progress_jsonl) as progress:
+        return _run(args, progress)
 
 
 if __name__ == "__main__":
