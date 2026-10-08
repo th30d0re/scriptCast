@@ -677,6 +677,16 @@ pub const QUIT_WIDTH: f32 = 392.0;
 pub const PATH_CHOOSE_WIDTH: f32 = 80.0;
 pub const SWITCH_WIDTH: f32 = 36.0;
 pub const SWITCH_HEIGHT: f32 = 20.0;
+/// Phase K editor controls and background spans (no expansion into neighbouring glyphs).
+pub const TAG_BACKGROUND_EXPANSION: f32 = 0.0;
+pub const TAG_FIELD_WIDTH: f32 = 36.0;
+pub const TAG_TOOLBAR_HEIGHT: f32 = 36.0;
+pub const TIME_FIELD_WIDTH: f32 = 96.0;
+pub const CONTEXT_MENU_WIDTH: f32 = 260.0;
+pub const EDITOR_BODY_LINES: f32 = 6.0;
+pub const NEW_TURN_ROW_HEIGHT: f32 = 420.0;
+pub const CLIP_PICKER_WIDTH: f32 = 300.0;
+pub const CLIP_PICKER_HEIGHT: f32 = 300.0;
 
 #[cfg(test)]
 mod tests {

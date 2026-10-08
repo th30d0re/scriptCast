@@ -371,6 +371,9 @@ impl Browser {
     }
 
     fn reload_after_job(&mut self, ctx: &egui::Context) {
+        if self.jobs.title == "Detect changes" && self.jobs.state == JobState::Complete {
+            self.editing.k.structure_changed = false;
+        }
         if let Some(e) = &self.episode {
             self.open(e.dir.clone(), ctx);
         }
@@ -629,6 +632,7 @@ impl Browser {
         {
             crate::phase_j::reveal(self.phase.stitch_output.as_deref().unwrap_or(&e.dir));
         }
+        self.retime_button(ui);
         let presets = [
             Preset::Relayout(self.phase.pipeline.gap_ms),
             Preset::Stitch,

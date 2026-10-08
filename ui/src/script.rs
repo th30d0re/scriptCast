@@ -51,29 +51,21 @@ fn load_json<T: DeserializeOwned>(
     episode: &Episode,
     mode: &str,
 ) -> Result<T, String> {
-    let checkout = match &export.source {
-        ExportSource::DevCheckout(path) => Some(path.clone()),
-        _ => None,
-    };
-    let resolved = Resolved {
-        source: export.source.clone(),
-        program: export.program.clone(),
-        prefix: if checkout.is_some() {
-            vec!["-m".into(), "scriptcast.tools.export_session".into()]
-        } else {
-            vec![]
-        },
-        path: cli::login_path(),
-        pythonpath: checkout,
-    };
-    let mut command = resolved.base_command();
-    command
-        .arg(&episode.dir)
-        .arg(mode)
-        .current_dir(&episode.dir);
-    if let Some(root) = &episode.project_root {
-        command.env("SCRIPTCAST_PROJECT", root);
+    let mut command = export_process(export, episode);
+    match mode {
+        "--speakers-json" => {
+            if let Some(path) = &episode.voices_path {
+                command.arg("--voices").arg(path);
+            }
+        }
+        "--turns-json" | "--changes-json" | "--tags-json" => {
+            if let Some(path) = &episode.script_path {
+                command.arg("--script").arg(path);
+            }
+        }
+        _ => {}
     }
+    command.arg(mode);
     let output = command.output().map_err(|e| format!("{mode}: {e}"))?;
     if !output.status.success() {
         return Err(format!(
@@ -394,6 +386,90 @@ pub fn save_many(
         let _ = fs::remove_file(&temporary);
     }
     result
+}
+
+/// Reuse the exact export resolution used for turns JSON.
+pub fn export_process(export: &ExportCommand, episode: &Episode) -> std::process::Command {
+    let checkout = match &export.source {
+        ExportSource::DevCheckout(path) => Some(path.clone()),
+        _ => None,
+    };
+    let resolved = Resolved {
+        source: export.source.clone(),
+        program: export.program.clone(),
+        prefix: if checkout.is_some() {
+            vec!["-m".into(), "scriptcast.tools.export_session".into()]
+        } else {
+            vec![]
+        },
+        path: cli::login_path(),
+        pythonpath: checkout,
+    };
+    let mut command = resolved.base_command();
+    command.arg(&episode.dir).current_dir(&episode.dir);
+    if let Some(root) = &episode.project_root {
+        command.env("SCRIPTCAST_PROJECT", root);
+    }
+    command
+}
+
+pub fn load_registry(
+    export: &ExportCommand,
+    episode: &Episode,
+) -> Result<crate::structure::Registry, String> {
+    load_json(export, episode, "--speakers-json")
+}
+pub fn load_tags(export: &ExportCommand, episode: &Episode) -> Result<crate::tags::Report, String> {
+    load_json(export, episode, "--tags-json")
+}
+
+/// Checkpoint first; only Python is permitted to splice structure. Reload IDs from its response.
+pub fn apply_edits(
+    export: &ExportCommand,
+    episode: &Episode,
+    ops: &[crate::structure::EditOp],
+    expected: &str,
+) -> Result<(Checkpoint, ScriptTurns), String> {
+    let path = episode
+        .script_path
+        .as_ref()
+        .ok_or("Script path unavailable")?;
+    check_hash(&fs::read(path).map_err(|e| e.to_string())?, expected)?;
+    let cp = checkpoint::create_external(
+        &episode.dir,
+        "script-structure",
+        std::slice::from_ref(path),
+        vec![],
+    )?;
+    let ops_path = cp.dir.join("structure-ops.json");
+    fs::write(
+        &ops_path,
+        serde_json::to_vec(ops).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| e.to_string())?;
+    let mut command = export_process(export, episode);
+    if let Some(path) = &episode.script_path {
+        command.arg("--script").arg(path);
+    }
+    if let Some(path) = &episode.voices_path {
+        command.arg("--voices").arg(path);
+    }
+    let output = command
+        .arg("--edit-json")
+        .arg(&ops_path)
+        .arg("--expect-sha256")
+        .arg(expected)
+        .output()
+        .map_err(|e| e.to_string())?;
+    if !output.status.success() {
+        return Err(crate::structure::edit_error(
+            output.status.code(),
+            &String::from_utf8_lossy(&output.stderr),
+        ));
+    }
+    let turns =
+        serde_json::from_slice(&output.stdout).map_err(|e| format!("Saved; reload turns: {e}"))?;
+    Ok((cp, turns))
 }
 
 #[cfg(test)]

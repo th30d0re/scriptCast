@@ -609,3 +609,24 @@ fn pick_rate(ranges: &[(u16, u32, u32)], default_channels: u16, want: u32) -> Op
                 .position(|&(_, min, max)| want >= min && want <= max)
         })
 }
+
+impl AudioOut {
+    /// Archive previews share this output device, with a separate finite player and the same mute setting.
+    pub fn preview_range(&self, path: &Path, start: f64, end: f64) -> Result<Player, String> {
+        if !start.is_finite() || !end.is_finite() || start < 0.0 || end <= start {
+            return Err("Invalid clip range".into());
+        }
+        let file = File::open(path).map_err(|e| e.to_string())?;
+        let source = Decoder::new(BufReader::new(file)).map_err(|e| e.to_string())?;
+        let source = source
+            .skip_duration(Duration::from_secs_f64(start))
+            .take_duration(Duration::from_secs_f64(end - start));
+        let player = Player::connect_new(self.sink.mixer());
+        if self.muted {
+            player.set_volume(0.0);
+        }
+        player.append(source);
+        player.play();
+        Ok(player)
+    }
+}

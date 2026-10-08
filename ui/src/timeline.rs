@@ -77,6 +77,7 @@ pub fn show(
     waveforms: Option<&Waveforms>,
     edited: &[usize],
     progress: Option<&scriptcast_ui::progress::Progress>,
+    editing: &mut crate::editing::Editing,
 ) -> Option<(usize, bool)> {
     let rect = ui.max_rect();
     let content = view::inset(rect, t::SPACE_20, t::SPACE_10);
@@ -380,6 +381,22 @@ pub fn show(
                             view::time(turn.end_ms),
                             turn.first_words
                         ));
+                    let script_index = if editing.k.script_view {
+                        editing
+                            .k
+                            .rendered_rows
+                            .iter()
+                            .position(|row| *row == Some(idx))
+                    } else {
+                        Some(idx)
+                    };
+                    if let Some(index) = script_index {
+                        crate::phase_k::open_row_menu(&response, editing, index, true, false);
+                    } else {
+                        response.context_menu(|ui| {
+                            ui.label("This rendered turn is absent from the script");
+                        });
+                    }
                     if response.clicked() || response.double_clicked() {
                         clicked = Some((idx, response.double_clicked()));
                     }

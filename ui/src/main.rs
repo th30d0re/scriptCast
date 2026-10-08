@@ -5,9 +5,11 @@ mod find_replace;
 mod inspector;
 mod jobs;
 mod phase_j;
+mod phase_k;
 mod read_along;
 mod settings;
 mod table;
+mod tag_editor;
 mod timeline;
 mod view;
 
@@ -369,6 +371,12 @@ impl Browser {
         };
         app.init_phase_j(cli);
         app.editing.capture_open = cli.edit;
+        app.editing.k.context_capture = cli.context_menu.is_some();
+        app.editing.k.capture_insert = cli.new_turn_after.is_some();
+        app.editing.k.capture_speaker = cli.new_turn_speaker.clone();
+        app.editing.toolbar.raw = cli.raw_script;
+        app.editing.toolbar.picker = cli.clip_picker;
+        app.editing.toolbar.select_first = cli.clip_picker;
         app.find.capture_query = cli.find.clone();
         if let Some(replacement) = &cli.replace {
             app.find.replacement = replacement.clone();
@@ -470,6 +478,9 @@ impl Browser {
             .and_then(|id| episode.turns.iter().position(|t| t.id == id))
             .or_else(|| previous_row.filter(|i| same && *i < episode.turns.len()));
         if !same {
+            if self.episode.is_some() {
+                self.editing.k = phase_k::PhaseK::default();
+            }
             self.filters = Filters::default();
             self.timeline = TimelineView::initial(episode.total_ms);
         } else {
@@ -997,8 +1008,21 @@ impl Browser {
             || self.jobs.confirmation.is_some()
             || self.jobs.restore.is_some()
             || self.editing.pending_selection.is_some()
-            || self.find.confirmation.is_some();
+            || self.find.confirmation.is_some()
+            || self.editing.k.delete.is_some()
+            || self.editing.k.retime.is_some();
+        if !dialog
+            && self.editing.k.new_turn.is_some()
+            && ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Enter))
+        {
+            self.save_new_turn(ctx);
+        }
         if editor_focused && self.preferences.edit_mode == editing::EditMode::Row {
+            if !dialog
+                && ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Enter))
+            {
+                self.save_draft(ctx);
+            }
             if !dialog && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
             {
                 self.editing.cancel();
@@ -1030,6 +1054,7 @@ impl Browser {
         if ctx.text_edit_focused() {
             return;
         }
+        self.structure_shortcuts(ctx);
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::J)) {
             self.preferences.inspector_hidden = false;
             self.jobs.mode = Some(InspectorMode::Jobs);
@@ -2060,6 +2085,8 @@ impl Browser {
         if let Some(w) = self.waveforms.as_mut() {
             w.poll();
         }
+        self.phase_k_poll(&ctx);
+        self.phase_k_windows(&ctx);
         self.shortcuts(&ctx);
         let rect = ui.max_rect();
         ui.painter().rect_filled(rect, 0, t::BG_WINDOW);
@@ -2158,6 +2185,7 @@ impl Browser {
                 self.waveforms.as_ref(),
                 &edited,
                 render_progress.as_ref(),
+                &mut self.editing,
             );
             if let Some((i, double)) = clicked {
                 if double {
@@ -2199,27 +2227,37 @@ impl Browser {
             let read_position = (self.preferences.read_along
                 && matches!(self.transport, Transport::Playing(_)))
             .then(|| self.audio_position().as_millis() as u64);
-            let (clicked, edit_action) = table::show(
-                &mut view::region(ui, "table", table_rect, t::BG_SURFACE),
-                self.episode.as_ref().unwrap(),
-                &visible,
-                &mut self.table_cache,
-                self.selected,
-                self.transport.turn(),
-                read_position,
-                self.scroll_to.take(),
-                self.filters.failed_only,
-                &self.jobs.selected,
-                &edited,
-                markers.is_none(),
-                &self.find,
-                &self.filters.search,
-                &self.preferences.find,
-                &mut self.editing,
-                self.preferences.edit_mode,
-                !self.jobs.busy() && self.pending.is_none(),
-                render_progress.as_ref(),
-            );
+            let (clicked, edit_action) = if self.editing.k.script_view {
+                let action = phase_k::script_table(
+                    &mut view::region(ui, "script_table", table_rect, t::BG_SURFACE),
+                    &mut self.editing,
+                    self.preferences.edit_mode,
+                    !self.jobs.busy(),
+                );
+                (None, action)
+            } else {
+                table::show(
+                    &mut view::region(ui, "table", table_rect, t::BG_SURFACE),
+                    self.episode.as_ref().unwrap(),
+                    &visible,
+                    &mut self.table_cache,
+                    self.selected,
+                    self.transport.turn(),
+                    read_position,
+                    self.scroll_to.take(),
+                    self.filters.failed_only,
+                    &self.jobs.selected,
+                    &edited,
+                    markers.is_none(),
+                    &self.find,
+                    &self.filters.search,
+                    &self.preferences.find,
+                    &mut self.editing,
+                    self.preferences.edit_mode,
+                    !self.jobs.busy() && self.pending.is_none(),
+                    render_progress.as_ref(),
+                )
+            };
             self.edit_action(edit_action, &ctx);
             if let Some((i, double)) = clicked {
                 if double {
@@ -2235,6 +2273,15 @@ impl Browser {
                 self.jobs_panel(&mut view::region(
                     ui,
                     "jobs",
+                    view::inset(rect, t::SPACE_12, 0.0),
+                    t::BG_SURFACE,
+                ));
+            } else if self.editing.k.script_view
+                && let Some(rect) = inspector_rect
+            {
+                self.structure_panel(&mut view::region(
+                    ui,
+                    "structure_panel",
                     view::inset(rect, t::SPACE_12, 0.0),
                     t::BG_SURFACE,
                 ));

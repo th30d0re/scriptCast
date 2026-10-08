@@ -46,6 +46,12 @@ Options:
   --find QUERY       find words after the episode loads
   --replace TEXT     open Replace with TEXT (never saves automatically)
   --edit             open the transcript editor (requires --select)
+  --context-menu N   show turn menu and speaker choices
+  --new-turn-after N show an unsaved insertion draft
+  --new-turn-speaker ID choose the insertion speaker
+  --tag-toolbar N    open the body editor with its tag toolbar
+  --clip-picker      open the registered clip picker
+  --raw-script       use plain monospace text in the body editor
   --edit-mode MODE   panel (default) or row
   --play             after --select, start playback of the selected turn
                      (requires --select)
@@ -83,6 +89,12 @@ pub struct Cli {
     /// Whisper / Ensemble mode when opening `--review`.
     pub review_mode: Option<scriptcast_ui::discrepancy::ReviewMode>,
     pub edit: bool,
+    pub context_menu: Option<usize>,
+    pub new_turn_after: Option<usize>,
+    pub new_turn_speaker: Option<String>,
+    pub tag_toolbar: Option<usize>,
+    pub clip_picker: bool,
+    pub raw_script: bool,
     pub find: Option<String>,
     pub replace: Option<String>,
     pub edit_mode: Option<crate::editing::EditMode>,
@@ -120,6 +132,12 @@ impl Cli {
             review: None,
             review_mode: None,
             edit: false,
+            context_menu: None,
+            new_turn_after: None,
+            new_turn_speaker: None,
+            tag_toolbar: None,
+            clip_picker: false,
+            raw_script: false,
             find: None,
             replace: None,
             edit_mode: None,
@@ -206,6 +224,36 @@ impl Cli {
                 }
                 "--fresh" => cli.fresh = true,
                 "--edit" => cli.edit = true,
+                "--context-menu" | "--new-turn-after" | "--tag-toolbar" => {
+                    let n = args
+                        .next()
+                        .ok_or("Turn number required")?
+                        .to_string_lossy()
+                        .parse::<usize>()
+                        .map_err(|_| "Invalid turn number")?;
+                    if n == 0 {
+                        return Err("Turn numbers start at 1".into());
+                    }
+                    match arg.to_string_lossy().as_ref() {
+                        "--context-menu" => cli.context_menu = Some(n),
+                        "--new-turn-after" => cli.new_turn_after = Some(n),
+                        _ => {
+                            cli.tag_toolbar = Some(n);
+                            cli.edit = true;
+                        }
+                    }
+                    cli.select = Some(n);
+                }
+                "--new-turn-speaker" => {
+                    cli.new_turn_speaker = Some(
+                        args.next()
+                            .ok_or("Speaker id required")?
+                            .to_string_lossy()
+                            .into_owned(),
+                    )
+                }
+                "--clip-picker" => cli.clip_picker = true,
+                "--raw-script" => cli.raw_script = true,
                 "--find" => {
                     cli.find = Some(
                         args.next()

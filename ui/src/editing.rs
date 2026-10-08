@@ -37,10 +37,14 @@ impl Draft {
 struct Loaded {
     turns: Result<ScriptTurns, String>,
     changes: Result<Changes, String>,
+    registry: Result<scriptcast_ui::structure::Registry, String>,
 }
 
 #[derive(Default)]
 pub struct Editing {
+    pub k: crate::phase_k::PhaseK,
+    pub toolbar: crate::tag_editor::Toolbar,
+    pub registry: scriptcast_ui::structure::Registry,
     pub manifest_len: Option<usize>,
     pub draft: Option<Draft>,
     pub turns: Option<ScriptTurns>,
@@ -55,11 +59,11 @@ pub struct Editing {
     pub capture_open: bool,
     pub load_requested: bool,
     loading: Option<Receiver<Loaded>>,
-    saving: Option<Receiver<Result<Checkpoint, String>>>,
+    saving: Option<Receiver<Result<(Checkpoint, scriptcast_ui::tags::Report), String>>>,
 }
 impl Editing {
     pub fn busy(&self) -> bool {
-        self.saving.is_some()
+        self.saving.is_some() || self.k.busy()
     }
     pub fn loading(&self) -> bool {
         self.load_requested || self.loading.is_some()
@@ -70,6 +74,7 @@ impl Editing {
             self.focus_requested = true;
             return;
         }
+        self.toolbar.cursor = None;
         if let Some(body) = self.body(turn) {
             self.draft = Some(Draft {
                 turn,
@@ -81,6 +86,7 @@ impl Editing {
     }
     pub fn cancel(&mut self) {
         if !self.busy() {
+            self.k.new_turn = None;
             self.draft = None;
             self.edit_tab = false;
             self.focus_requested = false;
@@ -106,7 +112,7 @@ impl Editing {
     }
     pub fn script_turn(&self, row: usize) -> Option<&ScriptTurn> {
         let turns = &self.turns.as_ref()?.turns;
-        if self.manifest_len.is_some_and(|n| n != turns.len()) {
+        if !self.k.script_view && self.manifest_len.is_some_and(|n| n != turns.len()) {
             return None;
         }
         turns.get(row)
@@ -284,15 +290,13 @@ pub fn inline_editor(
             .max_height(height)
             .min_scrolled_height(height)
             .show(ui, |ui| {
-                ui.add_sized(
-                    [ui.available_width(), height],
-                    egui::TextEdit::multiline(&mut draft.text)
-                        .id(editor_id())
-                        .font(t::font(t::BODY))
-                        .text_color(t::TEXT_PRIMARY)
-                        .frame(egui::Frame::NONE)
-                        .margin(egui::Vec2::ZERO)
-                        .desired_width(f32::INFINITY),
+                crate::tag_editor::body(
+                    ui,
+                    &mut draft.text,
+                    &mut editing.toolbar,
+                    &editing.registry,
+                    height,
+                    "Write this turn…",
                 )
             })
             .inner;
@@ -308,7 +312,10 @@ pub fn inline_editor(
                 if busy { "Saving…" } else { "Save draft" },
                 Action::Save,
                 true,
-                enabled && !busy && draft.changed() && !draft.text.trim().is_empty(),
+                enabled
+                    && !busy
+                    && draft.changed()
+                    && scriptcast_ui::tags::can_save(&draft.text, &editing.registry),
             ),
             ("Cancel", Action::Cancel, false, !busy),
         ] {
@@ -362,15 +369,13 @@ pub fn editor(
             .max_height(height)
             .min_scrolled_height(height)
             .show(ui, |ui| {
-                ui.add_sized(
-                    [ui.available_width(), height],
-                    egui::TextEdit::multiline(&mut draft.text)
-                        .id(editor_id())
-                        .font(t::font(t::BODY))
-                        .text_color(t::TEXT_PRIMARY)
-                        .background_color(if row { t::BG_WINDOW } else { t::BG_RAISED })
-                        .margin(egui::Vec2::splat(t::SPACE_8))
-                        .desired_width(f32::INFINITY),
+                crate::tag_editor::body(
+                    ui,
+                    &mut draft.text,
+                    &mut editing.toolbar,
+                    &editing.registry,
+                    height,
+                    "Write this turn…",
                 )
             })
             .inner;
@@ -406,7 +411,10 @@ pub fn editor(
             action = Some(Action::UseEnsemble);
         }
     }
-    let save_enabled = enabled && !busy && draft.changed() && !draft.text.trim().is_empty();
+    let save_enabled = enabled
+        && !busy
+        && draft.changed()
+        && scriptcast_ui::tags::can_save(&draft.text, &editing.registry);
     let buttons = |ui: &mut Ui| {
         if t::primary_button(
             ui,
@@ -494,6 +502,10 @@ impl Browser {
         }
     }
     pub(crate) fn save_draft(&mut self, ctx: &egui::Context) {
+        if self.editing.k.new_turn.is_some() {
+            self.save_new_turn(ctx);
+            return;
+        }
         if self.editing.busy()
             || self.jobs.busy()
             || self.pending.is_some()
@@ -513,12 +525,22 @@ impl Browser {
         };
         episode.script_path = self.editing.turns.as_ref().map(|s| s.script_path.clone());
         let text = draft.text.clone();
+        if !scriptcast_ui::tags::can_save(&text, &self.editing.registry) {
+            return;
+        }
+        let Some(Ok(export)) = self.export_command.clone() else {
+            return;
+        };
         let (tx, rx) = mpsc::channel();
         self.editing.saving = Some(rx);
         self.editing.notice = Some("Saving draft…".into());
         let ctx = ctx.clone();
         std::thread::spawn(move || {
-            let _ = tx.send(script::save(&episode, &turn, &text, &hash));
+            let result = script::save(&episode, &turn, &text, &hash).and_then(|cp| {
+                let report = script::load_tags(&export, &episode)?;
+                Ok((cp, report))
+            });
+            let _ = tx.send(result);
             ctx.request_repaint();
         });
     }
@@ -534,7 +556,8 @@ impl Browser {
             if let Some(result) = result {
                 self.editing.saving = None;
                 match result {
-                    Ok(cp) => {
+                    Ok((cp, report)) => {
+                        self.editing.k.authority = Some(report);
                         let number = self
                             .selected
                             .and_then(|i| self.episode.as_ref()?.turns.get(i))
@@ -583,7 +606,12 @@ impl Browser {
                     std::thread::spawn(move || {
                         let turns = script::load_turns(&export, &episode);
                         let changes = script::load_changes(&export, &episode);
-                        let _ = tx.send(Loaded { turns, changes });
+                        let registry = script::load_registry(&export, &episode);
+                        let _ = tx.send(Loaded {
+                            turns,
+                            changes,
+                            registry,
+                        });
                         ctx.request_repaint();
                     });
                 }
@@ -596,6 +624,7 @@ impl Browser {
                 Err(mpsc::TryRecvError::Disconnected) => Some(Loaded {
                     turns: Err("Script loader stopped".into()),
                     changes: Err("Script loader stopped".into()),
+                    registry: Err("Speaker loader stopped".into()),
                 }),
                 Err(mpsc::TryRecvError::Empty) => None,
             };
@@ -611,6 +640,10 @@ impl Browser {
                         }
                     }
                     Err(error) => self.editing.error = Some(error),
+                }
+                match result.registry {
+                    Ok(registry) => self.editing.registry = registry,
+                    Err(error) => self.editing.notice = Some(error),
                 }
                 match result.changes {
                     Ok(changes) => self.editing.changes = Some(changes),
@@ -694,12 +727,23 @@ impl Browser {
         }
         episode.script_path = Some(turns.script_path.clone());
         self.find.saved_counts = Some((plan.occurrences, plan.edits.len()));
+        let export = self.export_command.clone();
         let (tx, rx) = mpsc::channel();
         self.editing.saving = Some(rx);
         self.editing.notice = Some("Saving replacements…".into());
         let ctx = ctx.clone();
         std::thread::spawn(move || {
-            let _ = tx.send(script::save_many(&episode, &plan.edits, &hash));
+            let result = script::save_many(&episode, &plan.edits, &hash).and_then(|cp| {
+                let report = match export {
+                    Some(Ok(export)) => script::load_tags(&export, &episode)?,
+                    _ => scriptcast_ui::tags::Report {
+                        script_sha256: hash,
+                        problems: Vec::new(),
+                    },
+                };
+                Ok((cp, report))
+            });
+            let _ = tx.send(result);
             ctx.request_repaint();
         });
     }
@@ -939,7 +983,8 @@ mod tests {
         assert!(
             tx.send(Loaded {
                 turns: Err("old".into()),
-                changes: Err("old".into())
+                changes: Err("old".into()),
+                registry: Err("old".into())
             })
             .is_err()
         );

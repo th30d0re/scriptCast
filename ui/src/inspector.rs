@@ -174,6 +174,10 @@ pub fn show(
         .show(&mut body_ui, |ui| {
             ui.add_space(t::SPACE_16);
             ui.spacing_mut().item_spacing.y = t::SPACE_12;
+            if edit_mode == EditMode::Panel && editing.k.new_turn.is_some() {
+                crate::phase_k::new_editor(ui, editing, true);
+                return;
+            }
             ui.horizontal(|ui| {
                 if ui
                     .selectable_label(
@@ -323,6 +327,15 @@ pub fn show(
             }
             if let Some(notice) = &editing.notice {
                 ui.label(t::text(notice, t::SECONDARY, t::TEXT_MUTED));
+            }
+            if let Some(report) = &editing.k.authority {
+                for problem in report.problems.iter().filter(|p| p.index == turn_idx) {
+                    ui.label(t::text(
+                        format!("{} {}", problem.tag, problem.message),
+                        t::CAPTION,
+                        t::STATUS_FAILED,
+                    ));
+                }
             }
             if editing.edit_tab && editing.has_edits() {
                 let can_render = scope.as_ref().is_some_and(|s| s.synthesis_enabled());

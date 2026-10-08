@@ -359,7 +359,8 @@ pub fn show(
     });
     let editor_height = field_height
         + editing::inline_actions_height(&body_ui, transcript_width, editing.draft.as_ref())
-        + t::SPACE_4 * 3.0;
+        + t::SPACE_4 * 3.0
+        + t::TAG_TOOLBAR_HEIGHT;
     let heights = visible.iter().map(|&idx| {
         let raw = editing.body(idx).unwrap_or(&episode.turns[idx].first_words);
         let clip = script::clip_id(raw);
@@ -399,8 +400,22 @@ pub fn show(
                 not_heard_style: mark_style,
             },
         );
+        let draft_above = edit_mode == EditMode::Row
+            && editing
+                .k
+                .new_turn
+                .as_ref()
+                .is_some_and(|draft| draft.position == idx);
         if editor_turn == Some(idx) {
             editor_height
+        } else if draft_above {
+            t::NEW_TURN_ROW_HEIGHT
+                + if clip.is_some() {
+                    clip_badge_row_height() + t::AUDIO_CLIP_BADGE_MARGIN * 2.0
+                } else {
+                    0.0
+                }
+                + transcript.height()
         } else {
             let chrome = if clip.is_some() {
                 clip_badge_row_height() + t::AUDIO_CLIP_BADGE_MARGIN * 2.0
@@ -430,6 +445,30 @@ pub fn show(
                 origin + vec2(0.0, rows.top(row)),
                 vec2(width, rows.height(row)),
             );
+            let draft_above = edit_mode == EditMode::Row
+                && editing
+                    .k
+                    .new_turn
+                    .as_ref()
+                    .is_some_and(|draft| draft.position == idx);
+            let row_rect = if draft_above {
+                let draft_rect = Rect::from_min_size(
+                    row_rect.min,
+                    vec2(row_rect.width(), t::NEW_TURN_ROW_HEIGHT),
+                );
+                let mut draft_ui = ui.new_child(
+                    egui::UiBuilder::new()
+                        .id_salt(("new_turn", idx))
+                        .max_rect(draft_rect),
+                );
+                draft_ui
+                    .painter()
+                    .rect_filled(draft_rect, 0, t::BG_SELECTED);
+                crate::phase_k::new_editor(&mut draft_ui, editing, false);
+                Rect::from_min_max(pos2(row_rect.left(), draft_rect.bottom()), row_rect.max)
+            } else {
+                row_rect
+            };
             let mut row_ui = ui.new_child(
                 egui::UiBuilder::new()
                     .id_salt(("row", idx))
@@ -439,6 +478,13 @@ pub fn show(
             let turn = &episode.turns[idx];
             let speaker = &episode.speakers[turn.speaker_idx];
             let (rect, response) = ui.allocate_exact_size(row_rect.size(), Sense::click());
+            crate::phase_k::open_row_menu(
+                &response,
+                editing,
+                idx,
+                enabled,
+                editing.k.context_capture && selected == Some(idx),
+            );
             let active = selected == Some(idx) || multi.contains(&idx);
             ui.painter().rect_filled(
                 rect,
