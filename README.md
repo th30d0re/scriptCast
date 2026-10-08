@@ -177,6 +177,7 @@ flowchart TD
 | `scriptcast-repair` | Verify a rendered episode and re-synthesize whatever fails, until it passes. |
 | `scriptcast-relayout` | Re-time a rendered episode without re-synthesizing any audio. |
 | `scriptcast-stitch` | Stitch a rendered episode into one MP3 that matches the manifest timeline. |
+| `scriptcast-export` | Export FCPXML, inspect script turns/tags/speakers, or atomically apply structural script edits. |
 | `scriptcast-retime` | Recompute an episode script's timestamps from the measured audio in the rendered manifest. |
 | `scriptcast-turn-index` | Write TURN_INDEX.csv for a rendered episode. |
 | `scriptcast-outliers` | Flag turns whose rendered audio does not match the text it was given. |

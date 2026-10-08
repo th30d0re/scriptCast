@@ -26,6 +26,18 @@ _TIMING_HELP = (
 )
 
 
+def _script_path(episode_dir: Path, script: Path | None) -> tuple[object, Path]:
+    """Resolve the project and the script selected by the render state."""
+    from scriptcast.project import current
+
+    episode_dir = episode_dir.resolve()
+    project = current(episode_dir)
+    if script is None:
+        state = json.loads((episode_dir / "render_state.json").read_text(encoding="utf-8"))
+        script = project.resolve(_field(state, "source_file", str, "render_state"))
+    return project, script.resolve()
+
+
 def _field(obj: object, key: str, kind: type, context: str):
     if not isinstance(obj, dict) or key not in obj:
         raise ValueError(f"{context}: missing {key}")
@@ -128,16 +140,11 @@ def script_json(episode_dir: Path, script: Path | None, changes: bool) -> dict:
     """Read the project's script and render state without publishing any files."""
     from scriptcast.markup import tokenize_markup
     from scriptcast.parser import parse_transcript
-    from scriptcast.project import current
     from scriptcast.render_state import load_render_state_with_migration, plan_precision_insert
     from scriptcast.voices import load_voices
 
     episode_dir = episode_dir.resolve()
-    project = current(episode_dir)
-    if script is None:
-        state = json.loads((episode_dir / "render_state.json").read_text(encoding="utf-8"))
-        script = project.resolve(_field(state, "source_file", str, "render_state"))
-    script = script.resolve()
+    project, script = _script_path(episode_dir, script)
     original = script.read_bytes()
     if b"\r" in original.replace(b"\r\n", b""):
         raise ValueError("Unsupported bare CR line endings; use LF or CRLF")
@@ -210,17 +217,63 @@ def main(argv: list[str] | None = None) -> int:
     for mode in ("turns", "changes"):
         formats.add_argument(f"--{mode}-json", dest="format", action="store_const", const=mode,
                              help=f"print read-only script {mode} JSON")
-    parser.add_argument("--script", type=Path, help="override the transcript path for JSON modes")
+    formats.add_argument("--edit-json", type=Path, metavar="OPS_FILE",
+                         help="atomically apply structural script edits from a JSON file")
+    formats.add_argument("--tags-json", dest="format", action="store_const", const="tags",
+                         help="print script tag validation JSON")
+    formats.add_argument("--speakers-json", dest="format", action="store_const", const="speakers",
+                         help="print configured speakers and archive clips as JSON")
+    parser.add_argument("--script", type=Path, help="override the transcript path for script modes")
+    parser.add_argument("--voices", type=Path,
+                        help="override the voices file for edit or speaker JSON")
+    parser.add_argument("--expect-sha256",
+                        help="required current script hash for --edit-json")
     parser.add_argument("--out", type=Path, help="output path (default: EPISODE_DIR/EPISODE_ID.fcpxml)")
     args = parser.parse_args(argv)
     try:
-        if args.format == "fcpxml":
+        if args.edit_json is not None:
+            from scriptcast.script_edit import StaleScriptError, edit_script
+
+            if args.expect_sha256 is None:
+                raise ValueError("--expect-sha256 is required with --edit-json")
+            if args.out is not None:
+                raise ValueError("--out is only supported with --fcpxml")
+            project, script = _script_path(args.episode_dir, args.script)
+            try:
+                edit_script(script, args.edit_json, args.expect_sha256, project, args.voices)
+            except StaleScriptError as exc:
+                print(f"scriptcast-export: {exc}", file=sys.stderr)
+                return 3
+            output = json.dumps(script_json(args.episode_dir, script, False))
+        elif args.format == "fcpxml":
             if args.script is not None:
                 raise ValueError("--script is only supported with JSON modes")
+            if args.voices is not None or args.expect_sha256 is not None:
+                raise ValueError("--voices and --expect-sha256 are not supported with --fcpxml")
             output = str(export_fcpxml(args.episode_dir, args.out))
+        elif args.format == "tags":
+            from scriptcast.script_edit import tags_json
+
+            if args.out is not None:
+                raise ValueError("--out is only supported with --fcpxml")
+            if args.voices is not None or args.expect_sha256 is not None:
+                raise ValueError("--voices and --expect-sha256 are not supported with --tags-json")
+            project, script = _script_path(args.episode_dir, args.script)
+            output = json.dumps(tags_json(script, project))
+        elif args.format == "speakers":
+            from scriptcast.project import current
+            from scriptcast.script_edit import speakers_json
+
+            if args.script is not None or args.out is not None or args.expect_sha256 is not None:
+                raise ValueError(
+                    "--speakers-json supports only EPISODE_DIR and optional --voices"
+                )
+            output = json.dumps(speakers_json(current(args.episode_dir.resolve()), args.voices))
         else:
             if args.out is not None:
                 raise ValueError("--out is only supported with --fcpxml")
+            if args.voices is not None or args.expect_sha256 is not None:
+                raise ValueError("--voices and --expect-sha256 are only supported with edit modes")
             output = json.dumps(script_json(args.episode_dir, args.script, args.format == "changes"))
     except (OSError, ValueError, RuntimeError, TypeError, KeyError, AttributeError, ImportError, YAMLError) as exc:
         print(f"scriptcast-export: {exc}", file=sys.stderr)
