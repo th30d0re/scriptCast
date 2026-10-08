@@ -220,6 +220,7 @@ def _clips_section(path: Path, root: Path) -> dict:
         for clip_id, entry in registry.items():
             fields = entry if isinstance(entry, dict) else {}
             source = _opt_str(fields, "source")
+            rendered = _jsonable(fields) if isinstance(fields, dict) else {}
             clips.append(
                 {
                     "id": str(clip_id),
@@ -230,6 +231,7 @@ def _clips_section(path: Path, root: Path) -> dict:
                     "origin_url": _opt_str(fields, "origin_url"),
                     "content_note": _opt_str(fields, "content_note"),
                     "source_exists": _source_exists(root, source),
+                    "fields": rendered if isinstance(rendered, dict) else {},
                     "problems": [],
                 }
             )
@@ -254,10 +256,12 @@ def _pronunciations_section(path: Path) -> dict:
         if isinstance(data, dict):
             for word, readings in data.items():
                 rendered = _jsonable(readings) if isinstance(readings, dict) else {}
+                readings_obj = rendered if isinstance(rendered, dict) else {}
                 entries.append(
                     {
                         "word": str(word),
-                        "readings": rendered if isinstance(rendered, dict) else {},
+                        "readings": readings_obj,
+                        "fields": readings_obj,
                         "problems": [],
                     }
                 )
@@ -519,24 +523,59 @@ def _cmd_edit(root: Path, ops_path: Path, expect_items: list[str]) -> int:
     return 0
 
 
+_COMPLETE_MAPPING = (
+    "set_speaker, set_clip, and set_entry take the complete mapping: "
+    "keys absent from the op are removed. Unchanged keys stay byte-identical."
+)
+_INIT_HEADER = (
+    "# scriptCast project settings. Every key is optional; see the README Configuration table.\n"
+)
+
+
+def _cmd_init(root: Path) -> int:
+    if root.exists() and not root.is_dir():
+        print(f"root is not a directory: {root}", file=sys.stderr)
+        return 1
+    root.mkdir(parents=True, exist_ok=True)
+    path = root / CONFIG_NAME
+    if path.exists():
+        print(f"{path}: scriptcast.toml already exists", file=sys.stderr)
+        return 2
+    _atomic_write(path, _INIT_HEADER)
+    _dump(build_report(root))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Read, validate, and edit scriptCast project configuration.")
+    parser = argparse.ArgumentParser(
+        description="Read, validate, and edit scriptCast project configuration.",
+        epilog=_COMPLETE_MAPPING,
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     show = sub.add_parser("show", help="Print the project configuration as JSON")
     show.add_argument("--json", action="store_true", required=True)
     show.add_argument("--root", type=Path)
 
-    edit = sub.add_parser("edit", help="Apply configuration edits atomically")
+    edit = sub.add_parser(
+        "edit",
+        help="Apply configuration edits atomically",
+        description=_COMPLETE_MAPPING,
+    )
     edit.add_argument("--ops", type=Path, required=True)
     edit.add_argument("--expect-sha256", action="append", default=[], metavar="FILE=HEX")
     edit.add_argument("--root", type=Path)
+
+    init = sub.add_parser("init", help="Create scriptcast.toml when the project has none")
+    init.add_argument("--root", type=Path, required=True)
 
     validate = sub.add_parser("validate", help="Print the project configuration and fail if it has problems")
     validate.add_argument("--json", action="store_true", required=True)
     validate.add_argument("--root", type=Path)
 
     args = parser.parse_args(argv)
+    if args.command == "init":
+        return _cmd_init(args.root.expanduser().resolve())
     root = _project_root(args.root)
     if root is None:
         return 1

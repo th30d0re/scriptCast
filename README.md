@@ -186,7 +186,7 @@ flowchart TD
 | `scriptcast-reference` | Turn a raw recording into a voice reference clip and its exact transcript. |
 | `scriptcast-audition` | Score a candidate reference clip on how reliably it clones (render candidate references against a speaker). |
 | `scriptcast-calibrate` | Find a spelling that makes the TTS engine say a heteronym the intended way. |
-| `scriptcast-project` | Show, validate, and edit project configuration: voices, clips, pronunciations, accepted hearings, speaker rates, and `scriptcast.toml`. |
+| `scriptcast-project` | Show, validate, edit, or `init` project configuration: voices, clips, pronunciations, accepted hearings, speaker rates, and `scriptcast.toml`. |
 
 ## Configuration
 
@@ -205,6 +205,10 @@ A project is a directory containing a `scriptcast.toml`. The project root is `$S
 | `scripts` | `scripts` | `scriptcast-calibrate` mines real sentences here |
 | `outputs` | `outputs` | `scriptcast` (default for `--out-dir`), `scriptcast-calibrate` |
 | `omnivoice_python` | `.venv-omnivoice/bin/python` | the OmniVoice engine |
+
+`scriptcast-project init --root PATH` writes `scriptcast.toml` containing only `# scriptCast project settings. Every key is optional; see the README Configuration table.` when that file is absent, then prints `show --json`. If `scriptcast.toml` already exists, `init` exits 2 and leaves it untouched.
+
+`set_speaker`, `set_clip`, and `set_entry` take the complete mapping. A key absent from the op is removed. A key whose value is unchanged stays byte-identical, including its quoting. `show --json` puts every key from the file on each speaker, clip, and pronunciation entry under `fields` (clips and pronunciations also keep their existing convenience keys).
 
 </details>
 
