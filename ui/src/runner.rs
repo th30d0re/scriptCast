@@ -19,6 +19,11 @@ use std::{
 };
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Preset {
+    Render,
+    Relayout(u64),
+    Stitch,
+    TurnIndex,
+    ReExport { fcpxml: bool, logic_dry_run: bool },
     DetectChanges,
     PrecisionInsert,
     RegenerateTurns(Vec<usize>),
@@ -32,6 +37,11 @@ pub enum Preset {
 impl Preset {
     pub fn name(&self) -> &'static str {
         match self {
+            Self::Render => "render",
+            Self::Relayout(_) => "relayout",
+            Self::Stitch => "stitch",
+            Self::TurnIndex => "turn-index",
+            Self::ReExport { .. } => "re-export",
             Self::DetectChanges => "detect-changes",
             Self::PrecisionInsert => "precision-insert",
             Self::RegenerateTurns(_) => "regenerate-turns",
@@ -45,6 +55,11 @@ impl Preset {
     }
     pub fn label(&self) -> &'static str {
         match self {
+            Self::Render => "Render",
+            Self::Relayout(_) => "Relayout",
+            Self::Stitch => "Stitch MP3",
+            Self::TurnIndex => "Turn index",
+            Self::ReExport { .. } => "Re-export",
             Self::DetectChanges => "Detect changes",
             Self::PrecisionInsert => "Precision insert",
             Self::RegenerateTurns(_) => "Regenerate selected",
@@ -58,6 +73,9 @@ impl Preset {
     }
     pub fn command(&self) -> &'static str {
         match self {
+            Self::Relayout(_) => "scriptcast-relayout",
+            Self::Stitch => "scriptcast-stitch",
+            Self::TurnIndex => "scriptcast-turn-index",
             Self::Verify => "scriptcast-verify",
             Self::ReadAlong => "scriptcast-word-timings",
             Self::ClipTranscripts => "scriptcast-clip-transcribe",
@@ -75,6 +93,14 @@ impl Preset {
     }
     pub fn parse(name: &str, turns: Vec<usize>) -> Result<Self, String> {
         match name {
+            "render" => Ok(Self::Render),
+            "relayout" => Ok(Self::Relayout(250)),
+            "stitch" => Ok(Self::Stitch),
+            "turn-index" => Ok(Self::TurnIndex),
+            "re-export" => Ok(Self::ReExport {
+                fcpxml: false,
+                logic_dry_run: false,
+            }),
             "detect-changes" => Ok(Self::DetectChanges),
             "precision-insert" => Ok(Self::PrecisionInsert),
             "regenerate-turns" | "regenerate-selected" => Ok(Self::RegenerateTurns(turns)),
@@ -119,9 +145,18 @@ impl JobSpec {
             .project_root
             .clone()
             .ok_or("Missing scriptcast.toml project root")?;
-        let script = e.script_path.as_ref().filter(|p| p.is_file()).ok_or(
-            "Missing transcript: source_file in render_state.json / episode_manifest.json",
-        )?;
+        let script = e.script_path.as_ref().filter(|p| p.is_file());
+        let utility = matches!(
+            p,
+            Preset::Relayout(_) | Preset::Stitch | Preset::ReExport { .. }
+        );
+        if !utility && script.is_none() {
+            return Err(
+                "Missing transcript: source_file in render_state.json / episode_manifest.json"
+                    .into(),
+            );
+        }
+        let script = script.unwrap_or(&cwd);
         let turns = p.turns();
         if matches!(p, Preset::RegenerateTurns(_) | Preset::Repair(Some(_))) {
             if e.script_in_sync != Some(true) {
@@ -145,6 +180,38 @@ impl JobSpec {
         let out = e.dir.parent().ok_or("Episode has no output parent")?;
         let mut synthesizes = false;
         match p {
+            Preset::ReExport {
+                fcpxml,
+                logic_dry_run,
+            } => {
+                args.extend([
+                    "--export-only".into(),
+                    "--episode-id".into(),
+                    e.manifest.episode_id.clone().into(),
+                    "--out-dir".into(),
+                    out.as_os_str().into(),
+                ]);
+                if *fcpxml {
+                    args.push("--fcpxml".into());
+                }
+                if *logic_dry_run {
+                    args.push("--logic-dry-run".into());
+                }
+            }
+
+            Preset::Relayout(gap) => {
+                args.extend([
+                    e.dir.as_os_str().into(),
+                    "--gap-ms".into(),
+                    gap.to_string().into(),
+                ]);
+            }
+            Preset::Stitch => args.push(e.dir.as_os_str().into()),
+            Preset::TurnIndex => args.extend([
+                e.dir.as_os_str().into(),
+                "--transcript".into(),
+                script.as_os_str().into(),
+            ]),
             Preset::ReadAlong | Preset::ClipTranscripts | Preset::SecondOpinion => {
                 args.extend([
                     e.dir.clone().into_os_string(),
@@ -208,6 +275,13 @@ impl JobSpec {
                     out.as_os_str().into(),
                 ]);
                 match p {
+                    Preset::Render => {
+                        args.push("--resume".into());
+                        if let Some(voices) = &e.voices_path {
+                            args.extend(["--voices".into(), voices.as_os_str().into()]);
+                        }
+                        synthesizes = true;
+                    }
                     Preset::DetectChanges => args.push("--detect-changes".into()),
                     Preset::PrecisionInsert => {
                         args.push("--precision-insert".into());
@@ -228,11 +302,14 @@ impl JobSpec {
             Preset::SecondOpinion => Some("stress_ensemble.json"),
             _ => None,
         };
-        let overwrites = derived
+        let mut overwrites: Vec<PathBuf> = derived
             .map(|name| e.dir.join(name))
             .filter(|path| path.exists())
             .into_iter()
             .collect();
+        if matches!(p, Preset::Relayout(_) | Preset::ReExport { .. }) {
+            overwrites.push(e.dir.join("episode_manifest.json"));
+        }
         Ok(Self {
             program: resolved.program.clone(),
             args,
@@ -457,6 +534,6 @@ fn read_pipe(
 }
 impl Drop for Job {
     fn drop(&mut self) {
-        self.cancel();
+        // Dropping a handle must not terminate a detached process group.
     }
 }

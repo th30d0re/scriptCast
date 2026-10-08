@@ -101,6 +101,7 @@ pub(crate) struct Jobs {
     pub started: Option<Instant>,
     pub elapsed: Duration,
     pub job: Option<Job>,
+    pub durable: Option<crate::phase_j::Active>,
     pub preparing: Option<Receiver<Result<Checkpoint, String>>>,
     pub prepared: Option<Confirmation>,
     pub notice: Option<String>,
@@ -131,6 +132,7 @@ impl Default for Jobs {
             started: None,
             elapsed: Duration::ZERO,
             job: None,
+            durable: None,
             preparing: None,
             prepared: None,
             notice: None,
@@ -146,7 +148,7 @@ impl Default for Jobs {
 
 impl Jobs {
     pub fn busy(&self) -> bool {
-        self.job.is_some() || self.preparing.is_some()
+        self.job.is_some() || self.preparing.is_some() || self.durable.is_some()
     }
 }
 
@@ -206,7 +208,7 @@ impl Browser {
         }
     }
 
-    fn job_error(&mut self, error: String) {
+    pub(crate) fn job_error(&mut self, error: String) {
         self.jobs.state = JobState::Failed(None);
         self.jobs.notice = Some(error.clone());
         self.jobs.log.push(error.clone());
@@ -364,7 +366,7 @@ impl Browser {
             self.reload_after_job(ctx);
         }
         if self.jobs.login.is_some() || self.jobs.resolving.is_some() || self.jobs.busy() {
-            ctx.request_repaint_after(Duration::from_millis(50));
+            ctx.request_repaint_after(scriptcast_ui::progress::TICK);
         }
     }
 
@@ -378,7 +380,11 @@ impl Browser {
         if self.jobs.login.is_some() {
             return;
         }
-        let project = self.episode.as_ref().and_then(|e| e.project_root.clone());
+        let project = self
+            .episode
+            .as_ref()
+            .and_then(|e| e.project_root.clone())
+            .or_else(|| self.phase.project.clone());
         let folder = self.preferences.cli_dir.clone();
         let path = self
             .jobs
@@ -402,6 +408,9 @@ impl Browser {
                 "scriptcast-review-stats",
                 "scriptcast-repair",
                 "scriptcast-export",
+                "scriptcast-relayout",
+                "scriptcast-stitch",
+                "scriptcast-turn-index",
             ]
             .into_iter()
             .map(|name| {
@@ -473,17 +482,16 @@ impl Browser {
     fn start_prepared_job(&mut self, c: Confirmation, ctx: &egui::Context) {
         eprintln!("scriptcast-ui starting: {}", c.spec.display());
         self.jobs.log.push(format!("Command: {}", c.spec.display()));
-        match Job::start(&c.spec, ctx.clone()) {
-            Ok(job) => {
-                self.jobs.job = Some(job);
-                self.jobs.state = JobState::Running;
-                self.jobs.started = Some(Instant::now());
-                self.jobs.notice = Some(format!("{} · Running", c.preset.label()));
-            }
-            Err(error) => self.job_error(error),
-        }
+        let Some(episode) = &self.episode else { return };
+        let dir = episode.dir.clone();
+        self.launch_durable(
+            &dir,
+            c.preset.name(),
+            vec![scriptcast_ui::detached::CommandPlan::new(&c.spec)],
+            None,
+        );
+        ctx.request_repaint();
     }
-
     pub(crate) fn request_job(
         &mut self,
         preset: Preset,
@@ -539,9 +547,12 @@ impl Browser {
         });
     }
 
-    fn cancel_job(&mut self) {
+    pub(crate) fn cancel_job(&mut self) {
         if let Some(job) = &self.jobs.job {
             job.cancel();
+        }
+        if let Some(active) = &self.jobs.durable {
+            scriptcast_ui::detached::stop(&active.record);
         }
         // A checkpoint may finish its copy, but discarding its receiver forbids launch.
         // Restore is an atomic-file copy sequence and cannot be canceled mid-restore.
@@ -553,7 +564,7 @@ impl Browser {
     }
 
     pub(crate) fn running_capture(&mut self, ctx: &egui::Context) {
-        if self.jobs.job.is_some()
+        if (self.jobs.job.is_some() || self.jobs.durable.is_some())
             && self.jobs.running_screenshot.is_some()
             && self.jobs.running_requested.is_none()
         {
@@ -608,7 +619,24 @@ impl Browser {
         ui.separator();
         let turns = self.selected_turns();
         let has_clips = self.has_clip_turns();
+        ui.checkbox(&mut self.phase.export_fcpxml, "FCPXML");
+        ui.checkbox(&mut self.phase.export_logic, "Logic dry-run");
+        ui.add(egui::Slider::new(&mut self.phase.pipeline.gap_ms, 0..=1000).text("Gap ms"));
+        if self.jobs.title == "Stitch MP3"
+            && self.jobs.state == JobState::Complete
+            && ui.button("Reveal in Finder").clicked()
+            && let Some(e) = &self.episode
+        {
+            crate::phase_j::reveal(self.phase.stitch_output.as_deref().unwrap_or(&e.dir));
+        }
         let presets = [
+            Preset::Relayout(self.phase.pipeline.gap_ms),
+            Preset::Stitch,
+            Preset::TurnIndex,
+            Preset::ReExport {
+                fcpxml: self.phase.export_fcpxml,
+                logic_dry_run: self.phase.export_logic,
+            },
             Preset::DetectChanges,
             Preset::PrecisionInsert,
             Preset::RegenerateTurns(turns.clone()),
@@ -718,7 +746,7 @@ impl Browser {
                     t::CAPTION,
                     t::TEXT_MUTED,
                 ));
-let cancelable = self.jobs.job.is_some() || self.jobs.prepared.is_some();
+let cancelable = self.jobs.job.is_some() || self.jobs.prepared.is_some() || self.jobs.durable.is_some();
 if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
     self.cancel_job();
 }
@@ -1457,7 +1485,11 @@ mod tests {
             &[("scriptcast-verify".into(), Ok(resolved))].into(),
         )
         .unwrap();
+        let body = format!(
+            "{body}; printf '%s\n' '{{\"event\":\"done\",\"ok\":true,\"outputs\":{{}}}}' > \"$1\""
+        );
         spec.args = vec!["-c".into(), body.into()];
+
         Confirmation {
             preset: Preset::Verify,
             spec,
@@ -1470,6 +1502,7 @@ mod tests {
         while app.jobs.busy() {
             assert!(start.elapsed() < Duration::from_secs(3));
             app.poll_jobs(ctx);
+            app.poll_phase_j(ctx);
             std::thread::sleep(Duration::from_millis(5));
         }
     }

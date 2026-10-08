@@ -27,6 +27,11 @@ pub const USAGE: &str = "Usage: scriptcast-ui [EPISODE_DIR] [OPTIONS]
 Open a rendered scriptCast episode directory in the episode browser.
 
 Options:
+  --new-episode PATH open the New Episode sheet
+  --dry-run-json PATH preview fixture (with --new-episode)
+  --progress-fixture PATH load a progress JSONL fixture
+  --pipeline-fixture PATH load a pipeline JSON fixture
+  --quit-alert       show the active-render quit alert
   --screenshot PATH  after the UI settles, save the window to PATH as PNG and exit
   --size WxH         inner window size in points (default: 1440x900)
   --inspector MODE   selected, verification, or jobs
@@ -63,6 +68,11 @@ window while playing. A saved screenshot exits 0; any failure (including a
 
 #[derive(Clone, Debug)]
 pub struct Cli {
+    pub new_episode: Option<PathBuf>,
+    pub dry_run_json: Option<PathBuf>,
+    pub progress_fixture: Option<PathBuf>,
+    pub pipeline_fixture: Option<PathBuf>,
+    pub quit_alert: bool,
     pub episode: Option<PathBuf>,
     pub screenshot: Option<PathBuf>,
     pub size: [f32; 2],
@@ -97,6 +107,11 @@ pub struct Cli {
 impl Cli {
     pub fn parse(args: impl IntoIterator<Item = OsString>) -> Result<Self, String> {
         let mut cli = Self {
+            new_episode: None,
+            dry_run_json: None,
+            progress_fixture: None,
+            pipeline_fixture: None,
+            quit_alert: false,
             episode: None,
             screenshot: None,
             size: t::WINDOW_SIZE,
@@ -140,7 +155,21 @@ impl Cli {
                 continue;
             }
             match arg.to_string_lossy().as_ref() {
+                "--new-episode" => {
+                    cli.new_episode = Some(args.next().ok_or("Missing script")?.into())
+                }
+                "--dry-run-json" => {
+                    cli.dry_run_json = Some(args.next().ok_or("Missing JSON")?.into())
+                }
+                "--progress-fixture" => {
+                    cli.progress_fixture = Some(args.next().ok_or("Missing JSONL")?.into())
+                }
+                "--pipeline-fixture" => {
+                    cli.pipeline_fixture = Some(args.next().ok_or("Missing JSON")?.into())
+                }
+                "--quit-alert" => cli.quit_alert = true,
                 "--" => positional_only = true,
+
                 "-h" | "--help" => cli.help = true,
                 "--inspector" => {
                     cli.inspector = Some(
@@ -315,7 +344,7 @@ impl Cli {
     }
     /// A capture that plays is always muted; --mute mutes any run.
     pub fn effective_muted(&self) -> bool {
-        self.mute || (self.screenshot.is_some() && self.play)
+        self.mute || self.screenshot.is_some() || self.running_screenshot.is_some()
     }
 }
 

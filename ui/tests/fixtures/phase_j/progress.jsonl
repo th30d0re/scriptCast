@@ -1,0 +1,4 @@
+{"event":"start","tool":"render","total":3,"ts":"2026-10-07T12:00:00Z"}
+{"event":"turn_start","turn_index":1,"turn_id":"turn_1","speaker_id":"alex","engine":"omnivoice","n":1,"total":3}
+{"event":"turn_done","turn_index":1,"turn_id":"turn_1","n":1,"total":3,"seconds":4.2}
+{"event":"turn_start","turn_index":2,"turn_id":"turn_2","speaker_id":"maya","engine":"omnivoice","n":2,"total":3}

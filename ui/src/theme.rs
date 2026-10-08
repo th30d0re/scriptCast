@@ -666,6 +666,15 @@ pub fn find_shortcut(ui: &mut egui::Ui, replace: bool) -> egui::Response {
     response
 }
 
+// Phase J sheets use the same spacing, colours and controls as the workspace.
+pub const NEW_EPISODE_WIDTH: f32 = 1060.0;
+pub const PIPELINE_WIDTH: f32 = 690.0;
+pub const PREVIEW_HEIGHT: f32 = 300.0;
+pub const PREVIEW_TURNS_WIDTH: f32 = 710.0;
+pub const PREVIEW_SPEAKERS_WIDTH: f32 = 340.0;
+pub const QUIT_WIDTH: f32 = 560.0;
+pub const PATH_CHOOSE_WIDTH: f32 = 80.0;
+
 #[cfg(test)]
 mod tests {
     use super::*;

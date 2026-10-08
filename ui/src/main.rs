@@ -4,6 +4,7 @@ mod editing;
 mod find_replace;
 mod inspector;
 mod jobs;
+mod phase_j;
 mod read_along;
 mod settings;
 mod table;
@@ -243,6 +244,7 @@ fn neighbour_targets(visible: &[usize], current: Option<usize>) -> (Option<usize
 }
 #[derive(Default)]
 struct Browser {
+    phase: phase_j::PhaseJ,
     editing: editing::Editing,
     find: find_replace::FindReplace,
     table_cache: table::TextCache,
@@ -365,6 +367,7 @@ impl Browser {
             pending_review: cli.review.is_some(),
             ..Self::default()
         };
+        app.init_phase_j(cli);
         app.editing.capture_open = cli.edit;
         app.find.capture_query = cli.find.clone();
         if let Some(replacement) = &cli.replace {
@@ -393,7 +396,11 @@ impl Browser {
         // Replacing the receiver invalidates any previous request. Late results
         // can never overwrite a newer open or a user's cancellation.
         std::thread::spawn(move || {
-            let result = Episode::load_cancellable(&worker_path, &worker_canceled);
+            let result = if worker_path.join("_jobs").is_dir() {
+                scriptcast_ui::new_episode::load_live(&worker_path)
+            } else {
+                Episode::load_cancellable(&worker_path, &worker_canceled)
+            };
             let _ = sender.send(result);
             repaint.request_repaint();
         });
@@ -502,6 +509,7 @@ impl Browser {
         self.episode = Some(episode);
         self.error = None;
         self.jobs.selected.clear();
+        self.reattach_phase_j();
         self.refresh_checkpoints();
         self.refresh_commands(ctx);
         // Reset virtual scroll on a new episode; preserve/reveal selection on reload.
@@ -979,8 +987,14 @@ impl Browser {
         ctx.request_repaint_after(capture::TICK);
     }
     fn shortcuts(&mut self, ctx: &egui::Context) {
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::N)) {
+            self.show_new_episode(None);
+        }
         let editor_focused = ctx.memory(|m| m.has_focus(editing::editor_id()));
-        let dialog = self.jobs.confirmation.is_some()
+        let dialog = self.phase.new_open
+            || self.phase.pipeline_open
+            || self.phase.quit_alert
+            || self.jobs.confirmation.is_some()
             || self.jobs.restore.is_some()
             || self.editing.pending_selection.is_some()
             || self.find.confirmation.is_some();
@@ -1145,6 +1159,22 @@ impl Browser {
                 .layout(Layout::right_to_left(Align::Center)),
         );
         actions.spacing_mut().item_spacing.x = t::SPACE_8;
+        actions.menu_button("Episode", |ui| {
+            if ui
+                .add_enabled(self.episode.is_some(), egui::Button::new("Finish Episode…"))
+                .clicked()
+            {
+                self.phase.pipeline_open = true;
+                ui.close();
+            }
+        });
+        actions.menu_button("File", |ui| {
+            if ui.button("New Episode…     ⌘N").clicked() {
+                self.show_new_episode(None);
+                ui.close();
+            }
+        });
+
         // This row is laid out right-to-left: Settings, Logic, Live, Reload, Open.
         let settings =
             t::icon_button(&mut actions, "settings-16-text", true).on_hover_text("Settings (⌘,)");
@@ -1299,14 +1329,18 @@ impl Browser {
             vec2(t::EMPTY_RIGHT, height),
         );
         let mut open = false;
+        let mut new = false;
         let mut left_ui = view::region(ui, "empty_guidance", left, t::BG_WINDOW);
         if left_height > height {
             egui::ScrollArea::vertical()
                 .id_salt("empty_guidance_scroll")
                 .auto_shrink([false, false])
-                .show(&mut left_ui, |ui| open |= empty_left(ui));
+                .show(&mut left_ui, |ui| open |= empty_left(ui, &mut new));
         } else {
-            open |= empty_left(&mut left_ui);
+            open |= empty_left(&mut left_ui, &mut new);
+        }
+        if new {
+            self.show_new_episode(None);
         }
         let mut path = None;
         let mut right_ui = view::region(ui, "recent_episodes", right, t::BG_WINDOW);
@@ -1696,9 +1730,11 @@ impl Browser {
             }
         }
     }
-    fn status(&self, ui: &mut Ui) {
+    fn status(&mut self, ui: &mut Ui) {
         let rect = view::inset(ui.max_rect(), t::SPACE_20, 0.0);
-        let status = if self.discrepancy_open {
+        let status = if let Some(status) = self.phase_status() {
+            status
+        } else if self.discrepancy_open {
             "[ Previous difference ] Next difference Space Play/pause · Cmd+Return Save decision"
                 .into()
         } else if self.jobs.confirmation.is_some() || self.jobs.restore.is_some() {
@@ -1760,6 +1796,9 @@ impl Browser {
                 .max_rect(rect)
                 .layout(Layout::right_to_left(Align::Center)),
         );
+        if self.jobs.durable.is_some() && row.button("Cancel").clicked() {
+            self.cancel_job();
+        }
         let right = if self.discrepancy_open {
             "Audio unchanged · Draft"
         } else {
@@ -2063,6 +2102,7 @@ impl Browser {
                 .editing
                 .markers(self.episode.as_ref().unwrap().turns.len());
             let edited = markers.clone().unwrap_or_default();
+            let render_progress = self.render_progress().cloned();
             let clicked = timeline::show(
                 &mut view::region(ui, "timeline", timeline, t::BG_WINDOW),
                 self.episode.as_ref().unwrap(),
@@ -2073,6 +2113,7 @@ impl Browser {
                 playing,
                 self.waveforms.as_ref(),
                 &edited,
+                render_progress.as_ref(),
             );
             if let Some((i, double)) = clicked {
                 if double {
@@ -2133,6 +2174,7 @@ impl Browser {
                 &mut self.editing,
                 self.preferences.edit_mode,
                 !self.jobs.busy() && self.pending.is_none(),
+                render_progress.as_ref(),
             );
             self.edit_action(edit_action, &ctx);
             if let Some((i, double)) = clicked {
@@ -2245,6 +2287,7 @@ impl Browser {
         self.confirmation_dialog(&ctx);
         self.replace_dialog(&ctx);
         self.settings_window(&ctx);
+        self.phase_j_sheets(&ctx);
         self.draft_guard(&ctx);
     }
 }
@@ -2252,6 +2295,7 @@ impl eframe::App for Browser {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.poll_load(ctx);
         self.poll_jobs(ctx);
+        self.poll_phase_j(ctx);
         self.poll_editing(ctx);
         self.refresh_find();
         self.poll_review_save();
@@ -2297,7 +2341,7 @@ fn empty_left_height(ui: &Ui) -> f32 {
     height
 }
 /// Left column of the empty workspace. Returns true when Open Episode was clicked.
-fn empty_left(ui: &mut Ui) -> bool {
+fn empty_left(ui: &mut Ui, new: &mut bool) -> bool {
     let mut open = false;
     ui.spacing_mut().item_spacing.y = t::SPACE_20;
     ui.add(
@@ -2309,6 +2353,7 @@ fn empty_left(ui: &mut Ui) -> bool {
     ui.horizontal(|ui| {
         open |=
             t::primary_button(ui, "Open Episode", Some("folder-open-16-on-accent"), true).clicked();
+        *new |= t::secondary_button(ui, "New Episode…", None, true).clicked();
         ui.label(t::text("Cmd+O", t::BODY, t::TEXT_MUTED));
     });
     ui.add_space(t::SPACE_16);
@@ -2405,6 +2450,15 @@ fn rendered_when(iso: &str) -> std::borrow::Cow<'_, str> {
     }
 }
 fn main() -> eframe::Result {
+    if std::env::args().nth(1).as_deref() == Some("--job-worker") {
+        let path = std::env::args_os().nth(2).expect("worker record");
+        if let Err(message) = scriptcast_ui::detached::worker(std::path::Path::new(&path)) {
+            eprintln!("{message}");
+            std::process::exit(1);
+        }
+        return Ok(());
+    }
+
     let cli = match capture::Cli::parse(std::env::args_os().skip(1)) {
         Ok(cli) => cli,
         Err(message) => {

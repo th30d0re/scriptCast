@@ -293,6 +293,7 @@ pub fn show(
     editing: &mut Editing,
     edit_mode: EditMode,
     enabled: bool,
+    progress: Option<&scriptcast_ui::progress::Progress>,
 ) -> (Option<(usize, bool)>, Option<editing::Action>) {
     let matcher = scriptcast_ui::find::Matcher::new(query, options).ok();
     let mut area = ui.max_rect();
@@ -546,7 +547,13 @@ pub fn show(
                 t::mono(t::NUMERIC),
                 t::TEXT_MUTED,
             );
-            let (label, colour) = if edited.contains(&idx) {
+            let (label, colour) = if progress.is_some_and(|p| p.current == Some(turn.index)) {
+                ("Rendering…", t::accent())
+            } else if progress.is_some_and(|p| !p.completed.contains(&turn.index))
+                && turn.verification == V::MissingAudio
+            {
+                ("Queued", t::TEXT_SUBTLE)
+            } else if edited.contains(&idx) {
                 ("Edited", t::accent())
             } else {
                 view::verification_label(turn.verification)

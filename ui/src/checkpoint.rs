@@ -76,7 +76,10 @@ pub fn plan_files(p: &Preset, e: &Episode) -> Result<Vec<PlannedFile>, String> {
         }
         for entry in fs::read_dir(&e.dir).map_err(|x| x.to_string())? {
             let path = entry.map_err(|x| x.to_string())?.path();
-            if path.extension().is_some_and(|x| x == "als") {
+            if path
+                .extension()
+                .is_some_and(|x| x == "als" || x == "fcpxml" || x == "logicx")
+            {
                 paths.push(path);
             }
         }

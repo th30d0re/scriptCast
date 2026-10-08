@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "episode_id": "episode_small",
+  "transcript": "/tmp/scriptcast-j/script.md",
+  "voices": "/tmp/scriptcast-j/voices.yaml",
+  "turns": [
+    {"index": 1, "turn_id": "turn_1", "speaker_id": "alex", "speaker_name": "Alex", "timestamp_ms": 0,
+     "first_words": "Welcome to All Things Open. Today: who pays?", "clip_id": null},
+    {"index": 2, "turn_id": "turn_2", "speaker_id": "maya", "speaker_name": "Maya", "timestamp_ms": 12000,
+     "first_words": "Open source is free to use, but not free to sustain.", "clip_id": null},
+    {"index": 3, "turn_id": "turn_3", "speaker_id": "guest_two", "speaker_name": "guest_two", "timestamp_ms": 25000,
+     "first_words": "The first invoice changed that conversation.", "clip_id": null}
+  ],
+  "speakers": [
+    {"id": "alex", "name": "Alex", "engine": "omnivoice", "turns": 1},
+    {"id": "maya", "name": "Maya", "engine": "omnivoice", "turns": 1},
+    {"id": "guest_two", "name": "guest_two", "engine": null, "turns": 1}
+  ],
+  "warnings": [
+    {"kind": "preamble_skipped", "line": 1, "speaker_id": null, "blocking": false,
+     "message": "Text before the first header was skipped (line 1)."},
+    {"kind": "unknown_speaker", "line": 12, "speaker_id": "guest_two", "blocking": true,
+     "message": "Speaker guest_two has no entry in voices.yaml. Assign a voice to enable rendering."}
+  ]
+}
