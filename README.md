@@ -180,12 +180,12 @@ flowchart TD
 | `scriptcast-export` | Export FCPXML, inspect script turns/tags/speakers, or atomically apply structural script edits. |
 | `scriptcast-retime` | Recompute an episode script's timestamps from the measured audio in the rendered manifest. |
 | `scriptcast-turn-index` | Write TURN_INDEX.csv for a rendered episode. |
-| `scriptcast-outliers` | Flag turns whose rendered audio does not match the text it was given. |
-| `scriptcast-stress` | Check that rendered heteronyms were spoken in the reading the script needs (judge one heteronym in one WAV). |
-| `scriptcast-clip` | Cut an archival excerpt by naming its first and last words. |
-| `scriptcast-reference` | Turn a raw recording into a voice reference clip and its exact transcript. |
-| `scriptcast-audition` | Score a candidate reference clip on how reliably it clones (render candidate references against a speaker). |
-| `scriptcast-calibrate` | Find a spelling that makes the TTS engine say a heteronym the intended way. |
+| `scriptcast-outliers` | Flag turns whose rendered audio does not match the text it was given. `--json` prints one object of outliers. |
+| `scriptcast-stress` | Check that rendered heteronyms were spoken in the reading the script needs (judge one heteronym in one WAV). `--json` prints one object. |
+| `scriptcast-clip` | Cut an archival excerpt by naming its first and last words. `--words-json` prints word timings; `--json` registers and prints the entry. |
+| `scriptcast-reference` | Turn a raw recording into a voice reference clip and its exact transcript. `--candidates-json` lists sentence runs; `--json` writes an exact span. |
+| `scriptcast-audition` | Score a candidate reference clip on how reliably it clones (render candidate references against a speaker). `--json` requires `--keep` and prints the scores. |
+| `scriptcast-calibrate` | Find a spelling that makes the TTS engine say a heteronym the intended way. `--json` requires `--keep`; `--write` saves the winner. |
 | `scriptcast-project` | Show, validate, edit, or `init` project configuration: voices, clips, pronunciations, accepted hearings, speaker rates, and `scriptcast.toml`. |
 
 ## Configuration

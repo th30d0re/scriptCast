@@ -19,6 +19,7 @@ import argparse
 import asyncio
 import json
 import statistics
+import sys
 import tempfile
 from pathlib import Path
 
@@ -26,6 +27,7 @@ import soundfile
 
 from scriptcast.engine import ENGINE_REGISTRY
 from scriptcast.models import VoiceConfig
+from scriptcast.tool_json import JsonArgumentParser, emit, fail, run_json
 
 # Drawn from the two rendered episodes, weighted toward the lines that have
 # actually failed. Each one targets a mode seen in the wild.
@@ -64,7 +66,7 @@ async def _render(engine, text: str, config: VoiceConfig, path: Path, rate: int)
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
+    ap = JsonArgumentParser(json_flags=("--json",))
     ap.add_argument("references", nargs="+", type=Path)
     ap.add_argument("--speaker", default="candidate")
     ap.add_argument("--engine", default="mlx_chatterbox")
@@ -76,7 +78,15 @@ def main() -> int:
     ap.add_argument("--model", choices=["tiny", "small", "medium"], default="small")
     ap.add_argument("--keep", type=Path, default=None,
                     help="Directory to keep the rendered auditions in.")
+    ap.add_argument("--json", action="store_true",
+                    help="Print one JSON object. Requires --keep so the takes stay on disk.")
     args = ap.parse_args()
+    return run_json(args.json, lambda: _run(args))
+
+
+def _run(args: argparse.Namespace) -> int:
+    if args.json and args.keep is None:
+        return fail("--json requires --keep")
 
     from scriptcast.tools.verify_render import _MODELS, _score
 
@@ -88,10 +98,14 @@ def main() -> int:
     temperatures = [float(x) for x in args.temperature.split(",")]
     out_root = args.keep or Path(tempfile.mkdtemp(prefix="audition_"))
     out_root.mkdir(parents=True, exist_ok=True)
+    log = sys.stderr if args.json else sys.stdout
 
     table = []
+    candidates = []
     for reference in args.references:
         if not reference.exists():
+            if args.json:
+                return fail(f"missing: {reference}")
             print(f"missing: {reference}")
             continue
         for temperature in temperatures:
@@ -102,6 +116,7 @@ def main() -> int:
             )
             scores = []
             worst = []
+            takes = []
             for index, text in enumerate(PASSAGES):
                 path = out_root / f"{reference.stem}_t{temperature}_{index:02d}.wav"
                 asyncio.run(_render(engine, text, config, path, engine.sample_rate))
@@ -111,29 +126,52 @@ def main() -> int:
                 score, run = _score(text, heard)
                 scores.append(score)
                 worst.append(run)
+                takes.append({
+                    "wav": str(path.resolve()),
+                    "text": text,
+                    "heard": heard,
+                    "score": round(float(score), 4),
+                    "run": int(run),
+                })
                 if score < 0.85 or run > 2:
                     print(f"  {reference.name} t={temperature} passage {index}: "
-                          f"{score:.3f} run {run}")
-                    print(f"      want: {text[:90]}")
-                    print(f"      got : {heard[:90]}")
-            table.append(
-                {
-                    "reference": reference.name,
-                    "temperature": temperature,
-                    "mean": round(statistics.mean(scores), 4),
-                    "min": round(min(scores), 4),
-                    "clean": sum(1 for s, r in zip(scores, worst) if s >= 0.85 and r <= 2),
-                    "of": len(PASSAGES),
-                }
-            )
+                          f"{score:.3f} run {run}", file=log)
+                    print(f"      want: {text[:90]}", file=log)
+                    print(f"      got : {heard[:90]}", file=log)
+            row = {
+                "reference": reference.name,
+                "temperature": temperature,
+                "mean": round(statistics.mean(scores), 4),
+                "min": round(min(scores), 4),
+                "clean": sum(1 for s, r in zip(scores, worst) if s >= 0.85 and r <= 2),
+                "of": len(PASSAGES),
+            }
+            table.append(row)
+            candidates.append({
+                "reference": str(reference.resolve()),
+                "temperature": temperature,
+                "mean": row["mean"],
+                "min": row["min"],
+                "clean": row["clean"],
+                "of": row["of"],
+                "takes": takes,
+            })
 
-    print(f"\n{'reference':<34} {'temp':>5} {'mean':>7} {'min':>7} {'clean':>7}")
-    for row in sorted(table, key=lambda r: (-r["clean"], -r["mean"])):
+    ordered = sorted(range(len(table)), key=lambda i: (-table[i]["clean"], -table[i]["mean"]))
+    print(f"\n{'reference':<34} {'temp':>5} {'mean':>7} {'min':>7} {'clean':>7}", file=log)
+    for index in ordered:
+        row = table[index]
         print(f"{row['reference']:<34} {row['temperature']:>5} {row['mean']:>7.4f} "
-              f"{row['min']:>7.4f} {row['clean']:>3}/{row['of']}")
+              f"{row['min']:>7.4f} {row['clean']:>3}/{row['of']}", file=log)
     if args.keep:
-        print(f"\naudio kept in {out_root}")
+        print(f"\naudio kept in {out_root}", file=log)
         (out_root / "scores.json").write_text(json.dumps(table, indent=1))
+    if args.json:
+        emit({
+            "speaker": args.speaker,
+            "engine": args.engine,
+            "candidates": [candidates[index] for index in ordered],
+        })
     return 0
 
 

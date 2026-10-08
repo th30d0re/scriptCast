@@ -25,6 +25,7 @@ import argparse
 import asyncio
 import logging
 import re
+import sys
 from pathlib import Path
 
 import soundfile
@@ -37,6 +38,7 @@ from scriptcast.pronunciation import (
     find_heteronyms,
     respellings_path,
 )
+from scriptcast.tool_json import JsonArgumentParser, emit, fail, run_json
 from scriptcast.tools.stress_check import check_segment
 from scriptcast.voices import load_voices
 
@@ -73,8 +75,43 @@ def _swap(sentence: str, word: str, reading: str, spelling: str) -> str:
     return "".join(out) + sentence[cursor:]
 
 
+def _write_respelling(word: str, reading: str, spelling: str, json_mode: bool) -> Path:
+    out_path = respellings_path()
+    if not json_mode:
+        data: dict = {}
+        header = ""
+        if out_path.exists():
+            data = yaml.safe_load(out_path.read_text()) or {}
+            header = out_path.read_text().split("\n\n")[0]
+        data.setdefault(word, {})[reading] = spelling
+        body = yaml.safe_dump(data, sort_keys=True, allow_unicode=True)
+        out_path.write_text((header + "\n\n" if header.startswith("#") else "") + body)
+        return out_path
+    from scriptcast.config_edit import apply_ops
+
+    text = out_path.read_text(encoding="utf-8") if out_path.exists() else ""
+    loaded = yaml.safe_load(text) if text.strip() else None
+    loaded = loaded or {}
+    if not isinstance(loaded, dict):
+        raise SystemExit("pronunciations file must be a mapping")
+    current_readings = loaded.get(word) or {}
+    if not isinstance(current_readings, dict):
+        current_readings = {}
+    readings = {str(key): str(value) for key, value in current_readings.items()}
+    readings[reading] = spelling
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    updated = apply_ops({"pronunciations": text}, [{
+        "op": "set_entry",
+        "file": "pronunciations",
+        "word": word,
+        "readings": readings,
+    }])
+    out_path.write_text(updated["pronunciations"], encoding="utf-8")
+    return out_path
+
+
 def main() -> int:
-    ap = argparse.ArgumentParser()
+    ap = JsonArgumentParser(json_flags=("--json",))
     ap.add_argument("word")
     ap.add_argument("--reading", default=None)
     ap.add_argument("--candidates", default="",
@@ -89,16 +126,30 @@ def main() -> int:
                     help="Directory of markdown scripts to mine for sentences. "
                          "Defaults to the project's scripts directory.")
     ap.add_argument("--write", action="store_true")
+    ap.add_argument("--json", action="store_true",
+                    help="Print one JSON object. Requires --keep so the takes stay on disk.")
+    ap.add_argument("--keep", type=Path, default=None,
+                    help="With --json, directory that keeps the rendered takes.")
     args = ap.parse_args()
     logging.disable(logging.WARNING)
+    return run_json(bool(args.json), lambda: _run(args))
+
+
+def _run(args: argparse.Namespace) -> int:
 
     project = current()
     scripts_dir = args.scripts or project.scripts
 
+    if args.json and (args.reading is None or args.keep is None):
+        return fail("--json requires --reading and --keep")
+
     word = args.word.lower()
     readings = _heteronym_table().get(word)
     if not readings:
-        print(f"{word!r} is not a heteronym in misaki's lexicon.")
+        message = f"{word!r} is not a heteronym in misaki's lexicon."
+        if args.json:
+            return fail(message)
+        print(message)
         return 1
     if args.reading is None:
         for key, phonemes in readings.items():
@@ -108,27 +159,39 @@ def main() -> int:
 
     sentences = _script_sentences(word, reading, args.sentences, scripts_dir)
     if not sentences:
-        print(f"no script sentence uses {word!r} as {reading!r}.")
+        message = f"no script sentence uses {word!r} as {reading!r}."
+        if args.json:
+            return fail(message)
+        print(message)
         return 1
 
     import mlx_whisper
 
     voice = load_voices(args.voices or project.voices)[args.speaker]
     if voice.engine != "omnivoice":
-        print(f"calibration drives OmniVoice; {args.speaker} uses {voice.engine!r}.")
+        message = f"calibration drives OmniVoice; {args.speaker} uses {voice.engine!r}."
+        if args.json:
+            return fail(message)
+        print(message)
         return 1
     engine = ENGINE_REGISTRY["omnivoice"]("k2-fsa/OmniVoice")
     spellings = [word] + [c.strip() for c in args.candidates.split(",") if c.strip()]
-    out_dir = project.outputs / "pronunciation_calibration" / f"{word}_{reading}"
+    if args.json:
+        out_dir = args.keep
+    else:
+        out_dir = project.outputs / "pronunciation_calibration" / f"{word}_{reading}"
     out_dir.mkdir(parents=True, exist_ok=True)
+    log = sys.stderr if args.json else sys.stdout
 
     async def render(text: str, path: Path) -> None:
         audio = await engine.synthesize_chunk(text, voice)
         soundfile.write(str(path), audio, engine.sample_rate)
 
     rows = []
+    take_rows: dict[str, list[dict]] = {}
     for spelling in spellings:
         tally = {"ok": 0, "unclear": 0, "wrong": 0, "garbled": 0, "unaligned": 0}
+        takes = []
         for s_index, sentence in enumerate(sentences):
             spoken = _swap(sentence, word, reading, spelling)
             for take in range(args.takes):
@@ -138,31 +201,49 @@ def main() -> int:
                     str(path), word_timestamps=True, verbose=False,
                     path_or_hf_repo="mlx-community/whisper-small.en-mlx")
                 words = [w for seg in result["segments"] for w in seg.get("words", [])]
+                matched = None
                 for entry in check_segment(path, sentence, words):
                     if entry["word"].lower() == word and entry["reading"] == reading:
                         tally[entry["verdict"]] += 1
+                        if matched is None:
+                            matched = entry["verdict"] == "ok"
+                takes.append({
+                    "wav": str(path.resolve()),
+                    "sentence": spoken,
+                    "ok": bool(matched),
+                })
         total = sum(tally.values())
         rows.append((spelling, tally["ok"] / total if total else 0.0, tally, total))
-        print(f"  {spelling:<16} ok {tally['ok']}/{total}  {tally}", flush=True)
+        take_rows[spelling] = takes
+        print(f"  {spelling:<16} ok {tally['ok']}/{total}  {tally}", file=log, flush=True)
 
     rows.sort(key=lambda r: (-r[1], r[0] != word))
     best = rows[0]
-    print(f"\nbest: {best[0]!r} at {best[1]:.0%} ok. Audio in {out_dir}")
+    print(f"\nbest: {best[0]!r} at {best[1]:.0%} ok. Audio in {out_dir}", file=log)
     plain = next(r for r in rows if r[0] == word)
+    written = False
     if args.write:
         if best[0] == word or best[1] <= plain[1]:
-            print("plain spelling is as good as any candidate; nothing written.")
-            return 0
-        out_path = respellings_path()
-        data: dict = {}
-        header = ""
-        if out_path.exists():
-            data = yaml.safe_load(out_path.read_text()) or {}
-            header = out_path.read_text().split("\n\n")[0]
-        data.setdefault(word, {})[reading] = best[0]
-        body = yaml.safe_dump(data, sort_keys=True, allow_unicode=True)
-        out_path.write_text((header + "\n\n" if header.startswith("#") else "") + body)
-        print(f"wrote {word}.{reading} = {best[0]!r} to {out_path}")
+            print("plain spelling is as good as any candidate; nothing written.", file=log)
+        else:
+            out_path = _write_respelling(word, reading, best[0], bool(args.json))
+            written = True
+            print(f"wrote {word}.{reading} = {best[0]!r} to {out_path}", file=log)
+    if args.json:
+        emit({
+            "word": word,
+            "reading": reading,
+            "candidates": [
+                {
+                    "spelling": spelling,
+                    "score": score,
+                    "takes": take_rows[spelling],
+                }
+                for spelling, score, _tally, _total in rows
+            ],
+            "best": best[0],
+            "written": written,
+        })
     return 0
 
 
