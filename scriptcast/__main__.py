@@ -7,6 +7,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import re
 import shutil
 import sys
 import time
@@ -990,7 +991,7 @@ def _dry_run_json(
                 "speaker_id": turn.speaker_id,
                 "speaker_name": turn.display_name,
                 "timestamp_ms": turn.timestamp_ms,
-                "first_words": " ".join(turn.clean_text.split()[:12]),
+                "first_words": " ".join(re.sub(r"\[clip:[^\]]*\]", "", turn.clean_text).split()[:12]),
                 "clip_id": _turn_clip_id(turn),
             }
             for turn in turns
