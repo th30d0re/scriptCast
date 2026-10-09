@@ -1,0 +1,31 @@
+{
+  "outliers": [
+    {
+      "turn_index": 12,
+      "turn_id": "host-12",
+      "speaker_id": "host",
+      "predicted_s": 8.0,
+      "actual_s": 20.0,
+      "ratio": 2.5,
+      "reason": "ratio 2.50 for 20 words: alpha alpha"
+    },
+    {
+      "turn_index": 4,
+      "turn_id": "host-4",
+      "speaker_id": "host",
+      "predicted_s": 10.0,
+      "actual_s": 15.0,
+      "ratio": 1.5,
+      "reason": "ratio 1.50 for 20 words: boundary"
+    },
+    {
+      "turn_index": 8,
+      "turn_id": "host-8",
+      "speaker_id": "host",
+      "predicted_s": 10.0,
+      "actual_s": 5.9,
+      "ratio": 0.59,
+      "reason": "ratio 0.59 for 20 words: short"
+    }
+  ]
+}

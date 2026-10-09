@@ -7,6 +7,7 @@ mod jobs;
 mod phase_j;
 mod phase_k;
 mod phase_l;
+mod phase_m_ui;
 mod read_along;
 mod settings;
 mod table;
@@ -250,6 +251,7 @@ fn neighbour_targets(visible: &[usize], current: Option<usize>) -> (Option<usize
 #[derive(Default)]
 struct Browser {
     project: phase_l::PhaseL,
+    makers: phase_m_ui::PhaseMUi,
     phase: phase_j::PhaseJ,
     editing: editing::Editing,
     find: find_replace::FindReplace,
@@ -387,6 +389,7 @@ impl Browser {
         {
             app.load_project(root, &cc.egui_ctx);
         }
+        app.apply_phase_m_cli(cli);
         app.editing.capture_open = cli.edit;
         app.editing.k.context_capture = cli.context_menu.is_some();
         app.editing.k.capture_insert = cli.new_turn_after.is_some();
@@ -1232,6 +1235,14 @@ impl Browser {
                 .clicked()
             {
                 self.phase.pipeline_open = true;
+                ui.close();
+            }
+            if ui
+                .add_enabled(self.episode.is_some(), egui::Button::new("Find outliers"))
+                .on_disabled_hover_text("Open an episode first")
+                .clicked()
+            {
+                self.open_outliers();
                 ui.close();
             }
         });
@@ -2137,6 +2148,7 @@ impl Browser {
         }
         self.phase_k_poll(&ctx);
         self.phase_k_windows(&ctx);
+        self.phase_m_windows(&ctx);
         self.shortcuts(&ctx);
         if self.project.data_open {
             self.project_data_screen(ui);
@@ -2450,6 +2462,7 @@ impl eframe::App for Browser {
         self.poll_project(ctx);
         self.poll_jobs(ctx);
         self.poll_phase_j(ctx);
+        self.poll_phase_m(ctx);
         self.poll_editing(ctx);
         self.refresh_find();
         self.poll_review_save();

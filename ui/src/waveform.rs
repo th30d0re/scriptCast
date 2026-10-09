@@ -96,24 +96,107 @@ pub fn ffmpeg_wav(path: &std::path::Path, start: f64, len: f64) -> Result<Vec<u8
     Ok(output.stdout)
 }
 
-/// Full-file peaks when rodio can decode the source. Otherwise a padded window via ffmpeg.
-/// The `f64` is the window's start in the source, or `0` for a full-file decode.
+/// True when `peaks` cover `seconds` (10 ms buckets). A few buckets of
+/// container padding still count; a decode that stops a third of the way does not.
+pub fn covers_window(peaks: &[f32], seconds: f64) -> bool {
+    if seconds <= f64::from(BUCKET_SECS) {
+        return !peaks.is_empty();
+    }
+    let got = peaks.len() as f64 * f64::from(BUCKET_SECS);
+    got + 0.1 >= seconds * 0.98
+}
+
+fn peaks_of_f32le(bytes: &[u8]) -> Vec<f32> {
+    const RATE: usize = 48_000;
+    let per = RATE / 100;
+    let mut peaks = Vec::new();
+    let mut peak = 0.0_f32;
+    let mut count = 0usize;
+    let mut index = 0;
+    while index + 4 <= bytes.len() {
+        let mut chunk = [0u8; 4];
+        chunk.copy_from_slice(&bytes[index..index + 4]);
+        let sample = f32::from_le_bytes(chunk);
+        peak = peak.max(sample.abs());
+        count += 1;
+        index += 4;
+        if count == per {
+            peaks.push(peak.min(1.0));
+            peak = 0.0;
+            count = 0;
+        }
+    }
+    if count > 0 {
+        peaks.push(peak.min(1.0));
+    }
+    peaks
+}
+
+/// Mono 48 kHz f32le for `[start, start + len)`. `-t` is an output option so the
+/// requested length is decoded, including sources rodio stops early on.
+fn ffmpeg_f32le(path: &std::path::Path, start: f64, len: f64) -> Result<Vec<u8>, String> {
+    if !start.is_finite() || !len.is_finite() || start < 0.0 || len <= 0.0 {
+        return Err("Invalid audio range".into());
+    }
+    let output = match std::process::Command::new("ffmpeg")
+        .args(["-v", "error", "-ss"])
+        .arg(format!("{start:.3}"))
+        .arg("-i")
+        .arg(path)
+        .arg("-t")
+        .arg(format!("{len:.3}"))
+        .args(["-vn", "-f", "f32le", "-ac", "1", "-ar", "48000", "-"])
+        .stdin(std::process::Stdio::null())
+        .output()
+    {
+        Ok(output) => output,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Err("ffmpeg is not available".into());
+        }
+        Err(error) => return Err(error.to_string()),
+    };
+    if !output.status.success() {
+        let detail = String::from_utf8_lossy(&output.stderr).trim().to_owned();
+        return Err(if detail.is_empty() {
+            format!("ffmpeg exited {}", output.status)
+        } else {
+            format!("ffmpeg: {detail}")
+        });
+    }
+    if output.stdout.len() < 4 {
+        return Err("ffmpeg produced no audio".into());
+    }
+    Ok(output.stdout)
+}
+
+/// Full-file peaks when rodio covers the requested window. Otherwise ffmpeg PCM
+/// for that window. The `f64` is the window's start in the source, or `0` for a
+/// full-file decode.
 pub fn clip_envelope(
     path: &std::path::Path,
     start: f64,
     end: f64,
 ) -> Result<(Envelope, f64), String> {
-    match peaks_of_file(path) {
-        Ok(peaks) => Ok((Envelope { peaks }, 0.0)),
-        Err(native) => {
-            let ss = (start - CLIP_CONTEXT_SECS).max(0.0);
-            let len = (end - ss).max(end - start) + CLIP_CONTEXT_SECS;
-            let bytes =
-                ffmpeg_wav(path, ss, len).map_err(|ffmpeg| format!("{native}; {ffmpeg}"))?;
-            let peaks = peaks_of_reader(std::io::Cursor::new(bytes))?;
-            Ok((Envelope { peaks }, ss))
+    let window = (end - start).max(f64::from(BUCKET_SECS));
+    let native = match peaks_of_file(path) {
+        Ok(peaks) if covers_window(&peaks, window) => {
+            return Ok((Envelope { peaks }, 0.0));
         }
+        Ok(_) => "decode ended before the end of the source".to_owned(),
+        Err(error) => error,
+    };
+    let ss = (start - CLIP_CONTEXT_SECS).max(0.0);
+    let len = (end - ss).max(window) + CLIP_CONTEXT_SECS;
+    let bytes = ffmpeg_f32le(path, ss, len).map_err(|ffmpeg| format!("{native}; {ffmpeg}"))?;
+    let peaks = peaks_of_f32le(&bytes);
+    if !covers_window(&peaks, window) {
+        return Err(format!(
+            "{native}; ffmpeg decoded {:.2} s of the requested {:.2} s",
+            peaks.len() as f64 * f64::from(BUCKET_SECS),
+            window
+        ));
     }
+    Ok((Envelope { peaks }, ss))
 }
 
 pub fn bars(env: &Envelope, n: usize) -> Vec<f32> {
@@ -303,6 +386,15 @@ mod tests {
             expected_buckets,
             env.peaks.len()
         );
+    }
+
+    #[test]
+    fn pcm_peaks_cover_one_second_and_a_short_decode_does_not() {
+        let bytes = vec![0u8; 48_000 * 4];
+        let peaks = peaks_of_f32le(&bytes);
+        assert_eq!(peaks.len(), 100);
+        assert!(covers_window(&peaks, 1.0));
+        assert!(!covers_window(&peaks[..30], 1.0));
     }
 
     #[test]

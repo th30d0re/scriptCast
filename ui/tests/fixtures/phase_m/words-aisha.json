@@ -1,0 +1,8 @@
+{
+  "source": "/private/tmp/scriptcast-m/aisha.wav",
+  "duration": 15.41,
+  "words": [
+    {"i": 0, "word": "The", "start": 0.0, "end": 0.18},
+    {"i": 44, "word": "it.", "start": 15.12, "end": 15.38}
+  ]
+}

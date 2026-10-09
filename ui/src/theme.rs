@@ -29,6 +29,7 @@ pub const BG_AUDIO_CLIP_BADGE: Color32 = Color32::from_rgb(44, 48, 55);
 pub const ACCENT: Color32 = Color32::from_rgb(140, 175, 243);
 pub const ON_ACCENT: Color32 = Color32::from_rgb(21, 28, 41);
 pub const STATUS_PASSED: Color32 = Color32::from_rgb(154, 190, 176);
+pub const STATUS_WARNING: Color32 = Color32::from_rgb(212, 176, 112);
 pub const STATUS_FAILED: Color32 = Color32::from_rgb(240, 130, 135);
 /// Text on a danger pill (not-heard marks in side-panel mode).
 pub const ON_DANGER: Color32 = Color32::from_rgb(255, 252, 250);
@@ -690,6 +691,9 @@ pub const CLIP_PICKER_HEIGHT: f32 = 300.0;
 
 pub const PROJECT_DATA_WIDTH: f32 = 1000.0;
 pub const PROJECT_DATA_HEIGHT: f32 = 580.0;
+pub const CLIP_MAKER_WIDTH: f32 = 1100.0;
+pub const CLIP_MAKER_HEIGHT: f32 = 720.0;
+pub const CLIP_MAKER_SPLIT: f32 = 0.56;
 pub const PROJECT_PICKER_FRACTION: f32 = 0.24;
 pub const PROJECT_VOICES_FRACTION: f32 = 0.3;
 pub const PROJECT_CLIPS_FRACTION: f32 = 0.6;
@@ -700,6 +704,7 @@ pub const PROJECT_FOOTER_HEIGHT: f32 = 56.0;
 pub const PROJECT_SOURCE_WIDTH: f32 = 220.0;
 pub const PROJECT_EPISODE_SPLIT: [f32; 7] = [0.16, 0.16, 0.08, 0.10, 0.16, 0.20, 0.14];
 pub const PROJECT_CLIP_SPLIT: [f32; 7] = [0.16, 0.28, 0.10, 0.10, 0.10, 0.16, 0.10];
+pub const METER_WIDTH: f32 = 72.0;
 
 #[cfg(test)]
 mod tests {

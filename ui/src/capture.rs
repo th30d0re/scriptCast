@@ -54,6 +54,13 @@ Options:
   --new-turn-speaker ID choose the insertion speaker
   --tag-toolbar N    open the body editor with its tag toolbar
   --clip-picker      open the registered clip picker
+  --clip-maker [SOURCE] open the clip maker; optional source path
+  --words-fixture PATH  clip-maker words JSON (no transcription)
+  --reference-maker  open the reference maker
+  --candidates-fixture PATH  reference-maker candidates JSON
+  --audition-fixture PATH  open audition with a JSON result
+  --calibrate-fixture PATH  open calibration with a JSON result
+  --outliers-fixture PATH  open the outliers table with a JSON result
   --raw-script       use plain monospace text in the body editor
   --edit-mode MODE   panel (default) or row
   --play             after --select, start playback of the selected turn
@@ -121,6 +128,14 @@ pub struct Cli {
     pub settings: bool,
     /// Hidden capture aid: start with the side panel collapsed.
     pub inspector_hidden: bool,
+    pub clip_maker: bool,
+    pub clip_source: Option<PathBuf>,
+    pub words_fixture: Option<PathBuf>,
+    pub reference_maker: bool,
+    pub candidates_fixture: Option<PathBuf>,
+    pub audition_fixture: Option<PathBuf>,
+    pub calibrate_fixture: Option<PathBuf>,
+    pub outliers_fixture: Option<PathBuf>,
 }
 
 impl Cli {
@@ -165,6 +180,14 @@ impl Cli {
             layout: None,
             settings: false,
             inspector_hidden: false,
+            clip_maker: false,
+            clip_source: None,
+            words_fixture: None,
+            reference_maker: false,
+            candidates_fixture: None,
+            audition_fixture: None,
+            calibrate_fixture: None,
+            outliers_fixture: None,
         };
         let mut positional_only = false;
         let mut args = args.into_iter().peekable();
@@ -294,6 +317,44 @@ impl Cli {
                     )
                 }
                 "--clip-picker" => cli.clip_picker = true,
+                "--clip-maker" => {
+                    cli.clip_maker = true;
+                    if args
+                        .peek()
+                        .is_some_and(|a| !a.to_string_lossy().starts_with('-'))
+                    {
+                        cli.clip_source = args.next().map(PathBuf::from);
+                    }
+                }
+                "--words-fixture" => {
+                    cli.words_fixture =
+                        Some(args.next().ok_or("--words-fixture needs a path")?.into());
+                    cli.clip_maker = true;
+                }
+                "--reference-maker" => cli.reference_maker = true,
+                "--candidates-fixture" => {
+                    cli.candidates_fixture = Some(
+                        args.next()
+                            .ok_or("--candidates-fixture needs a path")?
+                            .into(),
+                    );
+                    cli.reference_maker = true;
+                }
+                "--audition-fixture" => {
+                    cli.audition_fixture =
+                        Some(args.next().ok_or("--audition-fixture needs a path")?.into());
+                }
+                "--calibrate-fixture" => {
+                    cli.calibrate_fixture = Some(
+                        args.next()
+                            .ok_or("--calibrate-fixture needs a path")?
+                            .into(),
+                    );
+                }
+                "--outliers-fixture" => {
+                    cli.outliers_fixture =
+                        Some(args.next().ok_or("--outliers-fixture needs a path")?.into());
+                }
                 "--raw-script" => cli.raw_script = true,
                 "--find" => {
                     cli.find = Some(

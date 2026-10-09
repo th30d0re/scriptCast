@@ -1,0 +1,19 @@
+{
+  "source": "/tmp/raw.wav",
+  "candidates": [
+    {
+      "rank": 1,
+      "start": 0.0,
+      "end": 9.5,
+      "text": "Alpha sentence. Beta sentence.",
+      "score": 0.6667
+    },
+    {
+      "rank": 2,
+      "start": 10.0,
+      "end": 18.2,
+      "text": "A later sentence about the work.",
+      "score": 0.55
+    }
+  ]
+}

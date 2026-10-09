@@ -1,0 +1,5 @@
+{
+  "heteronyms": [
+    {"word": "record", "expected": "abc", "heard": "r eh", "ok": false}
+  ]
+}

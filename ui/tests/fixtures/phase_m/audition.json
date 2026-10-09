@@ -1,0 +1,57 @@
+{
+  "speaker": "guest",
+  "engine": "mlx_chatterbox",
+  "candidates": [
+    {
+      "reference": "/tmp/aisha_neutral.wav",
+      "temperature": 0.6,
+      "mean": 0.872,
+      "min": 0.8,
+      "clean": 2,
+      "of": 3,
+      "takes": [
+        {
+          "wav": "/tmp/keep/neutral_0.wav",
+          "text": "We need to listen before we decide.",
+          "heard": "We need to learn before we decide.",
+          "score": 0.84,
+          "run": 1
+        }
+      ]
+    },
+    {
+      "reference": "/tmp/aisha_news.wav",
+      "temperature": 0.6,
+      "mean": 0.936,
+      "min": 0.9,
+      "clean": 3,
+      "of": 3,
+      "takes": [
+        {
+          "wav": "/tmp/keep/news_0.wav",
+          "text": "We need to listen before we decide.",
+          "heard": "We need to listen before we decide.",
+          "score": 1.0,
+          "run": 0
+        }
+      ]
+    },
+    {
+      "reference": "/tmp/aisha_expressive.wav",
+      "temperature": 0.4,
+      "mean": 0.936,
+      "min": 0.7,
+      "clean": 1,
+      "of": 3,
+      "takes": [
+        {
+          "wav": "/tmp/keep/expressive_0.wav",
+          "text": "Trust is built in the small decisions.",
+          "heard": "Trust is built in the strong decisions.",
+          "score": 0.79,
+          "run": 1
+        }
+      ]
+    }
+  ]
+}

@@ -57,6 +57,7 @@ pub enum MenuAction {
     Insert(usize),
     Apply(EditOp, usize),
     Delete(usize),
+    Stress(usize),
 }
 type Saved = Result<(Checkpoint, ScriptTurns, tags::Report), String>;
 #[derive(Default)]
@@ -249,6 +250,15 @@ pub fn menu(ui: &mut Ui, editing: &mut editing::Editing, index: usize, enabled: 
     );
     if menu_row(ui, &delete_label, "Delete", enabled, true) {
         editing.k.action = Some(MenuAction::Delete(index));
+        ui.close();
+    }
+    ui.separator();
+    let stress_label = blocked.map_or_else(
+        || "Check stress".to_owned(),
+        |reason| format!("Check stress · {reason}"),
+    );
+    if menu_row(ui, &stress_label, "", blocked.is_none(), false) {
+        editing.k.action = Some(MenuAction::Stress(index));
         ui.close();
     }
 }
@@ -577,6 +587,7 @@ impl Browser {
             match action {
                 MenuAction::Insert(position) => self.begin_insert(position),
                 MenuAction::Apply(op, selected) => self.start_structure(op, selected, ctx),
+                MenuAction::Stress(index) => self.start_stress_check(index),
                 MenuAction::Delete(index) => {
                     let rendered_index = if self.editing.k.script_view {
                         self.editing.k.rendered_rows.get(index).copied().flatten()

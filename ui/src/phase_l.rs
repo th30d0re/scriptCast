@@ -604,7 +604,7 @@ fn status_chip(ui: &mut Ui, status: scriptcast_ui::project::EpisodeStatus) {
     );
     paint_status_chip(ui, rect, status);
 }
-fn stored_path(root: &std::path::Path, path: PathBuf) -> String {
+pub(crate) fn stored_path(root: &std::path::Path, path: PathBuf) -> String {
     let path = std::fs::canonicalize(&path).unwrap_or(path);
     let root = std::fs::canonicalize(root).unwrap_or_else(|_| root.to_path_buf());
     path.strip_prefix(&root)
@@ -624,6 +624,7 @@ fn field_label(key: &str) -> &'static str {
         "cfg_weight" => "CFG weight",
         "elevenlabs_voice_id" => "ElevenLabs voice id",
         "name" => "Name",
+        "word" => "Word",
         "citation" => "Citation",
         "origin_url" => "Origin URL",
         "content_note" => "Content note",
@@ -914,147 +915,178 @@ impl Browser {
                 if self.project.saving.is_some() {
                     ui.disable();
                 }
-                egui::ScrollArea::vertical()
-                    .max_height(ui.available_height())
-                    .show(ui, |ui| match tab.as_str() {
-                        "voices" => self.voice_editor(ui, report, &mut selected),
-                        "clips" => self.clip_editor(ui, report, &mut selected),
-                        "accepted_hearings" => {
-                            ui.label(t::text(
-                                "These hearings count as a match in every turn of the project.",
-                                t::CAPTION,
-                                t::TEXT_MUTED,
-                            ));
-                            ui.horizontal(|ui| {
-                                for label in
-                                    ["Script word", "Heard as", "Review date", "Review risk"]
-                                {
-                                    ui.label(t::text(label, t::CAPTION, t::TEXT_MUTED));
-                                }
-                            });
-                            for entry in &mut report.accepted_hearings.entries {
-                                let word = entry["word"].as_str().unwrap_or("").to_owned();
-                                let date = entry["review_ts"]
-                                    .as_str()
-                                    .map(project::format_review_date)
-                                    .unwrap_or_else(|| "—".into());
-                                let risky = entry["risky"].as_bool().unwrap_or(false);
-                                if let Some(heard) = entry["heard"].as_array_mut() {
-                                    heard.retain(|hearing| {
-                                        let mut delete = false;
-                                        ui.horizontal(|ui| {
-                                            ui.label(t::text(&word, t::BODY, t::TEXT_PRIMARY));
-                                            ui.label(t::text(
-                                                hearing.as_str().unwrap_or(""),
-                                                t::BODY,
-                                                t::TEXT_PRIMARY,
-                                            ));
-                                            ui.label(t::text(&date, t::BODY, t::TEXT_MUTED));
-                                            if risky {
-                                                ui.label(t::text(
-                                                    "Common word",
-                                                    t::CAPTION,
-                                                    t::STATUS_FAILED,
-                                                ));
-                                            } else {
-                                                ui.label(t::text(
-                                                    "Reviewed",
-                                                    t::CAPTION,
-                                                    t::TEXT_MUTED,
-                                                ));
-                                            }
-                                            ui.with_layout(
-                                                egui::Layout::right_to_left(egui::Align::Center),
-                                                |ui| {
-                                                    delete = ui
-                                                        .add(
-                                                            egui::Button::new(t::text(
-                                                                "Delete",
-                                                                t::BUTTON,
-                                                                t::STATUS_FAILED,
-                                                            ))
-                                                            .fill(t::BG_WINDOW)
-                                                            .stroke(egui::Stroke::new(
-                                                                t::BORDER,
-                                                                t::STATUS_FAILED,
-                                                            )),
-                                                        )
-                                                        .clicked();
-                                                },
-                                            );
-                                        });
-                                        !delete
-                                    });
-                                }
-                            }
-                            report.accepted_hearings.entries.retain(|entry| {
-                                entry["heard"]
-                                    .as_array()
-                                    .is_some_and(|heard| !heard.is_empty())
-                            });
-                        }
-                        "pronunciations" => {
-                            report.pronunciations.entries.retain_mut(|entry| {
-                                let mut delete = false;
-                                ui.group(|ui| {
-                                    text_field(ui, entry.as_object_mut().unwrap(), "word");
-                                    if let Some(readings) = entry["readings"].as_object_mut() {
-                                        for (key, value) in readings.clone() {
-                                            ui.horizontal(|ui| {
-                                                let mut next_key = key.clone();
-                                                let mut text =
-                                                    value.as_str().unwrap_or("").to_owned();
-                                                let renamed = ui
-                                                    .text_edit_singleline(&mut next_key)
-                                                    .changed();
-                                                let edited =
-                                                    ui.text_edit_singleline(&mut text).changed();
-                                                if ui.button("Delete reading").clicked() {
-                                                    readings.remove(&key);
-                                                } else if renamed
-                                                    && next_key != key
-                                                    && readings.contains_key(&next_key)
-                                                {
-                                                    ui.colored_label(
-                                                        t::STATUS_FAILED,
-                                                        "Reading already exists.",
-                                                    );
-                                                } else if renamed || edited {
-                                                    readings.remove(&key);
-                                                    readings.insert(next_key, text.into());
-                                                }
-                                            });
-                                        }
-                                        if ui.button("+ Add reading").clicked() {
-                                            readings.insert(
-                                                format!("reading_{}", readings.len() + 1),
-                                                "".into(),
-                                            );
-                                        }
+                if self.phase_m_replaces(&tab) {
+                    self.phase_m_fill(ui, report);
+                } else {
+                    egui::ScrollArea::vertical()
+                        .max_height(ui.available_height())
+                        .show(ui, |ui| match tab.as_str() {
+                            "voices" => self.voice_editor(ui, report, &mut selected),
+                            "clips" => self.clip_editor(ui, report, &mut selected),
+                            "accepted_hearings" => {
+                                ui.label(t::text(
+                                    "These hearings count as a match in every turn of the project.",
+                                    t::CAPTION,
+                                    t::TEXT_MUTED,
+                                ));
+                                ui.horizontal(|ui| {
+                                    for label in
+                                        ["Script word", "Heard as", "Review date", "Review risk"]
+                                    {
+                                        ui.label(t::text(label, t::CAPTION, t::TEXT_MUTED));
                                     }
-                                    delete = ui.button("Delete entry").clicked();
                                 });
-                                !delete
-                            });
-                            if ui.button("+ Add word").clicked() {
-                                report.pronunciations.entries.push(
-                                    serde_json::json!({"word":"", "readings":{"default":""}}),
-                                );
-                            }
-                        }
-                        "speaker_rates" => {
-                            ui.label("Read-only");
-                            egui::Grid::new("rates").striped(true).show(ui, |ui| {
-                                for (speaker, rate) in &report.speaker_rates.rates {
-                                    ui.label(speaker);
-                                    ui.label(rate.to_string());
-                                    ui.end_row();
+                                for entry in &mut report.accepted_hearings.entries {
+                                    let word = entry["word"].as_str().unwrap_or("").to_owned();
+                                    let date = entry["review_ts"]
+                                        .as_str()
+                                        .map(project::format_review_date)
+                                        .unwrap_or_else(|| "—".into());
+                                    let risky = entry["risky"].as_bool().unwrap_or(false);
+                                    if let Some(heard) = entry["heard"].as_array_mut() {
+                                        heard.retain(|hearing| {
+                                            let mut delete = false;
+                                            ui.horizontal(|ui| {
+                                                ui.label(t::text(&word, t::BODY, t::TEXT_PRIMARY));
+                                                ui.label(t::text(
+                                                    hearing.as_str().unwrap_or(""),
+                                                    t::BODY,
+                                                    t::TEXT_PRIMARY,
+                                                ));
+                                                ui.label(t::text(&date, t::BODY, t::TEXT_MUTED));
+                                                if risky {
+                                                    ui.label(t::text(
+                                                        "Common word",
+                                                        t::CAPTION,
+                                                        t::STATUS_FAILED,
+                                                    ));
+                                                } else {
+                                                    ui.label(t::text(
+                                                        "Reviewed",
+                                                        t::CAPTION,
+                                                        t::TEXT_MUTED,
+                                                    ));
+                                                }
+                                                ui.with_layout(
+                                                    egui::Layout::right_to_left(
+                                                        egui::Align::Center,
+                                                    ),
+                                                    |ui| {
+                                                        delete = ui
+                                                            .add(
+                                                                egui::Button::new(t::text(
+                                                                    "Delete",
+                                                                    t::BUTTON,
+                                                                    t::STATUS_FAILED,
+                                                                ))
+                                                                .fill(t::BG_WINDOW)
+                                                                .stroke(egui::Stroke::new(
+                                                                    t::BORDER,
+                                                                    t::STATUS_FAILED,
+                                                                )),
+                                                            )
+                                                            .clicked();
+                                                    },
+                                                );
+                                            });
+                                            !delete
+                                        });
+                                    }
                                 }
-                            });
-                        }
-                        "toml" => toml_fields(ui, report),
-                        _ => {}
-                    });
+                                report.accepted_hearings.entries.retain(|entry| {
+                                    entry["heard"]
+                                        .as_array()
+                                        .is_some_and(|heard| !heard.is_empty())
+                                });
+                            }
+                            "pronunciations" => {
+                                if t::secondary_button(ui, "Calibrate…", None, true).clicked() {
+                                    self.makers.calibrate = true;
+                                }
+                                report.pronunciations.entries.retain_mut(|entry| {
+                                    let mut delete = false;
+                                    ui.group(|ui| {
+                                        text_field(ui, entry.as_object_mut().unwrap(), "word");
+                                        let word = entry["word"].as_str().unwrap_or("").to_owned();
+                                        if let Some(readings) = entry["readings"].as_object_mut() {
+                                            egui::Grid::new(("pron_readings", word))
+                                                .striped(true)
+                                                .show(ui, |ui| {
+                                                    ui.label(t::text(
+                                                        "Reading key",
+                                                        t::CAPTION,
+                                                        t::TEXT_MUTED,
+                                                    ));
+                                                    ui.label(t::text(
+                                                        "Spoken as",
+                                                        t::CAPTION,
+                                                        t::TEXT_MUTED,
+                                                    ));
+                                                    ui.label(t::text(
+                                                        "",
+                                                        t::CAPTION,
+                                                        t::TEXT_MUTED,
+                                                    ));
+                                                    ui.end_row();
+                                                    for (key, value) in readings.clone() {
+                                                        let mut next_key = key.clone();
+                                                        let mut text =
+                                                            value.as_str().unwrap_or("").to_owned();
+                                                        let renamed = ui
+                                                            .text_edit_singleline(&mut next_key)
+                                                            .changed();
+                                                        let edited = ui
+                                                            .text_edit_singleline(&mut text)
+                                                            .changed();
+                                                        let remove = ui.button("Delete").clicked();
+                                                        ui.end_row();
+                                                        if remove {
+                                                            readings.remove(&key);
+                                                        } else if renamed
+                                                            && next_key != key
+                                                            && readings.contains_key(&next_key)
+                                                        {
+                                                            ui.colored_label(
+                                                                t::STATUS_FAILED,
+                                                                "Reading already exists.",
+                                                            );
+                                                        } else if renamed || edited {
+                                                            readings.remove(&key);
+                                                            readings.insert(next_key, text.into());
+                                                        }
+                                                    }
+                                                });
+                                            if ui.button("+ Add reading").clicked() {
+                                                readings.insert(
+                                                    format!("reading_{}", readings.len() + 1),
+                                                    "".into(),
+                                                );
+                                            }
+                                        }
+                                        delete = ui.button("Delete entry").clicked();
+                                    });
+                                    !delete
+                                });
+                                if ui.button("+ Add word").clicked() {
+                                    report.pronunciations.entries.push(
+                                        serde_json::json!({"word":"", "readings":{"default":""}}),
+                                    );
+                                }
+                            }
+                            "speaker_rates" => {
+                                ui.label("Read-only");
+                                egui::Grid::new("rates").striped(true).show(ui, |ui| {
+                                    for (speaker, rate) in &report.speaker_rates.rates {
+                                        ui.label(speaker);
+                                        ui.label(rate.to_string());
+                                        ui.end_row();
+                                    }
+                                });
+                            }
+                            "toml" => toml_fields(ui, report),
+                            _ => {}
+                        });
+                }
             }
         }
         let save_name = draft
@@ -1081,48 +1113,54 @@ impl Browser {
                 .is_some_and(|s| s.report.section(&tab) != report.section(&tab))
         });
         let mut footer_ui = crate::view::region(ui, "data_footer", footer, t::BG_SURFACE);
-        footer_ui.horizontal(|ui| {
-            ui.add_space(t::SPACE_16);
-            ui.label(t::text(
-                "Comments in the file are kept.",
-                t::CAPTION,
-                t::TEXT_MUTED,
-            ));
-            if let Some(reason) = &reason {
-                ui.label(t::text(reason, t::CAPTION, t::STATUS_FAILED));
-            }
-            if self.project.stale
-                && t::secondary_button(ui, "Reload from disk", None, true).clicked()
-            {
-                reload = true;
-            }
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                save = t::primary_button(
-                    ui,
-                    &format!("Save {save_name}"),
-                    None,
-                    reason.is_none() && dirty_tab && self.project.saving.is_none(),
-                )
-                .clicked();
-                if t::secondary_button(ui, "Revert", None, true).clicked()
-                    && let Some(snapshot) = &self.project.snapshot
-                    && let Some(report) = draft.as_mut()
-                {
-                    match tab.as_str() {
-                        "voices" => report.voices = snapshot.report.voices.clone(),
-                        "clips" => report.clips = snapshot.report.clips.clone(),
-                        "pronunciations" => {
-                            report.pronunciations = snapshot.report.pronunciations.clone()
-                        }
-                        "accepted_hearings" => {
-                            report.accepted_hearings = snapshot.report.accepted_hearings.clone()
-                        }
-                        "toml" => report.toml = snapshot.report.toml.clone(),
-                        _ => {}
-                    }
+        if self.phase_m_replaces(&tab) {
+            self.project.draft = draft;
+            self.phase_m_footer(&mut footer_ui);
+            draft = self.project.draft.take();
+        } else {
+            footer_ui.horizontal(|ui| {
+                ui.add_space(t::SPACE_16);
+                ui.label(t::text(
+                    "Comments in the file are kept.",
+                    t::CAPTION,
+                    t::TEXT_MUTED,
+                ));
+                if let Some(reason) = &reason {
+                    ui.label(t::text(reason, t::CAPTION, t::STATUS_FAILED));
                 }
+                if self.project.stale
+                    && t::secondary_button(ui, "Reload from disk", None, true).clicked()
+                {
+                    reload = true;
+                }
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    save = t::primary_button(
+                        ui,
+                        &format!("Save {save_name}"),
+                        None,
+                        reason.is_none() && dirty_tab && self.project.saving.is_none(),
+                    )
+                    .clicked();
+                    if t::secondary_button(ui, "Revert", None, true).clicked()
+                        && let Some(snapshot) = &self.project.snapshot
+                        && let Some(report) = draft.as_mut()
+                    {
+                        match tab.as_str() {
+                            "voices" => report.voices = snapshot.report.voices.clone(),
+                            "clips" => report.clips = snapshot.report.clips.clone(),
+                            "pronunciations" => {
+                                report.pronunciations = snapshot.report.pronunciations.clone()
+                            }
+                            "accepted_hearings" => {
+                                report.accepted_hearings = snapshot.report.accepted_hearings.clone()
+                            }
+                            "toml" => report.toml = snapshot.report.toml.clone(),
+                            _ => {}
+                        }
+                    }
+                });
             });
-        });
+        }
         self.project.draft = draft;
         self.project.tab = tab;
         self.project.select_id = selected;
@@ -1342,6 +1380,19 @@ impl Browser {
                                 }
                             },
                         );
+                        ui.horizontal(|ui| {
+                            if t::secondary_button(ui, "Make reference…", None, true).clicked() {
+                                self.makers.reference = true;
+                                self.makers.ref_source = path.display().to_string();
+                            }
+                            if scriptcast_ui::project::engine_fields(&engine)
+                                .contains(&"reference_audio")
+                                && t::secondary_button(ui, "Audition…", None, true).clicked()
+                            {
+                                self.makers.audition = true;
+                                self.makers.audition_speaker = selected.clone();
+                            }
+                        });
                         self.load_project_media(path.clone(), None, ui.ctx());
                         if let Some(Err(error)) = &self.project.media {
                             ui.label(t::text(
@@ -1379,8 +1430,9 @@ impl Browser {
                 egui::TextEdit::singleline(&mut self.project.search)
                     .hint_text("Search id or source file…"),
             );
-            ui.add_enabled(false, egui::Button::new("+ Register clip…"))
-                .on_disabled_hover_text("Coming in Phase M (clip maker)");
+            if ui.button("+ Register clip…").clicked() {
+                self.makers.clip = true;
+            }
         });
         let query = self.project.search.to_lowercase();
         if selected.is_empty()
@@ -1715,7 +1767,12 @@ impl Browser {
     }
 }
 
-fn bordered_columns(ui: &mut Ui, fraction: f32, ids: [&str; 2], body: impl FnOnce(&mut [Ui; 2])) {
+pub(crate) fn bordered_columns(
+    ui: &mut Ui,
+    fraction: f32,
+    ids: [&str; 2],
+    body: impl FnOnce(&mut [Ui; 2]),
+) {
     let rect = ui.available_rect_before_wrap();
     let split = rect.left() + rect.width() * fraction;
     let left = egui::Rect::from_min_max(rect.min, egui::pos2(split - t::SPACE_8, rect.bottom()));
@@ -1727,6 +1784,21 @@ fn bordered_columns(ui: &mut Ui, fraction: f32, ids: [&str; 2], body: impl FnOnc
     body(&mut columns);
     ui.advance_cursor_after_rect(rect);
 }
+
+pub(crate) fn tool_footer(ui: &mut Ui, status: &str, primary: &str, enabled: bool) -> (bool, bool) {
+    let mut cancel = false;
+    let mut go = false;
+    ui.horizontal(|ui| {
+        ui.add_space(t::SPACE_16);
+        ui.label(t::text(status, t::CAPTION, t::TEXT_MUTED));
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            go = t::primary_button(ui, primary, None, enabled).clicked();
+            cancel = t::secondary_button(ui, "Cancel", None, true).clicked();
+        });
+    });
+    (cancel, go)
+}
+
 fn media_request_key(path: &std::path::Path, window: Option<(f64, f64)>) -> (PathBuf, i64, i64) {
     match window {
         Some((start, end)) => (
@@ -1737,7 +1809,7 @@ fn media_request_key(path: &std::path::Path, window: Option<(f64, f64)>) -> (Pat
         None => (path.to_path_buf(), 0, -1),
     }
 }
-fn two_columns(ui: &mut Ui, fraction: f32, body: impl FnOnce(&mut [Ui; 2])) {
+pub(crate) fn two_columns(ui: &mut Ui, fraction: f32, body: impl FnOnce(&mut [Ui; 2])) {
     let rect = ui.available_rect_before_wrap();
     let split = rect.left() + rect.width() * fraction;
     let left = egui::Rect::from_min_max(rect.min, egui::pos2(split - t::SPACE_8, rect.bottom()));
@@ -1812,7 +1884,12 @@ impl Browser {
             ctx.request_repaint();
         });
     }
-    fn audition_project_media(&mut self, path: &std::path::Path, start: f64, end: Option<f64>) {
+    pub(crate) fn audition_project_media(
+        &mut self,
+        path: &std::path::Path,
+        start: f64,
+        end: Option<f64>,
+    ) {
         if !start.is_finite() || start < 0.0 {
             return;
         }

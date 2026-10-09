@@ -620,6 +620,13 @@ impl Browser {
             ));
         });
         ui.separator();
+        if ui
+            .add_enabled(self.episode.is_some(), egui::Button::new("Find outliers"))
+            .on_disabled_hover_text("Open an episode first")
+            .clicked()
+        {
+            self.open_outliers();
+        }
         let turns = self.selected_turns();
         let has_clips = self.has_clip_turns();
         ui.checkbox(&mut self.phase.export_fcpxml, "FCPXML");
