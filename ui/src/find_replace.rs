@@ -223,6 +223,15 @@ impl Browser {
                 format!("Failed only · {failures}"),
             );
             editing::mode_toggle(ui, &mut self.preferences.edit_mode);
+            let stale = self.editing.markers(e.turns.len()).unwrap_or_default();
+            if !stale.is_empty() {
+                let label = format!("Regenerate {} edited turns", stale.len());
+                if t::secondary_button(ui, &label, None, !self.jobs.busy() && !self.editing.busy())
+                    .clicked()
+                {
+                    self.request_regenerate_edited(stale, ui.ctx());
+                }
+            }
             ui.label(t::text("Episode text", t::CAPTION, t::TEXT_SUBTLE));
             ui.menu_button("Options ▸", |ui| {
                 ui.horizontal(|ui| {

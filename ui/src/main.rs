@@ -101,6 +101,8 @@ struct Preferences {
     discrepancy_mode: scriptcast_ui::discrepancy::ReviewMode,
     #[serde(default)]
     find: scriptcast_ui::find::Options,
+    #[serde(default = "default_true")]
+    retime_on_open: bool,
 }
 fn default_true() -> bool {
     true
@@ -123,6 +125,7 @@ impl Default for Preferences {
             edit_mode: editing::EditMode::default(),
             discrepancy_mode: scriptcast_ui::discrepancy::ReviewMode::default(),
             find: scriptcast_ui::find::Options::default(),
+            retime_on_open: true,
         }
     }
 }
@@ -287,6 +290,11 @@ struct Browser {
     /// The Unavailable device card is hidden (but the error stays active).
     device_card_dismissed: bool,
     waveforms: Option<Waveforms>,
+    retime_arm: bool,
+    auto_retime_job: Option<Receiver<Result<scriptcast_ui::retime::Preview, String>>>,
+    auto_retime_apply:
+        Option<Receiver<Result<(scriptcast_ui::checkpoint::Checkpoint, usize), String>>>,
+    retime_banner: Option<(String, scriptcast_ui::checkpoint::Checkpoint)>,
     /// Show the Missing audio card for the selected turn.
     missing_audio_card: bool,
     /// Transient playback/open notices, shown in the status bar.
@@ -390,7 +398,17 @@ impl Browser {
             app.load_project(root, &cc.egui_ctx);
         }
         app.apply_phase_m_cli(cli);
-        app.editing.capture_open = cli.edit;
+        app.editing.capture_open = cli.edit || cli.edit_turn.is_some();
+        if let Some(path) = &cli.failed_job_fixture {
+            let log = std::fs::read_to_string(path).unwrap_or_else(|e| e.to_string());
+            let message = scriptcast_ui::detached::failure_banner("Detect changes", &log);
+            app.jobs.failure = Some(jobs::JobFailure {
+                message,
+                log,
+                show_log: false,
+            });
+            app.jobs.mode = Some(InspectorMode::Jobs);
+        }
         app.editing.k.context_capture = cli.context_menu.is_some();
         app.editing.k.capture_insert = cli.new_turn_after.is_some();
         app.editing.k.capture_speaker = cli.new_turn_speaker.clone();
@@ -499,6 +517,7 @@ impl Browser {
             .and_then(|id| episode.turns.iter().position(|t| t.id == id))
             .or_else(|| previous_row.filter(|i| same && *i < episode.turns.len()));
         if !same {
+            self.jobs.regenerated.clear();
             if self.episode.is_some() {
                 self.editing.k = phase_k::PhaseK::default();
             }
@@ -544,6 +563,9 @@ impl Browser {
         self.reattach_phase_j();
         self.refresh_checkpoints();
         self.refresh_commands(ctx);
+        if self.auto_retime_job.is_none() && self.auto_retime_apply.is_none() {
+            self.retime_arm = true;
+        }
         // Reset virtual scroll on a new episode; preserve/reveal selection on reload.
         self.scroll_to = self.selected.or(Some(0));
         if let Some(want) = self.pending_select.take() {
@@ -1835,7 +1857,13 @@ impl Browser {
             t::SPACE_20,
             0.0,
         );
-        let status = if let Some(status) = self.phase_status() {
+        let failure_message = self.jobs.failure.as_ref().map(|f| f.message.clone());
+        let retime_message = self.retime_banner.as_ref().map(|(text, _)| text.clone());
+        let status = if let Some(message) = &failure_message {
+            message.clone()
+        } else if let Some(message) = &retime_message {
+            message.clone()
+        } else if let Some(status) = self.phase_status() {
             status
         } else if self.discrepancy_open {
             "[ Previous difference ] Next difference Space Play/pause · Cmd+Return Save decision"
@@ -1899,6 +1927,52 @@ impl Browser {
                 .max_rect(rect)
                 .layout(Layout::right_to_left(Align::Center)),
         );
+        if failure_message.is_some() {
+            if row
+                .add(egui::Button::new(t::text(
+                    "Dismiss",
+                    t::CAPTION,
+                    t::TEXT_PRIMARY,
+                )))
+                .clicked()
+            {
+                self.jobs.failure = None;
+            }
+            if row
+                .add(egui::Button::new(t::text(
+                    "Show log",
+                    t::CAPTION,
+                    t::TEXT_PRIMARY,
+                )))
+                .clicked()
+                && let Some(failure) = self.jobs.failure.as_mut()
+            {
+                failure.show_log = true;
+            }
+        }
+        if retime_message.is_some() && failure_message.is_none() {
+            if row
+                .add(egui::Button::new(t::text(
+                    "Dismiss",
+                    t::CAPTION,
+                    t::TEXT_PRIMARY,
+                )))
+                .clicked()
+            {
+                self.retime_banner = None;
+            }
+            if row
+                .add(egui::Button::new(t::text(
+                    "Undo",
+                    t::CAPTION,
+                    t::TEXT_PRIMARY,
+                )))
+                .clicked()
+                && let Some((_, checkpoint)) = self.retime_banner.take()
+            {
+                self.begin_restore(checkpoint, ui.ctx());
+            }
+        }
         if self.jobs.durable.is_some() || fraction.is_some() {
             row.spacing_mut().interact_size.y = t::STATUS_BAR_HEIGHT - t::SPACE_8;
             if row
@@ -1921,11 +1995,12 @@ impl Browser {
             rect.min,
             pos2(row.min_rect().left() - t::SPACE_20, rect.bottom()),
         );
-        let color = if self.daw_notice.as_ref().is_some_and(Result::is_err) {
-            t::STATUS_FAILED
-        } else {
-            t::TEXT_MUTED
-        };
+        let color =
+            if failure_message.is_some() || self.daw_notice.as_ref().is_some_and(Result::is_err) {
+                t::STATUS_FAILED
+            } else {
+                t::TEXT_MUTED
+            };
         view::line(
             ui,
             left,
@@ -2170,10 +2245,15 @@ impl Browser {
         } else {
             0.0
         };
+        let banner_h = if self.jobs.failure.is_some() || self.retime_banner.is_some() {
+            t::FAILURE_BANNER_HEIGHT
+        } else {
+            0.0
+        };
         let status = Rect::from_min_max(
             pos2(
                 rect.left(),
-                rect.bottom() - t::STATUS_BAR_HEIGHT - progress_h,
+                rect.bottom() - t::STATUS_BAR_HEIGHT - progress_h - banner_h,
             ),
             rect.max,
         );
@@ -2322,6 +2402,7 @@ impl Browser {
                     self.filters.failed_only,
                     &self.jobs.selected,
                     &edited,
+                    &self.jobs.regenerated,
                     markers.is_none(),
                     &self.find,
                     &self.filters.search,
@@ -2393,6 +2474,7 @@ impl Browser {
                         &mut self.editing,
                         self.preferences.edit_mode,
                         edited.contains(&turn),
+                        self.jobs.regenerated.contains(&turn),
                         !self.jobs.busy() && self.pending.is_none(),
                         self.preferences.read_along,
                     );
@@ -2464,6 +2546,7 @@ impl eframe::App for Browser {
         self.poll_phase_j(ctx);
         self.poll_phase_m(ctx);
         self.poll_editing(ctx);
+        self.poll_auto_retime(ctx);
         self.refresh_find();
         self.poll_review_save();
         self.poll_daw();

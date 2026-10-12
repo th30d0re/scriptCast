@@ -64,11 +64,38 @@ pub enum Classification {
 pub fn classify(record: &Record, terminal: bool, alive: impl Fn(u32) -> bool) -> Classification {
     if alive(record.pid) {
         Classification::Alive
-    } else if terminal {
+    } else if terminal || record.exit.is_some() {
         Classification::Finished
     } else {
         Classification::Interrupted
     }
+}
+/// Outcome of a process this session watched until it exited.
+/// Interrupted is not a result here: a vanished pid with no recorded exit is
+/// only classified on reattach, via [`classify`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Watched {
+    Canceled,
+    Complete,
+    Failed,
+}
+pub fn watched_outcome(exit: Option<i32>, terminal_ok: bool, canceled: bool) -> Watched {
+    if canceled {
+        Watched::Canceled
+    } else if exit == Some(0) && terminal_ok {
+        Watched::Complete
+    } else {
+        Watched::Failed
+    }
+}
+pub fn failure_banner(preset: &str, log: &str) -> String {
+    let line = log
+        .lines()
+        .rev()
+        .find(|line| !line.trim().is_empty())
+        .map(str::trim)
+        .unwrap_or("ended without a done or error event");
+    format!("{preset} failed: {line}")
 }
 pub fn alive(pid: u32) -> bool {
     if pid == 0 || pid > i32::MAX as u32 {
@@ -241,6 +268,7 @@ fn run(path: &Path, record: &mut Record) -> Result<(), String> {
     {
         pipeline.next();
     }
+    let mut plain = 0usize;
     loop {
         let index = if let Some(pipeline) = &record.pipeline {
             match &pipeline.state {
@@ -261,8 +289,10 @@ fn run(path: &Path, record: &mut Record) -> Result<(), String> {
                 }
                 _ => pipeline.current.ok_or("Missing pipeline step")?,
             }
+        } else if plain < record.commands.len() {
+            plain
         } else {
-            0
+            break;
         };
         if cancelled() {
             return Err("cancelled".into());
@@ -351,21 +381,26 @@ fn run(path: &Path, record: &mut Record) -> Result<(), String> {
             write(path, record)?;
         } else {
             record.exit = status.code().or(Some(1));
-            if progress.terminal.is_none() && !supports_progress(&record.preset, false) {
-                let event = if status.success() {
-                    Event::Done {
-                        ok: true,
-                        outputs: Default::default(),
-                    }
-                } else {
-                    Event::Error {
-                        message: format!("Job exited with {:?}", status.code()),
-                    }
-                };
-                append(&record.progress, &event)?;
+            let last = plain + 1 >= record.commands.len();
+            if record.exit != Some(0) || last {
+                if progress.terminal.is_none() && !supports_progress(&record.preset, false) {
+                    let event = if status.success() {
+                        Event::Done {
+                            ok: true,
+                            outputs: Default::default(),
+                        }
+                    } else {
+                        Event::Error {
+                            message: format!("Job exited with {:?}", status.code()),
+                        }
+                    };
+                    append(&record.progress, &event)?;
+                }
+                write(path, record)?;
+                return Ok(());
             }
+            plain += 1;
             write(path, record)?;
-            return Ok(());
         }
     }
     record.exit = Some(0);
@@ -391,6 +426,7 @@ fn supports_progress(preset: &str, pipeline: bool) -> bool {
                 | "re-export"
                 | "precision-insert"
                 | "regenerate-turns"
+                | "regenerate-edited"
                 | "detect-changes"
         )
 }

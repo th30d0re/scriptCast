@@ -119,6 +119,7 @@ pub fn show(
     editing: &mut Editing,
     edit_mode: EditMode,
     edited: bool,
+    regenerated: bool,
     enabled: bool,
     read_along: bool,
 ) -> (Option<Action>, Option<editing::Action>) {
@@ -208,11 +209,8 @@ pub fn show(
                         .color(colour),
                 );
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    let (label, colour) = if edited {
-                        ("Edited", t::accent())
-                    } else {
-                        view::verification_label(turn.verification)
-                    };
+                    let (label, colour) =
+                        view::turn_verification(turn.verification, edited, regenerated);
                     ui.label(t::text(label, t::SECONDARY, colour));
                 });
             });
@@ -357,6 +355,12 @@ pub fn show(
                 }
             }
             if editing.edit_tab && edit_mode == EditMode::Panel {
+                if edited
+                    && t::secondary_button(ui, "Regenerate", None, enabled && !editing.busy())
+                        .clicked()
+                {
+                    edit_action = Some(editing::Action::Regenerate);
+                }
                 return;
             }
 

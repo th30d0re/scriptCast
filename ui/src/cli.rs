@@ -1,13 +1,14 @@
 //! Per-command discovery and the once-per-launch login-shell environment.
 use std::{
+    collections::HashMap,
     env,
     ffi::{OsStr, OsString},
     fs,
     io::Read,
     path::{Path, PathBuf},
     process::{Command, Stdio},
-    sync::{OnceLock, mpsc},
-    time::{Duration, Instant},
+    sync::{Mutex, OnceLock, mpsc},
+    time::{Duration, Instant, SystemTime},
 };
 
 #[derive(Clone, Debug)]
@@ -235,19 +236,42 @@ pub fn resolve(
         env::current_exe().ok().as_deref(),
     )
 }
-pub fn resolve_with(
+#[derive(Clone, Debug)]
+pub struct Skip {
+    pub program: PathBuf,
+    pub reason: String,
+}
+
+/// Flags the app passes to `command`. Empty means "take the first executable",
+/// which the resolution tests rely on.
+pub fn required_flags(command: &str) -> &'static [&'static str] {
+    match command {
+        "scriptcast" => &["--progress-jsonl", "--resume", "--export-only"],
+        "scriptcast-export" => &["--edit-json", "--fcpxml"],
+        "scriptcast-verify"
+        | "scriptcast-repair"
+        | "scriptcast-relayout"
+        | "scriptcast-stitch"
+        | "scriptcast-turn-index" => &["--progress-jsonl"],
+        _ => &[],
+    }
+}
+
+pub fn resolve_with_flags(
     command: &str,
     project: Option<&Path>,
     cli_dir: Option<&Path>,
     path: &OsStr,
     exe: Option<&Path>,
-) -> Result<Resolved, String> {
-    let direct = |program: PathBuf, source| Resolved {
-        source,
-        program: absolute(&program),
-        prefix: vec![],
-        path: path.into(),
-        pythonpath: None,
+    flags: &[&str],
+) -> Result<(Resolved, Vec<Skip>), String> {
+    let mut skipped = Vec::new();
+    let accept = |program: PathBuf,
+                  source: ExportSource,
+                  prefix: Vec<OsString>,
+                  pythonpath: Option<PathBuf>,
+                  skipped: &mut Vec<Skip>| {
+        capable(program, source, prefix, pythonpath, path, flags, skipped)
     };
     // Clip-transcribe and verify-ensemble need fermion + mlx_whisper.
     let needs_clip_engines = matches!(
@@ -258,8 +282,9 @@ pub fn resolve_with(
         .filter(|p| !p.as_os_str().is_empty())
         .map(|p| p.join(command))
         .filter(|p| is_executable(p))
+        && let Some(resolved) = accept(p, ExportSource::Folder, vec![], None, &mut skipped)
     {
-        return Ok(direct(p, ExportSource::Folder));
+        return Ok((resolved, skipped));
     }
     let venvs = project.map(venvs).unwrap_or_default();
     for venv in &venvs {
@@ -272,13 +297,17 @@ pub fn resolve_with(
         if needs_clip_engines && !probe_clip_engines(&venv.join("bin/python"), None, path) {
             continue;
         }
-        return Ok(direct(p, ExportSource::ProjectVenv));
+        if let Some(resolved) = accept(p, ExportSource::ProjectVenv, vec![], None, &mut skipped) {
+            return Ok((resolved, skipped));
+        }
     }
-    if let Some(p) = env::split_paths(path)
+    for p in env::split_paths(path)
         .map(|p| p.join(command))
-        .find(|p| is_executable(p))
+        .filter(|p| is_executable(p))
     {
-        return Ok(direct(p, ExportSource::Path));
+        if let Some(resolved) = accept(p, ExportSource::Path, vec![], None, &mut skipped) {
+            return Ok((resolved, skipped));
+        }
     }
     if let Some(dir) = exe.and_then(find_dev_checkout) {
         let module = module_for(&dir, command)?;
@@ -310,21 +339,236 @@ pub fn resolve_with(
                     .find(|p| is_executable(p))
                     .unwrap_or_else(|| "python3".into())
             });
-        return Ok(Resolved {
-            source: ExportSource::DevCheckout(dir.clone()),
+        let prefix = vec!["-m".into(), module.into()];
+        if let Some(resolved) = accept(
             program,
-            prefix: vec!["-m".into(), module.into()],
-            path: path.into(),
-            pythonpath: Some(dir),
-        });
+            ExportSource::DevCheckout(dir.clone()),
+            prefix,
+            Some(dir),
+            &mut skipped,
+        ) {
+            return Ok((resolved, skipped));
+        }
     }
-    Err(format!(
+    let why = skipped
+        .iter()
+        .map(|s| s.reason.as_str())
+        .collect::<Vec<_>>()
+        .join("; ");
+    let mut message = format!(
         "{command} unavailable. Checked CLI folder {}, project .venv*/bin, login PATH, \
          and dev-checkout pyproject.toml ancestors of {}",
         cli_dir
             .map(|p| p.display().to_string())
             .unwrap_or_else(|| "unset".into()),
         exe.map(|p| p.display().to_string()).unwrap_or_default()
+    );
+    if !why.is_empty() {
+        message.push_str(". ");
+        message.push_str(&why);
+    }
+    Err(message)
+}
+
+pub fn resolve_with(
+    command: &str,
+    project: Option<&Path>,
+    cli_dir: Option<&Path>,
+    path: &OsStr,
+    exe: Option<&Path>,
+) -> Result<Resolved, String> {
+    resolve_with_flags(command, project, cli_dir, path, exe, &[]).map(|(r, _)| r)
+}
+
+fn capable(
+    program: PathBuf,
+    source: ExportSource,
+    prefix: Vec<OsString>,
+    pythonpath: Option<PathBuf>,
+    path: &OsStr,
+    flags: &[&str],
+    skipped: &mut Vec<Skip>,
+) -> Option<Resolved> {
+    let program = if program.components().nth(1).is_some() {
+        absolute(&program)
+    } else {
+        program
+    };
+    if !flags.is_empty() {
+        let help = command_help(&program, &prefix, pythonpath.as_deref(), path).unwrap_or_default();
+        let missing: Vec<String> = flags
+            .iter()
+            .copied()
+            .filter(|flag| !help_has_flag(&help, flag))
+            .map(str::to_owned)
+            .collect();
+        if !missing.is_empty() {
+            skipped.push(Skip {
+                reason: stale_reason(&program, &missing),
+                program: program.clone(),
+            });
+            return None;
+        }
+    }
+    Some(Resolved {
+        source,
+        program,
+        prefix,
+        path: path.into(),
+        pythonpath,
+    })
+}
+
+fn help_has_flag(help: &str, flag: &str) -> bool {
+    help.match_indices(flag).any(|(index, _)| {
+        help[index + flag.len()..]
+            .chars()
+            .next()
+            .is_none_or(|c| !c.is_ascii_alphanumeric() && c != '-')
+    })
+}
+
+struct HelpHit {
+    mtime: Option<SystemTime>,
+    text: String,
+}
+fn help_cache() -> &'static Mutex<HashMap<String, HelpHit>> {
+    static CACHE: OnceLock<Mutex<HashMap<String, HelpHit>>> = OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+fn command_help(
+    program: &Path,
+    prefix: &[OsString],
+    pythonpath: Option<&Path>,
+    path: &OsStr,
+) -> Result<String, String> {
+    let key = format!(
+        "{} {} {}",
+        program.display(),
+        prefix
+            .iter()
+            .map(|a| a.to_string_lossy())
+            .collect::<Vec<_>>()
+            .join(" "),
+        pythonpath
+            .map(|p| p.display().to_string())
+            .unwrap_or_default()
+    );
+    let mtime = fs::metadata(program).ok().and_then(|m| m.modified().ok());
+    let cache = help_cache();
+    let guard = cache.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(hit) = guard.get(&key)
+        && hit.mtime == mtime
+    {
+        return Ok(hit.text.clone());
+    }
+    drop(guard);
+    let mut command = Command::new(program);
+    command
+        .args(prefix)
+        .arg("--help")
+        .env("PATH", path)
+        .env("PYTHONDONTWRITEBYTECODE", "1")
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    if let Some(dir) = pythonpath {
+        command.env("PYTHONPATH", dir);
+    }
+    let text = help_output(&mut command, Duration::from_secs(4))?;
+    help_cache()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(
+            key,
+            HelpHit {
+                mtime,
+                text: text.clone(),
+            },
+        );
+    Ok(text)
+}
+fn help_output(command: &mut Command, timeout: Duration) -> Result<String, String> {
+    let mut child = command.spawn().map_err(|e| e.to_string())?;
+    let mut stdout = child.stdout.take().unwrap();
+    let mut stderr = child.stderr.take().unwrap();
+    let (tx, rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        let mut out = Vec::new();
+        let mut err = Vec::new();
+        let _ = stdout.read_to_end(&mut out);
+        let _ = stderr.read_to_end(&mut err);
+        out.extend(err);
+        let _ = tx.send(out);
+    });
+    let start = Instant::now();
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Err(e) => return Err(e.to_string()),
+            Ok(None) if start.elapsed() > timeout => {
+                kill_group(&mut child);
+                let _ = child.wait();
+                return Err("help timed out".into());
+            }
+            Ok(None) => std::thread::sleep(Duration::from_millis(10)),
+        }
+    };
+    let bytes = rx.recv_timeout(Duration::from_secs(1)).unwrap_or_default();
+    if !status.success() && bytes.is_empty() {
+        return Err(format!("help exited {status}"));
+    }
+    Ok(String::from_utf8_lossy(&bytes).into_owned())
+}
+fn stale_reason(program: &Path, missing: &[String]) -> String {
+    let flags = missing.join(", ");
+    match install_origin(program) {
+        Some(origin) => format!(
+            "{} is an older scriptCast (from {origin}) without {flags}",
+            short_install(program)
+        ),
+        None => format!(
+            "{} is an older scriptCast without {flags}",
+            short_install(program)
+        ),
+    }
+}
+fn short_install(program: &Path) -> String {
+    let parts: Vec<_> = program.components().collect();
+    parts
+        .iter()
+        .position(|c| c.as_os_str().to_string_lossy().starts_with(".venv"))
+        .map(|index| {
+            parts[index..]
+                .iter()
+                .map(|c| c.as_os_str().to_string_lossy())
+                .collect::<Vec<_>>()
+                .join("/")
+        })
+        .unwrap_or_else(|| program.display().to_string())
+}
+fn install_origin(program: &Path) -> Option<String> {
+    let text = fs::read_to_string(program).ok()?;
+    text.split_whitespace().find_map(|token| {
+        let token = token.trim_matches(|c: char| c == '\'' || c == '"' || c == '#');
+        (token.starts_with('/')
+            && (token.contains("scriptCast") || token.contains("scriptcast"))
+            && !token.contains(".venv"))
+        .then(|| token.to_owned())
+    })
+}
+pub fn stale_install_warning(skipped: &[Skip], using_dev_checkout: bool) -> Option<String> {
+    if !using_dev_checkout {
+        return None;
+    }
+    let name = skipped.iter().find_map(|skip| {
+        skip.program.components().find_map(|c| {
+            let name = c.as_os_str().to_string_lossy();
+            name.starts_with(".venv").then(|| name.into_owned())
+        })
+    })?;
+    Some(format!(
+        "Skipped an older scriptCast install in {name}. Using the dev checkout."
     ))
 }
 fn probe_module(p: &Path, module: &str, dir: &Path, path: &OsStr) -> bool {

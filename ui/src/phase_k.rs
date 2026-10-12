@@ -58,6 +58,7 @@ pub enum MenuAction {
     Apply(EditOp, usize),
     Delete(usize),
     Stress(usize),
+    Regenerate(usize),
 }
 type Saved = Result<(Checkpoint, ScriptTurns, tags::Report), String>;
 #[derive(Default)]
@@ -261,6 +262,14 @@ pub fn menu(ui: &mut Ui, editing: &mut editing::Editing, index: usize, enabled: 
         editing.k.action = Some(MenuAction::Stress(index));
         ui.close();
     }
+    let regenerate_label = blocked.map_or_else(
+        || "Regenerate turn".to_owned(),
+        |reason| format!("Regenerate turn · {reason}"),
+    );
+    if menu_row(ui, &regenerate_label, "", blocked.is_none(), false) {
+        editing.k.action = Some(MenuAction::Regenerate(index));
+        ui.close();
+    }
 }
 
 pub fn new_editor(ui: &mut Ui, editing: &mut editing::Editing, panel: bool) {
@@ -355,6 +364,7 @@ pub fn new_editor(ui: &mut Ui, editing: &mut editing::Editing, panel: bool) {
             &editing.registry,
             t::EDITOR_MIN_HEIGHT,
             &placeholder,
+            t::EDITOR_BODY_LINES,
         );
     }
     if let Some(speaker) = speaker {
@@ -588,6 +598,16 @@ impl Browser {
                 MenuAction::Insert(position) => self.begin_insert(position),
                 MenuAction::Apply(op, selected) => self.start_structure(op, selected, ctx),
                 MenuAction::Stress(index) => self.start_stress_check(index),
+                MenuAction::Regenerate(index) => {
+                    let mut rows = self
+                        .editing
+                        .markers(self.episode.as_ref().map_or(0, |e| e.turns.len()))
+                        .unwrap_or_default();
+                    if !rows.contains(&index) {
+                        rows.push(index);
+                    }
+                    self.request_regenerate_edited(rows, ctx);
+                }
                 MenuAction::Delete(index) => {
                     let rendered_index = if self.editing.k.script_view {
                         self.editing.k.rendered_rows.get(index).copied().flatten()
@@ -759,6 +779,97 @@ impl Browser {
                 });
             });
         }
+    }
+    pub(crate) fn poll_auto_retime(&mut self, ctx: &egui::Context) {
+        if let Some(rx) = &self.auto_retime_apply {
+            if let Ok(result) = rx.try_recv() {
+                self.auto_retime_apply = None;
+                match result {
+                    Ok((checkpoint, n)) => {
+                        self.retime_banner = Some((
+                            format!("Retimed {n} timestamps to match the audio"),
+                            checkpoint,
+                        ));
+                        if let Some(episode) = &self.episode {
+                            let dir = episode.dir.clone();
+                            self.open(dir, ctx);
+                        }
+                    }
+                    Err(error) => self.editing.notice = Some(error),
+                }
+            }
+            return;
+        }
+        if let Some(rx) = &self.auto_retime_job {
+            if let Ok(result) = rx.try_recv() {
+                self.auto_retime_job = None;
+                if let Ok(preview) = result {
+                    let n = preview.rows.len();
+                    if let retime::AutoRetime::Apply(_) =
+                        retime::auto_retime_decision(true, false, false, Some(n))
+                        && let Some(episode) = self.episode.clone()
+                    {
+                        let (tx, rx) = mpsc::channel();
+                        self.auto_retime_apply = Some(rx);
+                        let ctx = ctx.clone();
+                        std::thread::spawn(move || {
+                            let _ = tx.send(retime::apply(&episode, &preview).map(|cp| (cp, n)));
+                            ctx.request_repaint();
+                        });
+                    }
+                } else if let Err(error) = result {
+                    self.editing.notice = Some(error);
+                }
+            }
+            return;
+        }
+        if !self.retime_arm || self.editing.k.retime.is_some() {
+            return;
+        }
+        let decision = retime::auto_retime_decision(
+            self.preferences.retime_on_open,
+            self.jobs.busy(),
+            self.unsaved_script(),
+            None,
+        );
+        match decision {
+            retime::AutoRetime::Off => self.retime_arm = false,
+            retime::AutoRetime::WaitForJob | retime::AutoRetime::WaitForEdits => {}
+            retime::AutoRetime::Run => {
+                if self.jobs.resolving.is_some() || self.export_command.is_none() {
+                    return;
+                }
+                let Some(Ok(export)) = self.export_command.clone() else {
+                    self.retime_arm = false;
+                    return;
+                };
+                let Some(mut episode) = self.episode.clone() else {
+                    self.retime_arm = false;
+                    return;
+                };
+                if let Some(turns) = &self.editing.turns {
+                    episode.script_path = Some(turns.script_path.clone());
+                }
+                if episode.script_path.is_none() {
+                    self.retime_arm = false;
+                    return;
+                }
+                self.retime_arm = false;
+                let (tx, rx) = mpsc::channel();
+                self.auto_retime_job = Some(rx);
+                let ctx = ctx.clone();
+                std::thread::spawn(move || {
+                    let _ = tx.send(retime::preview(&export, &episode));
+                    ctx.request_repaint();
+                });
+            }
+            retime::AutoRetime::Silent | retime::AutoRetime::Apply(_) => {}
+        }
+    }
+    fn unsaved_script(&self) -> bool {
+        self.editing.draft.as_ref().is_some_and(|d| d.changed())
+            || self.editing.k.new_turn.is_some()
+            || self.editing.busy()
     }
     pub(crate) fn retime_button(&mut self, ui: &mut Ui) {
         if t::secondary_button(

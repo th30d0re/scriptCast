@@ -130,6 +130,18 @@ impl Preset {
     }
 }
 pub type Commands = BTreeMap<String, Result<Resolved, String>>;
+pub struct Discovery {
+    pub commands: Commands,
+    pub skipped: Vec<crate::cli::Skip>,
+}
+pub fn preset_label(name: &str) -> String {
+    if name == "regenerate-edited" {
+        return "Regenerate edited turns".into();
+    }
+    Preset::parse(name, vec![])
+        .map(|preset| preset.label().to_owned())
+        .unwrap_or_else(|_| name.to_owned())
+}
 #[derive(Clone, Debug)]
 pub struct JobSpec {
     pub program: PathBuf,

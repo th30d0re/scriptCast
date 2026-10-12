@@ -65,7 +65,7 @@ pub struct PhaseJ {
     pub export_logic: bool,
     existing: bool,
     error: Option<String>,
-    interrupted: Option<Record>,
+    pub(crate) interrupted: Option<Record>,
     allow_close: bool,
     stopping: Option<Instant>,
     refreshed: usize,
@@ -774,7 +774,7 @@ impl Browser {
         options.voices = project.join(&options.voices).display().to_string();
         options.output = project.join(&options.output).display().to_string();
         options.validate()?;
-        let resolved = crate::cli::resolve_with(
+        let resolved = crate::cli::resolve_with_flags(
             "scriptcast",
             Some(&project),
             self.preferences.cli_dir.as_deref(),
@@ -783,7 +783,9 @@ impl Browser {
                 .as_deref()
                 .unwrap_or(std::ffi::OsStr::new("/usr/bin:/bin")),
             std::env::current_exe().ok().as_deref(),
-        )?;
+            crate::cli::required_flags("scriptcast"),
+        )
+        .map(|(resolved, _)| resolved)?;
         Ok(options.spec(resolved, project, dry, resume))
     }
     fn dry_run(&mut self, ctx: &egui::Context) {
@@ -909,9 +911,25 @@ impl Browser {
                 Classification::Interrupted if self.phase.interrupted.is_none() => {
                     self.phase.interrupted = Some(record)
                 }
+                Classification::Finished => self.note_failed_record(&record),
                 _ => {}
             }
         }
+    }
+    fn note_failed_record(&mut self, record: &scriptcast_ui::detached::Record) {
+        if self.jobs.failure.is_some() || record.exit.is_none_or(|code| code == 0) {
+            return;
+        }
+        let log = std::fs::read_to_string(&record.log).unwrap_or_default();
+        let label = scriptcast_ui::runner::preset_label(&record.preset);
+        let message = scriptcast_ui::detached::failure_banner(&label, &log);
+        self.jobs.notice = Some(message.clone());
+        self.jobs.failure = Some(crate::jobs::JobFailure {
+            message,
+            log,
+            show_log: false,
+        });
+        self.jobs.state = JobState::Failed(record.exit);
     }
     pub(crate) fn phase_status(&self) -> Option<String> {
         let progress = self
@@ -928,20 +946,56 @@ impl Browser {
                 progress.stage, self.phase.pipeline.state
             ));
         }
-        Some(
-            progress.status(self.jobs.started.map(|s| s.elapsed()).unwrap_or_else(|| {
-                self.jobs
-                    .durable
-                    .as_ref()
-                    .and_then(|a| chrono::DateTime::parse_from_rfc3339(&a.record.started).ok())
-                    .and_then(|s| {
-                        (chrono::Utc::now() - s.with_timezone(&chrono::Utc))
-                            .to_std()
-                            .ok()
-                    })
-                    .unwrap_or(Duration::from_secs(372))
-            })),
-        )
+        let elapsed = self.jobs.started.map(|s| s.elapsed()).unwrap_or_else(|| {
+            self.jobs
+                .durable
+                .as_ref()
+                .and_then(|a| chrono::DateTime::parse_from_rfc3339(&a.record.started).ok())
+                .and_then(|s| {
+                    (chrono::Utc::now() - s.with_timezone(&chrono::Utc))
+                        .to_std()
+                        .ok()
+                })
+                .unwrap_or(Duration::from_secs(372))
+        });
+        let render = self
+            .jobs
+            .durable
+            .as_ref()
+            .is_none_or(|a| a.record.preset == "render")
+            || self.phase.fixture.is_some();
+        if render
+            && self
+                .jobs
+                .durable
+                .as_ref()
+                .is_none_or(|a| a.record.preset == "render")
+        {
+            return Some(progress.status(elapsed));
+        }
+        let label = self
+            .jobs
+            .durable
+            .as_ref()
+            .map(|a| scriptcast_ui::runner::preset_label(&a.record.preset))
+            .unwrap_or_else(|| "Job".into());
+        let detail = if progress.total > 0 {
+            format!(
+                "turn {} of {} · {}",
+                progress.n,
+                progress.total,
+                scriptcast_ui::progress::clock(elapsed)
+            )
+        } else if !progress.stage.is_empty() {
+            format!(
+                "{} · {}",
+                progress.stage,
+                scriptcast_ui::progress::clock(elapsed)
+            )
+        } else {
+            scriptcast_ui::progress::clock(elapsed)
+        };
+        Some(format!("{label} · {detail}"))
     }
     pub(crate) fn render_progress(&self) -> Option<&Progress> {
         self.jobs
@@ -1058,25 +1112,38 @@ impl Browser {
                 if let Some(output) = active.progress.outputs.get("mp3") {
                     self.phase.stitch_output = Some(active.record.episode.join(output));
                 }
-                let interrupted = !terminal;
-                if interrupted {
-                    self.phase.interrupted = Some(active.record.clone());
+                let exit = active.record.exit;
+                let terminal_ok = terminal
+                    && exit == Some(0)
+                    && !matches!(active.progress.terminal, Some(Err(_)));
+                let canceled = self.jobs.state == JobState::Canceled;
+                self.phase.interrupted = None;
+                self.jobs.state =
+                    match scriptcast_ui::detached::watched_outcome(exit, terminal_ok, canceled) {
+                        scriptcast_ui::detached::Watched::Canceled => JobState::Canceled,
+                        scriptcast_ui::detached::Watched::Complete => {
+                            if active.record.preset == "regenerate-edited" {
+                                self.jobs.regenerated = self.jobs.regen_rows.clone();
+                            }
+                            JobState::Complete
+                        }
+                        scriptcast_ui::detached::Watched::Failed => {
+                            let log = self.jobs.log.join("\n");
+                            let label = scriptcast_ui::runner::preset_label(&active.record.preset);
+                            let message = scriptcast_ui::detached::failure_banner(&label, &log);
+                            self.jobs.failure = Some(crate::jobs::JobFailure {
+                                message: message.clone(),
+                                log,
+                                show_log: false,
+                            });
+                            self.jobs.notice = Some(message);
+                            JobState::Failed(exit)
+                        }
+                    };
+                if !matches!(self.jobs.state, JobState::Failed(_)) {
+                    self.jobs.notice =
+                        Some(format!("{} · {:?}", active.record.preset, self.jobs.state));
                 }
-                self.jobs.state = if self.jobs.state == JobState::Canceled {
-                    JobState::Canceled
-                } else if !interrupted
-                    && active.record.exit == Some(0)
-                    && !matches!(active.progress.terminal, Some(Err(_)))
-                {
-                    JobState::Complete
-                } else {
-                    JobState::Failed(active.record.exit)
-                };
-                self.jobs.notice = Some(if interrupted {
-                    "Interrupted — resume available".into()
-                } else {
-                    format!("{} · {:?}", active.record.preset, self.jobs.state)
-                });
             }
             if reload && !finish && self.phase.live_load.is_none() {
                 let dir = active.record.episode.clone();
@@ -1127,6 +1194,7 @@ impl Browser {
         if self.phase.quit_alert {
             self.quit_sheet(ctx);
         }
+        self.failure_log_window(ctx);
         if self.phase.interrupted.is_some() && !self.phase.quit_alert {
             let mut resume = false;
             let mut dismiss = false;

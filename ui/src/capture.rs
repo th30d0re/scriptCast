@@ -103,6 +103,8 @@ pub struct Cli {
     /// Whisper / Ensemble mode when opening `--review`.
     pub review_mode: Option<scriptcast_ui::discrepancy::ReviewMode>,
     pub edit: bool,
+    pub edit_turn: Option<usize>,
+    pub failed_job_fixture: Option<PathBuf>,
     pub context_menu: Option<usize>,
     pub new_turn_after: Option<usize>,
     pub new_turn_speaker: Option<String>,
@@ -158,6 +160,8 @@ impl Cli {
             review: None,
             review_mode: None,
             edit: false,
+            edit_turn: None,
+            failed_job_fixture: None,
             context_menu: None,
             new_turn_after: None,
             new_turn_speaker: None,
@@ -288,6 +292,28 @@ impl Cli {
                 }
                 "--fresh" => cli.fresh = true,
                 "--edit" => cli.edit = true,
+                "--edit-turn" => {
+                    let n = args
+                        .next()
+                        .ok_or("--edit-turn needs a turn number")?
+                        .to_string_lossy()
+                        .parse::<usize>()
+                        .map_err(|_| "Invalid turn number")?;
+                    if n == 0 {
+                        return Err("Turn numbers start at 1".into());
+                    }
+                    cli.edit_turn = Some(n);
+                    cli.edit = true;
+                    cli.select = Some(n);
+                }
+                "--failed-job-fixture" => {
+                    cli.failed_job_fixture = Some(
+                        args.next()
+                            .ok_or("--failed-job-fixture needs a log path")?
+                            .into(),
+                    );
+                    cli.inspector = Some(crate::inspector::InspectorMode::Jobs);
+                }
                 "--context-menu" | "--new-turn-after" | "--tag-toolbar" => {
                     let n = args
                         .next()
@@ -803,6 +829,21 @@ mod tests {
         assert_eq!(cli.episode, Some(PathBuf::from("-odd-dir")));
     }
     #[test]
+    fn edit_turn_and_failed_job_fixture_parse() {
+        let cli = parse(&["--edit-turn", "12", "--edit-mode", "row"]).unwrap();
+        assert_eq!(cli.edit_turn, Some(12));
+        assert!(cli.edit);
+        assert_eq!(cli.select, Some(12));
+        assert_eq!(cli.edit_mode, Some(crate::editing::EditMode::Row));
+        let cli = parse(&["--failed-job-fixture", "/tmp/job.log"]).unwrap();
+        assert_eq!(
+            cli.failed_job_fixture.unwrap(),
+            std::path::PathBuf::from("/tmp/job.log")
+        );
+        assert!(parse(&["--edit-turn", "0"]).is_err());
+        assert!(parse(&["--failed-job-fixture"]).is_err());
+    }
+    #[test]
     fn help_is_recognised() {
         assert!(parse(&["--help"]).unwrap().help);
         assert!(parse(&["-h"]).unwrap().help);
@@ -814,6 +855,7 @@ mod tests {
             "scriptcast-ui-capture-test-{}.png",
             std::process::id()
         ));
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         write_png(&path, &image).unwrap();
         let bytes = std::fs::read(&path).unwrap();
         assert!(!bytes.is_empty());

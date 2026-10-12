@@ -26,6 +26,37 @@ pub struct Preview {
     pub bytes: Vec<u8>,
     pub rows: Vec<Diff>,
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AutoRetime {
+    Off,
+    WaitForJob,
+    WaitForEdits,
+    Run,
+    Silent,
+    Apply(usize),
+}
+/// `preview` is `None` before the temp-copy diff, or `Some(changed rows)` after.
+pub fn auto_retime_decision(
+    enabled: bool,
+    job_running: bool,
+    unsaved_edits: bool,
+    preview: Option<usize>,
+) -> AutoRetime {
+    if !enabled {
+        AutoRetime::Off
+    } else if job_running {
+        AutoRetime::WaitForJob
+    } else if unsaved_edits {
+        AutoRetime::WaitForEdits
+    } else {
+        match preview {
+            None => AutoRetime::Run,
+            Some(0) => AutoRetime::Silent,
+            Some(n) => AutoRetime::Apply(n),
+        }
+    }
+}
+
 pub fn parse_diff(json: &[u8]) -> Result<Vec<Diff>, String> {
     serde_json::from_slice::<Vec<Diff>>(json)
         .map(|rows| rows.into_iter().filter(|r| r.old != r.new).collect())
@@ -148,4 +179,33 @@ pub fn apply(episode: &Episode, preview: &Preview) -> Result<Checkpoint, String>
         let _ = fs::remove_file(temp);
     }
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{AutoRetime, auto_retime_decision};
+
+    #[test]
+    fn auto_retime_decision_table() {
+        assert_eq!(
+            auto_retime_decision(true, false, false, Some(0)),
+            AutoRetime::Silent
+        );
+        assert_eq!(
+            auto_retime_decision(true, false, false, Some(4)),
+            AutoRetime::Apply(4)
+        );
+        assert_eq!(
+            auto_retime_decision(true, true, false, Some(4)),
+            AutoRetime::WaitForJob
+        );
+        assert_eq!(
+            auto_retime_decision(true, false, true, Some(4)),
+            AutoRetime::WaitForEdits
+        );
+        assert_eq!(
+            auto_retime_decision(false, false, false, Some(4)),
+            AutoRetime::Off
+        );
+    }
 }

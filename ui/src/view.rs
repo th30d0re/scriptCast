@@ -152,8 +152,34 @@ pub fn verification_label(state: VerificationState) -> (&'static str, Color32) {
     }
 }
 
+pub fn turn_verification(
+    state: VerificationState,
+    stale_audio: bool,
+    regenerated: bool,
+) -> (&'static str, Color32) {
+    if regenerated {
+        ("Regenerated · not verified", t::TEXT_SUBTLE)
+    } else if stale_audio {
+        ("Edited · audio stale", t::accent())
+    } else {
+        verification_label(state)
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn stale_audio_and_regenerated_labels() {
+        use scriptcast_ui::episode::VerificationState;
+        assert_eq!(
+            super::turn_verification(VerificationState::Passed, true, false).0,
+            "Edited · audio stale"
+        );
+        assert_eq!(
+            super::turn_verification(VerificationState::NotVerified, false, true).0,
+            "Regenerated · not verified"
+        );
+    }
     #[test]
     fn time_formats_mm_ss_mmm() {
         assert_eq!(super::time(0), "00:00.000");

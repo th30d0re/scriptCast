@@ -224,6 +224,10 @@ impl Browser {
                                 "Inline",
                             );
                         });
+                        ui.checkbox(
+                            &mut self.preferences.retime_on_open,
+                            t::text("Retime script on open", t::BODY, t::TEXT_PRIMARY),
+                        );
                         ui.add_space(t::SPACE_8);
                         ui.label(t::heading("Commands", t::SECTION_TITLE));
 
@@ -259,6 +263,12 @@ impl Browser {
                         if commands.is_empty() {
                             ui.label(t::text("Resolving…", t::CAPTION, t::TEXT_MUTED));
                         } else {
+                            for skip in &self.jobs.skipped {
+                                ui.label(t::text(&skip.reason, t::CAPTION, t::STATUS_FAILED));
+                            }
+                            if let Some(warning) = &self.jobs.stale_warning {
+                                ui.label(t::text(warning, t::CAPTION, t::STATUS_FAILED));
+                            }
                             for (name, detail) in &commands {
                                 ui.label(t::text(
                                     format!("{name} · {detail}"),

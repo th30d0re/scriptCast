@@ -2,7 +2,7 @@ use crate::{Browser, inspector::InspectorMode, view};
 use eframe::egui::{self, Align, Layout, Ui};
 use scriptcast_ui::{
     checkpoint::Checkpoint,
-    runner::{Commands, Job, JobEvent, JobSpec, JobState, Preset},
+    runner::{Commands, Discovery, Job, JobEvent, JobSpec, JobState, Preset},
     theme as t,
 };
 use std::sync::mpsc::{self, Receiver};
@@ -68,6 +68,15 @@ pub(crate) struct Confirmation {
     pub preset: Preset,
     pub spec: JobSpec,
     pub affected: Option<Vec<usize>>,
+    /// When set, this command runs first in the same detached job (detect-changes
+    /// before precision insert).
+    pub before: Option<JobSpec>,
+}
+#[derive(Clone)]
+pub(crate) struct JobFailure {
+    pub message: String,
+    pub log: String,
+    pub show_log: bool,
 }
 
 fn scope(c: &Confirmation) -> String {
@@ -86,7 +95,7 @@ fn scope(c: &Confirmation) -> String {
 pub(crate) struct Jobs {
     pub login: Option<Receiver<crate::cli::LoginPath>>,
     pub login_path: Option<std::ffi::OsString>,
-    pub resolving: Option<Receiver<Commands>>,
+    pub resolving: Option<Receiver<Discovery>>,
     pub mode: Option<InspectorMode>,
     pub auto_confirm: Option<String>,
     pub auto_run: Option<String>,
@@ -111,6 +120,11 @@ pub(crate) struct Jobs {
     pub confirmation: Option<Confirmation>,
     pub selected: std::collections::BTreeSet<usize>,
     pub log: Vec<String>,
+    pub skipped: Vec<scriptcast_ui::cli::Skip>,
+    pub stale_warning: Option<String>,
+    pub failure: Option<JobFailure>,
+    pub regen_rows: Vec<usize>,
+    pub regenerated: Vec<usize>,
 }
 
 impl Default for Jobs {
@@ -142,6 +156,11 @@ impl Default for Jobs {
             confirmation: None,
             selected: std::collections::BTreeSet::new(),
             log: vec![],
+            skipped: vec![],
+            stale_warning: None,
+            failure: None,
+            regen_rows: vec![],
+            regenerated: vec![],
         }
     }
 }
@@ -238,21 +257,38 @@ impl Browser {
         }
         if let Some(rx) = &self.jobs.resolving {
             match rx.try_recv() {
-                Ok(commands) => {
-                    for (name, result) in &commands {
+                Ok(discovery) => {
+                    for (name, result) in &discovery.commands {
                         let source = result
                             .as_ref()
                             .map(|r| r.description())
                             .unwrap_or_else(|e| e.clone());
                         eprintln!("scriptcast-ui command: {name} · {source}");
                     }
-                    self.export_command = commands.get("scriptcast-export").cloned().map(|r| {
-                        r.map(|r| crate::cli::ExportCommand {
-                            source: r.source,
-                            program: r.program,
-                        })
+                    for skip in &discovery.skipped {
+                        eprintln!("scriptcast-ui skipped: {}", skip.reason);
+                    }
+                    self.export_command =
+                        discovery
+                            .commands
+                            .get("scriptcast-export")
+                            .cloned()
+                            .map(|r| {
+                                r.map(|r| crate::cli::ExportCommand {
+                                    source: r.source,
+                                    program: r.program,
+                                })
+                            });
+                    let using_dev = discovery.commands.get("scriptcast").is_some_and(|r| {
+                        matches!(
+                            r.as_ref().map(|c| &c.source),
+                            Ok(scriptcast_ui::cli::ExportSource::DevCheckout(_))
+                        )
                     });
-                    self.jobs.commands = commands;
+                    self.jobs.stale_warning =
+                        scriptcast_ui::cli::stale_install_warning(&discovery.skipped, using_dev);
+                    self.jobs.skipped = discovery.skipped;
+                    self.jobs.commands = discovery.commands;
                     self.jobs.resolving = None;
                 }
                 Err(mpsc::TryRecvError::Disconnected) => {
@@ -277,6 +313,7 @@ impl Browser {
                         preset,
                         spec,
                         affected: None,
+                        before: None,
                     })
                 }) {
                     Ok(c) => self.begin_job(c, ctx),
@@ -288,6 +325,7 @@ impl Browser {
                         preset,
                         spec,
                         affected: None,
+                        before: None,
                     })
                 }) {
                     Ok(c) => self.jobs.confirmation = Some(c),
@@ -401,6 +439,7 @@ impl Browser {
         self.export_command = None;
         let ctx = ctx.clone();
         std::thread::spawn(move || {
+            let mut skipped = Vec::new();
             let commands = [
                 "scriptcast",
                 "scriptcast-verify",
@@ -417,19 +456,24 @@ impl Browser {
             ]
             .into_iter()
             .map(|name| {
-                (
-                    name.into(),
-                    crate::cli::resolve_with(
-                        name,
-                        project.as_deref(),
-                        folder.as_deref(),
-                        &path,
-                        exe.as_deref(),
-                    ),
-                )
+                let flags = crate::cli::required_flags(name);
+                match crate::cli::resolve_with_flags(
+                    name,
+                    project.as_deref(),
+                    folder.as_deref(),
+                    &path,
+                    exe.as_deref(),
+                    flags,
+                ) {
+                    Ok((resolved, mut skips)) => {
+                        skipped.append(&mut skips);
+                        (name.into(), Ok(resolved))
+                    }
+                    Err(error) => (name.into(), Err(error)),
+                }
             })
             .collect();
-            let _ = tx.send(commands);
+            let _ = tx.send(Discovery { commands, skipped });
             ctx.request_repaint();
         });
     }
@@ -447,7 +491,12 @@ impl Browser {
             return;
         }
         self.jobs.mode = Some(InspectorMode::Jobs);
-        self.jobs.title = c.preset.label().into();
+        self.jobs.failure = None;
+        self.jobs.title = if c.before.is_some() {
+            "Regenerate edited turns".into()
+        } else {
+            c.preset.label().into()
+        };
         self.jobs.subtitle = scope(&c);
         self.jobs.notice = None;
         self.jobs.log.clear();
@@ -487,12 +536,17 @@ impl Browser {
         self.jobs.log.push(format!("Command: {}", c.spec.display()));
         let Some(episode) = &self.episode else { return };
         let dir = episode.dir.clone();
-        self.launch_durable(
-            &dir,
-            c.preset.name(),
-            vec![scriptcast_ui::detached::CommandPlan::new(&c.spec)],
-            None,
-        );
+        let mut plans = Vec::new();
+        if let Some(before) = &c.before {
+            plans.push(scriptcast_ui::detached::CommandPlan::new(before));
+        }
+        plans.push(scriptcast_ui::detached::CommandPlan::new(&c.spec));
+        let name = if c.before.is_some() {
+            "regenerate-edited"
+        } else {
+            c.preset.name()
+        };
+        self.launch_durable(&dir, name, plans, None);
         ctx.request_repaint();
     }
     pub(crate) fn request_job(
@@ -520,6 +574,7 @@ impl Browser {
                     preset,
                     spec,
                     affected,
+                    before: None,
                 };
                 if c.spec.needs_confirmation() {
                     self.jobs.confirmation = Some(c);
@@ -531,7 +586,36 @@ impl Browser {
         }
     }
 
-    fn begin_restore(&mut self, cp: Checkpoint, ctx: &egui::Context) {
+    pub(crate) fn request_regenerate_edited(&mut self, rows: Vec<usize>, ctx: &egui::Context) {
+        let detect = match self.spec(&Preset::DetectChanges) {
+            Ok(spec) => spec,
+            Err(error) => {
+                self.job_error(error);
+                return;
+            }
+        };
+        let insert = match self.spec(&Preset::PrecisionInsert) {
+            Ok(spec) => spec,
+            Err(error) => {
+                self.job_error(error);
+                return;
+            }
+        };
+        self.jobs.regen_rows = rows.clone();
+        let c = Confirmation {
+            preset: Preset::PrecisionInsert,
+            spec: insert,
+            affected: Some(rows),
+            before: Some(detect),
+        };
+        if c.spec.needs_confirmation() {
+            self.jobs.confirmation = Some(c);
+        } else {
+            self.begin_job(c, ctx);
+        }
+    }
+
+    pub(crate) fn begin_restore(&mut self, cp: Checkpoint, ctx: &egui::Context) {
         if self.jobs.busy() || self.editing.busy() {
             return;
         }
@@ -660,6 +744,10 @@ impl Browser {
         ];
 
         egui::ScrollArea::vertical().id_salt("jobs_body").show(ui, |ui| {
+            if let Some(warning) = &self.jobs.stale_warning {
+                ui.label(t::text(warning, t::CAPTION, t::STATUS_FAILED));
+            }
+            self.failure_banner(ui);
             ui.horizontal_wrapped(|ui| {
                 for p in presets {
                     let no_clips = p == Preset::ClipTranscripts && !has_clips;
@@ -697,6 +785,9 @@ impl Browser {
             }
 
             egui::CollapsingHeader::new("Command sources").show(ui, |ui| {
+                for skip in &self.jobs.skipped {
+                    ui.label(t::text(&skip.reason, t::CAPTION, t::STATUS_FAILED));
+                }
                 for (name, c) in &self.jobs.commands {
                     ui.label(t::text(
                         format!(
@@ -1424,6 +1515,9 @@ for p in &cp.files {
                         .inner_margin(t::SPACE_12)
                         .show(ui, |ui| {
                             t::field_label(ui, "Exact command");
+                            if let Some(before) = &c.before {
+                                ui.label(egui::RichText::new(before.display()).font(t::mono(t::LOG_LINE)));
+                            }
                             ui.label(egui::RichText::new(c.spec.display()).font(t::mono(t::LOG_LINE)));
                         });
                 }
@@ -1450,6 +1544,55 @@ for p in &cp.files {
             } else if let Some(restore) = self.jobs.restore.take() {
                 self.begin_restore(restore, ctx);
             }
+        }
+    }
+
+    pub(crate) fn failure_banner(&mut self, ui: &mut Ui) {
+        let Some(failure) = self.jobs.failure.clone() else {
+            return;
+        };
+        egui::Frame::new()
+            .fill(t::BG_DANGER)
+            .inner_margin(t::SPACE_8)
+            .show(ui, |ui| {
+                ui.label(t::text(&failure.message, t::CAPTION, t::ON_DANGER));
+                ui.horizontal(|ui| {
+                    if t::secondary_button(ui, "Show log", None, true).clicked()
+                        && let Some(failure) = self.jobs.failure.as_mut()
+                    {
+                        failure.show_log = true;
+                    }
+                    if t::secondary_button(ui, "Dismiss", None, true).clicked() {
+                        self.jobs.failure = None;
+                    }
+                });
+            });
+    }
+
+    pub(crate) fn failure_log_window(&mut self, ctx: &egui::Context) {
+        let open = self.jobs.failure.as_ref().is_some_and(|f| f.show_log);
+        if !open {
+            return;
+        }
+        let log = self
+            .jobs
+            .failure
+            .as_ref()
+            .map(|f| f.log.clone())
+            .unwrap_or_default();
+        let mut show = true;
+        egui::Window::new("Job log")
+            .open(&mut show)
+            .collapsible(false)
+            .show(ctx, |ui| {
+                egui::ScrollArea::vertical()
+                    .max_height(t::JOB_LOG_HEIGHT)
+                    .show(ui, |ui| {
+                        ui.label(egui::RichText::new(&log).font(t::mono(t::LOG_LINE)));
+                    });
+            });
+        if !show && let Some(failure) = self.jobs.failure.as_mut() {
+            failure.show_log = false;
         }
     }
 }
@@ -1505,6 +1648,7 @@ mod tests {
             preset: Preset::Verify,
             spec,
             affected: None,
+            before: None,
         }
     }
 
@@ -1609,6 +1753,76 @@ mod tests {
     }
 
     #[test]
+    fn regenerate_edited_argv_is_detect_then_precision() {
+        let (_tmp, app, _ctx) = app();
+        let episode = app.episode.as_ref().unwrap();
+        let resolved = Resolved {
+            source: ExportSource::Folder,
+            program: "/bin/scriptcast".into(),
+            prefix: vec![],
+            path: "/usr/bin:/bin".into(),
+            pythonpath: None,
+        };
+        let commands = [("scriptcast".into(), Ok(resolved))].into();
+        let detect = JobSpec::from_preset(&Preset::DetectChanges, episode, &commands).unwrap();
+        let insert = JobSpec::from_preset(&Preset::PrecisionInsert, episode, &commands).unwrap();
+        assert!(detect.args.iter().any(|arg| arg == "--detect-changes"));
+        assert!(insert.args.iter().any(|arg| arg == "--precision-insert"));
+    }
+
+    #[test]
+    fn failed_shell_fixture_sets_banner_and_not_interrupted() {
+        let (_tmp, mut app, ctx) = app();
+        let c = verify(
+            &app,
+            "echo 'unrecognized arguments: --progress-jsonl' >&2; exit 2",
+        );
+        app.start_prepared_job(c, &ctx);
+        finish(&mut app, &ctx);
+        assert!(app.phase.interrupted.is_none());
+        let banner = app.jobs.failure.as_ref().expect("failure banner");
+        assert!(banner.message.contains("failed:"));
+        assert!(banner.message.contains("unrecognized arguments"));
+        assert_eq!(app.jobs.state, JobState::Failed(Some(2)));
+        assert_eq!(
+            scriptcast_ui::detached::watched_outcome(Some(2), false, false),
+            scriptcast_ui::detached::Watched::Failed
+        );
+        assert_eq!(
+            scriptcast_ui::detached::watched_outcome(None, false, false),
+            scriptcast_ui::detached::Watched::Failed
+        );
+        let vanished = scriptcast_ui::detached::Record {
+            pid: 1,
+            pgid: 1,
+            preset: "detect-changes".into(),
+            argv: vec![],
+            log: "a.log".into(),
+            log_offset: 0,
+            progress: "a.jsonl".into(),
+            started: "2026-10-11T00:00:00Z".into(),
+            episode: "episode".into(),
+            commands: vec![],
+            pipeline: None,
+            current_step: None,
+            exit: None,
+            interrupted: false,
+        };
+        assert_eq!(
+            scriptcast_ui::detached::classify(&vanished, false, |_| false),
+            scriptcast_ui::detached::Classification::Interrupted
+        );
+        let failed = scriptcast_ui::detached::Record {
+            exit: Some(2),
+            ..vanished
+        };
+        assert_eq!(
+            scriptcast_ui::detached::classify(&failed, false, |_| false),
+            scriptcast_ui::detached::Classification::Finished
+        );
+    }
+
+    #[test]
     fn failed_and_canceled_children_reload_and_preserve_status() {
         for canceled in [false, true] {
             let (_tmp, mut app, ctx) = app();
@@ -1646,8 +1860,11 @@ mod tests {
         app.jobs.auto_confirm = Some("verify".into());
         app.poll_jobs(&ctx);
         assert!(app.jobs.auto_confirm.is_some());
-        tx.send([("scriptcast-verify".into(), Ok(c.spec.resolved))].into())
-            .unwrap();
+        tx.send(scriptcast_ui::runner::Discovery {
+            commands: [("scriptcast-verify".into(), Ok(c.spec.resolved))].into(),
+            skipped: vec![],
+        })
+        .unwrap();
         app.poll_jobs(&ctx);
         assert!(app.jobs.auto_confirm.is_none());
         assert!(app.jobs.confirmation.is_some());

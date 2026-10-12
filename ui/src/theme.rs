@@ -685,6 +685,9 @@ pub const TAG_TOOLBAR_HEIGHT: f32 = 36.0;
 pub const TIME_FIELD_WIDTH: f32 = 96.0;
 pub const CONTEXT_MENU_WIDTH: f32 = 260.0;
 pub const EDITOR_BODY_LINES: f32 = 6.0;
+/// Inline body editor never collapses below this many lines.
+pub const EDITOR_ROW_MIN_LINES: f32 = 3.0;
+pub const FAILURE_BANNER_HEIGHT: f32 = 36.0;
 pub const NEW_TURN_ROW_HEIGHT: f32 = 420.0;
 pub const CLIP_PICKER_WIDTH: f32 = 300.0;
 pub const CLIP_PICKER_HEIGHT: f32 = 300.0;

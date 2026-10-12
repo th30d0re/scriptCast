@@ -117,6 +117,38 @@ esac"#,
 }
 
 #[test]
+fn stale_help_is_skipped_and_the_reason_names_the_flag() {
+    let t = Scratch::new();
+    let project = t.0.join("project");
+    let origin = "/Users/emmanuel/Documents/Theory/scriptCast";
+    let stale = t.exe(
+        "project/.venv-voice/bin/scriptcast",
+        &format!("# {origin}\nprintf '%s\\n' 'usage: scriptcast'"),
+    );
+    let good = t.exe(
+        "project/.venv-z/bin/scriptcast",
+        "printf '%s\\n' '--progress-jsonl --resume --export-only'",
+    );
+    let (resolved, skipped) = resolve_with_flags(
+        "scriptcast",
+        Some(&project),
+        None,
+        OsStr::new("/no-such-path"),
+        None,
+        &["--progress-jsonl", "--resume", "--export-only"],
+    )
+    .unwrap();
+    assert_eq!(resolved.program, good);
+    assert_eq!(resolved.source, ExportSource::ProjectVenv);
+    assert!(skipped.iter().any(|s| s.program == stale));
+    let reason = &skipped[0].reason;
+    assert!(reason.contains("--progress-jsonl"), "{reason}");
+    assert!(reason.contains(".venv-voice"), "{reason}");
+    assert!(reason.contains(origin), "{reason}");
+    assert!(reason.contains("older scriptCast"), "{reason}");
+}
+
+#[test]
 fn login_path_shell_noise_timeout_and_failure() {
     let t = Scratch::new();
     let shell = t.exe("shell", "printf 'startup noise\\n/first:/second'");

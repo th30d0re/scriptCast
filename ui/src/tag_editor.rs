@@ -55,6 +55,7 @@ pub fn body(
     registry: &Registry,
     height: f32,
     placeholder: &str,
+    min_lines: f32,
 ) -> egui::Response {
     let mut insertion = None;
     ui.horizontal(|ui| {
@@ -102,6 +103,8 @@ pub fn body(
     let mut layouter = |ui: &Ui, buffer: &dyn egui::TextBuffer, width: f32| {
         ui.fonts_mut(|f| f.layout_job(tags::layout(buffer.as_str(), registry, raw, width)))
     };
+    let line = t::line_height(ui, t::font(t::BODY));
+    let width = ui.available_width();
     let output = egui::TextEdit::multiline(text)
         .id(editor_id())
         .font(if raw {
@@ -110,12 +113,9 @@ pub fn body(
             t::font(t::BODY)
         })
         .hint_text(placeholder)
-        .desired_rows(t::EDITOR_BODY_LINES as usize)
-        .desired_width(ui.available_width())
-        .min_size(egui::vec2(
-            ui.available_width(),
-            height.max(t::line_height(ui, t::font(t::BODY)) * t::EDITOR_BODY_LINES),
-        ))
+        .desired_rows(min_lines.max(1.0) as usize)
+        .desired_width(width)
+        .min_size(egui::vec2(width, height.max(line * min_lines)))
         .layouter(&mut layouter)
         .show(ui);
     ui.checkbox(&mut state.raw, "Raw script");

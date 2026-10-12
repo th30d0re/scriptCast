@@ -174,6 +174,7 @@ pub enum Action {
     Cancel,
     Render,
     UseEnsemble,
+    Regenerate,
 }
 
 pub fn field_height(ui: &Ui, text: &str, width: f32, available: f32) -> f32 {
@@ -235,8 +236,20 @@ pub fn mode_toggle(ui: &mut Ui, mode: &mut EditMode) -> egui::Response {
 }
 
 pub fn inline_field_height(ui: &Ui, text: &str, width: f32) -> f32 {
+    let line = t::line_height(ui, t::font(t::BODY));
     t::wrapped_height(ui, text, t::font(t::BODY), width.max(t::SPACE_16))
-        .clamp(t::line_height(ui, t::font(t::BODY)), t::EDITOR_MAX_HEIGHT)
+        .clamp(line * t::EDITOR_ROW_MIN_LINES, t::EDITOR_MAX_HEIGHT)
+}
+
+/// Toolbar, wrapped body (at least three lines), raw-script row, and buttons.
+pub fn row_editor_block_height(ui: &Ui, text: &str, width: f32, draft: Option<&Draft>) -> f32 {
+    t::TAG_TOOLBAR_HEIGHT
+        + t::SPACE_4
+        + inline_field_height(ui, text, width)
+        + t::line_height(ui, t::font(t::CAPTION))
+        + t::SPACE_8
+        + inline_actions_height(ui, width, draft)
+        + t::SPACE_4
 }
 
 fn inline_actions_width(ui: &Ui) -> f32 {
@@ -284,30 +297,26 @@ pub fn inline_editor(
     let draft = editing.draft.as_mut()?;
     let mut action = None;
     ui.spacing_mut().item_spacing = egui::vec2(t::SPACE_8, t::SPACE_4);
+    ui.set_width(ui.available_width());
     ui.add_enabled_ui(!busy, |ui| {
-        let response = egui::ScrollArea::vertical()
-            .id_salt("inline_field_scroll")
-            .max_height(height)
-            .min_scrolled_height(height)
-            .show(ui, |ui| {
-                crate::tag_editor::body(
-                    ui,
-                    &mut draft.text,
-                    &mut editing.toolbar,
-                    &editing.registry,
-                    height,
-                    "Write this turn…",
-                )
-            })
-            .inner;
+        let response = crate::tag_editor::body(
+            ui,
+            &mut draft.text,
+            &mut editing.toolbar,
+            &editing.registry,
+            height,
+            "Write this turn…",
+            t::EDITOR_ROW_MIN_LINES,
+        );
         if editing.focus_requested {
             response.request_focus();
             editing.focus_requested = false;
         }
     });
     let wrap_warning = ui.available_width() < inline_actions_width(ui);
-    ui.horizontal(|ui| {
+    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
         for (label, value, primary, allowed) in [
+            ("Cancel", Action::Cancel, false, !busy),
             (
                 if busy { "Saving…" } else { "Save draft" },
                 Action::Save,
@@ -317,7 +326,6 @@ pub fn inline_editor(
                     && draft.changed()
                     && scriptcast_ui::tags::can_save(&draft.text, &editing.registry),
             ),
-            ("Cancel", Action::Cancel, false, !busy),
         ] {
             let button = egui::Button::new(t::heading(label, t::SECONDARY).color(if primary {
                 t::ON_ACCENT
@@ -376,6 +384,7 @@ pub fn editor(
                     &editing.registry,
                     height,
                     "Write this turn…",
+                    t::EDITOR_BODY_LINES,
                 )
             })
             .inner;
@@ -459,6 +468,13 @@ impl Browser {
             Some(Action::Cancel) => self.editing.cancel(),
             Some(Action::Save) => self.save_draft(ctx),
             Some(Action::UseEnsemble) => self.apply_ensemble_transcript(),
+            Some(Action::Regenerate) => {
+                let rows = self
+                    .editing
+                    .markers(self.episode.as_ref().map_or(0, |e| e.turns.len()))
+                    .unwrap_or_default();
+                self.request_regenerate_edited(rows, ctx);
+            }
             Some(Action::Render) => {
                 if let (Some(c), Some(turns)) = (&self.editing.changes, &self.editing.turns) {
                     let scope = script::RenderScope::from_changes(c, &turns.turns);
@@ -557,6 +573,7 @@ impl Browser {
                 self.editing.saving = None;
                 match result {
                     Ok((cp, report)) => {
+                        self.jobs.regenerated.clear();
                         self.editing.k.authority = Some(report);
                         let number = self
                             .selected
@@ -996,5 +1013,21 @@ mod tests {
             app.editing.notice.as_deref(),
             Some("Script save worker stopped")
         );
+    }
+    #[test]
+    fn row_editor_height_grows_for_long_text() {
+        let ctx = egui::Context::default();
+        t::apply(&ctx);
+        let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
+            let short = row_editor_block_height(ui, "Hi", 160.0, None);
+            let long = row_editor_block_height(ui, &"word ".repeat(80), 160.0, None);
+            let line = t::line_height(ui, t::font(t::BODY));
+            assert!(short >= line * t::EDITOR_ROW_MIN_LINES);
+            assert!(
+                long > short,
+                "long text should be taller than a short draft"
+            );
+        });
+        output.textures_delta.clear();
     }
 }

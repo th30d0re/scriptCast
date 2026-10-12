@@ -286,6 +286,7 @@ pub fn show(
     failed_only: bool,
     multi: &std::collections::BTreeSet<usize>,
     edited: &[usize],
+    regenerated: &[usize],
     mismatch: bool,
     find: &crate::find_replace::FindReplace,
     query: &str,
@@ -354,13 +355,12 @@ pub fn show(
     let editor_turn = (edit_mode == EditMode::Row)
         .then(|| editing.draft.as_ref().map(|draft| draft.turn))
         .flatten();
+    let editor_height = editing.draft.as_ref().map_or(0.0, |draft| {
+        editing::row_editor_block_height(&body_ui, &draft.text, transcript_width, Some(draft))
+    });
     let field_height = editing.draft.as_ref().map_or(0.0, |draft| {
         editing::inline_field_height(&body_ui, &draft.text, transcript_width)
     });
-    let editor_height = field_height
-        + editing::inline_actions_height(&body_ui, transcript_width, editing.draft.as_ref())
-        + t::SPACE_4 * 3.0
-        + t::TAG_TOOLBAR_HEIGHT;
     let heights = visible.iter().map(|&idx| {
         let raw = editing.body(idx).unwrap_or(&episode.turns[idx].first_words);
         let clip = script::clip_id(raw);
@@ -422,7 +422,14 @@ pub fn show(
             } else {
                 0.0
             };
-            chrome + transcript.height()
+            let regen = if edit_mode == EditMode::Row
+                && (edited.contains(&idx) || regenerated.contains(&idx))
+            {
+                t::INLINE_BUTTON_HEIGHT + t::SPACE_4
+            } else {
+                0.0
+            };
+            chrome + transcript.height() + regen
         }
     });
     let rows = RowOffsets::new(heights);
@@ -599,10 +606,12 @@ pub fn show(
                 && turn.verification == V::MissingAudio
             {
                 ("Queued", t::TEXT_SUBTLE)
-            } else if edited.contains(&idx) {
-                ("Edited", t::accent())
             } else {
-                view::verification_label(turn.verification)
+                view::turn_verification(
+                    turn.verification,
+                    edited.contains(&idx),
+                    regenerated.contains(&idx),
+                )
             };
             let maybe_misheard = turn.verification == V::Failed
                 && episode
@@ -645,6 +654,16 @@ pub fn show(
                     );
             } else {
                 view::line(ui, top_cells[5], label, t::font(t::SECONDARY), colour);
+            }
+            if edit_mode == EditMode::Row && edited.contains(&idx) {
+                let button_rect = Rect::from_min_size(
+                    pos2(cells[5].left(), top_cells[5].bottom() + t::SPACE_4),
+                    vec2(cells[5].width().max(t::SPACE_16), t::INLINE_BUTTON_HEIGHT),
+                );
+                let button = egui::Button::new(t::text("Regenerate", t::CAPTION, t::TEXT_PRIMARY));
+                if ui.put(button_rect, button).clicked() {
+                    edit_action = Some(editing::Action::Regenerate);
+                }
             }
             if response.clicked() || response.double_clicked() {
                 clicked = Some((idx, response.double_clicked()));
