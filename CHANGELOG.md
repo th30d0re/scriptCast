@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project settings `tail_ms` (400) and `speech_threshold` (0.03), shared by CLI defaults. Explicit CLI flags override saved refit settings, which override project settings on subsequent renders.
 
 ### Fixed
+- Accept three-digit minutes in transcript headers and retiming headers, shot-list anchors, and hold times, preserving timestamps beyond 99:59.
 - Prevented default prop leakage from unrelated examples in card compositions. Fails fast in Python if a card references missing SVG assets, with an --allow-missing-assets override.
 - Preserve the requested speech tail when reloading unchanged WAV segments, including resumed renders.
 

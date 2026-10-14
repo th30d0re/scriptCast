@@ -11,7 +11,7 @@ from scriptcast.models import Turn
 
 _LOGGER = logging.getLogger(__name__)
 _SPEAKER_RE = re.compile(
-    r"^\s*(?P<display_name>.+?)\s*\((?P<timestamp>\d{1,2}:\d{2})\)\s*$"
+    r"^\s*(?P<display_name>.+?)\s*\((?P<timestamp>\d{1,3}:\d{2})\)\s*$"
 )
 _MARKDOWN_FORMATTING_RE = re.compile(r"\*\*?|\_\_?")
 _HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)

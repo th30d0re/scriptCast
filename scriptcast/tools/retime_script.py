@@ -30,9 +30,9 @@ from scriptcast.parser import parse_transcript
 from scriptcast.project import current
 
 _MARK_RE = re.compile(r"[.,;:]")
-_HEADER_RE = re.compile(r"^(?P<name>.+?) \((?P<ts>\d{1,2}:\d{2})\)\s*$")
-_ANCHOR_RE = re.compile(r"`(?P<name>[^`(]+?) \((?P<ts>\d{1,2}:\d{2})\)`")
-_HOLD_RE = re.compile(r"(?P<lead>\*\*Hold:\*\* through )(?P<ts>\d{1,2}:\d{2})")
+_HEADER_RE = re.compile(r"^(?P<name>.+?) \((?P<ts>\d{1,3}:\d{2})\)\s*$")
+_ANCHOR_RE = re.compile(r"`(?P<name>[^`(]+?) \((?P<ts>\d{1,3}:\d{2})\)`")
+_HOLD_RE = re.compile(r"(?P<lead>\*\*Hold:\*\* through )(?P<ts>\d{1,3}:\d{2})")
 _DEFAULT_WPS = 2.55
 
 

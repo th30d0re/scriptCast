@@ -31,6 +31,38 @@ def _write_manifest(tmp_path, timings):
     return manifest
 
 
+def test_retime_round_trips_three_digit_minutes(tmp_path, monkeypatch):
+    monkeypatch.setattr(retime_script, "_load_known_rates", lambda: {})
+    script = tmp_path / "episode.md"
+    original = "Emmanuel Theodore (118:40)\nHello.\n"
+    script.write_text(original)
+    turn = parse_transcript(script)[0]
+    manifest = _write_manifest(
+        tmp_path, [(turn.turn_id, 7_120_000, 7_121_000)]
+    )
+
+    rows, _, estimated, _, _ = retime_script.retime(script, manifest, 350)
+
+    assert estimated == 0
+    assert rows[0]["old"] == rows[0]["new"] == "118:40"
+    assert retime_script.rewrite_script(script, rows) == 0
+    assert script.read_text() == original
+    assert parse_transcript(script)[0].timestamp_ms == 7_120_000
+
+    # Exercise writing a changed header and remapping three-digit references.
+    rows[0].update(new="119:40", new_ms=7_180_000)
+    assert retime_script.rewrite_script(script, rows) == 1
+    assert parse_transcript(script)[0].timestamp_mmss == "119:40"
+    shotlist = tmp_path / "shotlist.md"
+    shotlist.write_text(
+        "`Emmanuel Theodore (118:40)`\n**Hold:** through 118:45\n"
+    )
+    assert retime_script.rewrite_shotlist(shotlist, rows) == (2, [], [])
+    assert shotlist.read_text() == (
+        "`Emmanuel Theodore (119:40)`\n**Hold:** through 119:45\n"
+    )
+
+
 def test_contiguous_measured_turns_use_manifest_starts(tmp_path):
     script, turns = _write_script(tmp_path)
     manifest = _write_manifest(
