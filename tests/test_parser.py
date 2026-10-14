@@ -94,6 +94,24 @@ def test_parse_transcript_timestamp_ms() -> None:
     assert later_turn.timestamp_ms == expected_ms
 
 
+def test_parse_transcript_three_digit_minutes(tmp_path) -> None:
+    script = tmp_path / "episode.md"
+    script.write_text(
+        "Host (99:59)\nEarlier turn.\n\n"
+        "Emmanuel Theodore (100:05)\nLater turn.\n",
+        encoding="utf-8",
+    )
+
+    turns = parse_transcript(script)
+
+    assert len(turns) == 2
+    assert turns[0].raw_text == "Earlier turn."
+    assert turns[1].display_name == "Emmanuel Theodore"
+    assert turns[1].timestamp_mmss == "100:05"
+    assert turns[1].timestamp_ms == 6_005_000
+    assert turns[1].raw_text == "Later turn."
+
+
 def test_parse_transcript_line_span() -> None:
     turns = parse_transcript(FIXTURE)
 
