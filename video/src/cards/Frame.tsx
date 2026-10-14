@@ -4,6 +4,8 @@ import {USABLE_BOX, WIDTH, HEIGHT} from '../safeZone';
 import {palette as p, fontFamily} from '../theme';
 import {QrCode} from './QrCode';
 import {Reveal, useEnter} from './motion';
+import {useLayout} from '../layout';
+import {LandscapeFrame} from './LandscapeFrame';
 
 export type ArtProp = {src: string; size?: 'strip' | 'hero'; caption?: string; animate?: boolean; atSeconds?: number};
 export type BaseProps = {headline: string; highlight?: string; sources: string; svgAsset?: string; art?: ArtProp; qr?: boolean; qrUrl?: string; qrs?: {url: string; label: string}[]};
@@ -35,11 +37,14 @@ export function getTextLength(obj: any): number {
 // An SVG with CSS keyframes, inlined and driven by the frame counter. Every animation is paused
 // and given a negative delay equal to the card's own elapsed time, so each rendered frame is the
 // same no matter which browser tab draws it. A still (one-frame composition) shows time zero.
-function AnimatedSvg({src, atSeconds}: {src: string; atSeconds?: number}) {
+export function AnimatedSvg({src, atSeconds}: {src: string; atSeconds?: number}) {
   const [markup, setMarkup] = useState<string | null>(null);
   const [handle] = useState(() => delayRender());
-  const frame = useCurrentFrame();
-  const {fps, durationInFrames} = useVideoConfig();
+  let frame = 0, fps = 30, durationInFrames = 1;
+  try {
+    frame = useCurrentFrame();
+    ({fps, durationInFrames} = useVideoConfig());
+  } catch { /* Static markup has no timeline. */ }
   useLayoutEffect(() => {
     fetch(staticFile(src)).then(r => r.text()).then(t => { setMarkup(t); continueRender(handle); }).catch(e => { throw e; });
   }, [src, handle]);
@@ -54,7 +59,7 @@ function AnimatedSvg({src, atSeconds}: {src: string; atSeconds?: number}) {
 // same card start at the answer instead of re-running the shrink loop.
 const fittedScale = new Map<string, number>();
 
-export function Frame({headline, highlight, sources, svgAsset, art, qr = true, qrUrl, qrs, children}: BaseProps & {children: (scale: number) => ReactNode}) {
+function PortraitFrame({headline, highlight, sources, svgAsset, art, qr = true, qrUrl, qrs, children}: BaseProps & {children: (scale: number) => ReactNode}) {
   const effectiveArt = art || (svgAsset ? {src: svgAsset, size: 'strip' as const} : undefined);
   
   if (effectiveArt?.src) {
@@ -125,4 +130,9 @@ export function Frame({headline, highlight, sources, svgAsset, art, qr = true, q
       </footer></Reveal>
     </main>
   </div>;
+}
+
+export function Frame(props: BaseProps & {children: (scale: number) => ReactNode}) {
+  const layout = useLayout();
+  return layout === 'landscape' ? <LandscapeFrame {...props} /> : <PortraitFrame {...props} />;
 }

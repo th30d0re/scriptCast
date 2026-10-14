@@ -4,6 +4,7 @@ import {palette as p, fontFamily} from '../theme';
 import {USABLE_BOX, WIDTH, HEIGHT} from '../safeZone';
 import {QrCode} from './QrCode';
 import {Reveal} from './motion';
+import {useLayout} from '../layout';
 
 export type Callout = {shape: 'rect' | 'ellipse'; x: number; y: number; w: number; h: number; label?: string};
 // A still frame from real footage with outlined callouts. Callout boxes are fractions
@@ -42,13 +43,14 @@ function BleedLayout(props: FreezeProps) {
 }
 
 export function FreezeCallout(props: FreezeProps) {
+  const landscape = useLayout() === 'landscape';
   if (/^(\/|[a-z]+:)/i.test(props.image) || props.image.split('/').includes('..')) {
     throw new Error('image must be a relative path under public/');
   }
-  if (props.fullBleed) return <BleedLayout {...props} />;
-  return <Frame {...props} qr={props.qr ?? false}>{scale => <>
-    <Reveal delay={0} dur={8} style={{flex: 1, minHeight: 0, display: 'flex', justifyContent: 'center'}}>
-      <div style={{height: '100%', aspectRatio: String(props.aspect), position: 'relative'}}>
+  if (props.fullBleed && !landscape) return <BleedLayout {...props} />;
+  return <Frame {...props} qr={props.qr ?? false}>{scale => <FreezeBody landscape={landscape}>
+    <Reveal delay={0} dur={8} style={{flex: 1, minHeight: 0, ...(landscape ? {height: '100%', minWidth: 0} : {}), display: 'flex', justifyContent: 'center'}}>
+      <div style={{...(landscape ? {width: Math.min(800, 560 * props.aspect) * scale, height: Math.min(560, 800 / props.aspect) * scale, maxWidth: '100%', flexShrink: 0} : {height: '100%'}), aspectRatio: String(props.aspect), position: 'relative'}}>
         <Img src={staticFile(props.image)} alt="" style={{display: 'block', width: '100%', height: '100%'}} />
         {props.callouts.map((c, i) => <div key={i} data-callout style={{
           position: 'absolute', left: `${c.x * 100}%`, top: `${c.y * 100}%`, width: `${c.w * 100}%`, height: `${c.h * 100}%`,
@@ -57,6 +59,10 @@ export function FreezeCallout(props: FreezeProps) {
         }} />)}
       </div>
     </Reveal>
-    {props.caption && <div style={{fontSize: Math.round(30 * scale), textAlign: 'center', color: p.cream, marginTop: Math.round(12 * scale)}}>{props.caption}</div>}
-  </>}</Frame>;
+    {props.caption && <div style={{...(landscape ? {flex: 1, minWidth: 0} : {}), fontSize: Math.round(30 * scale), textAlign: 'center', color: p.cream, marginTop: Math.round(12 * scale)}}>{props.caption}</div>}
+  </FreezeBody>}</Frame>;
+}
+
+function FreezeBody({landscape, children}: {landscape: boolean; children: React.ReactNode}) {
+  return landscape ? <div style={{display: 'flex', gap: 36, flex: 1, minHeight: 0, alignItems: 'center'}}>{children}</div> : <>{children}</>;
 }

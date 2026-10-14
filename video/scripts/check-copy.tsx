@@ -1,3 +1,9 @@
+import {activeTerm} from '../src/cards/EquationCard';
+import {LayoutContext} from '../src/layout';
+import {LANDSCAPE, layoutFromDimensions} from '../src/safeZone';
+import {CardView, CaptionView, type Card} from '../src/Episode';
+import {readFileSync, readdirSync} from 'node:fs';
+import {join} from 'node:path';
 import {isValidElement, type ReactNode} from 'react';
 import {Img, staticFile} from 'remotion';
 import {Frame} from '../src/cards/Frame';
@@ -21,7 +27,7 @@ const stats = renderToStaticMarkup(<StatBarsCard {...g11 as StatBarsProps} />);
 const escape = (s: string) => s.replaceAll('&', '&amp;').replaceAll("'", '&#x27;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 for (const s of ["The timeline they don't put in the press release", 'Chapter 135 signed', '69 DAYS LATER', 'Emergency preamble signed', '93,229 signatures submitted', '78,707 signatures verified', 'Sources: Ballotpedia · Foley Hoag LLP · AP / NBC Boston (Oct 2, 2024)']) assert(timeline.includes(escape(s)), 'Missing G-10 copy: ' + s);
 for (const s of ['Louisiana, 1898: a neutral-sounding cutoff', '130,344', '5,320', '(−96%)', '164,088', '125,437', '(−24%)', 'racially neutral on its face', 'Guinn v. United States (1915)']) assert(stats.includes(escape(s)), 'Missing G-11 copy: ' + s);
-// Check all JSON prose, not just the acceptance subset. Dates are preserved with newlines.
+// Check every JSON prose field. Dates are preserved with newlines.
 function checkStrings(value: unknown, markup: string, key = '') {
   if (typeof value === 'string' && !['component', 'color', 'src', 'svgAsset'].includes(key)) assert(markup.includes(escape(value)), 'Missing example text: ' + value);
   else if (Array.isArray(value)) value.forEach(v => checkStrings(v, markup));
@@ -79,3 +85,46 @@ const titleMarkup2 = renderToStaticMarkup(<TitleCard {...neutral} items={[{title
 assert(titleMarkup2.includes('$100'), 'Title emphasis missing');
 
 console.log('PASS: public SVG slot renders in all four cards inside the shared safe-zone box.');
+
+// Landscape shares copy, with a separate safe area and composition metadata.
+assert(layoutFromDimensions(1920, 1080) === 'landscape', 'Landscape inference');
+assert(layoutFromDimensions(1080, 1920) === 'portrait', 'Portrait inference');
+assert(LANDSCAPE.box.x === 1920 * 0.05 && LANDSCAPE.box.y === 1080 * 0.06, 'Landscape margins');
+assert(Math.abs(LANDSCAPE.box.y + LANDSCAPE.box.height - LANDSCAPE.captions.top) < 1e-6, 'Caption band boundary');
+const landscape = (card: Card) => renderToStaticMarkup(<LayoutContext.Provider value="landscape"><CardView card={card} durationInFrames={90} /></LayoutContext.Provider>);
+const compositions = React.Children.toArray(Root().props.children).filter(isValidElement) as React.ReactElement<{id: string; width: number; height: number; defaultProps: Record<string, unknown>}>[];
+for (const name of ['TimelineCard', 'StatBarsCard', 'TitleCard', 'CompareCard', 'FreezeCallout', 'PartsCard', 'EquationCard', 'QuoteCard', 'TableCard']) {
+  const composition = compositions.find(c => c.props.id === `${name}-16x9`);
+  assert(Boolean(composition), `Missing landscape composition: ${name}`);
+  assert(composition!.props.width === 1920 && composition!.props.height === 1080, `Landscape dimensions: ${name}`);
+  const markup = landscape({...composition!.props.defaultProps, component: name} as Card);
+  assert(markup.includes('data-layout="landscape"'), `Landscape frame: ${name}`);
+}
+const fixtures = process.env.YT01_CARD_FIXTURES;
+if (fixtures) {
+  const files = readdirSync(fixtures).filter(name => name.endsWith('.json'));
+  for (const file of files) {
+    const card = JSON.parse(readFileSync(join(fixtures, file), 'utf8')) as Card;
+    const markup = landscape(card);
+    assert(markup.includes('data-layout="landscape"'), `Fixture layout: ${file}`);
+    for (const key of ['headline', 'sources', 'caption'] as const) {
+      const value = (card as unknown as Record<string, unknown>)[key];
+      if (typeof value === 'string') assert(markup.replace(/<[^>]*>/g, '').includes(escape(value)), `Fixture copy: ${file}/${key}`);
+    }
+  }
+  console.log(`PASS: ${files.length} Q9 fixture cards render landscape static markup; pixel overflow requires browser rendering.`);
+}
+for (const [rows, columns] of [[4, 3], [6, 6]]) {
+  const markup = landscape({component: 'TableCard', headline: 'Table layout', columns: Array.from({length: columns}, (_, i) => `Column ${i}`), rows: Array.from({length: rows}, () => Array.from({length: columns}, () => '$x_i$ = term')), latexCells: true, sources: 'Synthetic layout'});
+  assert((markup.match(/<td /g) ?? []).length === rows * columns, 'All table cells');
+  assert(markup.includes('katex-html'), 'Inline math rendered locally');
+}
+const equation = {component: 'EquationCard' as const, headline: 'Equation', latex: 'x+y=z', number: '2.7', terms: [{latex: 'x', gloss: 'First term'}, {latex: 'y', gloss: 'Second term'}], reading: 'The terms sum to z.', sources: 'Synthetic layout'};
+const equationMarkup = landscape(equation);
+assert(equationMarkup.includes('Equation 2.7') && equationMarkup.includes('katex-html'), 'Equation HTML and number');
+assert((equationMarkup.match(/data-term-active="true"/g) ?? []).length === 1, 'One active equation term');
+const captions = renderToStaticMarkup(<LayoutContext.Provider value="landscape"><CaptionView text="Caption" /></LayoutContext.Provider>);
+assert(captions.includes('top:928.8px') && captions.includes('height:151.2px'), 'Landscape captions');
+console.log('PASS: nine landscape compositions, safe margins, captions, equation HTML, and 4×3 / 6×6 table markup.');
+
+assert([0, 29, 30, 59, 60, 89].map(frame => activeTerm(frame, 90, 3)).join(',') === '0,0,1,1,2,2', 'Equation term timing across card duration');

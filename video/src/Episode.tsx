@@ -5,7 +5,11 @@ import {TitleCard, type TitleProps} from './cards/TitleCard';
 import {CompareCard, type CompareProps} from './cards/CompareCard';
 import {FreezeCallout, type FreezeProps} from './cards/FreezeCallout';
 import {PartsCard, type PartsProps} from './cards/PartsCard';
-import {USABLE_BOX} from './safeZone';
+import {USABLE_BOX, LANDSCAPE, layoutFromDimensions, safeBox} from './safeZone';
+import {LayoutContext, useLayout} from './layout';
+import {EquationCard, type EquationProps} from './cards/EquationCard';
+import {QuoteCard, type QuoteProps} from './cards/QuoteCard';
+import {TableCard, type TableProps} from './cards/TableCard';
 import {palette} from './theme';
 
 export type Card = ({component: 'TimelineCard'} & TimelineProps)
@@ -13,7 +17,10 @@ export type Card = ({component: 'TimelineCard'} & TimelineProps)
   | ({component: 'TitleCard'} & TitleProps)
   | ({component: 'CompareCard'} & CompareProps)
   | ({component: 'FreezeCallout'} & FreezeProps)
-  | ({component: 'PartsCard'} & PartsProps);
+  | ({component: 'PartsCard'} & PartsProps)
+  | ({component: 'EquationCard'} & EquationProps)
+  | ({component: 'QuoteCard'} & QuoteProps)
+  | ({component: 'TableCard'} & TableProps);
 type Window = {start_ms: number; end_ms: number};
 type Clip = Window & {turn_index: number; clip_id: string; src: string; in_ms: number; out_ms: number};
 export type EpisodePlan = {fps: number; width: number; height: number; duration_ms: number;
@@ -27,7 +34,7 @@ export const episodeMetadata = ({props}: {props: EpisodePlan}) => ({
   durationInFrames: Math.max(1, frameAt(props.duration_ms, props.fps)),
   fps: props.fps, width: props.width, height: props.height,
 });
-function CardView({card}: {card: Card}) {
+export function CardView({card, durationInFrames}: {card: Card; durationInFrames?: number}) {
   switch (card.component) {
     case 'TimelineCard': return <TimelineCard {...card} />;
     case 'StatBarsCard': return <StatBarsCard {...card} />;
@@ -35,6 +42,9 @@ function CardView({card}: {card: Card}) {
     case 'CompareCard': return <CompareCard {...card} />;
     case 'FreezeCallout': return <FreezeCallout {...card} />;
     case 'PartsCard': return <PartsCard {...card} />;
+    case 'EquationCard': return <EquationCard {...card} durationInFrames={durationInFrames} />;
+    case 'QuoteCard': return <QuoteCard {...card} />;
+    case 'TableCard': return <TableCard {...card} />;
   }
 }
 export const clipSourceFrame = (clip: Clip, fps: number, frame: number) => {
@@ -43,12 +53,14 @@ export const clipSourceFrame = (clip: Clip, fps: number, frame: number) => {
   return Math.min(first + frame, last);
 };
 function ClipView({clip, fps}: {clip: Clip; fps: number}) {
+  const layout = useLayout();
+  const box = safeBox(layout);
   const first = frameAt(clip.in_ms, fps);
   const last = clipSourceFrame(clip, fps, Number.MAX_SAFE_INTEGER);
   const style = {
-    position: 'absolute', left: USABLE_BOX.x, top: '50%',
-    transform: 'translateY(-50%)', width: USABLE_BOX.width,
-    height: '100%', objectFit: 'contain',
+    position: 'absolute', left: box.x, top: layout === 'landscape' ? box.y + box.height / 2 : '50%',
+    transform: 'translateY(-50%)', width: box.width,
+    height: layout === 'landscape' ? box.height : '100%', objectFit: 'contain',
   } as const;
   // Play the excerpt from its own in-point (startFrom seeks the source; Freeze
   // with an absolute frame does not), then hold the final frame for any remainder.
@@ -67,7 +79,8 @@ function ClipView({clip, fps}: {clip: Clip; fps: number}) {
 // platform's bottom overlay (starts at 65%). Sides keep the 6% margin.
 export const CAPTION_TOP = 1166;
 export function CaptionView({text}: {text: string}) {
-  return <div style={{position: 'absolute', left: 65, right: 65, top: CAPTION_TOP, height: 84,
+  const landscape = useLayout() === 'landscape';
+  return <div style={{position: 'absolute', left: landscape ? LANDSCAPE.captions.sides : 65, right: landscape ? LANDSCAPE.captions.sides : 65, top: landscape ? LANDSCAPE.captions.top : CAPTION_TOP, height: landscape ? LANDSCAPE.captions.height : 84,
     display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
     <span data-caption style={{fontFamily: 'Helvetica Neue, Helvetica, Arial, sans-serif', fontWeight: 800,
       fontSize: 50, lineHeight: 1.1, textAlign: 'center', color: palette.cream, background: 'rgba(15,27,51,0.78)',
@@ -75,7 +88,7 @@ export function CaptionView({text}: {text: string}) {
   </div>;
 }
 export function Episode(plan: EpisodePlan) {
-  return <AbsoluteFill style={{backgroundColor: palette.navy}}>
+  return <LayoutContext.Provider value={layoutFromDimensions(plan.width, plan.height)}><AbsoluteFill style={{backgroundColor: palette.navy}}>
     <Audio src={staticFile(plan.audio)} />
     {plan.clips.map(clip => {
       const window = frameWindow(clip, plan.fps);
@@ -86,7 +99,7 @@ export function Episode(plan: EpisodePlan) {
     {plan.cards.map(card => {
       const window = frameWindow(card, plan.fps);
       return window.durationInFrames > 0 && <Sequence key={card.shot_id} {...window}>
-        <CardView card={card.card} />
+        <CardView card={card.card} durationInFrames={window.durationInFrames} />
       </Sequence>;
     })}
     {(plan.captions ?? []).map((caption, index) => {
@@ -95,5 +108,5 @@ export function Episode(plan: EpisodePlan) {
         <CaptionView text={caption.text} />
       </Sequence>;
     })}
-  </AbsoluteFill>;
+  </AbsoluteFill></LayoutContext.Provider>;
 }
