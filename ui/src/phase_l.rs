@@ -1,7 +1,7 @@
 //! Project selection and project-data drafts. Project files are owned by the Python tool.
 use crate::Browser;
 use eframe::egui::{self, Ui};
-use scriptcast_ui::{
+use crate::{
     cli,
     project::{self, ProjectEpisode, RecentProject, Report, Snapshot, ToolError},
     theme as t,
@@ -24,11 +24,11 @@ pub struct PhaseL {
     /// Millisecond start/end of the decode in flight or cached. `None` end means the whole file.
     pub media_key: Option<(PathBuf, i64, i64)>,
     pub decode_requests: u32,
-    pub media_pending: Option<Receiver<Result<(scriptcast_ui::waveform::Envelope, f64), String>>>,
-    pub media: Option<Result<scriptcast_ui::waveform::Envelope, String>>,
+    pub media_pending: Option<Receiver<Result<(crate::waveform::Envelope, f64), String>>>,
+    pub media: Option<Result<crate::waveform::Envelope, String>>,
     pub media_origin: f64,
     pub media_span: Option<(f64, f64)>,
-    pub audition: Option<scriptcast_ui::audio::AudioOut>,
+    pub audition: Option<crate::audio::AudioOut>,
     pub audition_end: f64,
     pub root: Option<PathBuf>,
     pub snapshot: Option<Snapshot>,
@@ -106,7 +106,7 @@ impl Browser {
             match result {
                 Ok((envelope, origin)) => {
                     let len = envelope.peaks.len() as f64
-                        * f64::from(scriptcast_ui::waveform::BUCKET_SECS);
+                        * f64::from(crate::waveform::BUCKET_SECS);
                     self.project.media_origin = origin;
                     self.project.media_span = Some((origin, len));
                     self.project.media = Some(Ok(envelope));
@@ -516,7 +516,7 @@ fn episode_header_row(ui: &mut Ui) {
         crate::view::line(ui, cell, label, t::font(t::CAPTION), t::TEXT_MUTED);
     }
 }
-fn paint_episode_row(ui: &Ui, rect: egui::Rect, row: &scriptcast_ui::project::ProjectEpisode) {
+fn paint_episode_row(ui: &Ui, rect: egui::Rect, row: &crate::project::ProjectEpisode) {
     let script = row.script.file_name().unwrap_or_default().to_string_lossy();
     let turns = row
         .turns
@@ -569,11 +569,11 @@ fn column_rect(rect: egui::Rect, index: usize, fractions: &[f32]) -> egui::Rect 
     }
     rect
 }
-fn paint_status_chip(ui: &Ui, rect: egui::Rect, status: scriptcast_ui::project::EpisodeStatus) {
+fn paint_status_chip(ui: &Ui, rect: egui::Rect, status: crate::project::EpisodeStatus) {
     let (fill, colour) = match status {
-        scriptcast_ui::project::EpisodeStatus::Rendered => (t::BG_CONTROL, t::STATUS_PASSED),
-        scriptcast_ui::project::EpisodeStatus::Interrupted => (t::BG_DANGER, t::STATUS_FAILED),
-        scriptcast_ui::project::EpisodeStatus::NotRendered => (t::BG_CONTROL, t::TEXT_MUTED),
+        crate::project::EpisodeStatus::Rendered => (t::BG_CONTROL, t::STATUS_PASSED),
+        crate::project::EpisodeStatus::Interrupted => (t::BG_DANGER, t::STATUS_FAILED),
+        crate::project::EpisodeStatus::NotRendered => (t::BG_CONTROL, t::TEXT_MUTED),
     };
     let galley =
         ui.painter()
@@ -592,7 +592,7 @@ fn paint_status_chip(ui: &Ui, rect: egui::Rect, status: scriptcast_ui::project::
         colour,
     );
 }
-fn status_chip(ui: &mut Ui, status: scriptcast_ui::project::EpisodeStatus) {
+fn status_chip(ui: &mut Ui, status: crate::project::EpisodeStatus) {
     let galley = ui.painter().layout_no_wrap(
         status.label().to_owned(),
         t::font(t::CAPTION),
@@ -1245,6 +1245,26 @@ impl Browser {
                     let hits =
                         paint_speaker_row(&columns[0], rect, index, name, engine, count, invalid);
                     self.project.speaker_rows.push(hits);
+                    let (name_rect, chip_rect) = hits;
+                    let (chip_label, _, _) = engine_chip_style(engine);
+                    columns[0]
+                        .interact(
+                            name_rect,
+                            columns[0].id().with(("speaker_name", index)),
+                            egui::Sense::hover(),
+                        )
+                        .widget_info(|| {
+                            egui::WidgetInfo::labeled(egui::WidgetType::Label, true, name)
+                        });
+                    columns[0]
+                        .interact(
+                            chip_rect,
+                            columns[0].id().with(("speaker_chip", index)),
+                            egui::Sense::hover(),
+                        )
+                        .widget_info(|| {
+                            egui::WidgetInfo::labeled(egui::WidgetType::Label, true, chip_label)
+                        });
                 }
                 if columns[0].button("+ Add speaker").clicked() {
                     let mut n = report.voices.speakers.len() + 1;
@@ -1385,7 +1405,7 @@ impl Browser {
                                 self.makers.reference = true;
                                 self.makers.ref_source = path.display().to_string();
                             }
-                            if scriptcast_ui::project::engine_fields(&engine)
+                            if crate::project::engine_fields(&engine)
                                 .contains(&"reference_audio")
                                 && t::secondary_button(ui, "Audition…", None, true).clicked()
                             {
@@ -1830,7 +1850,7 @@ impl Browser {
         episode
             .turns
             .iter()
-            .filter(|turn| scriptcast_ui::script::clip_id(&turn.first_words) == Some(clip_id))
+            .filter(|turn| crate::script::clip_id(&turn.first_words) == Some(clip_id))
             .map(|turn| {
                 let name = episode
                     .speakers
@@ -1851,7 +1871,7 @@ impl Browser {
         let envelope = self.project.media.as_ref()?.as_ref().ok()?;
         Some(format!(
             "{:.1} s",
-            envelope.peaks.len() as f32 * scriptcast_ui::waveform::BUCKET_SECS
+            envelope.peaks.len() as f32 * crate::waveform::BUCKET_SECS
         ))
     }
     fn load_project_media(
@@ -1876,9 +1896,9 @@ impl Browser {
         let ctx = ctx.clone();
         std::thread::spawn(move || {
             let result = if let Some((start, end)) = window {
-                scriptcast_ui::waveform::clip_envelope(&path, start, end)
+                crate::waveform::clip_envelope(&path, start, end)
             } else {
-                scriptcast_ui::waveform::envelope(&[path]).map(|envelope| (envelope, 0.0))
+                crate::waveform::envelope(&[path]).map(|envelope| (envelope, 0.0))
             };
             let _ = tx.send(result);
             ctx.request_repaint();
@@ -1894,7 +1914,7 @@ impl Browser {
             return;
         }
         if self.project.audition.is_none() {
-            match scriptcast_ui::audio::AudioOut::open(self.preferences.output_device.as_deref()) {
+            match crate::audio::AudioOut::open(self.preferences.output_device.as_deref()) {
                 Ok(mut audio) => {
                     audio.set_muted(self.muted);
                     self.project.audition = Some(audio);
@@ -1916,7 +1936,7 @@ impl Browser {
                         self.project.error = vec![error];
                         return;
                     };
-                    match scriptcast_ui::waveform::ffmpeg_wav(path, start, stop - start) {
+                    match crate::waveform::ffmpeg_wav(path, start, stop - start) {
                         Ok(bytes) => match audio.play_wav_bytes(bytes) {
                             Ok(()) => self.project.audition_end = f64::INFINITY,
                             Err(play) => self.project.error = vec![play],
@@ -1952,7 +1972,7 @@ impl Browser {
             if let Some(Ok(envelope)) = &self.project.media {
                 ui.label(format!(
                     "{:.1} s",
-                    envelope.peaks.len() as f32 * scriptcast_ui::waveform::BUCKET_SECS
+                    envelope.peaks.len() as f32 * crate::waveform::BUCKET_SECS
                 ));
             }
         });
@@ -1975,15 +1995,15 @@ impl Browser {
         };
         let origin = self.project.media_origin;
         let duration = (envelope.peaks.len() as f64
-            * f64::from(scriptcast_ui::waveform::BUCKET_SECS))
-        .max(f64::from(scriptcast_ui::waveform::BUCKET_SECS));
+            * f64::from(crate::waveform::BUCKET_SECS))
+        .max(f64::from(crate::waveform::BUCKET_SECS));
         let (rect, _) = ui.allocate_exact_size(
             egui::vec2(ui.available_width(), t::PROJECT_WAVE_HEIGHT),
             egui::Sense::hover(),
         );
         ui.painter()
             .rect_filled(rect, t::RADIUS_CONTROL, t::BG_CONTROL);
-        let bars = scriptcast_ui::waveform::bars(
+        let bars = crate::waveform::bars(
             envelope,
             (rect.width() / (t::WAVE_BAR + t::WAVE_GAP)) as usize,
         );

@@ -3,7 +3,7 @@ use crate::{
     read_along, view,
 };
 use eframe::egui::{self, Rect, Sense, Ui, pos2, vec2};
-use scriptcast_ui::{
+use crate::{
     episode::{Episode, Turn, VerificationState as V},
     not_heard, script, theme as t,
 };
@@ -290,13 +290,13 @@ pub fn show(
     mismatch: bool,
     find: &crate::find_replace::FindReplace,
     query: &str,
-    options: &scriptcast_ui::find::Options,
+    options: &crate::find::Options,
     editing: &mut Editing,
     edit_mode: EditMode,
     enabled: bool,
-    progress: Option<&scriptcast_ui::progress::Progress>,
+    progress: Option<&crate::progress::Progress>,
 ) -> (Option<(usize, bool)>, Option<editing::Action>) {
-    let matcher = scriptcast_ui::find::Matcher::new(query, options).ok();
+    let matcher = crate::find::Matcher::new(query, options).ok();
     let mut area = ui.max_rect();
     if mismatch {
         let banner = Rect::from_min_size(area.min, vec2(area.width(), t::EDITOR_BANNER_HEIGHT));
@@ -373,7 +373,7 @@ pub fn show(
             .filter(|_| playing == Some(idx))
             .and_then(|position| {
                 let turn_id = &episode.turns[idx].id;
-                let position = scriptcast_ui::word_timings::manifest_position(
+                let position = crate::word_timings::manifest_position(
                     &episode.manifest.turns[idx],
                     position,
                 );
@@ -587,7 +587,7 @@ pub fn show(
                     text_rect.min.y += used + t::AUDIO_CLIP_BADGE_MARGIN * 2.0;
                 }
                 let highlights = matcher.as_ref().map_or_else(Vec::new, |matcher| {
-                    scriptcast_ui::find::occurrences(idx, raw, matcher, options)
+                    crate::find::occurrences(idx, raw, matcher, options)
                 });
                 let current = find.current.and_then(|i| find.matches.get(i));
                 paint_matches(ui, text_rect, transcript, &row_text, &highlights, current);
@@ -744,8 +744,8 @@ fn paint_matches(
     rect: Rect,
     transcript: &read_along::Transcript,
     text: &str,
-    matches: &[scriptcast_ui::find::Occurrence],
-    current: Option<&scriptcast_ui::find::Occurrence>,
+    matches: &[crate::find::Occurrence],
+    current: Option<&crate::find::Occurrence>,
 ) {
     let painter = ui.painter().with_clip_rect(rect.intersect(ui.clip_rect()));
     let origin = rect.min + vec2(0.0, t::SPACE_4);

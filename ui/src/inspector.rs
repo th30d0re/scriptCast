@@ -8,7 +8,7 @@ use crate::{
     read_along, view,
 };
 use eframe::egui::{self, Align, Layout, Rect, Sense, Ui, UiBuilder, pos2, vec2};
-use scriptcast_ui::{clip_transcripts::ClipTurn, episode::Episode, script, theme as t};
+use crate::{clip_transcripts::ClipTurn, episode::Episode, script, theme as t};
 use std::time::Duration;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -54,7 +54,7 @@ pub enum Action {
 /// `stress.json` entry with real expected text; anything else is FIRST WORDS
 /// from `TURN_INDEX.csv` and is never labelled a transcript.
 #[cfg(test)]
-pub fn transcript_field(turn: &scriptcast_ui::episode::Turn) -> (&'static str, &str) {
+pub fn transcript_field(turn: &crate::episode::Turn) -> (&'static str, &str) {
     let expected = turn
         .verify
         .as_ref()
@@ -279,7 +279,7 @@ pub fn show(
                     let words = clip.as_words();
                     let row_maps = read_along::word_mapping(&script_text, &words).is_some();
                     let play_ms = matches!(transport, Transport::Playing(_)).then(|| {
-                        scriptcast_ui::word_timings::manifest_position(
+                        crate::word_timings::manifest_position(
                             &episode.manifest.turns[turn_idx],
                             position.as_millis() as u64,
                         )

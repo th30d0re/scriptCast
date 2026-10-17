@@ -1,3 +1,5 @@
+extern crate self as scriptcast_ui;
+
 pub mod audio;
 pub mod checkpoint;
 pub mod cli;
@@ -24,3 +26,5 @@ pub mod waveform;
 pub mod word_timings;
 
 pub mod project;
+
+include!("app_main.rs");

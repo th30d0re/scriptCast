@@ -1,6 +1,6 @@
 use crate::{Browser, inspector::InspectorMode, view};
 use eframe::egui::{self, Align, Layout, Ui};
-use scriptcast_ui::{
+use crate::{
     checkpoint::Checkpoint,
     runner::{Commands, Discovery, Job, JobEvent, JobSpec, JobState, Preset},
     theme as t,
@@ -87,7 +87,7 @@ fn scope(c: &Confirmation) -> String {
         if turns.is_empty() {
             "Whole episode".into()
         } else {
-            format!("Turns {}", scriptcast_ui::runner::compact_ranges(&turns))
+            format!("Turns {}", crate::runner::compact_ranges(&turns))
         }
     }
 }
@@ -120,7 +120,7 @@ pub(crate) struct Jobs {
     pub confirmation: Option<Confirmation>,
     pub selected: std::collections::BTreeSet<usize>,
     pub log: Vec<String>,
-    pub skipped: Vec<scriptcast_ui::cli::Skip>,
+    pub skipped: Vec<crate::cli::Skip>,
     pub stale_warning: Option<String>,
     pub failure: Option<JobFailure>,
     pub regen_rows: Vec<usize>,
@@ -174,7 +174,7 @@ impl Jobs {
 impl Browser {
     pub(crate) fn refresh_checkpoints(&mut self) {
         if let Some(e) = &self.episode {
-            self.jobs.checkpoints = scriptcast_ui::checkpoint::list(&e.dir);
+            self.jobs.checkpoints = crate::checkpoint::list(&e.dir);
             self.jobs.total_bytes = self.jobs.checkpoints.iter().map(|c| c.bytes).sum();
         }
     }
@@ -184,7 +184,7 @@ impl Browser {
             turns
                 .turns
                 .iter()
-                .any(|turn| scriptcast_ui::script::clip_id(&turn.body).is_some())
+                .any(|turn| crate::script::clip_id(&turn.body).is_some())
         })
     }
 
@@ -282,11 +282,11 @@ impl Browser {
                     let using_dev = discovery.commands.get("scriptcast").is_some_and(|r| {
                         matches!(
                             r.as_ref().map(|c| &c.source),
-                            Ok(scriptcast_ui::cli::ExportSource::DevCheckout(_))
+                            Ok(crate::cli::ExportSource::DevCheckout(_))
                         )
                     });
                     self.jobs.stale_warning =
-                        scriptcast_ui::cli::stale_install_warning(&discovery.skipped, using_dev);
+                        crate::cli::stale_install_warning(&discovery.skipped, using_dev);
                     self.jobs.skipped = discovery.skipped;
                     self.jobs.commands = discovery.commands;
                     self.jobs.resolving = None;
@@ -404,7 +404,7 @@ impl Browser {
             self.reload_after_job(ctx);
         }
         if self.jobs.login.is_some() || self.jobs.resolving.is_some() || self.jobs.busy() {
-            ctx.request_repaint_after(scriptcast_ui::progress::TICK);
+            ctx.request_repaint_after(crate::progress::TICK);
         }
     }
 
@@ -503,7 +503,7 @@ impl Browser {
         self.jobs.elapsed = Duration::ZERO;
         if c.spec.needs_confirmation() {
             let Some(e) = &self.episode else { return };
-            let files = match scriptcast_ui::checkpoint::plan_files(&c.preset, e) {
+            let files = match crate::checkpoint::plan_files(&c.preset, e) {
                 Ok(files) => files,
                 Err(error) => {
                     self.job_error(error);
@@ -521,7 +521,7 @@ impl Browser {
             self.jobs.notice = Some("Saving checkpoint before launch…".into());
             let ctx = ctx.clone();
             std::thread::spawn(move || {
-                let _ = tx.send(scriptcast_ui::checkpoint::create(
+                let _ = tx.send(crate::checkpoint::create(
                     &dir, &preset, argv, turns, &files,
                 ));
                 ctx.request_repaint();
@@ -538,9 +538,9 @@ impl Browser {
         let dir = episode.dir.clone();
         let mut plans = Vec::new();
         if let Some(before) = &c.before {
-            plans.push(scriptcast_ui::detached::CommandPlan::new(before));
+            plans.push(crate::detached::CommandPlan::new(before));
         }
-        plans.push(scriptcast_ui::detached::CommandPlan::new(&c.spec));
+        plans.push(crate::detached::CommandPlan::new(&c.spec));
         let name = if c.before.is_some() {
             "regenerate-edited"
         } else {
@@ -629,7 +629,7 @@ impl Browser {
         self.jobs.notice = Some("Saving current files and restoring checkpoint…".into());
         let ctx = ctx.clone();
         std::thread::spawn(move || {
-            let _ = tx.send(scriptcast_ui::checkpoint::restore(&dir, &cp));
+            let _ = tx.send(crate::checkpoint::restore(&dir, &cp));
             ctx.request_repaint();
         });
     }
@@ -639,7 +639,7 @@ impl Browser {
             job.cancel();
         }
         if let Some(active) = &self.jobs.durable {
-            scriptcast_ui::detached::stop(&active.record);
+            crate::detached::stop(&active.record);
         }
         // A checkpoint may finish its copy, but discarding its receiver forbids launch.
         // Restore is an atomic-file copy sequence and cannot be canceled mid-restore.
@@ -904,7 +904,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                 turn_data.verify.clone(),
                 matches!(
                     turn_data.verification,
-                    scriptcast_ui::episode::VerificationState::Failed
+                    crate::episode::VerificationState::Failed
                 ),
                 turn_id.clone(),
                 turn_data.index,
@@ -981,7 +981,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                 ui.label(t::heading("Second opinion", t::SECTION_TITLE));
                 if let Some(second) = &ensemble {
                     ui.label(t::text(
-                        scriptcast_ui::stress_ensemble::StressEnsemble::summary_line(
+                        crate::stress_ensemble::StressEnsemble::summary_line(
                             &second.summary,
                         ),
                         t::BODY,
@@ -1003,7 +1003,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                         ui.add_space(t::SPACE_8);
                         ui.horizontal_wrapped(|ui| {
                             ui.label(t::text(
-                                scriptcast_ui::stress_ensemble::StressEnsemble::span_verdict_label(
+                                crate::stress_ensemble::StressEnsemble::span_verdict_label(
                                     &span.verdict,
                                 ),
                                 t::CAPTION,
@@ -1079,7 +1079,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
     pub(crate) fn ensure_review_form(&mut self, turn_id: &str, expected: &str, heard: &str) {
         let needs_new = self.review.as_ref().is_none_or(|f| f.turn_id != turn_id);
         if needs_new {
-            self.review = Some(scriptcast_ui::review::DecisionForm::for_turn(
+            self.review = Some(crate::review::DecisionForm::for_turn(
                 turn_id, expected, heard,
             ));
         }
@@ -1110,7 +1110,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
         ui.add_space(t::SPACE_16);
         ui.label(t::heading("Reviewer decision", t::SECTION_TITLE));
         ui.label(t::text(
-            scriptcast_ui::review::NO_RETRAIN,
+            crate::review::NO_RETRAIN,
             t::CAPTION,
             t::TEXT_SUBTLE,
         ));
@@ -1118,13 +1118,13 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
             let Some(form) = self.review.as_mut() else {
                 return;
             };
-            for outcome in scriptcast_ui::review::Outcome::all() {
+            for outcome in crate::review::Outcome::all() {
                 let selected = form.outcome == outcome;
                 if ui
                     .radio(selected, t::text(outcome.label(), t::BODY, t::TEXT_PRIMARY))
                     .clicked()
                 {
-                    scriptcast_ui::review::choose_outcome(form, outcome);
+                    crate::review::choose_outcome(form, outcome);
                 }
                 ui.label(t::text(outcome.explanation(), t::CAPTION, t::TEXT_MUTED));
             }
@@ -1151,7 +1151,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
             let save_clicked = t::primary_button(ui, "Save decision", None, can_save)
                 .on_disabled_hover_text(&save_hint)
                 .clicked();
-            if form.outcome == scriptcast_ui::review::Outcome::RecognizerMisheard {
+            if form.outcome == crate::review::Outcome::RecognizerMisheard {
                 if let Some(pair) = form
                     .single_accept()
                     .map(|p| (p.word.clone(), p.heard.clone()))
@@ -1205,7 +1205,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
         }
         if saved {
             ui.label(t::text(
-                scriptcast_ui::review::SAVED_BANNER,
+                crate::review::SAVED_BANNER,
                 t::BODY,
                 t::STATUS_PASSED,
             ));
@@ -1257,7 +1257,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                     return;
                 }
             };
-            let project_dir = match scriptcast_ui::review::project_dir_from_voices(voices) {
+            let project_dir = match crate::review::project_dir_from_voices(voices) {
                 Some(path) => path,
                 None => {
                     if let Some(f) = self.review.as_mut() {
@@ -1271,8 +1271,8 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
         };
         let start_token = 0usize;
         let end_token = expected.split_whitespace().count().saturating_sub(1);
-        let args = scriptcast_ui::review::add_args(
-            &scriptcast_ui::review::AddRequest {
+        let args = crate::review::add_args(
+            &crate::review::AddRequest {
                 project_dir: &project_dir,
                 turn_id,
                 episode: &episode,
@@ -1342,7 +1342,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
                 match result {
                     Ok(()) => {
                         form.saved = true;
-                        form.notice = Some(scriptcast_ui::review::SAVED_BANNER.into());
+                        form.notice = Some(crate::review::SAVED_BANNER.into());
                     }
                     Err(error) => {
                         form.saved = false;
@@ -1411,7 +1411,7 @@ if t::secondary_button(ui, "Cancel", None, cancelable).clicked() {
 if c.preset == Preset::PrecisionInsert && c.affected.is_some() {
     let scope = match (&self.editing.changes, &self.editing.turns) {
         (Some(changes), Some(script_turns)) => Some(
-            scriptcast_ui::script::RenderScope::from_changes(changes, &script_turns.turns),
+            crate::script::RenderScope::from_changes(changes, &script_turns.turns),
         ),
         _ => None,
     };
@@ -1608,7 +1608,7 @@ const RISKY_ACCEPT_NOTE: &str =
 #[cfg(test)]
 mod tests {
     use super::*;
-    use scriptcast_ui::{
+    use crate::{
         checkpoint,
         cli::{ExportSource, Resolved},
     };
@@ -1785,14 +1785,14 @@ mod tests {
         assert!(banner.message.contains("unrecognized arguments"));
         assert_eq!(app.jobs.state, JobState::Failed(Some(2)));
         assert_eq!(
-            scriptcast_ui::detached::watched_outcome(Some(2), false, false),
-            scriptcast_ui::detached::Watched::Failed
+            crate::detached::watched_outcome(Some(2), false, false),
+            crate::detached::Watched::Failed
         );
         assert_eq!(
-            scriptcast_ui::detached::watched_outcome(None, false, false),
-            scriptcast_ui::detached::Watched::Failed
+            crate::detached::watched_outcome(None, false, false),
+            crate::detached::Watched::Failed
         );
-        let vanished = scriptcast_ui::detached::Record {
+        let vanished = crate::detached::Record {
             pid: 1,
             pgid: 1,
             preset: "detect-changes".into(),
@@ -1809,16 +1809,16 @@ mod tests {
             interrupted: false,
         };
         assert_eq!(
-            scriptcast_ui::detached::classify(&vanished, false, |_| false),
-            scriptcast_ui::detached::Classification::Interrupted
+            crate::detached::classify(&vanished, false, |_| false),
+            crate::detached::Classification::Interrupted
         );
-        let failed = scriptcast_ui::detached::Record {
+        let failed = crate::detached::Record {
             exit: Some(2),
             ..vanished
         };
         assert_eq!(
-            scriptcast_ui::detached::classify(&failed, false, |_| false),
-            scriptcast_ui::detached::Classification::Finished
+            crate::detached::classify(&failed, false, |_| false),
+            crate::detached::Classification::Finished
         );
     }
 
@@ -1860,7 +1860,7 @@ mod tests {
         app.jobs.auto_confirm = Some("verify".into());
         app.poll_jobs(&ctx);
         assert!(app.jobs.auto_confirm.is_some());
-        tx.send(scriptcast_ui::runner::Discovery {
+        tx.send(crate::runner::Discovery {
             commands: [("scriptcast-verify".into(), Ok(c.spec.resolved))].into(),
             skipped: vec![],
         })

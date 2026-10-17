@@ -1,7 +1,7 @@
 //! Shared transcript draft, worker lifecycle and views for both editing locations.
 use crate::{Browser, inspector::InspectorMode};
 use eframe::egui::{self, Ui};
-use scriptcast_ui::{
+use crate::{
     checkpoint::Checkpoint,
     runner::Preset,
     script::{self, Changes, ScriptTurn, ScriptTurns},
@@ -37,14 +37,14 @@ impl Draft {
 struct Loaded {
     turns: Result<ScriptTurns, String>,
     changes: Result<Changes, String>,
-    registry: Result<scriptcast_ui::structure::Registry, String>,
+    registry: Result<crate::structure::Registry, String>,
 }
 
 #[derive(Default)]
 pub struct Editing {
     pub k: crate::phase_k::PhaseK,
     pub toolbar: crate::tag_editor::Toolbar,
-    pub registry: scriptcast_ui::structure::Registry,
+    pub registry: crate::structure::Registry,
     pub manifest_len: Option<usize>,
     pub draft: Option<Draft>,
     pub turns: Option<ScriptTurns>,
@@ -59,7 +59,7 @@ pub struct Editing {
     pub capture_open: bool,
     pub load_requested: bool,
     loading: Option<Receiver<Loaded>>,
-    saving: Option<Receiver<Result<(Checkpoint, scriptcast_ui::tags::Report), String>>>,
+    saving: Option<Receiver<Result<(Checkpoint, crate::tags::Report), String>>>,
 }
 impl Editing {
     pub fn busy(&self) -> bool {
@@ -324,7 +324,7 @@ pub fn inline_editor(
                 enabled
                     && !busy
                     && draft.changed()
-                    && scriptcast_ui::tags::can_save(&draft.text, &editing.registry),
+                    && crate::tags::can_save(&draft.text, &editing.registry),
             ),
         ] {
             let button = egui::Button::new(t::heading(label, t::SECONDARY).color(if primary {
@@ -423,7 +423,7 @@ pub fn editor(
     let save_enabled = enabled
         && !busy
         && draft.changed()
-        && scriptcast_ui::tags::can_save(&draft.text, &editing.registry);
+        && crate::tags::can_save(&draft.text, &editing.registry);
     let buttons = |ui: &mut Ui| {
         if t::primary_button(
             ui,
@@ -506,7 +506,7 @@ impl Browser {
         } else {
             draft.original.clone()
         };
-        match scriptcast_ui::clip_transcripts::use_ensemble_transcript(
+        match crate::clip_transcripts::use_ensemble_transcript(
             &source,
             &clip.ensemble_text(),
         ) {
@@ -541,7 +541,7 @@ impl Browser {
         };
         episode.script_path = self.editing.turns.as_ref().map(|s| s.script_path.clone());
         let text = draft.text.clone();
-        if !scriptcast_ui::tags::can_save(&text, &self.editing.registry) {
+        if !crate::tags::can_save(&text, &self.editing.registry) {
             return;
         }
         let Some(Ok(export)) = self.export_command.clone() else {
@@ -717,7 +717,7 @@ impl Browser {
 impl Browser {
     pub(crate) fn save_replacements(
         &mut self,
-        plan: scriptcast_ui::find::Plan,
+        plan: crate::find::Plan,
         ctx: &egui::Context,
     ) {
         if self.editing.draft.is_some() {
@@ -753,7 +753,7 @@ impl Browser {
             let result = script::save_many(&episode, &plan.edits, &hash).and_then(|cp| {
                 let report = match export {
                     Some(Ok(export)) => script::load_tags(&export, &episode)?,
-                    _ => scriptcast_ui::tags::Report {
+                    _ => crate::tags::Report {
                         script_sha256: hash,
                         problems: Vec::new(),
                     },
@@ -770,7 +770,7 @@ impl Browser {
 mod tests {
     use super::*;
     use crate::{Preferences, Transport};
-    use scriptcast_ui::episode::Episode;
+    use crate::episode::Episode;
     use std::path::PathBuf;
 
     fn loaded() -> Editing {

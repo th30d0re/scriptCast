@@ -1,7 +1,7 @@
 //! Clip maker, reference maker, audition, calibrate, outliers, and stress check.
 use crate::Browser;
 use eframe::egui::{self, Ui};
-use scriptcast_ui::{phase_m::*, project::Report, theme as t};
+use crate::{phase_m::*, project::Report, theme as t};
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
@@ -91,8 +91,8 @@ pub struct PhaseMUi {
     footer_enabled: bool,
     wave_path: Option<PathBuf>,
     wave_origin: f64,
-    wave_rx: Option<Receiver<Result<(scriptcast_ui::waveform::Envelope, f64), String>>>,
-    wave: Option<Result<scriptcast_ui::waveform::Envelope, String>>,
+    wave_rx: Option<Receiver<Result<(crate::waveform::Envelope, f64), String>>>,
+    wave: Option<Result<crate::waveform::Envelope, String>>,
 }
 
 impl Default for PhaseMUi {
@@ -245,13 +245,13 @@ impl Browser {
         let path = job.path.clone();
         let cancelled = job.cancelled;
         let kind = job.kind;
-        let Ok(record) = scriptcast_ui::detached::read(&path) else {
+        let Ok(record) = crate::detached::read(&path) else {
             return;
         };
         self.makers.progress = progress_line(&tail_log(&record.log));
         ctx.request_repaint_after(std::time::Duration::from_millis(250));
         let finished = record.exit.is_some()
-            || (record.pid != 0 && !scriptcast_ui::detached::alive(record.pid));
+            || (record.pid != 0 && !crate::detached::alive(record.pid));
         if !finished {
             return;
         }
@@ -275,8 +275,8 @@ impl Browser {
     pub(crate) fn cancel_phase_m(&mut self) {
         if let Some(job) = self.makers.job.as_mut() {
             job.cancelled = true;
-            if let Ok(record) = scriptcast_ui::detached::read(&job.path) {
-                scriptcast_ui::detached::stop(&record);
+            if let Ok(record) = crate::detached::read(&job.path) {
+                crate::detached::stop(&record);
             }
         }
     }
@@ -507,7 +507,7 @@ impl Browser {
             .clone()
             .or_else(|| self.episode.as_ref().and_then(|e| e.project_root.clone()))
             .unwrap_or_else(std::env::temp_dir);
-        let resolved = match scriptcast_ui::cli::resolve(
+        let resolved = match crate::cli::resolve(
             call.command,
             Some(&root),
             self.preferences.cli_dir.as_deref(),
@@ -520,7 +520,7 @@ impl Browser {
         };
         let mut args = resolved.prefix.clone();
         args.extend(call.args.iter().map(std::ffi::OsString::from));
-        let spec = scriptcast_ui::runner::JobSpec {
+        let spec = crate::runner::JobSpec {
             program: resolved.program.clone(),
             args,
             cwd: root.clone(),
@@ -528,8 +528,8 @@ impl Browser {
             overwrites: vec![],
             resolved,
         };
-        let plan = scriptcast_ui::detached::CommandPlan::new(&spec);
-        match scriptcast_ui::detached::launch(&root, kind.preset(), vec![plan], None) {
+        let plan = crate::detached::CommandPlan::new(&spec);
+        match crate::detached::launch(&root, kind.preset(), vec![plan], None) {
             Ok((path, _)) => {
                 self.makers.notice = None;
                 self.makers.progress = "Running".into();
@@ -875,7 +875,7 @@ impl Browser {
         };
         let position = selected + 1;
         self.editing.k.action = Some(crate::phase_k::MenuAction::Apply(
-            scriptcast_ui::structure::EditOp::Insert {
+            crate::structure::EditOp::Insert {
                 position,
                 speaker_id: self.makers.speaker.clone(),
                 timestamp: Some("00:00".into()),
@@ -1124,7 +1124,7 @@ impl Browser {
         let people: Vec<Person> = people_of(report)
             .into_iter()
             .filter(|person| {
-                scriptcast_ui::project::engine_fields(&person.engine).contains(&"reference_audio")
+                crate::project::engine_fields(&person.engine).contains(&"reference_audio")
             })
             .collect();
         let ids: Vec<&str> = people.iter().map(|person| person.id.as_str()).collect();
@@ -1652,7 +1652,7 @@ impl Browser {
         self.makers.wave_rx = Some(rx);
         let ctx = ctx.clone();
         std::thread::spawn(move || {
-            let result = scriptcast_ui::waveform::clip_envelope(&path, 0.0, duration.max(0.05));
+            let result = crate::waveform::clip_envelope(&path, 0.0, duration.max(0.05));
             let _ = tx.send(result);
             ctx.request_repaint();
         });
@@ -1664,7 +1664,7 @@ impl Browser {
             return;
         }
         let envelope = match &self.makers.wave {
-            Some(Ok(envelope)) if !envelope.peaks.is_empty() => scriptcast_ui::waveform::Envelope {
+            Some(Ok(envelope)) if !envelope.peaks.is_empty() => crate::waveform::Envelope {
                 peaks: envelope.peaks.clone(),
             },
             Some(Err(error)) => {
@@ -1684,19 +1684,19 @@ impl Browser {
                 return;
             }
         };
-        let duration = duration.max(f64::from(scriptcast_ui::waveform::BUCKET_SECS));
+        let duration = duration.max(f64::from(crate::waveform::BUCKET_SECS));
         let (rect, _) = ui.allocate_exact_size(
             egui::vec2(ui.available_width(), t::PROJECT_WAVE_HEIGHT),
             egui::Sense::hover(),
         );
         ui.painter()
             .rect_filled(rect, t::RADIUS_CONTROL, t::BG_CONTROL);
-        let full = scriptcast_ui::waveform::covers_window(&envelope.peaks, duration);
+        let full = crate::waveform::covers_window(&envelope.peaks, duration);
         let (frac0, frac1) = if full {
             (0.0_f32, 1.0_f32)
         } else {
             let covered = self.makers.wave_origin
-                + envelope.peaks.len() as f64 * f64::from(scriptcast_ui::waveform::BUCKET_SECS);
+                + envelope.peaks.len() as f64 * f64::from(crate::waveform::BUCKET_SECS);
             (
                 (self.makers.wave_origin / duration).clamp(0.0, 1.0) as f32,
                 (covered / duration).clamp(0.0, 1.0) as f32,
@@ -1704,7 +1704,7 @@ impl Browser {
         };
         let span = ((frac1 - frac0) * rect.width()).max(t::WAVE_BAR + t::WAVE_GAP);
         let bars =
-            scriptcast_ui::waveform::bars(&envelope, (span / (t::WAVE_BAR + t::WAVE_GAP)) as usize);
+            crate::waveform::bars(&envelope, (span / (t::WAVE_BAR + t::WAVE_GAP)) as usize);
         let left = rect.left() + frac0 * rect.width();
         for (index, peak) in bars.iter().enumerate() {
             let x = left + index as f32 * (t::WAVE_BAR + t::WAVE_GAP);
@@ -2218,9 +2218,9 @@ mod tests {
 
     #[test]
     fn heard_text_galley_matches_the_card_inner_width() {
-        use scriptcast_ui::phase_m::{AuditionCandidate, Take};
+        use crate::phase_m::{AuditionCandidate, Take};
         let ctx = egui::Context::default();
-        scriptcast_ui::theme::apply(&ctx);
+        crate::theme::apply(&ctx);
         let candidate = AuditionCandidate {
             reference: "/tmp/aisha_news.wav".into(),
             temperature: 0.6,

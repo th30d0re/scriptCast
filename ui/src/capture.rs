@@ -4,7 +4,7 @@
 //! permission.
 
 use eframe::egui;
-use scriptcast_ui::theme as t;
+use crate::theme as t;
 use std::{
     ffi::OsString,
     path::{Path, PathBuf},
@@ -101,7 +101,7 @@ pub struct Cli {
     /// Open discrepancy review after selecting this turn (capture aid).
     pub review: Option<usize>,
     /// Whisper / Ensemble mode when opening `--review`.
-    pub review_mode: Option<scriptcast_ui::discrepancy::ReviewMode>,
+    pub review_mode: Option<crate::discrepancy::ReviewMode>,
     pub edit: bool,
     pub edit_turn: Option<usize>,
     pub failed_job_fixture: Option<PathBuf>,
@@ -278,7 +278,7 @@ impl Cli {
                         .ok_or("--confirm needs a preset")?
                         .to_string_lossy()
                         .into_owned();
-                    scriptcast_ui::runner::Preset::parse(&name, vec![])?;
+                    crate::runner::Preset::parse(&name, vec![])?;
                     cli.confirm = Some(name);
                 }
                 "--run" => {
@@ -287,7 +287,7 @@ impl Cli {
                         .ok_or("--run needs detect-changes or verify")?
                         .to_string_lossy()
                         .into_owned();
-                    scriptcast_ui::runner::Preset::safe_run(&name)?;
+                    crate::runner::Preset::safe_run(&name)?;
                     cli.run = Some(name);
                 }
                 "--fresh" => cli.fresh = true,
@@ -466,9 +466,9 @@ impl Cli {
                         .ok_or_else(|| "--review-mode needs whisper or ensemble".to_string())?;
                     cli.review_mode = Some(match value.to_string_lossy().as_ref() {
                         "whisper" | "whisper-only" | "whisper_only" => {
-                            scriptcast_ui::discrepancy::ReviewMode::WhisperOnly
+                            crate::discrepancy::ReviewMode::WhisperOnly
                         }
-                        "ensemble" => scriptcast_ui::discrepancy::ReviewMode::Ensemble,
+                        "ensemble" => crate::discrepancy::ReviewMode::Ensemble,
                         _ => return Err("--review-mode needs whisper or ensemble".into()),
                     });
                 }
@@ -773,7 +773,7 @@ mod tests {
         let cli = parse(&["/tmp/e", "--review", "119", "--review-mode", "ensemble"]).unwrap();
         assert_eq!(
             cli.review_mode,
-            Some(scriptcast_ui::discrepancy::ReviewMode::Ensemble)
+            Some(crate::discrepancy::ReviewMode::Ensemble)
         );
         assert!(parse(&["--review-mode", "ensemble"]).is_err());
     }

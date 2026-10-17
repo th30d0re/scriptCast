@@ -1,5 +1,5 @@
 use eframe::egui::{self, Color32, CursorIcon, FontId, Rect, Sense, Ui, UiBuilder, pos2, vec2};
-use scriptcast_ui::{
+use crate::{
     episode::{Speaker, VerificationState},
     theme as t,
 };
@@ -170,7 +170,7 @@ pub fn turn_verification(
 mod tests {
     #[test]
     fn stale_audio_and_regenerated_labels() {
-        use scriptcast_ui::episode::VerificationState;
+        use crate::episode::VerificationState;
         assert_eq!(
             super::turn_verification(VerificationState::Passed, true, false).0,
             "Edited · audio stale"

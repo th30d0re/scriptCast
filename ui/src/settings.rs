@@ -2,7 +2,7 @@
 
 use crate::Browser;
 use eframe::egui;
-use scriptcast_ui::theme as t;
+use crate::theme as t;
 
 /// Title + Done chrome stay outside the scroll area; content scrolls under it.
 #[derive(Clone, Copy, Debug, PartialEq)]
