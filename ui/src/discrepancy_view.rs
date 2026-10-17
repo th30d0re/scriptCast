@@ -1,7 +1,7 @@
 //! Full-screen discrepancy review (Phase H4).
 use crate::{Browser, view};
 use eframe::egui::{self, Align, Layout, RichText, Sense, StrokeKind, Ui};
-use scriptcast_ui::{
+use crate::{
     discrepancy::{self, DiffCard, ReviewMode},
     runner::Preset,
     theme as t,
@@ -33,7 +33,7 @@ impl Browser {
         };
         let failed = self.episode.as_ref().is_some_and(|e| {
             e.turns.get(turn).is_some_and(|t| {
-                t.verification == scriptcast_ui::episode::VerificationState::Failed
+                t.verification == crate::episode::VerificationState::Failed
             })
         });
         if !failed {
@@ -437,7 +437,7 @@ impl Browser {
         let Some(form) = self.review.as_mut() else {
             return;
         };
-        for outcome in scriptcast_ui::review::Outcome::all() {
+        for outcome in crate::review::Outcome::all() {
             let selected = form.outcome == outcome;
             let stroke = if selected {
                 egui::Stroke::new(t::BORDER, t::accent())
@@ -469,7 +469,7 @@ impl Browser {
                 .response
                 .interact(Sense::click());
             if response.clicked() {
-                scriptcast_ui::review::choose_outcome(form, outcome);
+                crate::review::choose_outcome(form, outcome);
             }
             ui.add_space(t::SPACE_6);
         }
@@ -540,7 +540,7 @@ impl Browser {
 
         if form.saved {
             ui.label(t::text(
-                scriptcast_ui::review::SAVED_BANNER,
+                crate::review::SAVED_BANNER,
                 t::BODY,
                 t::STATUS_PASSED,
             ));
@@ -643,7 +643,7 @@ impl Browser {
                 for i in 0..n {
                     let t0 = (i as f32) / n as f32 * dur_sec;
                     let t1 = ((i + 1) as f32) / n as f32 * dur_sec;
-                    let Some(peak) = scriptcast_ui::waveform::peak_in_range(env, t0, t1, dur_sec)
+                    let Some(peak) = crate::waveform::peak_in_range(env, t0, t1, dur_sec)
                     else {
                         continue;
                     };

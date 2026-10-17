@@ -1,6 +1,6 @@
 //! Measured read-along text, painted inside the table's virtual items.
 use eframe::egui::{self, Rect, Ui, pos2, vec2};
-use scriptcast_ui::{
+use crate::{
     not_heard, theme as t,
     word_timings::{Word, current_word},
 };

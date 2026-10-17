@@ -6,7 +6,7 @@ use crate::{
     tag_editor,
 };
 use eframe::egui::{self, Ui};
-use scriptcast_ui::{
+use crate::{
     checkpoint::Checkpoint,
     retime,
     script::{self, ScriptTurns},

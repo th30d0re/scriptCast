@@ -1,7 +1,7 @@
 //! Find/replace controls and their UI lifecycle, kept separate from the browser shell.
 use crate::{Browser, editing, inspector::InspectorMode, view};
 use eframe::egui::{self, Ui};
-use scriptcast_ui::{
+use crate::{
     find::{self, Matcher, Mode, Occurrence, Plan},
     theme as t,
 };
@@ -39,10 +39,10 @@ impl Browser {
                     && (!self.filters.failed_only || turn.verification == crate::V::Failed)
                     && (options.mode == Mode::Words
                         || ((options.include_clips
-                            || scriptcast_ui::script::clip_id(body).is_none())
+                            || crate::script::clip_id(body).is_none())
                             && matcher.as_ref().is_ok_and(|m| {
                                 m.matches_turn(
-                                    &scriptcast_ui::script::display_body(body),
+                                    &crate::script::display_body(body),
                                     &episode.speakers[turn.speaker_idx].name,
                                     turn.index,
                                 )
@@ -70,7 +70,7 @@ impl Browser {
                     continue;
                 }
                 let body = self.editing.body(row).unwrap_or(&turn.first_words);
-                if !options.include_clips && scriptcast_ui::script::clip_id(body).is_some() {
+                if !options.include_clips && crate::script::clip_id(body).is_some() {
                     continue;
                 }
                 let mut found = find::occurrences(row, body, &matcher, options);
@@ -461,7 +461,7 @@ impl Browser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use scriptcast_ui::{
+    use crate::{
         episode::Episode,
         script::{ScriptTurn, ScriptTurns},
     };

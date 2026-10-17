@@ -1,7 +1,7 @@
 //! Shared body editor and caret-preserving toolbar for inline, panel and new-turn drafts.
 use crate::editing::editor_id;
 use eframe::egui::{self, Ui, text::CCursorRange};
-use scriptcast_ui::{structure::Registry, tags, theme as t};
+use crate::{structure::Registry, tags, theme as t};
 
 pub struct Toolbar {
     pub pause: String,

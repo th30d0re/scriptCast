@@ -465,6 +465,8 @@ fn apply_style(ctx: &egui::Context) {
     // A steady caret: blinking repaints every frame while an editor has focus,
     // which keeps the app busy (and never lets a capture settle).
     style.visuals.text_cursor.blink = false;
+    style.animation_time = 0.0;
+    style.scroll_animation = egui::style::ScrollAnimation::none();
     style.visuals.panel_fill = BG_WINDOW;
     style.visuals.window_fill = BG_SURFACE;
     style.visuals.extreme_bg_color = BG_WINDOW;

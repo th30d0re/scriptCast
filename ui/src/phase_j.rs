@@ -1,7 +1,7 @@
 //! Phase J sheets and durable-job presentation.
 use crate::{Browser, capture};
 use eframe::egui::{self, Ui};
-use scriptcast_ui::{
+use crate::{
     detached::{self, Classification, CommandPlan, Record},
     episode::Episode,
     new_episode::{Options, Preview},
@@ -70,7 +70,7 @@ pub struct PhaseJ {
     stopping: Option<Instant>,
     refreshed: usize,
     live_load:
-        Option<std::sync::mpsc::Receiver<Result<Episode, scriptcast_ui::episode::LoadError>>>,
+        Option<std::sync::mpsc::Receiver<Result<Episode, crate::episode::LoadError>>>,
 }
 pub fn reveal(path: &Path) {
     let _ = std::process::Command::new("/usr/bin/open")
@@ -716,7 +716,7 @@ impl Browser {
                 .unwrap_or_default()
                 .to_string_lossy()
                 .into_owned();
-            self.phase.project = scriptcast_ui::episode::find_project_root(
+            self.phase.project = crate::episode::find_project_root(
                 script.parent().unwrap_or(Path::new(".")),
             );
             if let Some(project) = self.phase.project.clone() {
@@ -916,13 +916,13 @@ impl Browser {
             }
         }
     }
-    fn note_failed_record(&mut self, record: &scriptcast_ui::detached::Record) {
+    fn note_failed_record(&mut self, record: &crate::detached::Record) {
         if self.jobs.failure.is_some() || record.exit.is_none_or(|code| code == 0) {
             return;
         }
         let log = std::fs::read_to_string(&record.log).unwrap_or_default();
-        let label = scriptcast_ui::runner::preset_label(&record.preset);
-        let message = scriptcast_ui::detached::failure_banner(&label, &log);
+        let label = crate::runner::preset_label(&record.preset);
+        let message = crate::detached::failure_banner(&label, &log);
         self.jobs.notice = Some(message.clone());
         self.jobs.failure = Some(crate::jobs::JobFailure {
             message,
@@ -977,23 +977,23 @@ impl Browser {
             .jobs
             .durable
             .as_ref()
-            .map(|a| scriptcast_ui::runner::preset_label(&a.record.preset))
+            .map(|a| crate::runner::preset_label(&a.record.preset))
             .unwrap_or_else(|| "Job".into());
         let detail = if progress.total > 0 {
             format!(
                 "turn {} of {} · {}",
                 progress.n,
                 progress.total,
-                scriptcast_ui::progress::clock(elapsed)
+                crate::progress::clock(elapsed)
             )
         } else if !progress.stage.is_empty() {
             format!(
                 "{} · {}",
                 progress.stage,
-                scriptcast_ui::progress::clock(elapsed)
+                crate::progress::clock(elapsed)
             )
         } else {
-            scriptcast_ui::progress::clock(elapsed)
+            crate::progress::clock(elapsed)
         };
         Some(format!("{label} · {detail}"))
     }
@@ -1030,7 +1030,7 @@ impl Browser {
         }
         let dry_exit = self.phase.dry_job.as_ref().and_then(|job| {
             job.receiver.try_iter().find_map(|e| {
-                if let scriptcast_ui::runner::JobEvent::Exited(code) = e {
+                if let crate::runner::JobEvent::Exited(code) = e {
                     Some(code)
                 } else {
                     None
@@ -1119,18 +1119,18 @@ impl Browser {
                 let canceled = self.jobs.state == JobState::Canceled;
                 self.phase.interrupted = None;
                 self.jobs.state =
-                    match scriptcast_ui::detached::watched_outcome(exit, terminal_ok, canceled) {
-                        scriptcast_ui::detached::Watched::Canceled => JobState::Canceled,
-                        scriptcast_ui::detached::Watched::Complete => {
+                    match crate::detached::watched_outcome(exit, terminal_ok, canceled) {
+                        crate::detached::Watched::Canceled => JobState::Canceled,
+                        crate::detached::Watched::Complete => {
                             if active.record.preset == "regenerate-edited" {
                                 self.jobs.regenerated = self.jobs.regen_rows.clone();
                             }
                             JobState::Complete
                         }
-                        scriptcast_ui::detached::Watched::Failed => {
+                        crate::detached::Watched::Failed => {
                             let log = self.jobs.log.join("\n");
-                            let label = scriptcast_ui::runner::preset_label(&active.record.preset);
-                            let message = scriptcast_ui::detached::failure_banner(&label, &log);
+                            let label = crate::runner::preset_label(&active.record.preset);
+                            let message = crate::detached::failure_banner(&label, &log);
                             self.jobs.failure = Some(crate::jobs::JobFailure {
                                 message: message.clone(),
                                 log,
@@ -1151,7 +1151,7 @@ impl Browser {
                 self.phase.live_load = Some(rx);
                 let ctx = ctx.clone();
                 std::thread::spawn(move || {
-                    let _ = tx.send(scriptcast_ui::new_episode::load_live(&dir));
+                    let _ = tx.send(crate::new_episode::load_live(&dir));
                     ctx.request_repaint();
                 });
             }
@@ -1169,12 +1169,12 @@ impl Browser {
                     && self.episode.as_ref().is_some_and(|e| e.dir == episode.dir)
                 {
                     // Updating metadata must leave the audio transport available during rendering.
-                    self.waveforms = Some(scriptcast_ui::waveform::Waveforms::start(
+                    self.waveforms = Some(crate::waveform::Waveforms::start(
                         &episode,
                         ctx.clone(),
                     ));
                     self.overview = episode.overview_sections(
-                        scriptcast_ui::episode::overview_section_count(episode.total_ms),
+                        crate::episode::overview_section_count(episode.total_ms),
                     );
                     self.timeline.zoom(1.0, episode.total_ms);
                     self.episode = Some(episode);
@@ -1411,7 +1411,7 @@ impl Browser {
                     ]);
                 }
                 if spec.synthesizes || !spec.overwrites.is_empty() {
-                    plan.checkpoint = scriptcast_ui::checkpoint::plan_files(preset, episode)?
+                    plan.checkpoint = crate::checkpoint::plan_files(preset, episode)?
                         .into_iter()
                         .map(|f| f.path)
                         .collect();

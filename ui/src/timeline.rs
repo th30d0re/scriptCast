@@ -1,6 +1,6 @@
 use crate::view;
 use eframe::egui::{self, Rect, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
-use scriptcast_ui::{
+use crate::{
     episode::{Episode, VerificationState},
     theme as t,
     waveform::{self, Waveforms},
@@ -76,7 +76,7 @@ pub fn show(
     playing: Option<(usize, u64)>,
     waveforms: Option<&Waveforms>,
     edited: &[usize],
-    progress: Option<&scriptcast_ui::progress::Progress>,
+    progress: Option<&crate::progress::Progress>,
     editing: &mut crate::editing::Editing,
 ) -> Option<(usize, bool)> {
     let rect = ui.max_rect();
