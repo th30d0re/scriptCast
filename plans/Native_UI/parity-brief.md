@@ -92,6 +92,16 @@ Today this means hand-editing YAML/TOML.
 | N2 | **Tape-stop** at the end of a turn (choose from the table) | `scriptcast-tapestop` |
 | N3 | **Captions** (generate, preview over playback) | `scriptcast-captions` |
 | N4 | **Craft cue sheet** export | `scriptcast-craft` |
+| N5 | **Loudness meter**: integrated, short-term and momentary LUFS plus true peak, for the episode and per turn. Turns far from the episode level are flagged; the target defaults to −16 LUFS | SoundCraft `soundcraft-dsp` `LoudnessMeter` (ITU-R BS.1770) |
+| N6 | **Per-speaker effects chain**: Channel Strip (trim → gate → compressor → 3-band EQ + HPF), De-Esser, optional light Room Reverb and EQ 7-band. Archive clips get Gate/EQ matching. Stored in the project (`fx.yaml`, or an `fx` field per speaker), with a bypass A/B | SoundCraft `soundcraft-dsp` plugins |
+| N7 | **Master chain**: Maximizer to the loudness target, Dither, DC removal, applied to the stitched episode | SoundCraft `soundcraft-dsp` |
+| N8 | **`scriptcast-fx` CLI** (Rust, built from the same DSP code). Stitch and Mix call it so exported audio matches what the app plays. Live/Logic sessions keep the dry audio | new Rust binary in `ui/` workspace |
+
+**Phase N prerequisites (from the SoundCraft review, 2026-10-17):**
+- **N0a:** add `egui_kittest` headless snapshot tests, so agents verify visuals themselves instead of relying on orchestrator captures.
+- **N0b:** adopt `soundcraft-audio-io` (symphonia with isomp4/aac, MP4 atom guards, multi-resolution `Peaks`) for decoding and waveforms. This replaces the ffmpeg fallback and fixes the partial clip-maker waveform.
+
+Pin SoundCraft to a commit (pre-alpha), take only `audio-io`, `dsp` and `time`, which have no SoundCraft dependencies, and keep their LICENSE/NOTICE. Do not take `mix`, `playback` or `ui-egui`; they pull in plugin hosts, MIDI and video.
 
 ## Phase O: Video (decide scope first)
 
