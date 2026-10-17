@@ -230,6 +230,9 @@ impl Browser {
         }
         let episode_root = self.episode.as_ref().and_then(|e| e.project_root.as_ref());
         let different = episode_root.is_some_and(|root| self.project.root.as_ref() != Some(root));
+        if self.harness {
+            return;
+        }
         if (self.project.snapshot.is_none() || different) && self.project.pending.is_none() {
             let root = self
                 .episode
@@ -1244,6 +1247,27 @@ impl Browser {
                     let hits =
                         paint_speaker_row(&columns[0], rect, index, name, engine, count, invalid);
                     self.project.speaker_rows.push(hits);
+                    // Painted text has no AccessKit node. The chip label is what snapshots query.
+                    let (name_rect, chip_rect) = hits;
+                    let chip_label = engine_chip_style(engine).0;
+                    columns[0]
+                        .interact(
+                            name_rect,
+                            columns[0].id().with(("speaker_name", index)),
+                            egui::Sense::hover(),
+                        )
+                        .widget_info(|| {
+                            egui::WidgetInfo::labeled(egui::WidgetType::Label, true, name)
+                        });
+                    columns[0]
+                        .interact(
+                            chip_rect,
+                            columns[0].id().with(("speaker_chip", index)),
+                            egui::Sense::hover(),
+                        )
+                        .widget_info(|| {
+                            egui::WidgetInfo::labeled(egui::WidgetType::Label, true, chip_label)
+                        });
                 }
                 if columns[0].button("+ Add speaker").clicked() {
                     let mut n = report.voices.speakers.len() + 1;

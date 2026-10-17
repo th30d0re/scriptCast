@@ -316,6 +316,8 @@ pub struct Browser {
     discrepancy_card: usize,
     /// Open discrepancy review once `--review` selection lands.
     pending_review: bool,
+    /// Snapshot harness: fixture data only, no project tool, shell, or PATH lookup.
+    pub(crate) harness: bool,
 }
 struct SelectedMedia {
     file_line: String,
@@ -449,11 +451,14 @@ impl Browser {
         args: impl IntoIterator<Item = std::ffi::OsString>,
     ) -> Self {
         crate::use_fixed_clock();
+        crate::episode::ignore_project_env(true);
         let cli = capture::Cli::parse(args).unwrap_or_else(|message| panic!("{message}"));
+        let _ = std::env::set_current_dir(env!("CARGO_MANIFEST_DIR"));
         let mut app = Self {
             preferences: Preferences::default(),
             pending_select: cli.select,
             muted: true,
+            harness: true,
             settings_open: cli.settings || cli.project_data.as_deref() == Some("toml"),
             pending_review: cli.review.is_some(),
             jobs: jobs::Jobs {
@@ -472,6 +477,9 @@ impl Browser {
         if let Some(path) = &cli.episode {
             let episode = Episode::load(path).unwrap_or_else(|error| panic!("{error}"));
             app.accept_episode(episode, ctx);
+            if let Some(episode) = app.episode.as_mut() {
+                episode.project_root = None;
+            }
         }
         app.jobs.resolving = None;
         app.editing.load_requested = false;
@@ -484,6 +492,14 @@ impl Browser {
             || cli.words_fixture.is_some()
         {
             install_project_fixture(&mut app);
+        }
+        if cli.new_episode.is_some() {
+            // Canonicalizing the script walks to a project root and paints a machine path.
+            app.phase.options.script = "tests/fixtures/script.md".into();
+            app.phase.options.voices = "tests/fixtures/voices.yaml".into();
+            app.phase.options.output = "tests/fixtures".into();
+            app.phase.project = None;
+            app.phase.options.episode_id = "script".into();
         }
         app.poll_editing(ctx);
         app

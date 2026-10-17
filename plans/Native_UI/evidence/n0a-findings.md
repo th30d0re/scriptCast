@@ -1,6 +1,8 @@
 # Phase N0a findings
 
 Status: done. `cargo test` in `ui/` is green, including `tests/snapshots.rs`.
+After the N0b merge the suite is hermetic: fixture media only, no
+`scriptcast-project`, no login shell, no `SCRIPTCAST_PROJECT`.
 
 ## What Was Requested
 
@@ -27,9 +29,50 @@ Headless `egui_kittest` snapshot tests so UI visuals can be checked inside `carg
 - Speaker name and engine chip are accesskit labels, so the kittest query API can see the painted row. The inline editor is a `MultilineTextInput`; its height is at least three single-line fields.
 - Accept workflow is in `ui/tests/README.md`. A mismatch writes `tests/snapshots/{name}.diff.png` beside `{name}.new.png`. `UPDATE_SNAPSHOTS=1` replaces the PNG and keeps `{name}.old.png`.
 
+## Hermetic follow-up (after N0b)
+
+`dev` merged SoundCraft decoding with these snapshots. Serial `cargo test --test snapshots` then failed three ways.
+
+- `voices` panicked on `get_all_by_label("OmniVoice")`. The chips were still painted.
+  The fast-forward dropped the AccessKit labels on the painted name and chip
+  rects, so kittest had no node to query. Those labels are back after
+  `paint_speaker_row`. The assertion is unchanged.
+- `open_project_data` spawned `scriptcast-project` whenever the snapshot was
+  empty, using the episode project root or `SCRIPTCAST_PROJECT`. That replaced
+  `show.json` with `/private/tmp/scriptcast-k/proj`. The harness sets
+  `Browser.harness` and returns before that spawn. `refresh_commands` returns
+  immediately too, so the login shell and PATH lookup never start.
+  `Episode::load` ignores `SCRIPTCAST_PROJECT` on the harness thread, and the
+  loaded episode's project root is cleared.
+- `show.json` root is `tests/fixtures`. Clip sources are `audio/tone.mp4`.
+  Voice references are `audio/tone.m4a`. Dry-run and audition JSON use the
+  same tree. The new-episode sheet keeps the script, voices, and output
+  fields on those relative paths and does not walk up to a parent
+  `scriptcast.toml`.
+
+Diff images before regeneration:
+
+- `voices`: header text, reference path, and the decode-error block. The error is gone because `tone.m4a` decodes (0.3 s). Fields below it sit higher. Speaker chips match the previous image.
+- `clips`: source column and the detail pane. The ffmpeg "no such file"
+  message for `/private/tmp/scriptcast-k/...` is gone. The pane shows the tone
+  waveform. One `.mp3` source had been left behind; it now points at
+  `tone.mp4` too.
+- `new_episode_sheet`: the three path fields. They were absolute worktree
+  paths. They are now `tests/fixtures/script.md`, `tests/fixtures/voices.yaml`,
+  and `tests/fixtures`.
+- `audition`: the project header, the reference filenames (`/tmp/aisha_*.wav` to `tone.m4a`), and Play buttons that appear because the file exists.
+
+`UPDATE_SNAPSHOTS=1` rewrote `voices.png`, `clips.png`, `new_episode_sheet.png`, and `audition.png`.
+
 ## Snapshot run time
 
-`cargo test --test snapshots -- --test-threads=1` finished in 6.12s (wall 6.42s, warm binary). Headless wgpu rendered. No test is `#[ignore]`.
+First pass, before N0b: `cargo test --test snapshots -- --test-threads=1` finished in 6.12s (wall 6.42s, warm binary).
+
+After the hermetic fixtures, the same serial snapshot run finished in 5.93s
+and 5.86s. Parallel snapshot runs finished in 0.84s and 0.75s. Full
+`cargo test --offline` passed twice with `--test-threads=1` and twice with
+the default thread pool. Headless wgpu rendered. No snapshot test is
+`#[ignore]`.
 
 ## Broken-layout proof
 

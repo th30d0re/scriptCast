@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "episode_id": "episode_small",
-  "transcript": "/tmp/scriptcast-j/script.md",
-  "voices": "/tmp/scriptcast-j/voices.yaml",
+  "transcript": "tests/fixtures/script.md",
+  "voices": "tests/fixtures/voices.yaml",
   "turns": [
     {"index": 1, "turn_id": "turn_1", "speaker_id": "alex", "speaker_name": "Alex", "timestamp_ms": 0,
      "first_words": "Welcome to All Things Open. Today: who pays?", "clip_id": null},

@@ -418,7 +418,7 @@ impl Browser {
     }
 
     pub(crate) fn refresh_commands(&mut self, ctx: &egui::Context) {
-        if self.jobs.login.is_some() {
+        if self.harness || self.jobs.login.is_some() {
             return;
         }
         let project = self

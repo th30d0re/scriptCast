@@ -709,18 +709,24 @@ impl Browser {
             self.apply_project_defaults(project);
         }
         if let Some(script) = script {
-            let script = std::fs::canonicalize(&script).unwrap_or(script);
+            let script = if self.harness {
+                script
+            } else {
+                std::fs::canonicalize(&script).unwrap_or(script)
+            };
             self.phase.options.script = script.display().to_string();
             self.phase.options.episode_id = script
                 .file_stem()
                 .unwrap_or_default()
                 .to_string_lossy()
                 .into_owned();
-            self.phase.project = crate::episode::find_project_root(
-                script.parent().unwrap_or(Path::new(".")),
-            );
-            if let Some(project) = self.phase.project.clone() {
-                self.apply_project_defaults(project);
+            if !self.harness {
+                self.phase.project = crate::episode::find_project_root(
+                    script.parent().unwrap_or(Path::new(".")),
+                );
+                if let Some(project) = self.phase.project.clone() {
+                    self.apply_project_defaults(project);
+                }
             }
             self.phase.preview = None;
             self.phase.validated = None;

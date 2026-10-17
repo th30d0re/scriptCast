@@ -183,7 +183,19 @@ fn absolute(path: &Path) -> PathBuf {
     fs::canonicalize(&expanded)
         .unwrap_or_else(|_| std::path::absolute(&expanded).unwrap_or(expanded))
 }
+thread_local! {
+    static IGNORE_PROJECT_ENV: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Snapshot runs ignore `SCRIPTCAST_PROJECT` so a developer shell cannot retarget fixtures.
+pub fn ignore_project_env(ignore: bool) {
+    IGNORE_PROJECT_ENV.with(|cell| cell.set(ignore));
+}
+
 pub fn find_project_root(dir: &Path) -> Option<PathBuf> {
+    if IGNORE_PROJECT_ENV.with(std::cell::Cell::get) {
+        return None;
+    }
     find_root_with_override(
         dir,
         std::env::var_os("SCRIPTCAST_PROJECT")
