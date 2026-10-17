@@ -1664,9 +1664,7 @@ impl Browser {
             return;
         }
         let envelope = match &self.makers.wave {
-            Some(Ok(envelope)) if !envelope.peaks.is_empty() => scriptcast_ui::waveform::Envelope {
-                peaks: envelope.peaks.clone(),
-            },
+            Some(Ok(envelope)) if !envelope.is_empty() => envelope,
             Some(Err(error)) => {
                 ui.label(t::text(
                     format!("Cannot decode source audio: {error}"),
@@ -1691,23 +1689,15 @@ impl Browser {
         );
         ui.painter()
             .rect_filled(rect, t::RADIUS_CONTROL, t::BG_CONTROL);
-        let full = scriptcast_ui::waveform::covers_window(&envelope.peaks, duration);
-        let (frac0, frac1) = if full {
-            (0.0_f32, 1.0_f32)
-        } else {
-            let covered = self.makers.wave_origin
-                + envelope.peaks.len() as f64 * f64::from(scriptcast_ui::waveform::BUCKET_SECS);
-            (
-                (self.makers.wave_origin / duration).clamp(0.0, 1.0) as f32,
-                (covered / duration).clamp(0.0, 1.0) as f32,
-            )
-        };
-        let span = ((frac1 - frac0) * rect.width()).max(t::WAVE_BAR + t::WAVE_GAP);
-        let bars =
-            scriptcast_ui::waveform::bars(&envelope, (span / (t::WAVE_BAR + t::WAVE_GAP)) as usize);
-        let left = rect.left() + frac0 * rect.width();
+        let origin = self.makers.wave_origin;
+        let bars = scriptcast_ui::waveform::bars_between(
+            envelope,
+            origin,
+            origin + duration,
+            (rect.width() / (t::WAVE_BAR + t::WAVE_GAP)) as usize,
+        );
         for (index, peak) in bars.iter().enumerate() {
-            let x = left + index as f32 * (t::WAVE_BAR + t::WAVE_GAP);
+            let x = rect.left() + index as f32 * (t::WAVE_BAR + t::WAVE_GAP);
             let half = peak * rect.height() * t::PROJECT_WAVE_AMPLITUDE;
             ui.painter().line_segment(
                 [

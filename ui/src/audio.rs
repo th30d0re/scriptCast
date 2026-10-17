@@ -9,13 +9,12 @@
 
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::{
-    ChannelCount, Decoder, DeviceSinkBuilder, MixerDeviceSink, Player, SampleRate, Source, cpal,
+    ChannelCount, DeviceSinkBuilder, MixerDeviceSink, Player, SampleRate, buffer::SamplesBuffer,
+    cpal,
 };
 use std::{
     collections::VecDeque,
     fmt,
-    fs::File,
-    io::{BufReader, Cursor},
     path::{Path, PathBuf},
     sync::mpsc::{self, Receiver, Sender},
     time::{Duration, Instant},
@@ -78,14 +77,18 @@ impl fmt::Display for AudioInfo {
     }
 }
 
-/// Decode a WAV's header. `None` when the file is missing or undecodable.
+/// Decode a file's header. `None` when the file is missing or undecodable.
 pub fn probe(path: &Path) -> Option<AudioInfo> {
-    let file = File::open(path).ok()?;
-    let source = Decoder::new(BufReader::new(file)).ok()?;
+    let bytes = std::fs::read(path).ok()?;
+    let hint = path.extension().and_then(|ext| ext.to_str());
+    let info = soundcraft_audio_io::probe(&bytes, hint).ok()?;
+    let channels = ChannelCount::try_from(info.channels).ok()?;
+    let sample_rate = SampleRate::try_from(info.sample_rate).ok()?;
+    let duration = (info.sample_rate != 0).then(|| Duration::from_secs_f64(info.duration_secs()));
     Some(AudioInfo {
-        channels: source.channels(),
-        sample_rate: source.sample_rate(),
-        duration: source.total_duration(),
+        channels,
+        sample_rate,
+        duration,
     })
 }
 
@@ -267,22 +270,16 @@ impl AudioOut {
         }
         let player = Player::connect_new(self.sink.mixer());
         let mut total = Duration::ZERO;
-        let mut decoded = true;
         for path in wavs {
-            let file = File::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
-            let source = Decoder::new(BufReader::new(file))
-                .map_err(|e| format!("{}: {e}", path.display()))?;
-            match source.total_duration() {
-                Some(d) => total += d,
-                None => decoded = false,
-            }
+            let (source, duration) = pcm_source(path, None, None, self.stream_rate)?;
+            total += duration;
             player.append(source);
         }
         if self.muted {
             player.set_volume(0.0);
         }
         player.play();
-        let dur = if decoded {
+        let dur = if total > Duration::ZERO {
             total
         } else {
             self.fallback_duration
@@ -299,8 +296,8 @@ impl AudioOut {
     /// Play a WAV already held in memory. Used after ffmpeg extracts a clip.
     pub fn play_wav_bytes(&mut self, bytes: Vec<u8>) -> Result<(), String> {
         self.stop();
-        let source = Decoder::new(Cursor::new(bytes)).map_err(|e| e.to_string())?;
-        let total = source.total_duration().unwrap_or(Duration::ZERO);
+        let pcm = crate::waveform::output_samples_bytes(&bytes, "wav", self.stream_rate)?;
+        let (source, total) = source_from_pcm(pcm)?;
         let player = Player::connect_new(self.sink.mixer());
         if self.muted {
             player.set_volume(0.0);
@@ -326,18 +323,12 @@ impl AudioOut {
             return Err(format!("turn {turn} has no audio segments"));
         }
         let mut total = Duration::ZERO;
-        let mut decoded = true;
         for path in wavs {
-            let file = File::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
-            let source = Decoder::new(BufReader::new(file))
-                .map_err(|e| format!("{}: {e}", path.display()))?;
-            match source.total_duration() {
-                Some(d) => total += d,
-                None => decoded = false,
-            }
+            let (source, duration) = pcm_source(path, None, None, self.stream_rate)?;
+            total += duration;
             player.append(source);
         }
-        let dur = if decoded {
+        let dur = if total > Duration::ZERO {
             total
         } else {
             self.fallback_duration
@@ -617,6 +608,28 @@ mod phase_c_tests {
     }
 }
 
+fn pcm_source(
+    path: &Path,
+    start: Option<f64>,
+    end: Option<f64>,
+    out_rate: u32,
+) -> Result<(SamplesBuffer, Duration), String> {
+    let pcm = crate::waveform::output_samples(path, start, end, out_rate)
+        .map_err(|e| format!("{}: {e}", path.display()))?;
+    source_from_pcm(pcm)
+}
+
+fn source_from_pcm(pcm: crate::waveform::OutputPcm) -> Result<(SamplesBuffer, Duration), String> {
+    let channels = ChannelCount::try_from(pcm.channels).map_err(|_| "audio has no channels")?;
+    let rate = SampleRate::try_from(pcm.sample_rate).map_err(|_| "audio has a zero sample rate")?;
+    let frames = pcm.interleaved.len() / usize::from(channels.get());
+    let duration = Duration::from_secs_f64(frames as f64 / f64::from(rate.get()));
+    Ok((
+        SamplesBuffer::new(channels, rate, pcm.interleaved),
+        duration,
+    ))
+}
+
 /// Pick the config range to open at `want` Hz: the first range whose
 /// min..=max contains `want`, preferring the device's default channel count.
 fn pick_rate(ranges: &[(u16, u32, u32)], default_channels: u16, want: u32) -> Option<usize> {
@@ -640,24 +653,8 @@ impl AudioOut {
         if self.muted {
             player.set_volume(0.0);
         }
-        match File::open(path).and_then(|file| {
-            Decoder::new(BufReader::new(file))
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string()))
-        }) {
-            Ok(source) => {
-                player.append(
-                    source
-                        .skip_duration(Duration::from_secs_f64(start))
-                        .take_duration(Duration::from_secs_f64(end - start)),
-                );
-            }
-            Err(native) => {
-                let bytes = crate::waveform::ffmpeg_wav(path, start, end - start)
-                    .map_err(|ffmpeg| format!("{native}; {ffmpeg}"))?;
-                let source = Decoder::new(Cursor::new(bytes)).map_err(|e| e.to_string())?;
-                player.append(source);
-            }
-        }
+        let (source, _) = pcm_source(path, Some(start), Some(end), self.stream_rate)?;
+        player.append(source);
         player.play();
         Ok(player)
     }

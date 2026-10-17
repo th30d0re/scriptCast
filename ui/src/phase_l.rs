@@ -105,8 +105,7 @@ impl Browser {
             self.project.media_pending = None;
             match result {
                 Ok((envelope, origin)) => {
-                    let len = envelope.peaks.len() as f64
-                        * f64::from(scriptcast_ui::waveform::BUCKET_SECS);
+                    let len = envelope.duration_secs();
                     self.project.media_origin = origin;
                     self.project.media_span = Some((origin, len));
                     self.project.media = Some(Ok(envelope));
@@ -1849,10 +1848,7 @@ impl Browser {
             return None;
         }
         let envelope = self.project.media.as_ref()?.as_ref().ok()?;
-        Some(format!(
-            "{:.1} s",
-            envelope.peaks.len() as f32 * scriptcast_ui::waveform::BUCKET_SECS
-        ))
+        Some(format!("{:.1} s", envelope.duration_secs()))
     }
     fn load_project_media(
         &mut self,
@@ -1950,16 +1946,13 @@ impl Browser {
                 audio.stop();
             }
             if let Some(Ok(envelope)) = &self.project.media {
-                ui.label(format!(
-                    "{:.1} s",
-                    envelope.peaks.len() as f32 * scriptcast_ui::waveform::BUCKET_SECS
-                ));
+                ui.label(format!("{:.1} s", envelope.duration_secs()));
             }
         });
     }
     fn clip_waveform(&mut self, ui: &mut Ui, start: &mut f64, end: &mut f64) -> bool {
         let envelope = match &self.project.media {
-            Some(Ok(envelope)) if !envelope.peaks.is_empty() => envelope,
+            Some(Ok(envelope)) if !envelope.is_empty() => envelope,
             Some(Err(error)) => {
                 ui.label(format!("Cannot decode source audio: {error}"));
                 return false;
@@ -1974,9 +1967,9 @@ impl Browser {
             }
         };
         let origin = self.project.media_origin;
-        let duration = (envelope.peaks.len() as f64
-            * f64::from(scriptcast_ui::waveform::BUCKET_SECS))
-        .max(f64::from(scriptcast_ui::waveform::BUCKET_SECS));
+        let duration = envelope
+            .duration_secs()
+            .max(f64::from(scriptcast_ui::waveform::BUCKET_SECS));
         let (rect, _) = ui.allocate_exact_size(
             egui::vec2(ui.available_width(), t::PROJECT_WAVE_HEIGHT),
             egui::Sense::hover(),
