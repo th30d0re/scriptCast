@@ -409,6 +409,10 @@ class PhononEngine(TTSEngine):
     clone-voice.py (a .safetensors path, relative to the project root) or a name
     from the Phonon voice catalog. The model loads in well under a second and
     renders far faster than real time on CPU, so it runs in process.
+
+    Phonon is deterministic: the same text and voice give the same take, so a
+    plain `--regenerate-turns` cannot re-roll a glitch. Set
+    SCRIPTCAST_PHONON_SEED=<int> for that run to draw a different take.
     """
 
     def __init__(
@@ -450,6 +454,9 @@ class PhononEngine(TTSEngine):
             raise RuntimeError("Phonon model failed to load")
 
         kwargs: dict[str, Any] = {"voice": self._voice(voice_config)}
+        seed = os.environ.get("SCRIPTCAST_PHONON_SEED")
+        if seed:
+            kwargs["seed"] = int(seed)
         # Phonon sets pace with duration_delta: positive is slower. `speed` in
         # voices.yaml is a rate (below 1.0 is slower), so convert it.
         if voice_config.speed and voice_config.speed != 1.0:

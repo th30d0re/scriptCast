@@ -211,3 +211,14 @@ def test_phonon_engine_missing_voice_raises(tmp_path) -> None:
     )
     with pytest.raises(RuntimeError, match="voice file not found"):
         asyncio.run(engine.synthesize_chunk("hello", missing))
+
+
+def test_phonon_engine_seed_comes_from_environment(monkeypatch) -> None:
+    engine = PhononEngine()
+    engine._tts = MagicMock()
+    engine._tts.synth.return_value = numpy.zeros(0, dtype=numpy.float32)
+    config = VoiceConfig(speaker_id="host", engine="phonon", phonon_voice="Zoey")
+
+    monkeypatch.setenv("SCRIPTCAST_PHONON_SEED", "3")
+    asyncio.run(engine.synthesize_chunk("hello", config))
+    assert engine._tts.synth.call_args.kwargs == {"voice": "Zoey", "seed": 3}
