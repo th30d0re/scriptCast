@@ -83,7 +83,7 @@ frame.
 Rerun with `uv sync --all-extras` in this worktree (so the `cinetic` extra supplies cv2), same clip:
 
 - `sheet.py`: pass, 45 frames (f0-f440, every 10).
-- `forensics.py`: fail, 45 findings. 20 shown are `stall` (frame N repeats N-1), occurring on a strict
+- `forensics.py`: fail, 43 findings. 20 shown are `stall` (frame N repeats N-1), occurring on a strict
   5-frame cadence (f156, f161, f166 ... f231, f266, f286 ...); the rest are `spike` (one-frame jumps at
   f137, f158, f234, f283 ...).
 - `hermetic tests`: 3 passed.
