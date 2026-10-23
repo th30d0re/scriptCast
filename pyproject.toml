@@ -28,6 +28,7 @@ dependencies = [
     "soundfile",
     "pyyaml",
     "ruamel.yaml",
+    "ptts",
 ]
 
 [project.optional-dependencies]
