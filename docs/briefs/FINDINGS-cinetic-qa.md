@@ -77,3 +77,24 @@ frame.
 - The lint palette/italic/glow failures may represent an intentional scriptCast visual identity,
   not defects. They should not be changed solely to make cinetic lint green without an art-direction
   decision.
+
+## Rerun with cv2 (reviewer, 2026-10-22)
+
+Rerun with `uv sync --all-extras` in this worktree (so the `cinetic` extra supplies cv2), same clip:
+
+- `sheet.py`: pass, 45 frames (f0-f440, every 10).
+- `forensics.py`: fail, 45 findings. 20 shown are `stall` (frame N repeats N-1), occurring on a strict
+  5-frame cadence (f156, f161, f166 ... f231, f266, f286 ...); the rest are `spike` (one-frame jumps at
+  f137, f158, f234, f283 ...).
+- `hermetic tests`: 3 passed.
+
+Interpretation (not proven):
+- The 1-in-5 duplicated frames match a 25 fps source conformed to 30 fps without frame blending. Worth
+  checking the source fps in `make_clip.py` / `video.py`; if confirmed it is real judder, and the most
+  useful finding of this run.
+- The spikes line up with B-roll cuts on the contact sheet (f100, f158, f290 ...). They are undeclared
+  cuts, not defects; passing cut frames via `--cuts` would silence them.
+
+Correction to "Manual observation" above: the contact sheet shows the caption building
+`I THINK THAT'S THE` then `I THINK THAT'S THE THE NUMBER` across f400-f430, so the doubled `THE` is very
+likely the speaker's own repetition in the transcript, not an overlay offset.
