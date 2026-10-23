@@ -126,3 +126,41 @@ def test_always_reading_covers_numbers() -> None:
     respellings = {"4473": {"always": "forty-four seventy-three"}}
     assert respell("Fill out a Form 4473 today.", respellings) == "Fill out a Form forty-four seventy-three today."
     assert respell("Room 44730 stays.", respellings) == "Room 44730 stays."
+
+
+PHONON_LEXICON = {
+    "psi-sub-m": {"phonon": "sigh sub em"},
+    "rho-tau": {"phonon": "row-tao"},
+    "rho": {"always": "roe"},
+    "geronimus": {"always": "jer-AH-nih-mus", "phonon": ""},
+}
+
+
+def test_compound_key_matches_the_whole_hyphenated_term():
+    assert respell("The wage psi-sub-m falls.", PHONON_LEXICON, engine="phonon") == (
+        "The wage sigh sub em falls."
+    )
+
+
+def test_compound_spelling_is_final():
+    # "rho" alone respells to "roe", but the calibrated compound wins inside rho-tau.
+    assert respell("The ratio rho-tau and rho itself.", PHONON_LEXICON, engine="phonon") == (
+        "The ratio row-tao and roe itself."
+    )
+
+
+def test_engine_key_overrides_always_and_empty_keeps_the_word():
+    text = "Geronimus named it."
+    assert respell(text, PHONON_LEXICON, engine="phonon") == text
+    assert respell(text, PHONON_LEXICON, engine="omnivoice") == "Jer-AH-nih-mus named it."
+
+
+def test_engine_only_compound_leaves_other_engines_alone():
+    # Without an "always" spelling, other engines keep the word-level behavior.
+    assert respell("The ratio rho-tau.", PHONON_LEXICON, engine="omnivoice") == "The ratio roe-tau."
+
+
+def test_phonon_is_a_respelling_engine():
+    from scriptcast.pronunciation import RESPELLING_ENGINES
+
+    assert "phonon" in RESPELLING_ENGINES
