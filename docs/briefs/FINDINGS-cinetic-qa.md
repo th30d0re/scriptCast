@@ -98,3 +98,18 @@ Interpretation (not proven):
 Correction to "Manual observation" above: the contact sheet shows the caption building
 `I THINK THAT'S THE` then `I THINK THAT'S THE THE NUMBER` across f400-f430, so the doubled `THE` is very
 likely the speaker's own repetition in the transcript, not an overlay offset.
+
+## Judder check (reviewer, 2026-10-22)
+
+`clip001.mp4` is not a finished render: it is the excerpt `stage_media` cuts in
+`scriptcast/tools/video.py:32-42` with `-an -vf fps=30`. The missing audio is by design (audio is staged
+as `000.mp3`), so the probe and check-sync failures are expected for this file and do not apply to it.
+
+Exact-repeat scan over all 443 frames (mean abs luma diff < 0.15): 48 repeated frames, 37 of the 47
+gaps exactly 5 frames, up to 6 repeats per second. One repeat every 5 frames is the 24 fps -> 30 fps
+pattern (25 fps would give one in 6). So the source footage is ~24 fps and `fps=30` conforms it by
+duplicating frames: a 2:3-style judder on every pan and gesture. The longer gaps (10, 15) are repeats
+the threshold missed where the source's burned-in captions change.
+
+Fix options (not applied): blend instead of duplicate (`framerate=30` or `minterpolate` in
+`_cut_clip`), or render episodes at the source rate when footage dominates.
