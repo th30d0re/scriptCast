@@ -31,13 +31,17 @@ def browser_args():
 
 
 def _cut_clip(source: Path, target: Path, in_ms: float, out_ms: float) -> bool:
-    """Re-encode just the used excerpt as a short 30 fps H.264 file. Returns False if it cannot."""
+    """Re-encode just the used excerpt as a short 30 fps H.264 file. Returns False if it cannot.
+
+    framerate blends neighbouring frames where fps would duplicate them: 24 fps footage conformed
+    with fps=30 repeats one frame in five, a visible judder on every pan.
+    """
     ffmpeg = shutil.which("ffmpeg")
     if not ffmpeg or out_ms <= in_ms:
         return False
     result = subprocess.run(
         [ffmpeg, "-v", "error", "-y", "-ss", f"{in_ms / 1000:.3f}", "-to", f"{out_ms / 1000:.3f}", "-i", str(source),
-         "-an", "-vf", "fps=30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", str(target)],
+         "-an", "-vf", "framerate=30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", str(target)],
         capture_output=True, check=False)
     return result.returncode == 0 and target.is_file() and target.stat().st_size > 0
 

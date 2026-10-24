@@ -126,3 +126,20 @@ def test_chunk_ranges_cover_every_frame_once():
     assert ranges[0][0] == 0 and ranges[-1][1] == 99
     assert all(ranges[i][1] + 1 == ranges[i + 1][0] for i in range(len(ranges) - 1))
     assert chunk_ranges(5, 6, 8) == [(5, 5), (6, 6)]
+
+
+def test_cut_clip_blends_frames(tmp_path, monkeypatch):
+    target = tmp_path / "clip001.mp4"
+    calls = []
+
+    def fake_run(cmd, **kw):
+        calls.append(cmd)
+        target.write_bytes(b"x")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(video.shutil, "which", lambda name: "/usr/bin/ffmpeg")
+    monkeypatch.setattr(video.subprocess, "run", fake_run)
+    assert video._cut_clip(tmp_path / "reel.mp4", target, 1000, 3500)
+    cmd = calls[0]
+    assert cmd[cmd.index("-vf") + 1] == "framerate=30"
+    assert cmd[cmd.index("-ss") + 1] == "1.000" and cmd[cmd.index("-to") + 1] == "3.500"
