@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - Unreleased
 
 ### Added
+- Phonon TTS (`engine: phonon` in `voices.yaml`). `phonon_voice` is a Phonon catalog name or a `.safetensors` clone. `ptts` is a core dependency. `SCRIPTCAST_PHONON_SEED` draws a different take; otherwise Phonon is deterministic.
+- Native macOS app `scriptcast-ui` (Rust). It opens a project, shows the episode timeline, plays turns, and edits voices, clips, and pronunciations. Apple Silicon builds are attached to GitHub releases.
 - `scriptcast-craft cue` writes a 1080×1920, 30 fps cue sheet from the episode manifest clock. `scriptcast-craft timeline` places silent Craft picture on that clock in FCPXML 1.10 and writes SRT and WebVTT beside it from the captions JSON. Dialogue wavs and `scriptcast-captions` JSON are unchanged.
 - Dynamic density scaling for cards, optimizing font sizes and layout for large text content while staying within the safe zone. Added "hero" art slot support across all cards. Added runtime visual overflow guards.
 - Quiver SVG generation, animation, and model-list client with bounded retries, a manifest-backed asset cache, offline checks, and `scriptcast-video svg` dry runs. All four cards render public-relative `svgAsset` artwork inside the safe zone; a hand-written SVG example is included.
