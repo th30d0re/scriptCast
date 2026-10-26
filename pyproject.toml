@@ -27,11 +27,14 @@ dependencies = [
     "scipy",
     "soundfile",
     "pyyaml",
+    "ruamel.yaml",
+    "ptts",
 ]
 
 [project.optional-dependencies]
 verify = ["mlx-whisper"]
 elevenlabs = ["elevenlabs"]
+cinetic = ["opencv-python", "librosa", "pyloudnorm", "soundfile", "scipy", "numpy"]
 
 [project.urls]
 Homepage = "https://github.com/th30d0re/scriptCast"
@@ -40,9 +43,23 @@ Issues = "https://github.com/th30d0re/scriptCast/issues"
 Changelog = "https://github.com/th30d0re/scriptCast/blob/main/CHANGELOG.md"
 
 [project.scripts]
+scriptcast-export = "scriptcast.tools.export_session:main"
+scriptcast-video = "scriptcast.tools.video:main"
+scriptcast-shotspec = "scriptcast.tools.shotspec:main"
+scriptcast-word-timings = "scriptcast.tools.word_timings:main"
+scriptcast-clip-transcribe = "scriptcast.tools.clip_transcribe:main"
+scriptcast-verify-ensemble = "scriptcast.tools.verify_ensemble:main"
+scriptcast-captions = "scriptcast.tools.captions:main"
+scriptcast-craft = "scriptcast.tools.craft_export:main"
+scriptcast-tapestop = "scriptcast.tools.tapestop:main"
+scriptcast-tapefx = "scriptcast.tools.tapefx:main"
+scriptcast-mix = "scriptcast.tools.mix:main"
 scriptcast = "scriptcast.__main__:main"
 scriptcast-verify = "scriptcast.tools.verify_render:main"
+scriptcast-review = "scriptcast.review:main"
+scriptcast-review-stats = "scriptcast.tools.review_stats:main"
 scriptcast-repair = "scriptcast.tools.repair_render:main"
+scriptcast-refit = "scriptcast.tools.refit_render:main"
 scriptcast-relayout = "scriptcast.tools.relayout_episode:main"
 scriptcast-stitch = "scriptcast.tools.stitch_episode:main"
 scriptcast-retime = "scriptcast.tools.retime_script:main"
@@ -53,6 +70,7 @@ scriptcast-clip = "scriptcast.tools.make_clip:main"
 scriptcast-reference = "scriptcast.tools.make_reference:main"
 scriptcast-audition = "scriptcast.tools.audition_voice:main"
 scriptcast-calibrate = "scriptcast.tools.calibrate_pronunciation:main"
+scriptcast-project = "scriptcast.tools.project_config:main"
 
 [tool.setuptools.packages.find]
 include = ["scriptcast*"]

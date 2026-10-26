@@ -12,13 +12,16 @@ tools pick up the caller's working directory.
 from __future__ import annotations
 
 import os
+import math
 import tomllib
 from pathlib import Path
 
 CONFIG_NAME = "scriptcast.toml"
 ROOT_ENV_VAR = "SCRIPTCAST_PROJECT"
 
-DEFAULTS: dict[str, str] = {
+DEFAULTS: dict[str, str | int | float] = {
+    "tail_ms": 400,
+    "speech_threshold": 0.03,
     "voices": "voices.yaml",
     "pronunciations": "pronunciations.yaml",
     "speaker_rates": "speaker_rates.json",
@@ -61,7 +64,16 @@ class Project:
                 f"Known keys: {', '.join(sorted(DEFAULTS))}."
             )
         merged = {**DEFAULTS, **raw}
-        self._paths = {key: self.resolve(value) for key, value in merged.items()}
+        self.tail_ms = merged["tail_ms"]
+        self.speech_threshold = merged["speech_threshold"]
+        if type(self.tail_ms) is not int or self.tail_ms < 0:
+            raise ValueError("tail_ms must be a nonnegative integer")
+        if (type(self.speech_threshold) not in (int, float)
+                or not math.isfinite(self.speech_threshold)
+                or self.speech_threshold < 0):
+            raise ValueError("speech_threshold must be a finite nonnegative number")
+        self._paths = {key: self.resolve(value) for key, value in merged.items()
+                       if key not in {"tail_ms", "speech_threshold"}}
 
     def resolve(self, value: object) -> Path:
         """`value` as an absolute path; relative values anchor at the root."""

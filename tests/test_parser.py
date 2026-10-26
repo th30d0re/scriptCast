@@ -94,6 +94,24 @@ def test_parse_transcript_timestamp_ms() -> None:
     assert later_turn.timestamp_ms == expected_ms
 
 
+def test_parse_transcript_three_digit_minutes(tmp_path) -> None:
+    script = tmp_path / "episode.md"
+    script.write_text(
+        "Host (99:59)\nEarlier turn.\n\n"
+        "Emmanuel Theodore (100:05)\nLater turn.\n",
+        encoding="utf-8",
+    )
+
+    turns = parse_transcript(script)
+
+    assert len(turns) == 2
+    assert turns[0].raw_text == "Earlier turn."
+    assert turns[1].display_name == "Emmanuel Theodore"
+    assert turns[1].timestamp_mmss == "100:05"
+    assert turns[1].timestamp_ms == 6_005_000
+    assert turns[1].raw_text == "Later turn."
+
+
 def test_parse_transcript_line_span() -> None:
     turns = parse_transcript(FIXTURE)
 
@@ -104,3 +122,60 @@ def test_parse_transcript_line_span() -> None:
         and turn.line_span[0] <= turn.line_span[1]
         for turn in turns
     )
+
+
+def test_parse_transcript_strips_trailing_html_comment(tmp_path) -> None:
+    transcript_path = tmp_path / "episode.md"
+    transcript_path.write_text(
+        "Host (00:00)\nNot all men. <!-- antithesis-ok: x -->\n",
+        encoding="utf-8",
+    )
+
+    turn = parse_transcript(transcript_path)[0]
+
+    assert turn.raw_text == "Not all men."
+    assert turn.clean_text == "Not all men."
+
+
+def test_parse_transcript_keeps_clip_tag_and_strips_html_comment(tmp_path) -> None:
+    transcript_path = tmp_path / "episode.md"
+    transcript_path.write_text(
+        "Archive (00:00)\n[clip:foo] caption <!-- note -->\n",
+        encoding="utf-8",
+    )
+
+    turn = parse_transcript(transcript_path)[0]
+
+    assert turn.raw_text == "[clip:foo] caption"
+    assert turn.clean_text == "[clip:foo] caption"
+
+
+def test_parse_transcript_strips_multiline_html_comment(tmp_path) -> None:
+    transcript_path = tmp_path / "episode.md"
+    transcript_path.write_text(
+        "Host (00:00)\nBefore <!-- note on\ntwo lines --> after.\n",
+        encoding="utf-8",
+    )
+
+    turn = parse_transcript(transcript_path)[0]
+
+    assert turn.raw_text == "Before after."
+    assert turn.clean_text == "Before after."
+
+
+def test_parse_transcript_html_comment_does_not_change_turn_id(tmp_path) -> None:
+    with_comment_path = tmp_path / "with-comment.md"
+    with_comment_path.write_text(
+        "Host (00:00)\nNot all men. <!-- antithesis-ok: x -->\n",
+        encoding="utf-8",
+    )
+    without_comment_path = tmp_path / "without-comment.md"
+    without_comment_path.write_text(
+        "Host (00:00)\nNot all men.\n",
+        encoding="utf-8",
+    )
+
+    with_comment = parse_transcript(with_comment_path)[0]
+    without_comment = parse_transcript(without_comment_path)[0]
+
+    assert with_comment.turn_id == without_comment.turn_id

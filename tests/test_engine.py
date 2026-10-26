@@ -8,6 +8,7 @@ from scriptcast.engine import (
     ElevenLabsEngine,
     MLXChatterboxEngine,
     MLXKokoroEngine,
+    PhononEngine,
     _elevenlabs_api_key,
 )
 from scriptcast.models import VoiceConfig
@@ -163,3 +164,61 @@ def test_mlx_chatterbox_engine_missing_reference_file_raises(tmp_path) -> None:
 def test_mlx_chatterbox_engine_sample_rate_is_24000() -> None:
     engine = MLXChatterboxEngine("dummy_model")
     assert engine.sample_rate == 24000
+
+
+def test_phonon_engine_registers_voice_file_once_and_converts_speed(tmp_path) -> None:
+    voice_file = tmp_path / "host.safetensors"
+    voice_file.write_bytes(b"")
+    engine = PhononEngine(trim_edges=False)
+    engine._tts = MagicMock()  # bypass load()
+    engine._tts.synth.return_value = numpy.ones(240, dtype=numpy.float32)
+
+    config = VoiceConfig(
+        speaker_id="host", engine="phonon",
+        phonon_voice=str(voice_file), speed=0.8,
+    )
+    audio = asyncio.run(engine.synthesize_chunk("hello", config))
+    asyncio.run(engine.synthesize_chunk("again", config))
+
+    assert audio.shape == (240,)
+    engine._tts.add_voice.assert_called_once_with("scriptcast_host", str(voice_file))
+    kwargs = engine._tts.synth.call_args.kwargs
+    assert kwargs["voice"] == "scriptcast_host"
+    assert kwargs["conditions"]["duration_delta"] == pytest.approx(0.25)
+
+
+def test_phonon_engine_catalog_voice_passes_name_through() -> None:
+    engine = PhononEngine()
+    engine._tts = MagicMock()
+    engine._tts.synth.return_value = numpy.zeros(0, dtype=numpy.float32)
+
+    config = VoiceConfig(speaker_id="host", engine="phonon", phonon_voice="Zoey")
+    asyncio.run(engine.synthesize_chunk("hello", config))
+
+    engine._tts.add_voice.assert_not_called()
+    assert engine._tts.synth.call_args.kwargs == {"voice": "Zoey"}
+
+
+def test_phonon_engine_missing_voice_raises(tmp_path) -> None:
+    engine = PhononEngine()
+    engine._tts = MagicMock()
+    with pytest.raises(RuntimeError, match="phonon_voice"):
+        asyncio.run(engine.synthesize_chunk(
+            "hello", VoiceConfig(speaker_id="host", engine="phonon")))
+    missing = VoiceConfig(
+        speaker_id="host", engine="phonon",
+        phonon_voice=str(tmp_path / "gone.safetensors"),
+    )
+    with pytest.raises(RuntimeError, match="voice file not found"):
+        asyncio.run(engine.synthesize_chunk("hello", missing))
+
+
+def test_phonon_engine_seed_comes_from_environment(monkeypatch) -> None:
+    engine = PhononEngine()
+    engine._tts = MagicMock()
+    engine._tts.synth.return_value = numpy.zeros(0, dtype=numpy.float32)
+    config = VoiceConfig(speaker_id="host", engine="phonon", phonon_voice="Zoey")
+
+    monkeypatch.setenv("SCRIPTCAST_PHONON_SEED", "3")
+    asyncio.run(engine.synthesize_chunk("hello", config))
+    assert engine._tts.synth.call_args.kwargs == {"voice": "Zoey", "seed": 3}

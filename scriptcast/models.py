@@ -32,6 +32,9 @@ class VoiceConfig:
     # a more expressive take.
     reference_audio_expressive: str | None = None
     reference_text_expressive: str | None = None
+    # Phonon: a cloned .safetensors voice file (project-relative) or a catalog
+    # voice name.
+    phonon_voice: str | None = None
 
 
 @dataclass
@@ -46,6 +49,7 @@ class SegmentResult:
     sample_rate: int
     gap_after_ms: int
     checksum: str
+    audio_channels: int = 2
 
 
 @dataclass

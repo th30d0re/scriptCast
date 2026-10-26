@@ -9,6 +9,56 @@ from scriptcast.models import SegmentResult
 
 
 class GenerateAlsTests(TestCase):
+    def test_clones_speaker_tracks_with_unique_live_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            output_path = project_root / "nine-speakers.als"
+            segments = [
+                self._segment(project_root, index, f"speaker_{index}", 100, 100, 0)
+                for index in range(9)
+            ]
+
+            result_path = generate_als(segments, output_path)
+            root = ET.fromstring(gzip.open(result_path, "rb").read())
+
+        audio_tracks = root.findall("./LiveSet/Tracks/AudioTrack")
+        self.assertGreaterEqual(len(audio_tracks), 9)
+
+        track_ids = [track.attrib["Id"] for track in audio_tracks]
+        self.assertEqual(len(track_ids), len(set(track_ids)))
+
+        target_ids = [
+            element.attrib["Id"]
+            for element in root.iter()
+            if "Id" in element.attrib
+            and (element.tag.endswith("Target") or element.tag == "Pointee")
+        ]
+        self.assertEqual(len(target_ids), len(set(target_ids)))
+
+        max_target_id = max(int(target_id) for target_id in target_ids)
+        next_pointee_ids = root.findall(".//NextPointeeId")
+        self.assertTrue(next_pointee_ids)
+        self.assertTrue(
+            all(
+                int(next_pointee.attrib["Value"]) > max_target_id
+                for next_pointee in next_pointee_ids
+            )
+        )
+
+    def test_five_or_fewer_speakers_do_not_clone_tracks(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            output_path = project_root / "five-speakers.als"
+            segments = [
+                self._segment(project_root, index, f"speaker_{index}", 100, 100, 0)
+                for index in range(5)
+            ]
+
+            result_path = generate_als(segments, output_path)
+            root = ET.fromstring(gzip.open(result_path, "rb").read())
+
+        self.assertEqual(len(root.findall("./LiveSet/Tracks/AudioTrack")), 5)
+
     def test_generates_gzip_xml_with_tracks_clips_timeline_and_file_refs(
         self,
     ) -> None:

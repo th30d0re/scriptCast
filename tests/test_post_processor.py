@@ -13,7 +13,7 @@ def test_trim_edge_silence_preserves_internal_pauses() -> None:
 
     trimmed = _trim_edge_silence(audio, sample_rate)
 
-    assert len(trimmed) == 20 + 200 + 500 + 200 + 20
+    assert len(trimmed) == 20 + 200 + 500 + 200 + 80
 
 
 def test_trim_edge_silence_fixed_threshold_leaves_noise_floor() -> None:
@@ -37,7 +37,7 @@ def test_trim_edge_silence_fixed_threshold_true_silence() -> None:
 
     trimmed = _trim_edge_silence(audio, sample_rate)
 
-    assert len(trimmed) == 20 + 500 + 20
+    assert len(trimmed) == 20 + 500 + 80
 
 
 def test_trim_edge_silence_low_energy_below_threshold() -> None:
@@ -49,8 +49,9 @@ def test_trim_edge_silence_low_energy_below_threshold() -> None:
 
     trimmed = _trim_edge_silence(audio, sample_rate)
 
-    # 0.003 is below the 0.005 threshold, so it gets trimmed.
-    assert len(trimmed) == 20 + 500 + 20
+    # Leading 0.003 is below the 0.005 threshold and is trimmed. Trailing 0.003
+    # sits above the 0.002 tail threshold, so the decay is kept.
+    assert len(trimmed) == 20 + 500 + 800
 
 
 def test_trim_edge_silence_quiet_clip_preserve_falloff() -> None:
@@ -66,6 +67,18 @@ def test_trim_edge_silence_quiet_clip_preserve_falloff() -> None:
     # 0.02 falloff is above the 0.005 fixed threshold and should remain;
     # only the terminal 0.001 edge noise is cut.
     assert len(trimmed) >= 80 + 300 + 80
+
+
+def test_trim_edge_silence_keeps_decaying_tail() -> None:
+    sample_rate = 1000
+    voiced = numpy.full(400, 0.2, dtype=numpy.float32)
+    decay = numpy.full(100, 0.004, dtype=numpy.float32)
+    silence = numpy.zeros(300, dtype=numpy.float32)
+    audio = numpy.concatenate([voiced, decay, silence])
+
+    trimmed = _trim_edge_silence(audio, sample_rate)
+
+    assert len(trimmed) >= 400 + 100 + 80
 
 
 def test_trim_edge_silence_all_zero_returns_empty() -> None:

@@ -1,0 +1,1005 @@
+{
+  "schema": 1,
+  "root": "tests/fixtures",
+  "toml": {
+    "path": "tests/fixtures/scriptcast.toml",
+    "values": {
+      "voices": "voices.yaml",
+      "pronunciations": "project/pronunciations.yaml",
+      "speaker_rates": "project/speaker_rates.json",
+      "clips": "project/clips.yaml",
+      "clip_sources": "audio",
+      "references": "audio",
+      "scripts": "episode_small",
+      "outputs": "outputs",
+      "omnivoice_python": ".venv-omnivoice/bin/python",
+      "tail_ms": 800
+    },
+    "unknown_keys": [],
+    "problems": []
+  },
+  "voices": {
+    "path": "tests/fixtures/voices.yaml",
+    "speakers": [
+      {
+        "id": "emmanuel_theodore",
+        "name": "Emmanuel Theodore",
+        "engine": "omnivoice",
+        "fields": {
+          "name": "Emmanuel Theodore",
+          "engine": "omnivoice",
+          "reference_audio": "audio/tone.m4a",
+          "reference_text": "We can control electrons. We control them so precisely that I can put my voice and my face on the other side of the planet in real time.",
+          "reference_audio_expressive": "audio/tone.m4a",
+          "reference_text_expressive": "We can control electrons. We control them so precisely that I can put my voice and my face on the other side of the planet in real time.",
+          "character_profile": "Host and author of The Original Power"
+        },
+        "problems": []
+      },
+      {
+        "id": "toussaint",
+        "name": "Toussaint",
+        "engine": "omnivoice",
+        "fields": {
+          "name": "Toussaint",
+          "engine": "omnivoice",
+          "reference_audio": "audio/tone.m4a",
+          "reference_text": "Which turns your own discomfort into a measurement. Wherever the exercise gets hardest is where something was installed.",
+          "speed": 0.75,
+          "character_profile": "Co-narrator, historical and structural throughline"
+        },
+        "problems": []
+      },
+      {
+        "id": "aisha",
+        "name": "Aisha",
+        "engine": "omnivoice",
+        "fields": {
+          "name": "Aisha",
+          "engine": "omnivoice",
+          "reference_audio": "audio/tone.m4a",
+          "reference_text": "Elite Obscuration, and the Square Ceiling, which together make the apex invisible from the base.",
+          "character_profile": "Co-narrator, mathematical and empirical throughline"
+        },
+        "problems": []
+      },
+      {
+        "id": "lee_atwater",
+        "name": "Lee Atwater",
+        "engine": "archive",
+        "fields": {
+          "name": "Lee Atwater",
+          "engine": "archive",
+          "character_profile": "Archival recording, 1981"
+        },
+        "problems": []
+      },
+      {
+        "id": "the_reel",
+        "name": "The Reel",
+        "engine": "archive",
+        "fields": {
+          "name": "The Reel",
+          "engine": "archive",
+          "character_profile": "Source clip, @harvardseye x Gov. Healey, Yes-on-9 press event"
+        },
+        "problems": []
+      },
+      {
+        "id": "blake_johnson",
+        "name": "Blake Johnson",
+        "engine": "archive",
+        "fields": {
+          "name": "Blake Johnson",
+          "engine": "archive",
+          "character_profile": "Instagram reel, @eugenesquad, 2026"
+        },
+        "problems": []
+      },
+      {
+        "id": "jaylin_hertz",
+        "name": "Jaylin Hertz",
+        "engine": "archive",
+        "fields": {
+          "name": "Jaylin Hertz",
+          "engine": "archive",
+          "character_profile": "Instagram reel, @jesus.reigns23, 2026"
+        },
+        "problems": []
+      },
+      {
+        "id": "nick_powers",
+        "name": "Nick Powers",
+        "engine": "archive",
+        "fields": {
+          "name": "Nick Powers",
+          "engine": "archive",
+          "character_profile": "Instagram reel, @thatnickpowersguy, 2026"
+        },
+        "problems": []
+      },
+      {
+        "id": "chloe_sunderland",
+        "name": "Chloe Sunderland",
+        "engine": "archive",
+        "fields": {
+          "name": "Chloe Sunderland",
+          "engine": "archive",
+          "character_profile": "Instagram reel, @romaarmyy, 2026"
+        },
+        "problems": []
+      },
+      {
+        "id": "the_speech_prof",
+        "name": "The Speech Prof",
+        "engine": "archive",
+        "fields": {
+          "name": "The Speech Prof",
+          "engine": "archive",
+          "character_profile": "Instagram reel, @thespeechprof, 2026"
+        },
+        "problems": []
+      },
+      {
+        "id": "jaeden",
+        "name": "jaeden",
+        "engine": "archive",
+        "fields": {
+          "name": "jaeden",
+          "engine": "archive",
+          "character_profile": "Instagram reel, @jaeserv, 2026"
+        },
+        "problems": []
+      },
+      {
+        "id": "the_mutual_man",
+        "name": "The Mutual Man",
+        "engine": "archive",
+        "fields": {
+          "name": "The Mutual Man",
+          "engine": "archive",
+          "character_profile": "Instagram reel, @themutualman, 2026"
+        },
+        "problems": []
+      },
+      {
+        "id": "jala_chantelle",
+        "name": "Jala Chantelle",
+        "engine": "archive",
+        "fields": {
+          "name": "Jala Chantelle",
+          "engine": "archive",
+          "character_profile": "Instagram reel, @jalachantelle, 2026"
+        },
+        "problems": []
+      },
+      {
+        "id": "mamwa",
+        "name": "mamwa",
+        "engine": "archive",
+        "fields": {
+          "name": "mamwa",
+          "engine": "archive",
+          "character_profile": "Instagram reel, @amandathegateman, 2026"
+        },
+        "problems": []
+      },
+      {
+        "id": "ilyas_abdulin",
+        "name": "Ilyas Abdulin",
+        "engine": "archive",
+        "fields": {
+          "name": "Ilyas Abdulin",
+          "engine": "archive",
+          "character_profile": "Instagram reel, @ilyas.abdulin_ig, 2026"
+        },
+        "problems": []
+      },
+      {
+        "id": "krystal",
+        "name": "Krystal",
+        "engine": "archive",
+        "fields": {
+          "name": "Krystal",
+          "engine": "archive",
+          "character_profile": "Instagram reel, @krystaltantricyogi, 2026"
+        },
+        "problems": []
+      },
+      {
+        "id": "eivin_sandstrom",
+        "name": "Eivin Sandstrom",
+        "engine": "archive",
+        "fields": {
+          "name": "Eivin Sandstrom",
+          "engine": "archive",
+          "character_profile": "Instagram reel, @uplandsandy, 2026"
+        },
+        "problems": []
+      },
+      {
+        "id": "may",
+        "name": "May",
+        "engine": "archive",
+        "fields": {
+          "name": "May",
+          "engine": "archive",
+          "character_profile": "Instagram reel, @mayson_yaps, 2026"
+        },
+        "problems": []
+      }
+    ],
+    "problems": []
+  },
+  "clips": {
+    "path": "tests/fixtures/project/clips.yaml",
+    "clips": [
+      {
+        "id": "amandathegateman_2026",
+        "source": "audio/tone.mp4",
+        "start": 11.8,
+        "end": 34.86,
+        "citation": "mamwa (@amandathegateman), Instagram reel, 2026",
+        "origin_url": "https://www.instagram.com/reel/Dcvy9nJNmQe/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "mamwa (@amandathegateman), Instagram reel, 2026",
+          "content_note": "",
+          "end": 34.86,
+          "origin_url": "https://www.instagram.com/reel/Dcvy9nJNmQe/",
+          "source": "audio/tone.mp4",
+          "start": 11.8
+        },
+        "problems": []
+      },
+      {
+        "id": "amandathegateman_2026b",
+        "source": "audio/tone.mp4",
+        "start": 35.5,
+        "end": 44.46,
+        "citation": "mamwa (@amandathegateman), Instagram reel, 2026",
+        "origin_url": "https://www.instagram.com/reel/Dcvy9nJNmQe/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "mamwa (@amandathegateman), Instagram reel, 2026",
+          "content_note": "",
+          "end": 44.46,
+          "origin_url": "https://www.instagram.com/reel/Dcvy9nJNmQe/",
+          "source": "audio/tone.mp4",
+          "start": 35.5
+        },
+        "problems": []
+      },
+      {
+        "id": "atwater_1981",
+        "source": "audio/tone.mp4",
+        "start": 997.95,
+        "end": 1049.85,
+        "citation": "Perlstein, R. (2012, November 13). Exclusive: Lee Atwater's infamous 1981 interview on the Southern Strategy. The Nation. Interview conducted by Alexander P. Lamis, 1981; audio released by Renee Lamis and James Carter IV.",
+        "origin_url": "https://www.thenation.com/article/archive/exclusive-lee-atwaters-infamous-1981-interview-southern-strategy/",
+        "content_note": "Contains a racial slur, spoken four times. Played uncensored: the record of how the language was used is the evidence.",
+        "source_exists": true,
+        "fields": {
+          "citation": "Perlstein, R. (2012, November 13). Exclusive: Lee Atwater's infamous 1981 interview on the Southern Strategy. The Nation. Interview conducted by Alexander P. Lamis, 1981; audio released by Renee Lamis and James Carter IV.",
+          "content_note": "Contains a racial slur, spoken four times. Played uncensored: the record of how the language was used is the evidence.",
+          "end": 1049.85,
+          "origin_url": "https://www.thenation.com/article/archive/exclusive-lee-atwaters-infamous-1981-interview-southern-strategy/",
+          "source": "audio/tone.mp4",
+          "speaker": "Lee Atwater",
+          "start": 997.95,
+          "transcript_source": "The caption follows the wording The Nation published with the audio. The clip begins where that published excerpt begins."
+        },
+        "problems": []
+      },
+      {
+        "id": "eugenesquad_2026",
+        "source": "audio/tone.mp4",
+        "start": 0.0,
+        "end": 16.74,
+        "citation": "Blake Johnson (@eugenesquad), Instagram reel, 'Yes, all men', 2026-09-29",
+        "origin_url": "https://www.instagram.com/reel/Dd4LvfSR2Xx/",
+        "content_note": "His figures are his claim; see notes/kimi/EP04_factcheck_FINDINGS.md C1.",
+        "source_exists": true,
+        "fields": {
+          "citation": "Blake Johnson (@eugenesquad), Instagram reel, 'Yes, all men', 2026-09-29",
+          "content_note": "His figures are his claim; see notes/kimi/EP04_factcheck_FINDINGS.md C1.",
+          "end": 16.74,
+          "origin_url": "https://www.instagram.com/reel/Dd4LvfSR2Xx/",
+          "source": "audio/tone.mp4",
+          "start": 0.0
+        },
+        "problems": []
+      },
+      {
+        "id": "eugenesquad_2026b",
+        "source": "audio/tone.mp4",
+        "start": 131.32,
+        "end": 137.32,
+        "citation": "Blake Johnson (@eugenesquad), Instagram reel, 'Yes, all men', 2026-09-29",
+        "origin_url": "https://www.instagram.com/reel/Dd4LvfSR2Xx/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "Blake Johnson (@eugenesquad), Instagram reel, 'Yes, all men', 2026-09-29",
+          "content_note": "",
+          "end": 137.32,
+          "origin_url": "https://www.instagram.com/reel/Dd4LvfSR2Xx/",
+          "source": "audio/tone.mp4",
+          "start": 131.32
+        },
+        "problems": []
+      },
+      {
+        "id": "ilyas_2026",
+        "source": "audio/tone.mp4",
+        "start": 54.34,
+        "end": 62.94,
+        "citation": "Ilyas Abdulin (@ilyas.abdulin_ig), Instagram reel, 'Prejudice Is Okay When It's Against Men?', 2026-09",
+        "origin_url": "https://www.instagram.com/reel/DdOdhYYu_by/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "Ilyas Abdulin (@ilyas.abdulin_ig), Instagram reel, 'Prejudice Is Okay When It's Against Men?', 2026-09",
+          "content_note": "",
+          "end": 62.94,
+          "origin_url": "https://www.instagram.com/reel/DdOdhYYu_by/",
+          "source": "audio/tone.mp4",
+          "start": 54.34
+        },
+        "problems": []
+      },
+      {
+        "id": "ilyas_2026b",
+        "source": "audio/tone.mp4",
+        "start": 14.0,
+        "end": 36.76,
+        "citation": "Ilyas Abdulin, Instagram reel replayed in Nick Powers' stitch, 'Whoppers', 2026",
+        "origin_url": "https://www.instagram.com/reel/DX-W4R0RiR4/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "Ilyas Abdulin, Instagram reel replayed in Nick Powers' stitch, 'Whoppers', 2026",
+          "content_note": "",
+          "end": 36.76,
+          "origin_url": "https://www.instagram.com/reel/DX-W4R0RiR4/",
+          "source": "audio/tone.mp4",
+          "start": 14.0
+        },
+        "problems": []
+      },
+      {
+        "id": "jaeserv_2026",
+        "source": "audio/tone.mp4",
+        "start": 29.98,
+        "end": 38.24,
+        "citation": "jaeden (@jaeserv), Instagram reel, 'What if it's all of our problem?', 2026",
+        "origin_url": "https://www.instagram.com/reel/Dd7NnycS4cV/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "jaeden (@jaeserv), Instagram reel, 'What if it's all of our problem?', 2026",
+          "content_note": "",
+          "end": 38.24,
+          "origin_url": "https://www.instagram.com/reel/Dd7NnycS4cV/",
+          "source": "audio/tone.mp4",
+          "start": 29.98
+        },
+        "problems": []
+      },
+      {
+        "id": "jalachantelle_2026a",
+        "source": "audio/tone.mp4",
+        "start": 19.16,
+        "end": 31.7,
+        "citation": "Jala Chantelle (@jalachantelle), Instagram reel, 'Not all men are bad', 2026-09-30",
+        "origin_url": "https://www.instagram.com/reel/Dd7W6WMStQ1/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "Jala Chantelle (@jalachantelle), Instagram reel, 'Not all men are bad', 2026-09-30",
+          "content_note": "",
+          "end": 31.7,
+          "origin_url": "https://www.instagram.com/reel/Dd7W6WMStQ1/",
+          "source": "audio/tone.mp4",
+          "start": 19.16
+        },
+        "problems": []
+      },
+      {
+        "id": "jalachantelle_2026b",
+        "source": "audio/tone.mp4",
+        "start": 63.58,
+        "end": 74.16,
+        "citation": "Jala Chantelle (@jalachantelle), Instagram reel, 'Not all men are bad', 2026-09-30",
+        "origin_url": "https://www.instagram.com/reel/Dd7W6WMStQ1/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "Jala Chantelle (@jalachantelle), Instagram reel, 'Not all men are bad', 2026-09-30",
+          "content_note": "",
+          "end": 74.16,
+          "origin_url": "https://www.instagram.com/reel/Dd7W6WMStQ1/",
+          "source": "audio/tone.mp4",
+          "start": 63.58
+        },
+        "problems": []
+      },
+      {
+        "id": "jesusreigns_2026",
+        "source": "audio/tone.mp4",
+        "start": 18.96,
+        "end": 39.7,
+        "citation": "Jaylin Hertz (@jesus.reigns23), Instagram reel replying to @eugenesquad, 2026-10-01",
+        "origin_url": "https://www.instagram.com/reel/Dd7mYMqR5rr/",
+        "content_note": "His 0.065% could not be reproduced; see FINDINGS C7.",
+        "source_exists": true,
+        "fields": {
+          "citation": "Jaylin Hertz (@jesus.reigns23), Instagram reel replying to @eugenesquad, 2026-10-01",
+          "content_note": "His 0.065% could not be reproduced; see FINDINGS C7.",
+          "end": 39.7,
+          "origin_url": "https://www.instagram.com/reel/Dd7mYMqR5rr/",
+          "source": "audio/tone.mp4",
+          "start": 18.96
+        },
+        "problems": []
+      },
+      {
+        "id": "krystal_2026a",
+        "source": "audio/tone.mp4",
+        "start": 0.0,
+        "end": 21.58,
+        "citation": "Krystal (@krystaltantricyogi), Instagram reel on the Cornell case, 2026-09-28",
+        "origin_url": "https://www.instagram.com/reel/Dd110O6pMRz/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "Krystal (@krystaltantricyogi), Instagram reel on the Cornell case, 2026-09-28",
+          "content_note": "",
+          "end": 21.58,
+          "origin_url": "https://www.instagram.com/reel/Dd110O6pMRz/",
+          "source": "audio/tone.mp4",
+          "start": 0.0
+        },
+        "problems": []
+      },
+      {
+        "id": "krystal_2026b",
+        "source": "audio/tone.mp4",
+        "start": 72.74,
+        "end": 93.04,
+        "citation": "Krystal (@krystaltantricyogi), Instagram reel on the Cornell case, 2026-09-28",
+        "origin_url": "https://www.instagram.com/reel/Dd110O6pMRz/",
+        "content_note": "Cut before her Nolan Wells claim, which the fact-check contradicts (C10).",
+        "source_exists": true,
+        "fields": {
+          "citation": "Krystal (@krystaltantricyogi), Instagram reel on the Cornell case, 2026-09-28",
+          "content_note": "Cut before her Nolan Wells claim, which the fact-check contradicts (C10).",
+          "end": 93.04,
+          "origin_url": "https://www.instagram.com/reel/Dd110O6pMRz/",
+          "source": "audio/tone.mp4",
+          "start": 72.74
+        },
+        "problems": []
+      },
+      {
+        "id": "mayson_2026",
+        "source": "audio/tone.mp4",
+        "start": 0.0,
+        "end": 8.24,
+        "citation": "may (@mayson_yaps), Instagram reel, 2026-09-28",
+        "origin_url": "https://www.instagram.com/reel/Dd4EXExhU4m/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "may (@mayson_yaps), Instagram reel, 2026-09-28",
+          "content_note": "",
+          "end": 8.24,
+          "origin_url": "https://www.instagram.com/reel/Dd4EXExhU4m/",
+          "source": "audio/tone.mp4",
+          "start": 0.0
+        },
+        "problems": []
+      },
+      {
+        "id": "mutualman_2026a",
+        "source": "audio/tone.mp4",
+        "start": 11.52,
+        "end": 29.06,
+        "citation": "The Mutual Man (@themutualman), Instagram reel, 'How my fraternity systematically silenced me', 2026-10-01",
+        "origin_url": "https://www.instagram.com/reel/Dd9VWGRBu6G/",
+        "content_note": "Personal testimony; his school is unnamed and his account is unverified.",
+        "source_exists": true,
+        "fields": {
+          "citation": "The Mutual Man (@themutualman), Instagram reel, 'How my fraternity systematically silenced me', 2026-10-01",
+          "content_note": "Personal testimony; his school is unnamed and his account is unverified.",
+          "end": 29.06,
+          "origin_url": "https://www.instagram.com/reel/Dd9VWGRBu6G/",
+          "source": "audio/tone.mp4",
+          "start": 11.52
+        },
+        "problems": []
+      },
+      {
+        "id": "mutualman_2026b",
+        "source": "audio/tone.mp4",
+        "start": 43.72,
+        "end": 46.92,
+        "citation": "The Mutual Man (@themutualman), Instagram reel, 'How my fraternity systematically silenced me', 2026-10-01",
+        "origin_url": "https://www.instagram.com/reel/Dd9VWGRBu6G/",
+        "content_note": "Personal testimony; his school is unnamed and his account is unverified.",
+        "source_exists": true,
+        "fields": {
+          "citation": "The Mutual Man (@themutualman), Instagram reel, 'How my fraternity systematically silenced me', 2026-10-01",
+          "content_note": "Personal testimony; his school is unnamed and his account is unverified.",
+          "end": 46.92,
+          "origin_url": "https://www.instagram.com/reel/Dd9VWGRBu6G/",
+          "source": "audio/tone.mp4",
+          "start": 43.72
+        },
+        "problems": []
+      },
+      {
+        "id": "mutualman_2026c",
+        "source": "audio/tone.mp4",
+        "start": 87.7,
+        "end": 97.36,
+        "citation": "The Mutual Man (@themutualman), Instagram reel, 'How my fraternity systematically silenced me', 2026-10-01",
+        "origin_url": "https://www.instagram.com/reel/Dd9VWGRBu6G/",
+        "content_note": "Personal testimony about his own unnamed chapter; unverified.",
+        "source_exists": true,
+        "fields": {
+          "citation": "The Mutual Man (@themutualman), Instagram reel, 'How my fraternity systematically silenced me', 2026-10-01",
+          "content_note": "Personal testimony about his own unnamed chapter; unverified.",
+          "end": 97.36,
+          "origin_url": "https://www.instagram.com/reel/Dd9VWGRBu6G/",
+          "source": "audio/tone.mp4",
+          "start": 87.7
+        },
+        "problems": []
+      },
+      {
+        "id": "mutualman_2026d",
+        "source": "audio/tone.mp4",
+        "start": 161.9,
+        "end": 168.74,
+        "citation": "The Mutual Man (@themutualman), Instagram reel, 'How my fraternity systematically silenced me', 2026-10-01",
+        "origin_url": "https://www.instagram.com/reel/Dd9VWGRBu6G/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "The Mutual Man (@themutualman), Instagram reel, 'How my fraternity systematically silenced me', 2026-10-01",
+          "content_note": "",
+          "end": 168.74,
+          "origin_url": "https://www.instagram.com/reel/Dd9VWGRBu6G/",
+          "source": "audio/tone.mp4",
+          "start": 161.9
+        },
+        "problems": []
+      },
+      {
+        "id": "nickpowers_2026",
+        "source": "audio/tone.mp4",
+        "start": 56.16,
+        "end": 70.98,
+        "citation": "Nick Powers (@thatnickpowersguy), Instagram reel stitch, 'Whoppers', 2026",
+        "origin_url": "https://www.instagram.com/reel/DX-W4R0RiR4/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "Nick Powers (@thatnickpowersguy), Instagram reel stitch, 'Whoppers', 2026",
+          "content_note": "",
+          "end": 70.98,
+          "origin_url": "https://www.instagram.com/reel/DX-W4R0RiR4/",
+          "source": "audio/tone.mp4",
+          "start": 56.16
+        },
+        "problems": []
+      },
+      {
+        "id": "reel_a1",
+        "source": "audio/tone.mp4",
+        "start": 14.84,
+        "end": 41.52,
+        "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+        "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+          "content_note": "",
+          "end": 41.52,
+          "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+          "source": "audio/tone.mp4",
+          "start": 14.84
+        },
+        "problems": []
+      },
+      {
+        "id": "reel_a1_short",
+        "source": "audio/tone.mp4",
+        "start": 26.69,
+        "end": 41.44,
+        "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+        "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+        "content_note": "her \"number one thing\" sentence, for the three-minute Part 0",
+        "source_exists": true,
+        "fields": {
+          "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+          "content_note": "her \"number one thing\" sentence, for the three-minute Part 0",
+          "end": 41.44,
+          "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+          "source": "audio/tone.mp4",
+          "start": 26.69
+        },
+        "problems": []
+      },
+      {
+        "id": "reel_a2",
+        "source": "audio/tone.mp4",
+        "start": 0.0,
+        "end": 29.3,
+        "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+        "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+        "content_note": "Excerpt of reel 49.2 to 77.5 s with a tape-stop effect on the last 1.2 s (scriptcast-tapefx).",
+        "source_exists": true,
+        "fields": {
+          "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+          "content_note": "Excerpt of reel 49.2 to 77.5 s with a tape-stop effect on the last 1.2 s (scriptcast-tapefx).",
+          "end": 29.3,
+          "linger": "next",
+          "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+          "source": "audio/tone.mp4",
+          "start": 0.0
+        },
+        "problems": []
+      },
+      {
+        "id": "reel_close",
+        "source": "audio/tone.mp4",
+        "start": 84.7,
+        "end": 89.9,
+        "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+        "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+          "content_note": "",
+          "end": 89.9,
+          "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+          "source": "audio/tone.mp4",
+          "start": 84.7
+        },
+        "problems": []
+      },
+      {
+        "id": "reel_q1",
+        "source": "audio/tone.mp4",
+        "start": 0.0,
+        "end": 14.86,
+        "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+        "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+          "content_note": "",
+          "end": 14.86,
+          "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+          "source": "audio/tone.mp4",
+          "start": 0.0
+        },
+        "problems": []
+      },
+      {
+        "id": "reel_q1_short",
+        "source": "audio/tone.mp4",
+        "start": 0.0,
+        "end": 5.35,
+        "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+        "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+        "content_note": "opening line only, for the three-minute Part 1",
+        "source_exists": true,
+        "fields": {
+          "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+          "content_note": "opening line only, for the three-minute Part 1",
+          "end": 5.35,
+          "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+          "source": "audio/tone.mp4",
+          "start": 0.0
+        },
+        "problems": []
+      },
+      {
+        "id": "reel_q2",
+        "source": "audio/tone.mp4",
+        "start": 43.14,
+        "end": 48.94,
+        "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+        "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+          "content_note": "",
+          "end": 48.94,
+          "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+          "source": "audio/tone.mp4",
+          "start": 43.14
+        },
+        "problems": []
+      },
+      {
+        "id": "reel_rewind_kids",
+        "source": "audio/tone.mp4",
+        "start": 0.0,
+        "end": 3.05,
+        "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+        "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+        "content_note": "Tape rewind from reel 77.5 s back to 67.5 s at 6x, then the phrase at 67.96 to 69.30 s (scriptcast-tapefx).",
+        "source_exists": true,
+        "fields": {
+          "citation": "@harvardseye, Instagram reel, Gov. Maura Healey interview, Yes-on-9 press event",
+          "content_note": "Tape rewind from reel 77.5 s back to 67.5 s at 6x, then the phrase at 67.96 to 69.30 s (scriptcast-tapefx).",
+          "end": 3.05,
+          "origin_url": "https://www.instagram.com/reel/DdoZBRXIbK5/",
+          "source": "audio/tone.mp4",
+          "start": 0.0
+        },
+        "problems": []
+      },
+      {
+        "id": "romaarmyy_2026",
+        "source": "audio/tone.mp4",
+        "start": 121.82,
+        "end": 150.04,
+        "citation": "Chloe Sunderland (@romaarmyy), Instagram reel, 2026-10-02",
+        "origin_url": "https://www.instagram.com/reel/DeAj3A1h5ab/",
+        "content_note": "Her trauma argument only; her account of the night is not aired (see notes/EP04_cornell_case_record.md).",
+        "source_exists": true,
+        "fields": {
+          "citation": "Chloe Sunderland (@romaarmyy), Instagram reel, 2026-10-02",
+          "content_note": "Her trauma argument only; her account of the night is not aired (see notes/EP04_cornell_case_record.md).",
+          "end": 150.04,
+          "origin_url": "https://www.instagram.com/reel/DeAj3A1h5ab/",
+          "source": "audio/tone.mp4",
+          "start": 121.82
+        },
+        "problems": []
+      },
+      {
+        "id": "thespeechprof_2026",
+        "source": "audio/tone.mp4",
+        "start": 69.08,
+        "end": 82.08,
+        "citation": "@thespeechprof, Instagram reel, 2026",
+        "origin_url": "https://www.instagram.com/reel/DZbNHhKMnQl/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "@thespeechprof, Instagram reel, 2026",
+          "content_note": "",
+          "end": 82.08,
+          "origin_url": "https://www.instagram.com/reel/DZbNHhKMnQl/",
+          "source": "audio/tone.mp4",
+          "start": 69.08
+        },
+        "problems": []
+      },
+      {
+        "id": "uplandsandy_2026a",
+        "source": "audio/tone.mp4",
+        "start": 16.28,
+        "end": 26.36,
+        "citation": "Eivin Sandstrom (@uplandsandy), Instagram reel on fraternity hazing, 2026-09-27",
+        "origin_url": "https://www.instagram.com/reel/DdwapUUg6mc/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "Eivin Sandstrom (@uplandsandy), Instagram reel on fraternity hazing, 2026-09-27",
+          "content_note": "",
+          "end": 26.36,
+          "origin_url": "https://www.instagram.com/reel/DdwapUUg6mc/",
+          "source": "audio/tone.mp4",
+          "start": 16.28
+        },
+        "problems": []
+      },
+      {
+        "id": "uplandsandy_2026b",
+        "source": "audio/tone.mp4",
+        "start": 60.92,
+        "end": 68.9,
+        "citation": "Eivin Sandstrom (@uplandsandy), Instagram reel on fraternity hazing, 2026-09-27",
+        "origin_url": "https://www.instagram.com/reel/DdwapUUg6mc/",
+        "content_note": "",
+        "source_exists": true,
+        "fields": {
+          "citation": "Eivin Sandstrom (@uplandsandy), Instagram reel on fraternity hazing, 2026-09-27",
+          "content_note": "",
+          "end": 68.9,
+          "origin_url": "https://www.instagram.com/reel/DdwapUUg6mc/",
+          "source": "audio/tone.mp4",
+          "start": 60.92
+        },
+        "problems": []
+      },
+      {
+        "id": "uplandsandy_2026c",
+        "source": "audio/tone.mp4",
+        "start": 101.88,
+        "end": 113.62,
+        "citation": "Eivin Sandstrom (@uplandsandy), Instagram reel on fraternity hazing, 2026-09-27",
+        "origin_url": "https://www.instagram.com/reel/DdwapUUg6mc/",
+        "content_note": "His claim about universities generally; presented as his read.",
+        "source_exists": true,
+        "fields": {
+          "citation": "Eivin Sandstrom (@uplandsandy), Instagram reel on fraternity hazing, 2026-09-27",
+          "content_note": "His claim about universities generally; presented as his read.",
+          "end": 113.62,
+          "origin_url": "https://www.instagram.com/reel/DdwapUUg6mc/",
+          "source": "audio/tone.mp4",
+          "start": 101.88
+        },
+        "problems": []
+      }
+    ],
+    "problems": []
+  },
+  "pronunciations": {
+    "path": "tests/fixtures/project/pronunciations.yaml",
+    "entries": [
+      {
+        "word": "record",
+        "readings": {
+          "default": "reckerd",
+          "verb": "ree-CORD"
+        },
+        "fields": {
+          "default": "reckerd",
+          "verb": "ree-CORD"
+        },
+        "problems": []
+      },
+      {
+        "word": "lead",
+        "readings": {
+          "always": "led"
+        },
+        "fields": {
+          "always": "led"
+        },
+        "problems": []
+      },
+      {
+        "word": "4473",
+        "readings": {
+          "always": "forty-four seventy-three"
+        },
+        "fields": {
+          "always": "forty-four seventy-three"
+        },
+        "problems": []
+      },
+      {
+        "word": "fid",
+        "readings": {
+          "always": "eff eye dee"
+        },
+        "fields": {
+          "always": "eff eye dee"
+        },
+        "problems": []
+      },
+      {
+        "word": "rho",
+        "readings": {
+          "always": "roe"
+        },
+        "fields": {
+          "always": "roe"
+        },
+        "problems": []
+      }
+    ],
+    "problems": []
+  },
+  "accepted_hearings": {
+    "path": "tests/fixtures/project/accepted_hearings.yaml",
+    "entries": [
+      {
+        "word": "bonded",
+        "heard": [
+          "about"
+        ],
+        "review_ts": "2026-10-05T01:33:56Z",
+        "risky": false
+      },
+      {
+        "word": "trauma",
+        "heard": [
+          "traumatizing"
+        ],
+        "review_ts": "2026-10-05T01:33:56Z",
+        "risky": false
+      }
+    ],
+    "problems": []
+  },
+  "speaker_rates": {
+    "path": "tests/fixtures/project/speaker_rates.json",
+    "rates": {
+      "aisha": {
+        "ms_per_mark": 34.3,
+        "ms_per_word": 351.67
+      },
+      "blake_johnson": {
+        "ms_per_mark": 0.0,
+        "ms_per_word": 214.29
+      },
+      "chloe_sunderland": {
+        "ms_per_mark": 0.0,
+        "ms_per_word": 344.15
+      },
+      "eivin_sandstrom": {
+        "ms_per_mark": 0.0,
+        "ms_per_word": 277.38
+      },
+      "emmanuel_theodore": {
+        "ms_per_mark": 297.53,
+        "ms_per_word": 323.06
+      },
+      "ilyas_abdulin": {
+        "ms_per_mark": 0.0,
+        "ms_per_word": 251.29
+      },
+      "jaeden": {
+        "ms_per_mark": 0.0,
+        "ms_per_word": 194.05
+      },
+      "jala_chantelle": {
+        "ms_per_mark": 0.0,
+        "ms_per_word": 281.59
+      },
+      "jaylin_hertz": {
+        "ms_per_mark": 0.0,
+        "ms_per_word": 300.58
+      },
+      "krystal": {
+        "ms_per_mark": 0.0,
+        "ms_per_word": 289.99
+      },
+      "lee_atwater": {
+        "ms_per_mark": 0.0,
+        "ms_per_word": 552.02
+      },
+      "mamwa": {
+        "ms_per_mark": 0.0,
+        "ms_per_word": 513.06
+      },
+      "may": {
+        "ms_per_mark": 0.0,
+        "ms_per_word": 357.39
+      },
+      "nick_powers": {
+        "ms_per_mark": 0.0,
+        "ms_per_word": 344.65
+      },
+      "the_mutual_man": {
+        "ms_per_mark": 0.0,
+        "ms_per_word": 365.1
+      },
+      "the_speech_prof": {
+        "ms_per_mark": 0.0,
+        "ms_per_word": 369.71
+      },
+      "toussaint": {
+        "ms_per_mark": 214.79,
+        "ms_per_word": 282.86
+      }
+    },
+    "problems": []
+  }
+}

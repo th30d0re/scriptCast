@@ -1,0 +1,30 @@
+extern crate self as scriptcast_ui;
+
+pub mod audio;
+pub mod checkpoint;
+pub mod cli;
+pub mod clip_transcripts;
+pub mod daw;
+pub mod detached;
+pub mod discrepancy;
+pub mod episode;
+pub mod find;
+pub mod new_episode;
+pub mod not_heard;
+pub mod phase_m;
+pub mod pipeline;
+pub mod progress;
+pub mod retime;
+pub mod review;
+pub mod runner;
+pub mod script;
+pub mod stress_ensemble;
+pub mod structure;
+pub mod tags;
+pub mod theme;
+pub mod waveform;
+pub mod word_timings;
+
+pub mod project;
+
+include!("app_main.rs");

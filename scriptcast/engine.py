@@ -402,6 +402,80 @@ class OmniVoiceEngine(TTSEngine):
         return 24000
 
 
+class PhononEngine(TTSEngine):
+    """Phonon (Gradium's on-device TTS), through its `ptts` Python package.
+
+    A speaker's `phonon_voice` is either a voice file cloned with xn-ptts's
+    clone-voice.py (a .safetensors path, relative to the project root) or a name
+    from the Phonon voice catalog. The model loads in well under a second and
+    renders far faster than real time on CPU, so it runs in process.
+
+    Phonon is deterministic: the same text and voice give the same take, so a
+    plain `--regenerate-turns` cannot re-roll a glitch. Set
+    SCRIPTCAST_PHONON_SEED=<int> for that run to draw a different take.
+    """
+
+    def __init__(
+        self, model_id: str = "hf://gradium/phonon-31m-en", trim_edges: bool = True
+    ) -> None:
+        self.model_id = model_id
+        self.trim_edges = trim_edges
+        self._tts: Any | None = None
+        self._voice_names: dict[str, str] = {}
+
+    async def load(self) -> None:
+        if self._tts is not None:
+            return
+        import ptts
+
+        self._tts = ptts.TTS(self.model_id, lang="en")
+
+    def _voice(self, voice_config: VoiceConfig) -> str:
+        voice = voice_config.phonon_voice
+        if not voice:
+            raise RuntimeError(
+                f"Speaker {voice_config.speaker_id!r} uses engine 'phonon' but has "
+                "no phonon_voice configured."
+            )
+        if not voice.endswith(".safetensors"):
+            return voice
+        if voice not in self._voice_names:
+            path = _resolve_reference(voice)
+            if not path.exists():
+                raise RuntimeError(f"Phonon voice file not found: {path}")
+            name = f"scriptcast_{voice_config.speaker_id}"
+            self._tts.add_voice(name, str(path))
+            self._voice_names[voice] = name
+        return self._voice_names[voice]
+
+    async def synthesize_chunk(self, text: str, voice_config: VoiceConfig) -> numpy.ndarray:
+        await self.load()
+        if self._tts is None:
+            raise RuntimeError("Phonon model failed to load")
+
+        kwargs: dict[str, Any] = {"voice": self._voice(voice_config)}
+        seed = os.environ.get("SCRIPTCAST_PHONON_SEED")
+        if seed:
+            kwargs["seed"] = int(seed)
+        # Phonon sets pace with duration_delta: positive is slower. `speed` in
+        # voices.yaml is a rate (below 1.0 is slower), so convert it.
+        if voice_config.speed and voice_config.speed != 1.0:
+            kwargs["conditions"] = {"duration_delta": 1.0 / voice_config.speed - 1.0}
+        array = numpy.asarray(self._tts.synth(text, **kwargs), dtype=numpy.float32)
+        if array.ndim > 1:
+            array = numpy.squeeze(array)
+        if self.trim_edges:
+            trimmed = _trim_edge_silence(array, self.sample_rate)
+            if trimmed.size == 0:
+                return numpy.array([], dtype=numpy.float32)
+            return trimmed
+        return array
+
+    @property
+    def sample_rate(self) -> int:
+        return 24000
+
+
 class ArchiveEngine(TTSEngine):
     """Plays a registered archival recording where the script quotes it.
 
@@ -441,4 +515,5 @@ ENGINE_REGISTRY: dict[str, type[TTSEngine]] = {
     "mlx_dia": MLXDiaEngine,
     "mlx_chatterbox": MLXChatterboxEngine,
     "omnivoice": OmniVoiceEngine,
+    "phonon": PhononEngine,
 }

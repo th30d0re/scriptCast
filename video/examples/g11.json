@@ -1,0 +1,30 @@
+{
+  "component": "StatBarsCard",
+  "headline": "Louisiana, 1898: a neutral-sounding cutoff",
+  "lead": "New literacy and property tests, with one exemption: you were excused if you, your father, or your grandfather could vote before January 1, 1867.",
+  "items": [
+    {
+      "label": "Black registered voters",
+      "period": "1897 to 1900",
+      "values": [
+        130344,
+        5320
+      ],
+      "delta": "(−96%)",
+      "color": "red"
+    },
+    {
+      "label": "White registered voters",
+      "period": "1897 to 1900",
+      "values": [
+        164088,
+        125437
+      ],
+      "delta": "(−24%)",
+      "color": "gold"
+    }
+  ],
+  "quote": "racially neutral on its face",
+  "attribution": "The U.S. Supreme Court struck down grandfather clauses in Guinn v. United States (1915).",
+  "sources": "Sources: BlackPast.org · Guinn v. United States, 238 U.S. 347 (1915) · registration counts from secondary summaries of Louisiana state registration reports"
+}

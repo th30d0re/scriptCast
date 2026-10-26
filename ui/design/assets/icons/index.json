@@ -1,0 +1,173 @@
+[
+ {
+  "file": "audio-lines-22-accent.svg",
+  "figma_asset": "97823.svg",
+  "lucide": "audio-lines",
+  "size_px": 22,
+  "colour_token": "accent"
+ },
+ {
+  "file": "circle-alert-22-danger.svg",
+  "figma_asset": "9fb30.svg",
+  "lucide": "circle-alert",
+  "size_px": 22,
+  "colour_token": "danger"
+ },
+ {
+  "file": "folder-open-16-on-accent.svg",
+  "figma_asset": "63bb0.svg",
+  "lucide": "folder-open",
+  "size_px": 16,
+  "colour_token": "on-accent"
+ },
+ {
+  "file": "folder-open-16-text.svg",
+  "figma_asset": "1957b.svg",
+  "lucide": "folder-open",
+  "size_px": 16,
+  "colour_token": "text"
+ },
+ {
+  "file": "folder-open-22-accent.svg",
+  "figma_asset": "3d0a6.svg",
+  "lucide": "folder-open",
+  "size_px": 22,
+  "colour_token": "accent"
+ },
+ {
+  "file": "folder-open-42-accent.svg",
+  "figma_asset": "05ef7.svg",
+  "lucide": "folder-open",
+  "size_px": 42,
+  "colour_token": "accent"
+ },
+ {
+  "file": "file-audio-13-text.svg",
+  "figma_asset": "48:139",
+  "lucide": "file-audio",
+  "size_px": 13,
+  "colour_token": "text-audio-clip",
+  "note": "Phase G audio-clip badge; Figma node 48:139."
+ },
+ {
+  "file": "headphones-22-accent.svg",
+  "figma_asset": "a9bc6.svg",
+  "lucide": "headphones",
+  "size_px": 22,
+  "colour_token": "accent"
+ },
+ {
+  "file": "list-15-text-muted.svg",
+  "figma_asset": "8ad19.svg",
+  "lucide": "list",
+  "size_px": 15,
+  "colour_token": "text-muted"
+ },
+ {
+  "file": "loader-circle-12-accent.svg",
+  "figma_asset": "718bb.svg",
+  "lucide": "loader-circle",
+  "size_px": 12,
+  "colour_token": "accent"
+ },
+ {
+  "file": "loader-circle-22-accent.svg",
+  "figma_asset": "01eb3.svg",
+  "lucide": "loader-circle",
+  "size_px": 22,
+  "colour_token": "accent"
+ },
+ {
+  "file": "pause-16-on-accent.svg",
+  "figma_asset": "72755.svg",
+  "lucide": "pause",
+  "size_px": 16,
+  "colour_token": "on-accent"
+ },
+ {
+  "file": "play-16-on-accent.svg",
+  "figma_asset": "235ba.svg",
+  "lucide": "play",
+  "size_px": 16,
+  "colour_token": "on-accent"
+ },
+ {
+  "file": "rotate-cw-16-text.svg",
+  "figma_asset": "c25b0.svg",
+  "lucide": "rotate-cw",
+  "size_px": 16,
+  "colour_token": "text"
+ },
+ {
+  "file": "search-14-text-muted.svg",
+  "figma_asset": "690df.svg",
+  "lucide": "search",
+  "size_px": 14,
+  "colour_token": "text-muted"
+ },
+ {
+  "file": "shield-check-26-accent.svg",
+  "figma_asset": "3db3f.svg",
+  "lucide": "shield-check",
+  "size_px": 26,
+  "colour_token": "accent"
+ },
+ {
+  "file": "square-16-text.svg",
+  "figma_asset": "8bf64.svg",
+  "lucide": "square",
+  "size_px": 16,
+  "colour_token": "text"
+ },
+ {
+  "file": "terminal-22-danger.svg",
+  "figma_asset": "f323b.svg",
+  "lucide": "terminal",
+  "size_px": 22,
+  "colour_token": "danger"
+ },
+ {
+  "file": "triangle-alert-16-danger.svg",
+  "figma_asset": "2141c.svg",
+  "lucide": "triangle-alert",
+  "size_px": 16,
+  "colour_token": "danger"
+ },
+ {
+  "file": "unplug-22-accent.svg",
+  "figma_asset": "5d140.svg",
+  "lucide": "unplug",
+  "size_px": 22,
+  "colour_token": "accent"
+ },
+ {
+  "file": "volume-x-22-danger.svg",
+  "figma_asset": "1f396.svg",
+  "lucide": "volume-x",
+  "size_px": 22,
+  "colour_token": "danger"
+ },
+ {
+  "file": "window-controls-49-text-subtle.svg",
+  "figma_asset": "045f3.svg",
+  "lucide": "Window controls",
+  "size_px": 49,
+  "colour_token": "text-subtle"
+ },
+ {
+  "file": "settings-16-text.svg",
+  "figma_asset": null,
+  "lucide": "settings",
+  "size_px": 16,
+  "colour_token": "text",
+  "note": "Not in the Figma file. Added 2026-10-03 for the header settings button; Lucide 24 px path, stroke scaled to match rotate-cw-16-text."
+ },
+ {
+  "file": "circle-alert-14-danger.svg",
+  "figma_asset": null,
+  "lucide": "circle-alert",
+  "size_px": 14,
+  "colour_token": "danger",
+  "note": "Phase D editor alert; Lucide circle-alert path, Figma inspector nodes 23:194–23:275."
+ }
+]

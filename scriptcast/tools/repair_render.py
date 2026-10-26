@@ -34,6 +34,7 @@ import sys
 from pathlib import Path
 
 from scriptcast.project import current
+from scriptcast.progress import Progress
 
 
 def _child_env() -> dict[str, str]:
@@ -86,7 +87,7 @@ def _regenerate(transcript: Path, episode_id: str, out_dir: Path,
     )
 
 
-def main() -> int:
+def _build_arg_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser()
     ap.add_argument("episode_dir", type=Path)
     ap.add_argument("--transcript", type=Path, required=True)
@@ -111,7 +112,15 @@ def main() -> int:
                          "manual `scriptcast-verify --turns` run), this skips "
                          "re-transcribing everything just to re-derive a list "
                          "already in hand. Ignored if --seed-json is set.")
-    args = ap.parse_args()
+    ap.add_argument(
+        "--progress-jsonl", type=Path, default=None,
+        help="Append machine-readable progress events to PATH.",
+    )
+    return ap
+
+
+def _run(args, progress: Progress) -> int:
+    progress.start("repair", args.max_passes)
 
     out_dir = args.out_dir or current().outputs
 
@@ -130,8 +139,11 @@ def main() -> int:
         failing = _verify(args.episode_dir, args.transcript, args.model, None,
                           args.threshold, args.max_run)
     if not failing:
+        progress.emit("result", passed=0, failed=0)
         print("nothing to repair.")
+        progress.done()
         return 0
+    progress.emit("result", passed=0, failed=len(failing))
     print(f"  {len(failing)} turn(s) failing: "
           f"{', '.join(str(r['turn']) for r in failing[:20])}"
           f"{' ...' if len(failing) > 20 else ''}")
@@ -146,16 +158,26 @@ def main() -> int:
         for r in failing:
             attempts[r["turn_id"]] = attempts.get(r["turn_id"], 0) + 1
         print(f"\npass {pass_no}: re-synthesizing {len(turns)} turn(s)")
+        progress.emit(
+            "pass",
+            **{
+                "pass": pass_no,
+                "max_passes": args.max_passes,
+                "failing": len(failing),
+            },
+        )
         _regenerate(args.transcript, args.episode_id, out_dir,
                     args.voices, args.gap_ms, turns)
         failing = _verify(args.episode_dir, args.transcript, args.model, turns,
                           args.threshold, args.max_run)
+        progress.emit("result", passed=len(turns) - len(failing), failed=len(failing))
         print(f"  {len(failing)} still failing")
         if not failing:
             break
 
     if not args.skip_relayout:
         print("\nrelaying the timeline")
+        progress.emit("stage", name="layout")
         subprocess.run(
             [sys.executable, "-m", "scriptcast.tools.relayout_episode",
              str(args.episode_dir), "--gap-ms", str(args.gap_ms)],
@@ -171,9 +193,17 @@ def main() -> int:
                   f"run {r['worst_run']}) {r['turn_id']}")
             print(f"      want: {r['expected'][:130]}")
             print(f"      got : {r['heard'][:130]}")
+        progress.done(ok=False)
         return 1
     print("\nrepair-render: episode verifies clean.")
+    progress.done()
     return 0
+
+
+def main() -> int:
+    args = _build_arg_parser().parse_args()
+    with Progress(args.progress_jsonl) as progress:
+        return _run(args, progress)
 
 
 if __name__ == "__main__":

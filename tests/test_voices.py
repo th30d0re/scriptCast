@@ -126,6 +126,24 @@ class LoadVoicesTests(TestCase):
             with self.assertRaisesRegex(ValueError, "reference_audio"):
                 load_voices(voices_path)
 
+    def test_phonon_speaker_requires_and_loads_phonon_voice(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            voices_path = Path(tmp) / "voices.yaml"
+            voices_path.write_text(
+                "speakers:\n  host:\n    engine: phonon\n", encoding="utf-8"
+            )
+            with self.assertRaisesRegex(ValueError, "phonon_voice"):
+                load_voices(voices_path)
+
+            voices_path.write_text(
+                "speakers:\n  host:\n    engine: phonon\n"
+                "    phonon_voice: voices/host.safetensors\n",
+                encoding="utf-8",
+            )
+            voice = load_voices(voices_path)["host"]
+            self.assertEqual(voice.engine, "phonon")
+            self.assertEqual(voice.phonon_voice, "voices/host.safetensors")
+
     def test_unknown_engine_raises_error(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             voices_path = Path(tmp) / "voices.yaml"

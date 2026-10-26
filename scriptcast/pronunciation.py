@@ -38,11 +38,15 @@ def respellings_path() -> Path:
     return current().pronunciations
 
 # Engines that read plain text and choose stress themselves.
-RESPELLING_ENGINES = frozenset({"omnivoice", "mlx_chatterbox", "elevenlabs", "mlx_dia"})
+RESPELLING_ENGINES = frozenset({"omnivoice", "mlx_chatterbox", "elevenlabs", "mlx_dia", "phonon"})
 
 _STRESS = str.maketrans("", "", "ˈˌ")
 _MISAKI_VOWELS = set("aeiouæɑɒɔəɛɜɪʊʌᵊᵻAIOWYɚɐ")
 _WORD_RE = re.compile(r"[A-Za-z']+")
+_TOKEN_RE = re.compile(r"[A-Za-z0-9']+")  # "always" readings also cover numbers such as 4473
+# Hyphenated terms such as psi-sub-m. A key with a hyphen matches the whole
+# compound, and its spelling is final: the word-level pass leaves it alone.
+_COMPOUND_RE = re.compile(r"[A-Za-z0-9']+(?:-[A-Za-z0-9']+)+")
 
 
 @dataclass(frozen=True)
@@ -180,14 +184,56 @@ def load_respellings(path: Path | None = None) -> dict[str, dict[str, str]]:
     }
 
 
-def respell(text: str, respellings: dict[str, dict[str, str]] | None = None) -> str:
+def _always_spelling(entry: dict[str, str], engine: str | None) -> str | None:
+    """The spelling an entry gives in every context, for this engine.
+
+    A key named after an engine overrides "always" for that engine; an empty
+    value there keeps the word as written (Phonon spells capitals out letter by
+    letter, so "jer-AH-nih-mus" helps OmniVoice and hurts Phonon).
+    """
+    if engine and engine in entry:
+        return entry[engine] or None
+    return entry.get("always") or None
+
+
+def _cased(spelling: str, original: str) -> str:
+    return spelling[:1].upper() + spelling[1:] if original[:1].isupper() else spelling
+
+
+def respell(
+    text: str,
+    respellings: dict[str, dict[str, str]] | None = None,
+    engine: str | None = None,
+) -> str:
     """Replace heteronyms with the spelling calibrated for their reading."""
     if respellings is None:
         respellings = load_respellings()
     if not respellings or not any(
-        w.lower() in respellings for w in _WORD_RE.findall(text)
+        w.lower() in respellings
+        for w in _TOKEN_RE.findall(text) + _COMPOUND_RE.findall(text)
     ):
         return text
+
+    # An "always" reading applies wherever the word appears. It covers words the
+    # lexicon lists with one reading only ("lead", the metal, comes out "leed").
+    def _always(match: re.Match[str]) -> str:
+        spelling = _always_spelling(respellings.get(match.group(0).lower(), {}), engine)
+        return _cased(spelling, match.group(0)) if spelling else match.group(0)
+
+    # Compounds first; their replacements are final, and only the text between
+    # them goes through the word-level pass.
+    pieces: list[str] = []
+    cursor = 0
+    for match in _COMPOUND_RE.finditer(text):
+        entry = respellings.get(match.group(0).lower())
+        spelling = _always_spelling(entry, engine) if entry else None
+        if not spelling:
+            continue
+        pieces.append(_TOKEN_RE.sub(_always, text[cursor : match.start()]))
+        pieces.append(_cased(spelling, match.group(0)))
+        cursor = match.end()
+    pieces.append(_TOKEN_RE.sub(_always, text[cursor:]))
+    text = "".join(pieces)
 
     out: list[str] = []
     cursor = 0
@@ -208,7 +254,7 @@ def speech_text_for(engine: str, text: str) -> str:
     """The text an engine should be handed for `text`."""
     if engine not in RESPELLING_ENGINES:
         return text
-    return respell(text)
+    return respell(text, engine=engine)
 
 
 def speech_text_hash(engine: str, texts: list[str]) -> str:
@@ -219,7 +265,7 @@ def speech_text_hash(engine: str, texts: list[str]) -> str:
     """
     if engine not in RESPELLING_ENGINES:
         return ""
-    respelled = [respell(t) for t in texts]
+    respelled = [respell(t, engine=engine) for t in texts]
     if respelled == texts:
         return ""
     return hashlib.sha256("\n".join(respelled).encode("utf-8")).hexdigest()[:16]

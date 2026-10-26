@@ -327,8 +327,82 @@ def _arrangement_events(track: ET.Element) -> ET.Element:
     return events
 
 
+def _fresh_target_ids(track: ET.Element, start: int) -> int:
+    next_id = start
+    for element in track.iter():
+        if "Id" not in element.attrib:
+            continue
+        if element.tag.endswith("Target") or element.tag == "Pointee":
+            element.attrib["Id"] = str(next_id)
+            next_id += 1
+    return next_id
+
+
+def _max_target_id(root: ET.Element) -> int:
+    ids = [
+        int(element.attrib["Id"])
+        for element in root.iter()
+        if "Id" in element.attrib
+        and (element.tag.endswith("Target") or element.tag == "Pointee")
+        and element.attrib["Id"].lstrip("-").isdigit()
+    ]
+    return max(ids) if ids else 0
+
+
+def _bump_next_pointee(root: ET.Element) -> None:
+    highest = _max_target_id(root)
+    for element in root.iter("NextPointeeId"):
+        element.attrib["Value"] = str(highest + 1)
+
+
 def _speaker_tracks(root: ET.Element, required_speaker_count: int) -> list[ET.Element]:
+    tracks_element = root.find("./LiveSet/Tracks")
+    if tracks_element is None:
+        raise RuntimeError("Ableton template is missing LiveSet/Tracks")
+
     audio_tracks = root.findall("./LiveSet/Tracks/AudioTrack")
+    if len(audio_tracks) < required_speaker_count:
+        if not audio_tracks:
+            raise RuntimeError("Ableton template has no usable audio tracks")
+
+        prototype = next(
+            (
+                track
+                for track in audio_tracks
+                if (
+                    track.find("./Name/EffectiveName") is not None
+                    and track.find("./Name/EffectiveName")
+                    .attrib.get("Value", "")
+                    .startswith("Voice ")
+                )
+            ),
+            audio_tracks[0],
+        )
+        track_ids = [
+            int(track.attrib["Id"])
+            for track in tracks_element
+            if track.tag.endswith("Track")
+            and track.attrib.get("Id", "").lstrip("-").isdigit()
+        ]
+        next_track_id = (max(track_ids) if track_ids else 0) + 1
+        next_target_id = _max_target_id(root) + 1
+        insert_at = max(
+            index
+            for index, track in enumerate(tracks_element)
+            if track.tag == "AudioTrack"
+        ) + 1
+
+        while len(audio_tracks) < required_speaker_count:
+            clone = copy.deepcopy(prototype)
+            clone.attrib["Id"] = str(next_track_id)
+            next_track_id += 1
+            next_target_id = _fresh_target_ids(clone, next_target_id)
+            tracks_element.insert(insert_at, clone)
+            insert_at += 1
+            audio_tracks.append(clone)
+
+        _bump_next_pointee(root)
+
     voice_tracks = [
         track
         for track in audio_tracks

@@ -1,0 +1,11 @@
+{
+  "speakers": [
+    {"display_name": "Host", "speaker_id": "host"},
+    {"display_name": "Guest", "speaker_id": "guest"}
+  ],
+  "turns": [
+    {"turn_index": 2, "speaker_id": "host", "source_timestamp": "00:01", "start_ms": 12000, "end_ms": 16000},
+    {"turn_index": 0, "speaker_id": "host", "source_timestamp": "00:00", "start_ms": 0, "end_ms": 5000},
+    {"turn_index": 1, "speaker_id": "guest", "source_timestamp": "00:09", "start_ms": 6000, "end_ms": 11000}
+  ]
+}

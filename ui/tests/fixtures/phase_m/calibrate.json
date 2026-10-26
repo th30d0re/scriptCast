@@ -1,0 +1,24 @@
+{
+  "word": "record",
+  "reading": "default",
+  "candidates": [
+    {
+      "spelling": "reckerd",
+      "score": 1.0,
+      "takes": [
+        {"wav": "/tmp/keep/reckerd_0.wav", "sentence": "A historical record.", "ok": true},
+        {"wav": "/tmp/keep/reckerd_1.wav", "sentence": "The record stood.", "ok": true},
+        {"wav": "/tmp/keep/reckerd_2.wav", "sentence": "Keep the record.", "ok": true}
+      ]
+    },
+    {
+      "spelling": "record",
+      "score": 0.333,
+      "takes": [
+        {"wav": "/tmp/keep/record_0.wav", "sentence": "A historical record.", "ok": false}
+      ]
+    }
+  ],
+  "best": "reckerd",
+  "written": false
+}

@@ -27,6 +27,7 @@ import numpy
 import soundfile
 
 from scriptcast.pronunciation import HeteronymReading, find_heteronyms
+from scriptcast.tool_json import JsonArgumentParser, emit, run_json
 
 MODEL_ID = "facebook/wav2vec2-lv-60-espeak-cv-ft"
 _RATE = 16000
@@ -251,17 +252,36 @@ def check_segment(wav: Path, text: str, whisper_words: list[dict],
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
+    ap = JsonArgumentParser(json_flags=("--json",))
     ap.add_argument("wav", type=Path)
     ap.add_argument("--text", required=True)
+    ap.add_argument("--json", action="store_true",
+                    help="Print one JSON object instead of one object per heteronym.")
     args = ap.parse_args()
+    return run_json(bool(args.json), lambda: _run(args))
 
+
+def _run(args: argparse.Namespace) -> int:
     import mlx_whisper
 
     result = mlx_whisper.transcribe(str(args.wav), word_timestamps=True, verbose=False,
                                     path_or_hf_repo="mlx-community/whisper-small.en-mlx")
     words = [w for s in result["segments"] for w in s.get("words", [])]
-    for entry in check_segment(args.wav, args.text, words):
+    entries = check_segment(args.wav, args.text, words)
+    if args.json:
+        emit({
+            "heteronyms": [
+                {
+                    "word": entry["word"],
+                    "expected": entry.get("expected", ""),
+                    "heard": entry.get("heard", ""),
+                    "ok": entry.get("verdict") == "ok",
+                }
+                for entry in entries
+            ],
+        })
+        return 0
+    for entry in entries:
         print(json.dumps(entry, ensure_ascii=False))
     return 0
 

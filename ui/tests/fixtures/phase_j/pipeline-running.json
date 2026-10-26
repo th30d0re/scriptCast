@@ -1,0 +1,29 @@
+{
+  "enabled": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "current": 2,
+  "state": "Running",
+  "max_passes": 3,
+  "gap_ms": 250,
+  "failing": 2,
+  "events": [
+    {
+      "event": "pass",
+      "pass": 2,
+      "max_passes": 3,
+      "failing": 2
+    }
+  ],
+  "log": [
+    "render complete: 3/3",
+    "verify complete: 1 passed, 2 failed",
+    "repair pass 1: 1 accepted, 1 still failing",
+    "repair pass 2/3: retrying turn"
+  ]
+}

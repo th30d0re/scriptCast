@@ -10,9 +10,10 @@
     <a href="LICENSE"><img src="https://img.shields.io/github/license/th30d0re/scriptCast?style=flat-square" alt="License"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.11+-blue?style=flat-square" alt="Python 3.11+"></a>
     <img src="https://img.shields.io/badge/Platform-Apple%20Silicon%20(macOS%20arm64)-lightgrey?style=flat-square" alt="Apple Silicon">
-    <img src="https://img.shields.io/badge/Engines-Kokoro%20%C2%B7%20Chatterbox%20%C2%B7%20OmniVoice%20%C2%B7%20ElevenLabs-orange?style=flat-square" alt="Engines">
+    <img src="https://img.shields.io/badge/Engines-Kokoro%20%C2%B7%20Chatterbox%20%C2%B7%20OmniVoice%20%C2%B7%20Phonon%20%C2%B7%20ElevenLabs-orange?style=flat-square" alt="Engines">
   </p>
   <p>
+    <a href="#desktop-app">Desktop app</a> ·
     <a href="#quickstart">Quickstart</a> ·
     <a href="#how-it-works">How it works</a> ·
     <a href="#commands">Commands</a> ·
@@ -21,11 +22,11 @@
   </p>
 </div>
 
-scriptCast renders a markdown podcast script into per-turn speech audio and exports the result as an Ableton Live set, a Final Cut Pro timeline, or a Logic Pro session. Each speaker turn is synthesized by the engine its voice configuration names — MLX Kokoro, MLX Chatterbox, ElevenLabs, or OmniVoice — post-processed onto a shared timeline, and verified against the script with on-device Whisper.
+scriptCast renders a markdown podcast script into per-turn speech audio and exports the result as an Ableton Live set, a Final Cut Pro timeline, or a Logic Pro session. Each speaker turn is synthesized by the engine its voice configuration names — MLX Kokoro, MLX Chatterbox, OmniVoice, Phonon, or ElevenLabs — post-processed onto a shared timeline, and checked against the script with on-device speech recognition.
 
 <table>
   <tr>
-    <td>🗣️<br><b>Per-speaker engines</b><br>Kokoro, Chatterbox, OmniVoice, ElevenLabs</td>
+    <td>🗣️<br><b>Per-speaker engines</b><br>Kokoro, Chatterbox, OmniVoice, Phonon, ElevenLabs</td>
     <td>🎞️<br><b>Archival clips</b><br>Spliced into the timeline</td>
     <td>🕵️<br><b>Whisper verification</b><br>With heteronym stress checks</td>
   </tr>
@@ -47,6 +48,27 @@ scriptCast renders a markdown podcast script into per-turn speech audio and expo
 
 > [!TIP]
 > The header timestamp is a source reference. Inter-turn spacing comes from the `--gap-ms` render flag, and a turn's identity (`turn_id`) is a hash of speaker and text, so re-timestamping a script re-synthesizes nothing.
+
+## Desktop app
+
+The native macOS app is `scriptcast-ui`, a Rust window. It opens a project, lays every turn on a timeline, plays the rendered audio, and edits voices, clips, and pronunciations. Synthesis still runs through the Python tools.
+
+![Episode workspace: a timeline of speaker turns, a table with verification, and the selected turn](ui/tests/snapshots/selected_turn.png)
+
+The episode window. Turns sit on a timeline and in a table. Verification is per turn, and the side panel is the turn you have selected.
+
+![Project voices: a speaker list and the selected speaker's engine, reference audio, and speed](ui/tests/snapshots/voices.png)
+
+The project window. Each speaker has an engine, a voice or a reference clip, and a speed.
+
+Apple Silicon builds are on the [releases page](https://github.com/th30d0re/scriptCast/releases). Unzip `scriptCast.app`, move it to Applications, and open it. The first time, if macOS blocks an unidentified developer, right-click the app and choose Open.
+
+To build it yourself:
+
+```bash
+cargo build --release --manifest-path ui/Cargo.toml
+# ui/target/release/scriptcast-ui
+```
 
 ## Quickstart
 
@@ -149,6 +171,7 @@ flowchart TD
     C -->|"Kokoro"| D["post-process"]
     C -->|"Chatterbox"| D
     C -->|"OmniVoice worker"| D
+    C -->|"Phonon"| D
     C -->|"ElevenLabs"| D
     C -->|"archive clip"| D
     D --> E["timeline + render_state.json"]
@@ -166,7 +189,7 @@ flowchart TD
 
 <details><summary>Useful render flags</summary>
 
-`--dry-run` (parse and manifest only), `--overwrite`, `--gap-ms`, `--regenerate-turns 5,10-15`, `--precision-insert`, `--detect-changes`, `--fcpxml`, `--logic` / `--logic-dry-run`, `--skip-als`, `--ableton-project-als`, `--tail-ms`, `--speech-threshold`, `--no-trim`, `--max-turns`, `--sample-seconds`.
+`--dry-run` (parse and manifest only), `--json-out`, `--progress-jsonl`, `--resume`, `--export-only`, `--overwrite`, `--gap-ms`, `--regenerate-turns 5,10-15`, `--precision-insert`, `--detect-changes`, `--fcpxml`, `--logic` / `--logic-dry-run`, `--skip-als`, `--ableton-project-als`, `--tail-ms`, `--speech-threshold`, `--no-trim`, `--max-turns`, `--sample-seconds`.
 
 </details>
 
@@ -177,14 +200,29 @@ flowchart TD
 | `scriptcast-repair` | Verify a rendered episode and re-synthesize whatever fails, until it passes. |
 | `scriptcast-relayout` | Re-time a rendered episode without re-synthesizing any audio. |
 | `scriptcast-stitch` | Stitch a rendered episode into one MP3 that matches the manifest timeline. |
+| `scriptcast-export` | Export FCPXML, inspect script turns/tags/speakers, or atomically apply structural script edits. |
 | `scriptcast-retime` | Recompute an episode script's timestamps from the measured audio in the rendered manifest. |
 | `scriptcast-turn-index` | Write TURN_INDEX.csv for a rendered episode. |
-| `scriptcast-outliers` | Flag turns whose rendered audio does not match the text it was given. |
-| `scriptcast-stress` | Check that rendered heteronyms were spoken in the reading the script needs (judge one heteronym in one WAV). |
-| `scriptcast-clip` | Cut an archival excerpt by naming its first and last words. |
-| `scriptcast-reference` | Turn a raw recording into a voice reference clip and its exact transcript. |
-| `scriptcast-audition` | Score a candidate reference clip on how reliably it clones (render candidate references against a speaker). |
-| `scriptcast-calibrate` | Find a spelling that makes the TTS engine say a heteronym the intended way. |
+| `scriptcast-outliers` | Flag turns whose rendered audio does not match the text it was given. `--json` prints one object of outliers. |
+| `scriptcast-stress` | Check that rendered heteronyms were spoken in the reading the script needs (judge one heteronym in one WAV). `--json` prints one object. |
+| `scriptcast-clip` | Cut an archival excerpt by naming its first and last words. `--words-json` prints word timings; `--json` registers and prints the entry. |
+| `scriptcast-reference` | Turn a raw recording into a voice reference clip and its exact transcript. `--candidates-json` lists sentence runs; `--json` writes an exact span. |
+| `scriptcast-audition` | Score a candidate reference clip on how reliably it clones (render candidate references against a speaker). `--json` requires `--keep` and prints the scores. |
+| `scriptcast-calibrate` | Find a spelling that makes the TTS engine say a heteronym the intended way. `--json` requires `--keep`; `--write` saves the winner. |
+| `scriptcast-project` | Show, validate, edit, or `init` project configuration: voices, clips, pronunciations, accepted hearings, speaker rates, and `scriptcast.toml`. |
+| `scriptcast-verify-ensemble` | Second opinion on turns Whisper failed, using Phonon-2 beside Whisper. |
+| `scriptcast-review` | Record a human decision on a disputed turn, and the hearings you accept. |
+| `scriptcast-review-stats` | Summarize `review_log.jsonl` and `accepted_hearings.yaml`. |
+| `scriptcast-refit` | Remeasure existing WAVs and update the manifest without re-synthesizing. |
+| `scriptcast-captions` | Word timings for on-screen captions, aligned to the script rather than raw recognition. |
+| `scriptcast-word-timings` | Read-along timings from the rendered WAVs. |
+| `scriptcast-clip-transcribe` | Ensemble transcript for an archival clip turn. |
+| `scriptcast-mix` | Mix quiet overlays and per-turn gain on top of a stitch. The original MP3 is left as it is. |
+| `scriptcast-video` | Render the vertical episode from the manifest: cards, excerpts, and stills. |
+| `scriptcast-shotspec` | Turn a markdown shot list into timings on the episode clock. |
+| `scriptcast-craft` | Cue sheet, and an FCPXML picture timeline, from an episode that is already rendered. |
+| `scriptcast-tapestop` | Tape-stop the stitched episode. |
+| `scriptcast-tapefx` | Tape-stop, rewind, and replay, cut from a source video. |
 
 ## Configuration
 
@@ -203,6 +241,10 @@ A project is a directory containing a `scriptcast.toml`. The project root is `$S
 | `scripts` | `scripts` | `scriptcast-calibrate` mines real sentences here |
 | `outputs` | `outputs` | `scriptcast` (default for `--out-dir`), `scriptcast-calibrate` |
 | `omnivoice_python` | `.venv-omnivoice/bin/python` | the OmniVoice engine |
+
+`scriptcast-project init --root PATH` writes `scriptcast.toml` containing only `# scriptCast project settings. Every key is optional; see the README Configuration table.` when that file is absent, then prints `show --json`. If `scriptcast.toml` already exists, `init` exits 2 and leaves it untouched.
+
+`set_speaker`, `set_clip`, and `set_entry` take the complete mapping. A key absent from the op is removed. A key whose value is unchanged stays byte-identical, including its quoting. `show --json` puts every key from the file on each speaker, clip, and pronunciation entry under `fields` (clips and pronunciations also keep their existing convenience keys).
 
 </details>
 
@@ -238,7 +280,7 @@ Any other bracketed tag falls through and is spoken verbatim.
 
 <details><summary>Voice configuration</summary>
 
-The voices file (`voices.yaml` by default, or `--voices`) maps speaker ids to engines under a top-level `speakers` mapping. The supported engines are `kokoro` (alias `mlx_kokoro`), `elevenlabs`, `mlx_chatterbox`, `omnivoice`, and `archive`. `name`, `character_profile`, and `speed` (default 1.0) apply to every engine.
+The voices file (`voices.yaml` by default, or `--voices`) maps speaker ids to engines under a top-level `speakers` mapping. The supported engines are `kokoro` (alias `mlx_kokoro`), `phonon`, `elevenlabs`, `mlx_chatterbox`, `omnivoice`, and `archive`. `name`, `character_profile`, and `speed` (default 1.0) apply to every engine.
 
 ```yaml
 speakers:
@@ -261,7 +303,14 @@ speakers:
     name: "Narrator"
     engine: "elevenlabs"
     elevenlabs_voice_id: "XXXXXXXXXXXXXXXXXXXXXX"  # required
+
+  reader:
+    name: "Reader"
+    engine: "phonon"
+    phonon_voice: "emma"         # a Phonon catalog name, or a .safetensors path
 ```
+
+Phonon is Gradium's on-device model, through the `ptts` package (installed with scriptCast). `phonon_voice` is either a name from the Phonon catalog or a `.safetensors` clone made with Phonon's clone-voice tool, as a path relative to the project root. The model (`hf://gradium/phonon-31m-en`) downloads on first use and runs in-process on CPU. The same text and voice always produce the same take. Set `SCRIPTCAST_PHONON_SEED` to an integer for one run when you need a different take.
 
 For OmniVoice, `reference_audio` and its word-for-word transcript `reference_text` are both required. The expressive pair (`reference_audio_expressive` / `reference_text_expressive`) is optional and must be declared together; a turn marked `[emphasis]` renders from it. `speed` scales the duration estimate OmniVoice derives from the reference clip. See `examples/voices.omnivoice.yaml`.
 

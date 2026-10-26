@@ -1,0 +1,314 @@
+"""Render JSON cards using the adjacent, separately installed Remotion workspace."""
+import argparse
+import json
+import os
+from pathlib import Path
+import subprocess
+import shlex
+import shutil
+import tempfile
+
+import yaml
+
+from scriptcast.parser import parse_transcript
+from scriptcast.tools.video_plan import COMPONENTS, build_plan
+
+VIDEO_DIR = Path(__file__).resolve().parents[2] / "video"
+DEFAULT_CHROME = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+
+def workspace(parser, *, dependencies=True):
+    if not (VIDEO_DIR / "src" / "index.ts").is_file():
+        parser.error(f"Remotion workspace not found at {VIDEO_DIR}; run from a source installation")
+    if dependencies and not (VIDEO_DIR / "node_modules" / ".bin" / "remotion").exists():
+        parser.error(f"Install the video workspace dependencies with: cd {VIDEO_DIR} && npm install")
+
+
+def browser_args():
+    chrome = os.environ.get("SCRIPTCAST_CHROME")
+    if not chrome and DEFAULT_CHROME.is_file():
+        chrome = str(DEFAULT_CHROME)
+    return [f"--browser-executable={chrome}"] if chrome else []
+
+
+def _cut_clip(source: Path, target: Path, in_ms: float, out_ms: float) -> bool:
+    """Re-encode just the used excerpt as a short 30 fps H.264 file. Returns False if it cannot.
+
+    framerate blends neighbouring frames where fps would duplicate them: 24 fps footage conformed
+    with fps=30 repeats one frame in five, a visible judder on every pan.
+    """
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg or out_ms <= in_ms:
+        return False
+    result = subprocess.run(
+        [ffmpeg, "-v", "error", "-y", "-ss", f"{in_ms / 1000:.3f}", "-to", f"{out_ms / 1000:.3f}", "-i", str(source),
+         "-an", "-vf", "framerate=30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", str(target)],
+        capture_output=True, check=False)
+    return result.returncode == 0 and target.is_file() and target.stat().st_size > 0
+
+
+def stage_media(plan):
+    """Copy the audio and cut each clip's excerpt so the run is independent of original paths.
+
+    Cutting keeps the render light: Remotion decodes a few seconds of H.264 instead of seeking
+    inside a 90 second HEVC reel, and the staged folder stays small. If ffmpeg is missing or the
+    cut fails, the whole source is copied and the excerpt stays addressed by in/out points.
+    """
+    sources = [Path(plan["audio"]), *(Path(c["src"]) for c in plan["clips"])]
+    for source in sources:
+        if not source.is_file():
+            raise ValueError(f"Missing media: {source}")
+    parent = VIDEO_DIR / "public" / "episode"
+    parent.mkdir(parents=True, exist_ok=True)
+    # Staged runs are scratch: Remotion copies the whole public/ folder into every bundle,
+    # so leftovers from earlier renders slow renders and fill the disk.
+    for stale in parent.glob("run-*"):
+        if stale.is_dir():
+            shutil.rmtree(stale, ignore_errors=True)
+    run = Path(tempfile.mkdtemp(prefix="run-", dir=parent))
+    audio_source = Path(plan["audio"])
+    audio_target = run / f"000{audio_source.suffix}"
+    shutil.copyfile(audio_source, audio_target)
+    plan["audio"] = audio_target.relative_to(VIDEO_DIR / "public").as_posix()
+    copies = {}
+    for number, clip in enumerate(plan["clips"], start=1):
+        source = Path(clip["src"])
+        cut = run / f"clip{number:03d}.mp4"
+        if _cut_clip(source, cut, clip["in_ms"], clip["out_ms"]):
+            clip["out_ms"] = clip["out_ms"] - clip["in_ms"]
+            clip["in_ms"] = 0
+            clip["src"] = cut.relative_to(VIDEO_DIR / "public").as_posix()
+            continue
+        if source not in copies:
+            target = run / f"{len(copies) + 1:03d}{source.suffix}"
+            shutil.copyfile(source, target)
+            copies[source] = target.relative_to(VIDEO_DIR / "public").as_posix()
+        clip["src"] = copies[source]
+
+
+def check_missing_assets(cards_list, allow_missing, parser):
+    public_dir = VIDEO_DIR / "public"
+    missing = []
+    for card in cards_list:
+        if not isinstance(card, dict): continue
+        srcs = []
+        if "svgAsset" in card and isinstance(card["svgAsset"], str):
+            srcs.append(card["svgAsset"])
+        if isinstance(card.get("image"), str):
+            srcs.append(card["image"])
+        if "art" in card and isinstance(card["art"], dict) and isinstance(card.get("art", {}).get("src"), str):
+            srcs.append(card["art"]["src"])
+        for src in srcs:
+            if not (public_dir / src).is_file():
+                missing.append((card.get("headline", "<unknown>"), src))
+    if missing:
+        if allow_missing:
+            for title, src in missing:
+                print(f"Warning: Missing asset '{src}' in card '{title}'")
+        else:
+            msg = "\n".join(f"  - {title}: {src}" for title, src in missing)
+            parser.error(f"Missing assets (use --allow-missing-assets to ignore):\n{msg}")
+
+
+def render(args, parser):
+    workspace(parser, dependencies=not args.plan_only)
+    episode = args.episode_dir.resolve()
+    audio = args.audio.resolve() if args.audio else None
+    if audio is None:
+        candidates = list(episode.glob("*.mp3"))
+        if len(candidates) != 1:
+            parser.error(f"Expected one *.mp3 in {episode}, found {len(candidates)}; use --audio")
+        audio = candidates[0]
+    try:
+        if not args.cards.is_dir():
+            raise ValueError(f"Cards directory not found: {args.cards}")
+        cards = {p.stem: json.loads(p.read_text()) for p in sorted(args.cards.iterdir()) if p.suffix.lower() == ".json"}
+        plan = build_plan(json.loads((episode / "episode_manifest.json").read_text()),
+                          parse_transcript(args.script), json.loads(args.specs.read_text()),
+                          yaml.safe_load(args.clips.read_text()), cards,
+                          audio=str(audio), project_root=args.project_root.resolve(),
+                          persist_cards=args.persist_cards,
+                          captions=json.loads(args.captions.read_text()) if args.captions else None)
+
+        stage_media(plan)
+        check_missing_assets([c["card"] for c in plan["cards"]], args.allow_missing_assets, parser)
+        out = args.out.resolve()
+        plan_path = Path(str(out) + ".plan.json")
+        plan_path.parent.mkdir(parents=True, exist_ok=True)
+        plan_path.write_text(json.dumps(plan, indent=2) + "\n")
+    except (OSError, ValueError, KeyError, TypeError, yaml.YAMLError) as exc:
+        parser.error(f"Cannot build episode plan: {exc}")
+    if args.plan_only:
+        print(f"wrote {plan_path}")
+        return 0
+    total = max(1, round(plan["duration_ms"] * plan["fps"] / 1000))
+    first, last = (0, total - 1)
+    if args.frames:
+        first, last = args.frames
+        if not 0 <= first <= last < total:
+            parser.error(f"--frames must fall inside 0-{total - 1}")
+    ranges = chunk_ranges(first, last, args.chunks)
+    base = ["npx", "--no-install", "remotion", "render", "src/index.ts", "Episode"]
+    common = [f"--props={plan_path}", "--codec", "h264", f"--timeout={args.timeout_ms}"]
+    if len(ranges) == 1 and not args.frames:
+        command = [*base, str(out), *common, f"--concurrency={args.concurrency}", *browser_args()]
+        if args.dry_run:
+            print(shlex.join(command))
+            return 0
+        try:
+            return subprocess.run(command, cwd=VIDEO_DIR, check=False).returncode
+        except OSError as exc:
+            parser.error(f"Could not run Remotion: {exc}")
+    return render_chunks(base, common, ranges, out, audio, plan, args)
+
+
+def chunk_ranges(first: int, last: int, chunks: int) -> list[tuple[int, int]]:
+    """Split frames first..last (inclusive) into `chunks` contiguous, near-equal ranges."""
+    count = last - first + 1
+    chunks = max(1, min(chunks, count))
+    size, extra = divmod(count, chunks)
+    ranges, start = [], first
+    for i in range(chunks):
+        end = start + size + (1 if i < extra else 0) - 1
+        ranges.append((start, end))
+        start = end + 1
+    return ranges
+
+
+def render_chunks(base, common, ranges, out, audio, plan, args) -> int:
+    """Render frame ranges in parallel Remotion processes, then join them and add the audio.
+
+    One Remotion process leaves most of a many-core machine idle, so each range gets its own
+    process (muted; the single MP3 is muxed at the end so no audio seams appear at joins).
+    """
+    per = max(2, args.concurrency // len(ranges)) if args.chunk_concurrency is None else args.chunk_concurrency
+    work = out.parent / f".{out.stem}-chunks"
+    commands = []
+    for i, (a, b) in enumerate(ranges):
+        part = work / f"part{i:02d}.mp4"
+        commands.append(([*base, str(part), *common, "--muted", f"--frames={a}-{b}", f"--concurrency={per}", *browser_args()], part))
+    join = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(work / "parts.txt")]
+    if args.frames:
+        mux = [*join, "-c:v", "copy", str(out)]  # a frame subset has no matching audio
+    else:
+        mux = [*join, "-i", str(audio), "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", str(out)]
+    if args.dry_run:
+        for cmd, _ in commands:
+            print(shlex.join(cmd))
+        print(shlex.join(mux))
+        return 0
+    work.mkdir(parents=True, exist_ok=True)
+    (work / "parts.txt").write_text("".join(f"file '{part}'\n" for _, part in commands))
+    try:
+        procs = [subprocess.Popen(cmd, cwd=VIDEO_DIR) for cmd, _ in commands]
+        codes = [p.wait() for p in procs]
+    except OSError as exc:
+        print(f"Could not run Remotion: {exc}")
+        return 1
+    if any(codes):
+        print(f"A chunk failed (exit codes {codes}); parts are kept in {work}")
+        return 1
+    code = subprocess.run(mux, check=False).returncode
+    if code == 0:
+        for _, part in commands:
+            part.unlink()
+        (work / "parts.txt").unlink()
+        work.rmdir()
+    return code
+
+
+def svg(args, parser):
+    workspace(parser, dependencies=False)
+    if not (VIDEO_DIR / "node_modules" / ".bin" / "tsc").is_file():
+        parser.error(f"Install the video workspace dependencies with: cd {VIDEO_DIR} && npm install")
+    command = ["npm", "run", "--silent", "quiver", "--", args.svg_command]
+    if args.svg_command == "generate":
+        command += [args.prompt, "--model", args.model, "--n", str(args.n)]
+        if args.instructions is not None:
+            command += ["--instructions", args.instructions]
+        for reference in args.reference or []:
+            command += ["--reference", str(reference.resolve())]
+    elif args.svg_command == "animate":
+        command += [str(args.svg_path.resolve())]
+        if args.prompt is not None:
+            command += ["--prompt", args.prompt]
+    if args.dry_run:
+        command.append("--dry-run")
+    try:
+        return subprocess.run(command, cwd=VIDEO_DIR, check=False).returncode
+    except OSError as exc:
+        parser.error(f"Could not run Quiver CLI: {exc}")
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    sub = parser.add_subparsers(dest="command", required=True)
+    still = sub.add_parser("still", help="Render one card to PNG")
+    still.add_argument("card", type=Path)
+    still.add_argument("out", type=Path)
+    still.add_argument("--component", choices=sorted(COMPONENTS))
+    still.add_argument("--allow-missing-assets", action="store_true")
+    episode = sub.add_parser("render", help="Assemble episode video from a resolved plan")
+    episode.add_argument("episode_dir", type=Path)
+    for name in ("script", "specs", "clips", "cards", "out"):
+        episode.add_argument(f"--{name}", type=Path, required=True)
+    episode.add_argument("--audio", type=Path)
+    episode.add_argument("--allow-missing-assets", action="store_true")
+    episode.add_argument("--timeout-ms", type=int, default=120000,
+                         help="per-frame render timeout; raise it on a busy machine (default 120000)")
+    episode.add_argument("--concurrency", type=int, default=8, help="total parallel browser tabs (default 8; the tool was set to 3 after load-related timeouts)")
+    episode.add_argument("--chunks", type=int, default=1, help="render this many frame ranges in parallel Remotion processes and join them (tabs are split between them)")
+    episode.add_argument("--chunk-concurrency", type=int, default=None, help="browser tabs per chunk (default: --concurrency divided by --chunks, at least 2)")
+    episode.add_argument("--frames", type=lambda v: tuple(int(x) for x in v.split("-")), default=None, help="render only frames A-B (inclusive), without audio; for testing")
+    episode.add_argument("--captions", type=Path, help="captions.json from scriptcast-captions, burned in above the cards")
+    episode.add_argument("--persist-cards", action="store_true",
+                         help="keep each card on screen until the next card or archive clip starts")
+    episode.add_argument("--project-root", type=Path, default=Path.cwd(),
+                         help="Root for registry source paths (default: current directory)")
+    mode = episode.add_mutually_exclusive_group()
+    mode.add_argument("--plan-only", action="store_true")
+    mode.add_argument("--dry-run", action="store_true")
+    svg_parser = sub.add_parser("svg", help="Generate and animate cached SVG assets")
+    svg_sub = svg_parser.add_subparsers(dest="svg_command", required=True)
+    generate = svg_sub.add_parser("generate")
+    generate.add_argument("prompt")
+    generate.add_argument("--model", default="arrow-2")
+    generate.add_argument("--instructions")
+    generate.add_argument("--n", type=int, choices=range(1, 17), default=1)
+    generate.add_argument("--reference", action="append", type=Path,
+                          help="reference image (PNG, JPEG, WebP, GIF, SVG); repeatable, up to 14")
+    animate = svg_sub.add_parser("animate")
+    animate.add_argument("svg_path", type=Path)
+    animate.add_argument("--prompt")
+    models = svg_sub.add_parser("models")
+    for command_parser in (generate, animate, models):
+        command_parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args(argv)
+    if args.command == "svg":
+        return svg(args, parser)
+    if args.command == "render":
+        return render(args, parser)
+    card, out = args.card.resolve(), args.out.resolve()
+    try:
+        props = json.loads(card.read_text())
+    except (OSError, ValueError) as exc:
+        parser.error(f"Cannot read card JSON: {exc}")
+    if not isinstance(props, dict):
+        parser.error("Card JSON must be an object")
+    component = args.component or props.get("component")
+
+    component = args.component or props.get("component")
+    if not isinstance(component, str) or component not in COMPONENTS:
+        parser.error("Supply a supported component in JSON or with --component")
+    check_missing_assets([props], args.allow_missing_assets, parser)
+    workspace(parser)
+    command = ["npx", "--no-install", "remotion", "still", "src/index.ts", component,
+               str(out), f"--props={card}"]
+    command.extend(browser_args())
+    try:
+        return subprocess.run(command, cwd=VIDEO_DIR, check=False).returncode
+    except OSError as exc:
+        parser.error(f"Could not run Remotion: {exc}")
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

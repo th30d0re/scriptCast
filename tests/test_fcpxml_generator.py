@@ -30,6 +30,7 @@ class GenerateFcpxmlTests(TestCase):
         self.assertIsNotNone(resources)
         assets = resources.findall("asset")
         self.assertEqual(len(assets), len(segments))
+        self.assertTrue(all(asset.get("audioChannels") == "2" for asset in assets))
 
         # Library > Event > Project > Sequence > Spine
         spine = root.find(".//spine")
@@ -69,6 +70,14 @@ class GenerateFcpxmlTests(TestCase):
         self.assertEqual(clips[0].attrib["offset"], "0s")
         # 5000ms = 5s -> 150 frames exactly
         self.assertEqual(clips[1].attrib["offset"], "150/30s")
+
+    def test_mono_channel_count(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            segment = self._segment(project_root, 0, "host", 1000, 950, 0)
+            segment.audio_channels = 1
+            output = generate_fcpxml([segment], project_root / "mono.fcpxml")
+            self.assertEqual(ET.parse(output).find(".//asset").get("audioChannels"), "1")
 
     def _segment(
         self,

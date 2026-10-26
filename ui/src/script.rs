@@ -1,0 +1,544 @@
+//! Python-owned transcript spans, byte-preserving edits and reversible saves.
+use crate::{
+    checkpoint::{self, Checkpoint},
+    cli::{self, ExportCommand, ExportSource, Resolved},
+    episode::Episode,
+};
+use serde::{Deserialize, de::DeserializeOwned};
+use sha2::{Digest, Sha256};
+use std::{fs, io::Write, path::PathBuf};
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct ScriptTurns {
+    pub script_path: PathBuf,
+    pub script_sha256: String,
+    pub line_ending: String,
+    pub turns: Vec<ScriptTurn>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct ScriptTurn {
+    pub index: usize,
+    pub turn_id: String,
+    pub speaker_id: String,
+    pub display_name: String,
+    pub header_line: usize,
+    pub body_start: usize,
+    pub body_end: usize,
+    pub body: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct Changes {
+    pub inserted: Vec<usize>,
+    pub modified: Vec<usize>,
+    pub deleted: Vec<String>,
+    pub unchanged: usize,
+}
+
+/// Blocking worker function: call off the UI thread, like DAW export work.
+pub fn load_turns(export: &ExportCommand, episode: &Episode) -> Result<ScriptTurns, String> {
+    load_json(export, episode, "--turns-json")
+}
+
+/// Blocking worker function; subprocesses inherit the resolved login PATH and null stdin.
+pub fn load_changes(export: &ExportCommand, episode: &Episode) -> Result<Changes, String> {
+    load_json(export, episode, "--changes-json")
+}
+
+fn load_json<T: DeserializeOwned>(
+    export: &ExportCommand,
+    episode: &Episode,
+    mode: &str,
+) -> Result<T, String> {
+    let mut command = export_process(export, episode);
+    match mode {
+        "--speakers-json" => {
+            if let Some(path) = &episode.voices_path {
+                command.arg("--voices").arg(path);
+            }
+        }
+        "--turns-json" | "--changes-json" | "--tags-json" => {
+            if let Some(path) = &episode.script_path {
+                command.arg("--script").arg(path);
+            }
+        }
+        _ => {}
+    }
+    command.arg(mode);
+    let output = command.output().map_err(|e| format!("{mode}: {e}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "{mode} failed ({}): {}",
+            output.status,
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
+    }
+    serde_json::from_slice(&output.stdout).map_err(|e| format!("Invalid {mode} JSON: {e}"))
+}
+
+/// Replace the exported body span, keeping all surrounding bytes and its final newline.
+/// Empty drafts and invalid/stale spans are errors, rather than panics or silent edits.
+pub fn splice(original: &[u8], turn: &ScriptTurn, new_body: &str) -> Result<Vec<u8>, String> {
+    let starts = line_starts(original);
+    let (range, body) = body_edit(original, &starts, turn, new_body, true)?;
+    let mut result = original.to_vec();
+    result.splice(range, body);
+    Ok(result)
+}
+
+fn line_starts(original: &[u8]) -> Vec<usize> {
+    let mut starts = vec![0];
+    for (i, byte) in original.iter().enumerate() {
+        if *byte == b'\n' {
+            starts.push(i + 1);
+        }
+    }
+    if starts.last() != Some(&original.len()) {
+        starts.push(original.len());
+    }
+    starts
+}
+
+fn body_edit(
+    original: &[u8],
+    starts: &[usize],
+    turn: &ScriptTurn,
+    new_body: &str,
+    normalize_endings: bool,
+) -> Result<(std::ops::Range<usize>, Vec<u8>), String> {
+    if new_body.trim().is_empty() {
+        return Err("A turn's body cannot be empty.".into());
+    }
+    let line_count = starts.len() - 1;
+    if turn.header_line == 0
+        || turn.header_line > line_count
+        || turn.body_start <= turn.header_line
+        || turn.body_start > line_count + 1
+        || turn.body_end < turn.body_start - 1
+        || turn.body_end > line_count
+    {
+        return Err("Invalid script body span. Reload to edit.".into());
+    }
+    let start = starts[turn.body_start - 1];
+    let end = starts[turn.body_end];
+    let old_body = &original[start..end];
+    let content = old_body.strip_suffix(b"\n").unwrap_or(old_body);
+    let content = content.strip_suffix(b"\r").unwrap_or(content);
+    if content != turn.body.as_bytes() {
+        return Err("Script body does not match its loaded span. Reload to edit.".into());
+    }
+    let ending = if original.windows(2).any(|p| p == b"\r\n") {
+        "\r\n"
+    } else {
+        "\n"
+    };
+    let normalized = new_body.replace("\r\n", "\n");
+    if normalized.contains('\r') {
+        return Err("Unsupported bare carriage return in draft.".into());
+    }
+    let body = if normalize_endings {
+        normalized.replace('\n', ending)
+    } else {
+        new_body.to_owned()
+    };
+
+    let mut result = Vec::new();
+    // A header at EOF may have no terminator yet; inserting its first body needs one.
+    if start == end && start > 0 && original[start - 1] != b'\n' {
+        result.extend_from_slice(ending.as_bytes());
+    }
+    result.extend_from_slice(body.as_bytes());
+    if old_body.ends_with(b"\r\n") {
+        result.extend_from_slice(b"\r\n");
+    } else if old_body.ends_with(b"\n") {
+        result.push(b'\n');
+    } else if start == end && end < original.len() {
+        result.extend_from_slice(ending.as_bytes());
+    }
+
+    Ok((start..end, result))
+}
+
+/// Refuse stale data before writing anything, checkpoint, then atomically replace the script.
+pub fn save(
+    episode: &Episode,
+    turn: &ScriptTurn,
+    new_body: &str,
+    loaded_sha256: &str,
+) -> Result<Checkpoint, String> {
+    preserve_clip_tag(&turn.body, new_body)?;
+    let path = episode
+        .script_path
+        .as_ref()
+        .ok_or("Script path unavailable")?;
+    let path = fs::canonicalize(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let original = fs::read(&path).map_err(|e| e.to_string())?;
+    check_hash(&original, loaded_sha256)?;
+    let edited = splice(&original, turn, new_body)?;
+    let mode = fs::metadata(&path)
+        .map_err(|e| e.to_string())?
+        .permissions();
+    let cp = checkpoint::create_external(
+        &episode.dir,
+        "script-edit",
+        std::slice::from_ref(&path),
+        vec![turn.index],
+    )?;
+    let parent = path.parent().ok_or("Script has no parent directory")?;
+    let temporary = parent.join(format!(
+        ".scriptcast-edit-{}-{}",
+        std::process::id(),
+        cp.version
+    ));
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temporary)
+        .map_err(|e| format!("{}: {e}", temporary.display()))?;
+    let result = (|| {
+        file.write_all(&edited).map_err(|e| e.to_string())?;
+        file.set_permissions(mode).map_err(|e| e.to_string())?;
+        file.sync_all().map_err(|e| e.to_string())?;
+        // Catch changes made while the checkpoint or temporary file was being written.
+        check_hash(&fs::read(&path).map_err(|e| e.to_string())?, loaded_sha256)?;
+        fs::rename(&temporary, &path).map_err(|e| e.to_string())?;
+        Ok(cp)
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temporary);
+    }
+    result
+}
+
+fn check_hash(bytes: &[u8], expected: &str) -> Result<(), String> {
+    let hash: String = Sha256::digest(bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
+    if hash != expected {
+        return Err("The script changed on disk. Reload to edit.".into());
+    }
+    Ok(())
+}
+
+pub fn edited_turns(
+    changes: &Changes,
+    manifest_len: usize,
+    script_len: usize,
+) -> Option<Vec<usize>> {
+    if manifest_len != script_len {
+        return None;
+    }
+    let mut indices = changes.inserted.clone();
+    indices.extend(&changes.modified);
+    if indices.iter().any(|i| *i >= script_len) {
+        return None;
+    }
+    indices.sort_unstable();
+    indices.dedup();
+    Some(indices)
+}
+
+/// First `[clip:<id>]` tag id in a turn body, if any.
+pub fn clip_id(body: &str) -> Option<&str> {
+    let start = body.find("[clip:")? + "[clip:".len();
+    let rest = body.get(start..)?;
+    let end = rest.find(']')?;
+    let id = rest.get(..end)?.trim();
+    if id.is_empty() || id.chars().any(char::is_whitespace) {
+        None
+    } else {
+        Some(id)
+    }
+}
+
+/// Full `[clip:<id>]` token for the first clip tag in `body`.
+pub fn clip_tag(body: &str) -> Option<String> {
+    clip_id(body).map(|id| format!("[clip:{id}]"))
+}
+
+/// Body text with the first clip tag removed, for table display.
+pub fn display_body(body: &str) -> String {
+    match clip_tag(body) {
+        Some(tag) => {
+            let stripped = body.replacen(&tag, "", 1);
+            stripped.trim().to_string()
+        }
+        None => body.to_string(),
+    }
+}
+
+/// Refuse saves that drop an existing audio-clip tag.
+pub fn preserve_clip_tag(original: &str, edited: &str) -> Result<(), String> {
+    let Some(tag) = clip_tag(original) else {
+        return Ok(());
+    };
+    if edited.contains(&tag) {
+        Ok(())
+    } else {
+        Err(format!(
+            "Keep the audio clip tag {tag}. Transcript-only edits cannot remove it."
+        ))
+    }
+}
+
+/// Edited turns split into synthesis work versus clip transcript corrections.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RenderScope {
+    pub synthesis: Vec<usize>,
+    pub clip_corrections: Vec<usize>,
+}
+
+impl RenderScope {
+    pub fn from_changes(changes: &Changes, turns: &[ScriptTurn]) -> Self {
+        let mut synthesis = Vec::new();
+        let mut clip_corrections = Vec::new();
+        let mut indices = changes.inserted.clone();
+        indices.extend(&changes.modified);
+        indices.sort_unstable();
+        indices.dedup();
+        for index in indices {
+            match turns.iter().find(|t| t.index == index) {
+                Some(turn) if clip_id(&turn.body).is_some() => clip_corrections.push(index),
+                Some(_) => synthesis.push(index),
+                None => synthesis.push(index),
+            }
+        }
+        Self {
+            synthesis,
+            clip_corrections,
+        }
+    }
+
+    pub fn synthesis_enabled(&self) -> bool {
+        !self.synthesis.is_empty()
+    }
+}
+
+/// One hash check, one checkpoint and one atomic write for a complete replacement batch.
+pub fn save_many(
+    episode: &Episode,
+    edits: &[(ScriptTurn, String)],
+    loaded_sha256: &str,
+) -> Result<Checkpoint, String> {
+    if edits.is_empty() {
+        return Err("No replacements to save.".into());
+    }
+    let path = episode
+        .script_path
+        .as_ref()
+        .ok_or("Script path unavailable")?;
+    let path = fs::canonicalize(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let original = fs::read(&path).map_err(|e| e.to_string())?;
+    check_hash(&original, loaded_sha256)?;
+    let starts = line_starts(&original);
+    let mut spans = Vec::with_capacity(edits.len());
+    let mut indices = Vec::with_capacity(edits.len());
+    for (turn, body) in edits {
+        preserve_clip_tag(&turn.body, body)?;
+        spans.push(body_edit(&original, &starts, turn, body, false)?);
+        indices.push(turn.index);
+    }
+    spans.sort_by_key(|(range, _)| range.start);
+    indices.sort_unstable();
+    if indices.windows(2).any(|pair| pair[0] == pair[1])
+        || spans
+            .windows(2)
+            .any(|pair| pair[0].0.end > pair[1].0.start || pair[0].0.start == pair[1].0.start)
+    {
+        return Err("Overlapping script edits. Reload to edit.".into());
+    }
+    let mut edited = original;
+    for (range, body) in spans.into_iter().rev() {
+        edited.splice(range, body);
+    }
+    let mode = fs::metadata(&path)
+        .map_err(|e| e.to_string())?
+        .permissions();
+    let cp = checkpoint::create_external(
+        &episode.dir,
+        "script-edit",
+        std::slice::from_ref(&path),
+        indices,
+    )?;
+    let temporary = path
+        .parent()
+        .ok_or("Script has no parent directory")?
+        .join(format!(
+            ".scriptcast-edit-{}-{}",
+            std::process::id(),
+            cp.version
+        ));
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temporary)
+        .map_err(|e| format!("{}: {e}", temporary.display()))?;
+    let result = (|| {
+        file.write_all(&edited).map_err(|e| e.to_string())?;
+        file.set_permissions(mode).map_err(|e| e.to_string())?;
+        file.sync_all().map_err(|e| e.to_string())?;
+        fs::rename(&temporary, &path).map_err(|e| e.to_string())?;
+        Ok(cp)
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temporary);
+    }
+    result
+}
+
+/// Reuse the exact export resolution used for turns JSON.
+pub fn export_process(export: &ExportCommand, episode: &Episode) -> std::process::Command {
+    let checkout = match &export.source {
+        ExportSource::DevCheckout(path) => Some(path.clone()),
+        _ => None,
+    };
+    let resolved = Resolved {
+        source: export.source.clone(),
+        program: export.program.clone(),
+        prefix: if checkout.is_some() {
+            vec!["-m".into(), "scriptcast.tools.export_session".into()]
+        } else {
+            vec![]
+        },
+        path: cli::login_path(),
+        pythonpath: checkout,
+    };
+    let mut command = resolved.base_command();
+    command.arg(&episode.dir).current_dir(&episode.dir);
+    if let Some(root) = &episode.project_root {
+        command.env("SCRIPTCAST_PROJECT", root);
+    }
+    command
+}
+
+pub fn load_registry(
+    export: &ExportCommand,
+    episode: &Episode,
+) -> Result<crate::structure::Registry, String> {
+    load_json(export, episode, "--speakers-json")
+}
+pub fn load_tags(export: &ExportCommand, episode: &Episode) -> Result<crate::tags::Report, String> {
+    load_json(export, episode, "--tags-json")
+}
+
+/// Checkpoint first; only Python is permitted to splice structure. Reload IDs from its response.
+pub fn apply_edits(
+    export: &ExportCommand,
+    episode: &Episode,
+    ops: &[crate::structure::EditOp],
+    expected: &str,
+) -> Result<(Checkpoint, ScriptTurns), String> {
+    let path = episode
+        .script_path
+        .as_ref()
+        .ok_or("Script path unavailable")?;
+    check_hash(&fs::read(path).map_err(|e| e.to_string())?, expected)?;
+    let cp = checkpoint::create_external(
+        &episode.dir,
+        "script-structure",
+        std::slice::from_ref(path),
+        vec![],
+    )?;
+    let ops_path = cp.dir.join("structure-ops.json");
+    fs::write(
+        &ops_path,
+        serde_json::to_vec(ops).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| e.to_string())?;
+    let mut command = export_process(export, episode);
+    if let Some(path) = &episode.script_path {
+        command.arg("--script").arg(path);
+    }
+    if let Some(path) = &episode.voices_path {
+        command.arg("--voices").arg(path);
+    }
+    let output = command
+        .arg("--edit-json")
+        .arg(&ops_path)
+        .arg("--expect-sha256")
+        .arg(expected)
+        .output()
+        .map_err(|e| e.to_string())?;
+    if !output.status.success() {
+        return Err(crate::structure::edit_error(
+            output.status.code(),
+            &String::from_utf8_lossy(&output.stderr),
+        ));
+    }
+    let turns =
+        serde_json::from_slice(&output.stdout).map_err(|e| format!("Saved; reload turns: {e}"))?;
+    Ok((cp, turns))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn turn(index: usize, body: &str) -> ScriptTurn {
+        ScriptTurn {
+            index,
+            turn_id: format!("t{index}"),
+            speaker_id: "s".into(),
+            display_name: "S".into(),
+            header_line: 1,
+            body_start: 2,
+            body_end: 2,
+            body: body.into(),
+        }
+    }
+
+    #[test]
+    fn clip_id_detects_tag_and_rejects_empty_or_spaced() {
+        assert_eq!(clip_id("[clip:atwater_1981] spoken"), Some("atwater_1981"));
+        assert_eq!(clip_id("pre [clip:x] post"), Some("x"));
+        assert_eq!(clip_id("no clip here"), None);
+        assert_eq!(clip_id("[clip:]"), None);
+        assert_eq!(clip_id("[clip:has space]"), None);
+        assert_eq!(
+            display_body("[clip:atwater_1981] Spoken words."),
+            "Spoken words."
+        );
+    }
+
+    #[test]
+    fn save_refuses_removed_clip_tag() {
+        let original = "[clip:atwater_1981] Hello there.";
+        assert!(preserve_clip_tag(original, original).is_ok());
+        assert!(preserve_clip_tag(original, "[clip:atwater_1981] Hello.").is_ok());
+        let err = preserve_clip_tag(original, "Hello there.").unwrap_err();
+        assert!(err.contains("[clip:atwater_1981]"));
+        assert!(preserve_clip_tag("plain text", "other").is_ok());
+    }
+
+    #[test]
+    fn render_scope_splits_synthesis_and_clip_only_disables() {
+        let turns = vec![
+            turn(1, "Synthesized line."),
+            turn(2, "[clip:atwater_1981] Archive line."),
+            turn(3, "Another synth."),
+        ];
+        let mixed = Changes {
+            inserted: vec![],
+            modified: vec![1, 2],
+            deleted: vec![],
+            unchanged: 1,
+        };
+        let scope = RenderScope::from_changes(&mixed, &turns);
+        assert_eq!(scope.synthesis, vec![1]);
+        assert_eq!(scope.clip_corrections, vec![2]);
+        assert!(scope.synthesis_enabled());
+
+        let clip_only = Changes {
+            inserted: vec![],
+            modified: vec![2],
+            deleted: vec![],
+            unchanged: 2,
+        };
+        let scope = RenderScope::from_changes(&clip_only, &turns);
+        assert!(scope.synthesis.is_empty());
+        assert_eq!(scope.clip_corrections, vec![2]);
+        assert!(!scope.synthesis_enabled());
+    }
+}

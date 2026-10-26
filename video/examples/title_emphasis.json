@@ -1,0 +1,12 @@
+{
+  "component": "TitleCard",
+  "headline": "A title card with emphasis",
+  "items": [
+    {
+      "title": "Amount",
+      "emphasis": "$1,000,000",
+      "detail": "One million dollars"
+    }
+  ],
+  "sources": "Sources: Neutral dataset"
+}

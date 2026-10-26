@@ -51,6 +51,8 @@ class RenderState:
     fcpxml_path: str | None = None
     ableton_project_als_path: str | None = None
 
+    refit_settings: dict[str, int | float] | None = None
+
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
 
@@ -63,6 +65,7 @@ class RenderState:
             SegmentPosition(**s) for s in data.get("segments", [])  # type: ignore[arg-type]
         ]
         return cls(
+            refit_settings=data.get("refit_settings"),
             schema_version=data.get("schema_version", "1.0"),  # type: ignore[arg-type]
             source_file=data.get("source_file", ""),  # type: ignore[arg-type]
             source_hash=data.get("source_hash", ""),  # type: ignore[arg-type]
