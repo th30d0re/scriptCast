@@ -71,6 +71,7 @@ scriptcast-reference = "scriptcast.tools.make_reference:main"
 scriptcast-audition = "scriptcast.tools.audition_voice:main"
 scriptcast-calibrate = "scriptcast.tools.calibrate_pronunciation:main"
 scriptcast-project = "scriptcast.tools.project_config:main"
+scriptcast-youtube = "scriptcast.tools.youtube:main"
 
 [tool.setuptools.packages.find]
 include = ["scriptcast*"]
