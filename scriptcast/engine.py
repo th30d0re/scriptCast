@@ -28,6 +28,10 @@ class TTSEngine(ABC):
     #: Whether this engine can render a turn from an alternate, more expressive
     #: reference when the script marks it [emphasis].
     supports_expressive: bool = False
+    #: Character cap for one synthesis call. None means this engine publishes
+    #: no cap, and the renderer does not split the text first.
+    max_chars: int | None = None
+
     @abstractmethod
     async def load(self) -> None:
         """Load the engine resources."""
