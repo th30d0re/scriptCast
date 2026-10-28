@@ -19,6 +19,10 @@ from pathlib import Path
 CONFIG_NAME = "scriptcast.toml"
 ROOT_ENV_VAR = "SCRIPTCAST_PROJECT"
 
+# A table, not a path. `shots` is a path relative to the project root. `render`
+# is a command the show names; ScriptCast does not invent one.
+YOUTUBE_KEYS = frozenset({"shots", "render"})
+
 DEFAULTS: dict[str, str | int | float] = {
     "tail_ms": 400,
     "speech_threshold": 0.03,
@@ -32,6 +36,28 @@ DEFAULTS: dict[str, str | int | float] = {
     "outputs": "outputs",
     "omnivoice_python": ".venv-omnivoice/bin/python",
 }
+
+KNOWN_KEYS = frozenset(set(DEFAULTS) | {"youtube"})
+
+
+def _youtube_table(value: object, config_path: Path) -> dict[str, str]:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError(f"{config_path}: youtube must be a table")
+    unknown = sorted(set(value) - YOUTUBE_KEYS)
+    if unknown:
+        raise ValueError(
+            f"{config_path}: unknown youtube key(s): {', '.join(unknown)}. "
+            f"Known keys: {', '.join(sorted(YOUTUBE_KEYS))}."
+        )
+    parsed: dict[str, str] = {}
+    for key in sorted(YOUTUBE_KEYS & set(value)):
+        item = value[key]
+        if not isinstance(item, str) or not item.strip():
+            raise ValueError(f"{config_path}: youtube.{key} must be a non-empty string")
+        parsed[key] = item
+    return parsed
 
 
 def find_root(start: Path | None = None) -> Path:
@@ -57,13 +83,14 @@ class Project:
         if config_path.is_file():
             with config_path.open("rb") as handle:
                 raw = tomllib.load(handle)
-        unknown = sorted(set(raw) - set(DEFAULTS))
+        unknown = sorted(set(raw) - KNOWN_KEYS)
         if unknown:
             raise ValueError(
                 f"{config_path}: unknown key(s): {', '.join(unknown)}. "
-                f"Known keys: {', '.join(sorted(DEFAULTS))}."
+                f"Known keys: {', '.join(sorted(KNOWN_KEYS))}."
             )
-        merged = {**DEFAULTS, **raw}
+        youtube = _youtube_table(raw.get("youtube"), config_path)
+        merged = {**DEFAULTS, **{key: value for key, value in raw.items() if key != "youtube"}}
         self.tail_ms = merged["tail_ms"]
         self.speech_threshold = merged["speech_threshold"]
         if type(self.tail_ms) is not int or self.tail_ms < 0:
@@ -74,6 +101,9 @@ class Project:
             raise ValueError("speech_threshold must be a finite nonnegative number")
         self._paths = {key: self.resolve(value) for key, value in merged.items()
                        if key not in {"tail_ms", "speech_threshold"}}
+        self.youtube_render = youtube.get("render")
+        shots = youtube.get("shots")
+        self.youtube_shots = self.resolve(shots) if shots else None
 
     def resolve(self, value: object) -> Path:
         """`value` as an absolute path; relative values anchor at the root."""

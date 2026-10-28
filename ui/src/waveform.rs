@@ -447,6 +447,66 @@ pub fn bars_between(env: &Envelope, t0: f64, t1: f64, n: usize) -> Vec<f32> {
         .collect()
 }
 
+/// One column per `bar_secs` across `[0, dur_sec)`. Built once per width, then
+/// scrolled. A frame does not query the audio again.
+pub fn strip(env: &Envelope, dur_sec: f32, bar_secs: f32) -> Vec<f32> {
+    if dur_sec <= 0.0 || bar_secs <= 0.0 {
+        return Vec::new();
+    }
+    let n = (f64::from(dur_sec) / f64::from(bar_secs)).ceil() as usize;
+    bars_between(env, 0.0, f64::from(dur_sec), n.max(1))
+}
+
+/// Draw `columns` as one mesh. `step` is the distance from one bar to the next.
+pub fn paint_columns(
+    painter: &egui::Painter,
+    columns: &[f32],
+    x0: f32,
+    step: f32,
+    bar: f32,
+    center_y: f32,
+    max_h: f32,
+    min_h: f32,
+    color_at: impl Fn(f32) -> egui::Color32,
+) {
+    let mesh = columns_mesh(columns, x0, step, bar, center_y, max_h, min_h, color_at);
+    if !mesh.indices.is_empty() {
+        painter.add(egui::Shape::mesh(mesh));
+    }
+}
+
+fn columns_mesh(
+    columns: &[f32],
+    x0: f32,
+    step: f32,
+    bar: f32,
+    center_y: f32,
+    max_h: f32,
+    min_h: f32,
+    color_at: impl Fn(f32) -> egui::Color32,
+) -> egui::Mesh {
+    let mut mesh = egui::Mesh::default();
+    if columns.is_empty() || step <= 0.0 {
+        return mesh;
+    }
+    mesh.vertices.reserve(columns.len() * 4);
+    mesh.indices.reserve(columns.len() * 6);
+    for (i, &peak) in columns.iter().enumerate() {
+        let x = x0 + i as f32 * step;
+        let h = (peak * max_h).max(min_h);
+        let y = center_y - h / 2.0;
+        let color = color_at(x + bar / 2.0);
+        let v = mesh.vertices.len() as u32;
+        mesh.colored_vertex(egui::pos2(x, y), color);
+        mesh.colored_vertex(egui::pos2(x + bar, y), color);
+        mesh.colored_vertex(egui::pos2(x, y + h), color);
+        mesh.colored_vertex(egui::pos2(x + bar, y + h), color);
+        mesh.add_triangle(v, v + 2, v + 1);
+        mesh.add_triangle(v + 1, v + 2, v + 3);
+    }
+    mesh
+}
+
 /// Seconds covered by one legacy envelope bucket. Drawing uses [`Peaks`] instead.
 pub const BUCKET_SECS: f32 = 0.01;
 
@@ -572,6 +632,21 @@ mod tests {
         assert_eq!(b.len(), 2);
         assert!((b[0] - 0.9).abs() < 1e-5, "{b:?}");
         assert!((b[1] - 0.5).abs() < 1e-5, "{b:?}");
+    }
+
+    #[test]
+    fn a_strip_becomes_one_mesh() {
+        let env = env_of(vec![0.1, 0.9, 0.2, 0.5], 100);
+        assert!(strip(&env, 0.0, 0.02).is_empty());
+        let columns = strip(&env, 0.04, 0.02);
+        assert_eq!(columns, vec![0.9, 0.5]);
+        let mesh = columns_mesh(&columns, 10.0, 3.0, 1.5, 20.0, 10.0, 1.0, |_| {
+            egui::Color32::WHITE
+        });
+        assert_eq!(mesh.vertices.len(), 8);
+        assert_eq!(mesh.indices.len(), 12);
+        assert!((mesh.vertices[0].pos.x - 10.0).abs() < 1e-4);
+        assert!((mesh.vertices[4].pos.x - 13.0).abs() < 1e-4);
     }
 
     #[test]

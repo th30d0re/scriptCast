@@ -23,7 +23,10 @@ pub enum Preset {
     Relayout(u64),
     Stitch,
     TurnIndex,
-    ReExport { fcpxml: bool, logic_dry_run: bool },
+    ReExport {
+        fcpxml: bool,
+        logic_dry_run: bool,
+    },
     DetectChanges,
     PrecisionInsert,
     RegenerateTurns(Vec<usize>),
@@ -33,6 +36,8 @@ pub enum Preset {
     SecondOpinion,
     ReviewStats,
     Repair(Option<Vec<usize>>),
+    /// Cut one shot-list segment. The string is the segment id, such as `00`.
+    CutSegment(String),
 }
 impl Preset {
     pub fn name(&self) -> &'static str {
@@ -51,6 +56,7 @@ impl Preset {
             Self::SecondOpinion => "second-opinion",
             Self::ReviewStats => "review-stats",
             Self::Repair(_) => "repair",
+            Self::CutSegment(_) => "cut-segment",
         }
     }
     pub fn label(&self) -> &'static str {
@@ -69,6 +75,7 @@ impl Preset {
             Self::SecondOpinion => "Second opinion (failed turns)",
             Self::ReviewStats => "Review stats",
             Self::Repair(_) => "Repair",
+            Self::CutSegment(_) => "Cut segment",
         }
     }
     pub fn command(&self) -> &'static str {
@@ -82,6 +89,7 @@ impl Preset {
             Self::SecondOpinion => "scriptcast-verify-ensemble",
             Self::ReviewStats => "scriptcast-review-stats",
             Self::Repair(_) => "scriptcast-repair",
+            Self::CutSegment(_) => "scriptcast-youtube",
             _ => "scriptcast",
         }
     }
@@ -110,6 +118,7 @@ impl Preset {
             "second-opinion" => Ok(Self::SecondOpinion),
             "review-stats" => Ok(Self::ReviewStats),
             "repair" => Ok(Self::Repair((!turns.is_empty()).then_some(turns))),
+            "cut-segment" => Ok(Self::CutSegment(String::new())),
             _ => Err(format!("Unknown preset {name}")),
         }
     }
@@ -160,7 +169,7 @@ impl JobSpec {
         let script = e.script_path.as_ref().filter(|p| p.is_file());
         let utility = matches!(
             p,
-            Preset::Relayout(_) | Preset::Stitch | Preset::ReExport { .. }
+            Preset::Relayout(_) | Preset::Stitch | Preset::ReExport { .. } | Preset::CutSegment(_)
         );
         if !utility && script.is_none() {
             return Err(
@@ -219,6 +228,25 @@ impl JobSpec {
                 ]);
             }
             Preset::Stitch => args.push(e.dir.as_os_str().into()),
+            Preset::CutSegment(seg) => {
+                if seg.is_empty() {
+                    return Err("This turn is not in the YouTube shot list".into());
+                }
+                let shots = crate::picture::shots_path(&cwd)?
+                    .ok_or("Set youtube.shots in scriptcast.toml")?;
+                args.extend([
+                    "cut".into(),
+                    e.dir.as_os_str().into(),
+                    "--shots".into(),
+                    shots.as_os_str().into(),
+                    "--seg".into(),
+                    seg.into(),
+                    "--res".into(),
+                    "960x540".into(),
+                    "--fps".into(),
+                    "30".into(),
+                ]);
+            }
             Preset::TurnIndex => args.extend([
                 e.dir.as_os_str().into(),
                 "--transcript".into(),

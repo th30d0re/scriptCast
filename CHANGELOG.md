@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - Unreleased
 
 ### Added
+- `scriptcast-youtube` cuts a 16:9 picture onto the episode clock: one shot per turn, frame `round(start_ms / 1000 × fps)`. The default is 3840×2160; 1920×1080 and 960×540 remain. `figcraft` draws one still per beat through `figcraft-cli` and holds it. `conform` fits an external video. The vertical 1080×1920 pipeline is unchanged.
+- The macOS app shows that shot on the playhead and plays its silent run. Preview is 1080p or 720p; a 4K master is not decoded at 4K. Timeline and playback waveforms draw as one mesh at 60 Hz.
 - Phonon TTS (`engine: phonon` in `voices.yaml`). `phonon_voice` is a Phonon catalog name or a `.safetensors` clone. `ptts` is a core dependency. `SCRIPTCAST_PHONON_SEED` draws a different take; otherwise Phonon is deterministic.
 - Native macOS app `scriptcast-ui` (Rust). It opens a project, shows the episode timeline, plays turns, and edits voices, clips, and pronunciations. Apple Silicon builds are attached to GitHub releases.
 - `scriptcast-craft cue` writes a 1080×1920, 30 fps cue sheet from the episode manifest clock. `scriptcast-craft timeline` places silent Craft picture on that clock in FCPXML 1.10 and writes SRT and WebVTT beside it from the captions JSON. Dialogue wavs and `scriptcast-captions` JSON are unchanged.

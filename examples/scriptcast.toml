@@ -32,3 +32,9 @@ outputs = "outputs"
 
 # Python interpreter of the OmniVoice worker venv.
 omnivoice_python = ".venv-omnivoice/bin/python"
+
+# YouTube picture. `shots` is the shot list. `render` is optional: a command
+# ScriptCast runs for a manim (or other) primary. Relative paths anchor here.
+# [youtube]
+# shots = "video/shots.md"
+# render = "python render_scene.py"

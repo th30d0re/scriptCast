@@ -221,6 +221,7 @@ flowchart TD
 | `scriptcast-video` | Render the vertical episode from the manifest: cards, excerpts, and stills. |
 | `scriptcast-shotspec` | Turn a markdown shot list into timings on the episode clock. |
 | `scriptcast-craft` | Cue sheet, and an FCPXML picture timeline, from an episode that is already rendered. |
+| `scriptcast-youtube` | Cut a 16:9 picture onto the manifest clock. The default is 3840×2160; 1920×1080 and 960×540 remain. `figcraft` draws one still per beat; `cut` lays the episode audio under a segment. |
 | `scriptcast-tapestop` | Tape-stop the stitched episode. |
 | `scriptcast-tapefx` | Tape-stop, rewind, and replay, cut from a source video. |
 

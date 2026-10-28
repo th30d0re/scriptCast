@@ -17,7 +17,7 @@ import yaml
 from scriptcast.archive import load_registry
 from scriptcast.config_edit import FILE_KINDS, EditError, apply_ops
 from scriptcast.pronunciation import load_respellings
-from scriptcast.project import CONFIG_NAME, DEFAULTS, Project, find_root
+from scriptcast.project import CONFIG_NAME, DEFAULTS, KNOWN_KEYS, Project, find_root
 from scriptcast.review import (
     ACCEPTED_HEARINGS,
     _hearing_comments,
@@ -80,7 +80,7 @@ def _read_toml(root: Path) -> tuple[dict, list[str], list[str], bool]:
         return {}, [], [str(exc)], False
     if not isinstance(raw, dict):
         return {}, [], [f"{path}: expected a table"], False
-    unknown = sorted(set(raw) - set(DEFAULTS))
+    unknown = sorted(set(raw) - KNOWN_KEYS)
     problems: list[str] = []
     try:
         Project(root)

@@ -67,6 +67,81 @@ pub fn transcript_field(turn: &crate::episode::Turn) -> (&'static str, &str) {
     }
 }
 
+/// The turn's words under the picture. Highlighting follows playback.
+/// `Run…` starts timings when this turn does not have them yet.
+pub fn read_along_strip(
+    ui: &mut Ui,
+    episode: &Episode,
+    turn_idx: usize,
+    text: &str,
+    position: Option<Duration>,
+    enabled: bool,
+) -> Option<Action> {
+    let turn = &episode.turns[turn_idx];
+    let is_clip = script::clip_id(text).is_some();
+    let display = if is_clip {
+        script::display_body(text)
+    } else {
+        text.to_owned()
+    };
+    let mut action = None;
+    if is_clip {
+        if let Some(clip) = episode.clip_transcripts.get(&turn.id) {
+            let words = clip.as_words();
+            let active = position.and_then(|position| {
+                let ms = crate::word_timings::manifest_position(
+                    &episode.manifest.turns[turn_idx],
+                    position.as_millis() as u64,
+                );
+                read_along::active_range(&display, &words, ms)
+            });
+            paint_read_along(ui, &display, active);
+        } else if let Some(prompt) = clip_transcript_prompt(episode, &turn.id) {
+            ui.label(t::text(prompt, t::SECONDARY, t::TEXT_MUTED));
+            if t::secondary_button(ui, "Run…", None, enabled).clicked() {
+                action = Some(Action::RunClipTranscripts);
+            }
+        }
+    } else if episode.read_along.words(&turn.id).is_some() {
+        let words = episode.read_along.words(&turn.id).unwrap();
+        let active = position.and_then(|position| {
+            let ms = crate::word_timings::manifest_position(
+                &episode.manifest.turns[turn_idx],
+                position.as_millis() as u64,
+            );
+            read_along::active_range(&display, words, ms)
+        });
+        paint_read_along(ui, &display, active);
+    } else if let Some(prompt) = read_along_prompt(episode, &turn.id) {
+        ui.label(t::text(prompt, t::SECONDARY, t::TEXT_MUTED));
+        if t::secondary_button(ui, "Run…", None, enabled).clicked() {
+            action = Some(Action::RunReadAlong);
+        }
+    } else if let Some(notice) = &episode.read_along.notice {
+        ui.label(t::text(notice, t::SECONDARY, t::TEXT_MUTED));
+    }
+    action
+}
+
+fn paint_read_along(ui: &mut Ui, text: &str, active: Option<std::ops::Range<usize>>) {
+    egui::ScrollArea::vertical()
+        .id_salt("stage_read_along")
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            let width = ui.available_width();
+            let measured = read_along::Transcript::measure_simple(ui, text, width, active);
+            let (rect, _) =
+                ui.allocate_exact_size(vec2(width, measured.height()), Sense::hover());
+            if let Some(top) = measured.active_top() {
+                ui.scroll_to_rect(
+                    Rect::from_min_size(pos2(rect.left(), rect.top() + top), vec2(width, 24.0)),
+                    Some(Align::Center),
+                );
+            }
+            measured.paint(ui, rect);
+        });
+}
+
 fn read_along_prompt(episode: &Episode, turn_id: &str) -> Option<&'static str> {
     if episode.read_along.words(turn_id).is_some() {
         return None;
@@ -122,6 +197,16 @@ pub fn show(
     regenerated: bool,
     enabled: bool,
     read_along: bool,
+    picture: Option<&crate::picture::Frame>,
+    picture_notice: Option<&str>,
+    picture_youtube: &mut bool,
+    picture_tex: &mut Option<(
+        std::path::PathBuf,
+        std::time::SystemTime,
+        egui::TextureHandle,
+    )>,
+    picture_motion: Option<&egui::TextureHandle>,
+    picture_preview: &mut crate::picture::Preview,
 ) -> (Option<Action>, Option<editing::Action>) {
     let turn = &episode.turns[turn_idx];
     let speaker = &episode.speakers[turn.speaker_idx];
@@ -175,6 +260,23 @@ pub fn show(
         .show(&mut body_ui, |ui| {
             ui.add_space(t::SPACE_16);
             ui.spacing_mut().item_spacing.y = t::SPACE_12;
+            if let Some(notice) = picture_notice {
+                ui.label(t::text(notice, t::SECONDARY, t::TEXT_MUTED));
+            }
+            if let Some(frame) = picture {
+                if frame.clip.is_some() && matches!(transport, Transport::Playing(_)) {
+                    ui.ctx().request_repaint_after(Duration::from_millis(33));
+                }
+                crate::picture::show(
+                    ui,
+                    frame,
+                    picture_youtube,
+                    picture_tex,
+                    picture_motion,
+                    None,
+                    picture_preview,
+                );
+            }
             if edit_mode == EditMode::Panel && editing.k.new_turn.is_some() {
                 crate::phase_k::new_editor(ui, editing, true);
                 return;

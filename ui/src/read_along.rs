@@ -339,6 +339,14 @@ impl Transcript {
         t::TABLE_ROW_HEIGHT.max(text_h + summary_h)
     }
 
+    /// Top of the highlighted word, relative to the text origin.
+    pub fn active_top(&self) -> Option<f32> {
+        self.pills
+            .iter()
+            .find(|(_, kind)| *kind == PillKind::Accent)
+            .map(|(rect, _)| rect.top())
+    }
+
     pub fn paint(&self, ui: &Ui, rect: Rect) {
         let painter = ui.painter().with_clip_rect(rect.intersect(ui.clip_rect()));
         let origin = pos2(rect.left(), rect.top() + t::SPACE_4);

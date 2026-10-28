@@ -4,10 +4,12 @@ mod editing;
 mod find_replace;
 mod inspector;
 mod jobs;
+mod motion;
 mod phase_j;
 mod phase_k;
 mod phase_l;
 mod phase_m_ui;
+mod picture;
 mod read_along;
 mod settings;
 mod table;
@@ -15,8 +17,6 @@ mod tag_editor;
 mod timeline;
 mod view;
 
-use eframe::egui::{self, Align, Layout, Rect, Sense, StrokeKind, Ui, UiBuilder, pos2, vec2};
-use inspector::InspectorMode;
 use crate::{
     audio::AudioOut,
     cli::ExportCommand,
@@ -25,6 +25,8 @@ use crate::{
     theme as t,
     waveform::Waveforms,
 };
+use eframe::egui::{self, Align, Layout, Rect, Sense, StrokeKind, Ui, UiBuilder, pos2, vec2};
+use inspector::InspectorMode;
 use serde::{Deserialize, Serialize};
 use std::{
     path::PathBuf,
@@ -39,8 +41,10 @@ use timeline::TimelineView;
 
 const STORAGE_KEY: &str = "scriptcast_browser";
 const LOAD_NOTICE_DELAY: Duration = Duration::from_millis(150);
-/// Repaint cadence while audio is playing; no repaints are requested when idle.
-const REPLAY_TICK: Duration = Duration::from_millis(50);
+/// Repaint cadence while audio is playing. One frame at 60 Hz. The waveforms
+/// are a cached strip drawn as a single mesh, so this tick does not rebuild them.
+/// Idle playback requests nothing.
+const REPLAY_TICK: Duration = Duration::from_millis(16);
 
 // Empty-workspace copy, factored out so the content height measurement in
 // `empty_left_height`/`empty_right_height` cannot drift from what is rendered.
@@ -103,6 +107,13 @@ struct Preferences {
     find: crate::find::Options,
     #[serde(default = "default_true")]
     retime_on_open: bool,
+    /// YouTube reads the landscape stills. Reel reads the vertical ones. Neither renders.
+    #[serde(default = "default_true")]
+    picture_youtube: bool,
+    /// 1080p previews the run at full HD. 720p is the lighter decode.
+    /// A 4K file is never played at 4K.
+    #[serde(default)]
+    picture_preview: picture::Preview,
 }
 fn default_true() -> bool {
     true
@@ -126,6 +137,8 @@ impl Default for Preferences {
             discrepancy_mode: crate::discrepancy::ReviewMode::default(),
             find: crate::find::Options::default(),
             retime_on_open: true,
+            picture_youtube: true,
+            picture_preview: picture::Preview::P1080,
         }
     }
 }
@@ -292,8 +305,7 @@ pub struct Browser {
     waveforms: Option<Waveforms>,
     retime_arm: bool,
     auto_retime_job: Option<Receiver<Result<crate::retime::Preview, String>>>,
-    auto_retime_apply:
-        Option<Receiver<Result<(crate::checkpoint::Checkpoint, usize), String>>>,
+    auto_retime_apply: Option<Receiver<Result<(crate::checkpoint::Checkpoint, usize), String>>>,
     retime_banner: Option<(String, crate::checkpoint::Checkpoint)>,
     /// Show the Missing audio card for the selected turn.
     missing_audio_card: bool,
@@ -318,7 +330,39 @@ pub struct Browser {
     pending_review: bool,
     /// Snapshot harness: fixture data only, no project tool, shell, or PATH lookup.
     pub(crate) harness: bool,
+    /// Shot list for the episode currently open. Absent when the project names none.
+    picture: picture::Source,
+    picture_for: Option<PathBuf>,
+    /// Last still drawn in the inspector, keyed by path and mtime.
+    picture_tex: Option<(PathBuf, SystemTime, egui::TextureHandle)>,
+    /// Decoder for the silent run under the playhead.
+    motion: motion::Player,
 }
+
+/// Column peaks for the scrolling playback waveform. Rebuilt when the turn,
+/// its duration, or the bar width changes. A playing frame only slices it.
+fn wave_strip(
+    ui: &Ui,
+    turn: usize,
+    env: &waveform::Envelope,
+    dur_sec: f32,
+    bar_secs: f32,
+) -> Arc<Vec<f32>> {
+    let id = ui.id().with((
+        "wave-strip",
+        turn,
+        dur_sec.to_bits(),
+        bar_secs.to_bits(),
+        Arc::as_ptr(&env.peaks) as usize,
+    ));
+    if let Some(hit) = ui.data(|data| data.get_temp::<Arc<Vec<f32>>>(id)) {
+        return hit;
+    }
+    let strip = Arc::new(waveform::strip(env, dur_sec, bar_secs));
+    ui.data_mut(|data| data.insert_temp(id, Arc::clone(&strip)));
+    strip
+}
+
 struct SelectedMedia {
     file_line: String,
     duration: Option<Duration>,
@@ -867,6 +911,77 @@ impl Browser {
             .as_ref()
             .and_then(|r| r.as_ref().ok())
             .map_or(Duration::ZERO, AudioOut::position)
+    }
+    /// Load the shot list once per episode directory. A project with no
+    /// `youtube.shots` leaves the inspector unchanged.
+    fn ensure_picture(&mut self) {
+        let Some(episode) = &self.episode else {
+            self.picture = picture::Source::Absent;
+            self.picture_for = None;
+            return;
+        };
+        if self.picture_for.as_ref() == Some(&episode.dir) {
+            return;
+        }
+        let dir = episode.dir.clone();
+        let root = episode.project_root.clone();
+        self.picture_for = Some(dir);
+        self.picture_tex = None;
+        self.motion.idle();
+        self.picture = match root {
+            Some(root) => picture::load_index(&root).unwrap_or_else(picture::Source::Failed),
+            None => picture::Source::Absent,
+        };
+    }
+    fn picture_frame(&mut self, turn: usize, position: Duration) -> Option<picture::Frame> {
+        self.ensure_picture();
+        let picture::Source::Ready(index) = &self.picture else {
+            return None;
+        };
+        let episode = self.episode.as_ref()?;
+        let row = episode.turns.get(turn)?;
+        // The player concatenates segment WAVs and leaves out the gaps the
+        // manifest keeps. The picture uses the same manifest clock as the
+        // highlighted words.
+        let playhead = if self.transport.turn() == Some(turn) {
+            let cursor = u64::try_from(position.as_millis()).unwrap_or(u64::MAX);
+            let within = episode
+                .manifest
+                .turns
+                .get(turn)
+                .map(|entry| crate::word_timings::manifest_position(entry, cursor))
+                .unwrap_or(cursor);
+            row.start_ms.saturating_add(within)
+        } else {
+            row.start_ms
+        };
+        let windows: Vec<(u64, u64)> = episode
+            .turns
+            .iter()
+            .map(|turn| (turn.start_ms, turn.end_ms))
+            .collect();
+        let dir = episode.dir.clone();
+        let youtube = self.preferences.picture_youtube;
+        picture::at(index, &windows, turn, playhead, &dir, youtube)
+    }
+    fn cut_segment(&self) -> String {
+        let picture::Source::Ready(index) = &self.picture else {
+            return String::new();
+        };
+        let Some(episode) = &self.episode else {
+            return String::new();
+        };
+        if index.shots.len() != episode.turns.len() {
+            return String::new();
+        }
+        let Some(turn) = self.selected else {
+            return String::new();
+        };
+        index
+            .shots
+            .get(turn)
+            .map(|shot| shot.seg.clone())
+            .unwrap_or_default()
     }
     fn visible_indices(&self) -> Vec<usize> {
         match &self.episode {
@@ -1844,30 +1959,38 @@ impl Browser {
         let mut seek_to = None;
         if let Some(env) = envelope {
             let dur_sec = duration_ms.map(|d| d.as_secs_f32()).unwrap_or(0.0);
-            let window_start = pos_sec - t::WAVE_VIEWPORT_SECONDS / 2.0;
             let bar_space = t::WAVE_BAR + t::WAVE_GAP;
             let n = (track.width() / bar_space) as usize;
             let max_h = track.height() * t::WAVE_VIEWPORT_FILL;
             let painter = bar.painter().with_clip_rect(track);
-            if n > 0 && track.width() > 0.0 {
-                for i in 0..n {
-                    let t0 = window_start + (i as f32) * t::WAVE_VIEWPORT_SECONDS / n as f32;
-                    let t1 = window_start + ((i + 1) as f32) * t::WAVE_VIEWPORT_SECONDS / n as f32;
-                    let Some(peak) = waveform::peak_in_range(env, t0, t1, dur_sec) else {
-                        continue;
-                    };
-                    let h = (peak * max_h).max(t::WAVE_MIN);
-                    let x = track.left() + i as f32 * bar_space;
-                    let y = track.center().y - h / 2.0;
-                    let colour = if x + t::WAVE_BAR / 2.0 < centre_x {
-                        t::accent()
-                    } else {
-                        t::TEXT_MUTED
-                    };
-                    painter.rect_filled(
-                        Rect::from_min_size(pos2(x, y), vec2(t::WAVE_BAR, h)),
-                        0.0,
-                        colour,
+            if n > 0 && dur_sec > 0.0 && track.width() > 0.0 {
+                let bar_secs = t::WAVE_VIEWPORT_SECONDS / n as f32;
+                let columns = wave_strip(&bar, turn_idx.unwrap_or(0), env, dur_sec, bar_secs);
+                let window_start = pos_sec - t::WAVE_VIEWPORT_SECONDS / 2.0;
+                let origin = window_start / bar_secs;
+                let first = origin.floor().max(0.0) as usize;
+                let last = columns
+                    .len()
+                    .min((origin + n as f32).ceil().max(0.0) as usize);
+                if first < last {
+                    let x0 = track.left() + (first as f32 - origin) * bar_space;
+                    let centre = centre_x;
+                    waveform::paint_columns(
+                        &painter,
+                        &columns[first..last],
+                        x0,
+                        bar_space,
+                        t::WAVE_BAR,
+                        track.center().y,
+                        max_h,
+                        t::WAVE_MIN,
+                        |mid_x| {
+                            if mid_x < centre {
+                                t::accent()
+                            } else {
+                                t::TEXT_MUTED
+                            }
+                        },
                     );
                 }
             }
@@ -2467,8 +2590,21 @@ impl Browser {
             let mode = self.jobs.mode.unwrap_or(InspectorMode::SelectedTurn);
             let show_inspector = !self.preferences.inspector_hidden
                 && (selected_turn.is_some() || mode == InspectorMode::Jobs);
+            let stage_position = self.audio_position();
+            let stage_frame = (show_inspector
+                && mode == InspectorMode::SelectedTurn
+                && !self.editing.k.script_view
+                && self.preferences.picture_youtube)
+                .then_some(selected_turn)
+                .flatten()
+                .and_then(|turn| self.picture_frame(turn, stage_position));
+            let show_stage = stage_frame.is_some();
             let (table_rect, inspector_rect) = if show_inspector {
-                let width = mode.panel_width(self.preferences.inspector_width, review.width());
+                let width = if show_stage {
+                    picture::stage_width(review.width(), self.preferences.inspector_width)
+                } else {
+                    mode.panel_width(self.preferences.inspector_width, review.width())
+                };
                 let inspector =
                     Rect::from_min_max(pos2(review.right() - width, review.top()), review.max);
                 (
@@ -2551,6 +2687,75 @@ impl Browser {
                         ),
                         turn,
                     );
+                } else if show_stage {
+                    let frame = stage_frame.as_ref().unwrap();
+                    let strip_h = 148.0_f32.min(rect.height() * 0.32).max(88.0);
+                    let picture_rect =
+                        Rect::from_min_max(rect.min, pos2(rect.right(), rect.bottom() - strip_h));
+                    let strip_rect =
+                        Rect::from_min_max(pos2(rect.left(), picture_rect.bottom()), rect.max);
+                    let stage = view::inset(picture_rect, t::SPACE_16, t::SPACE_12);
+                    let (view_w, view_h) =
+                        picture::fit_16_9(stage.width(), (stage.height() - 70.0).max(1.0));
+                    let (decode_w, decode_h) =
+                        self.preferences.picture_preview.decode_size(view_w, view_h);
+                    let motion = if self.harness {
+                        None
+                    } else if let Some(path) = frame.clip.as_ref() {
+                        self.motion
+                            .present(&ctx, path, frame.clip_ms, decode_w, decode_h)
+                    } else {
+                        self.motion.idle();
+                        None
+                    };
+                    let file_px = motion.as_ref().and_then(|_| self.motion.source_size());
+                    let mut youtube = self.preferences.picture_youtube;
+                    let mut preview = self.preferences.picture_preview;
+                    picture::show(
+                        &mut view::region(ui, "picture_stage", stage, t::BG_SURFACE),
+                        frame,
+                        &mut youtube,
+                        &mut self.picture_tex,
+                        motion.as_ref(),
+                        file_px,
+                        &mut preview,
+                    );
+                    self.preferences.picture_youtube = youtube;
+                    self.preferences.picture_preview = preview;
+                    let text = self
+                        .editing
+                        .body(turn)
+                        .map(str::to_owned)
+                        .unwrap_or_else(|| {
+                            self.episode.as_ref().unwrap().turns[turn]
+                                .first_words
+                                .clone()
+                        });
+                    let followed =
+                        (self.transport.turn() == Some(turn)).then(|| self.audio_position());
+                    let enabled = !self.jobs.busy() && self.pending.is_none();
+                    let follow = inspector::read_along_strip(
+                        &mut view::region(
+                            ui,
+                            "read_along_strip",
+                            view::inset(strip_rect, t::SPACE_16, t::SPACE_8),
+                            t::BG_SURFACE,
+                        ),
+                        self.episode.as_ref().unwrap(),
+                        turn,
+                        &text,
+                        followed,
+                        enabled,
+                    );
+                    match follow {
+                        Some(inspector::Action::RunReadAlong) => {
+                            self.request_job(crate::runner::Preset::ReadAlong, None, &ctx);
+                        }
+                        Some(inspector::Action::RunClipTranscripts) => {
+                            self.request_job(crate::runner::Preset::ClipTranscripts, None, &ctx);
+                        }
+                        _ => {}
+                    }
                 } else {
                     let (can_previous, can_next) = neighbour_targets(&visible, Some(turn));
                     let (can_previous, can_next) = (can_previous.is_some(), can_next.is_some());
@@ -2560,6 +2765,30 @@ impl Browser {
                         .map(|(_, m)| m.file_line.clone())
                         .unwrap_or_default();
                     let position = self.audio_position();
+                    let frame = self.picture_frame(turn, position);
+                    let motion = if self.harness {
+                        None
+                    } else if let Some(path) = frame.as_ref().and_then(|frame| frame.clip.as_ref())
+                    {
+                        let clip_ms = frame.as_ref().map(|frame| frame.clip_ms).unwrap_or(0);
+                        let (decode_w, decode_h) = self
+                            .preferences
+                            .picture_preview
+                            .decode_size(rect.width(), rect.width() * 9.0 / 16.0);
+                        self.motion.present(&ctx, path, clip_ms, decode_w, decode_h)
+                    } else {
+                        self.motion.idle();
+                        None
+                    };
+                    let notice = match &self.picture {
+                        picture::Source::Failed(error) => Some(error.clone()),
+                        _ => None,
+                    };
+                    let mut youtube = self.preferences.picture_youtube;
+                    let mut preview = self.preferences.picture_preview;
+                    let edit_mode = self.preferences.edit_mode;
+                    let read_along = self.preferences.read_along;
+                    let auto_advance = self.preferences.auto_advance;
                     let (action, edit_action) = inspector::show(
                         &mut view::region(ui, "inspector", rect, t::BG_SURFACE),
                         InspectorMode::SelectedTurn,
@@ -2567,17 +2796,25 @@ impl Browser {
                         turn,
                         self.transport,
                         position,
-                        self.preferences.auto_advance,
+                        auto_advance,
                         can_previous,
                         can_next,
                         &file_line,
                         &mut self.editing,
-                        self.preferences.edit_mode,
+                        edit_mode,
                         edited.contains(&turn),
                         self.jobs.regenerated.contains(&turn),
                         !self.jobs.busy() && self.pending.is_none(),
-                        self.preferences.read_along,
+                        read_along,
+                        frame.as_ref(),
+                        notice.as_deref(),
+                        &mut youtube,
+                        &mut self.picture_tex,
+                        motion.as_ref(),
+                        &mut preview,
                     );
+                    self.preferences.picture_youtube = youtube;
+                    self.preferences.picture_preview = preview;
                     self.edit_action(edit_action, &ctx);
                     match action {
                         Some(inspector::Action::Previous) => {
@@ -2597,11 +2834,7 @@ impl Browser {
                             self.request_job(crate::runner::Preset::ReadAlong, None, &ctx);
                         }
                         Some(inspector::Action::RunClipTranscripts) => {
-                            self.request_job(
-                                crate::runner::Preset::ClipTranscripts,
-                                None,
-                                &ctx,
-                            );
+                            self.request_job(crate::runner::Preset::ClipTranscripts, None, &ctx);
                         }
                         None => {}
                     }
@@ -2609,7 +2842,14 @@ impl Browser {
             }
             if let Some(inspector) = inspector_rect {
                 let width = inspector.width();
-                let max_w = (review.width() * t::INSPECTOR_MAX_FRACTION).max(t::INSPECTOR_MIN);
+                let (min_w, max_w) = if show_stage {
+                    picture::stage_bounds(review.width())
+                } else {
+                    (
+                        t::INSPECTOR_MIN,
+                        (review.width() * t::INSPECTOR_MAX_FRACTION).max(t::INSPECTOR_MIN),
+                    )
+                };
                 let v_split = view::splitter_vertical(
                     ui,
                     "inspector_splitter",
@@ -2622,7 +2862,7 @@ impl Browser {
                 } else if v_split.drag_delta != 0.0 {
                     // Inspector is on the right: drag left widens it.
                     let next = (width - v_split.drag_delta)
-                        .clamp(t::INSPECTOR_MIN, max_w)
+                        .clamp(min_w, max_w)
                         .min(review.width());
                     self.preferences.inspector_width = Some(next);
                 }
@@ -2896,10 +3136,9 @@ fn stable_tool_text(error: &str) -> String {
 }
 
 fn install_project_fixture(app: &mut Browser) {
-    let report = crate::project::Report::parse(include_bytes!(
-        "../tests/fixtures/phase_l/show.json"
-    ))
-    .unwrap_or_else(|message| panic!("{message}"));
+    let report =
+        crate::project::Report::parse(include_bytes!("../tests/fixtures/phase_l/show.json"))
+            .unwrap_or_else(|message| panic!("{message}"));
     app.project.root = Some(report.root.clone());
     app.project.snapshot = Some(crate::project::Snapshot {
         report: report.clone(),
@@ -2962,6 +3201,7 @@ mod tests {
         let old: Preferences = serde_json::from_str("{}").unwrap();
         assert!(old.cli_dir.is_none());
         assert!(old.read_along);
+        assert_eq!(old.picture_preview, picture::Preview::P1080);
         assert!(old.timeline_height.is_none());
         assert!(old.inspector_width.is_none());
         assert!(!old.inspector_hidden);
