@@ -1,0 +1,23 @@
+ScriptCast media — third-party notice
+
+This crate adapts algorithms from HyperFrames
+(https://github.com/heygen-com/hyperframes), licensed under the Apache
+License, Version 2.0. The license text is LICENSES/Apache-2.0.txt.
+
+Adapted sources:
+
+- packages/core/src/audioCarve.ts
+  Carve strength profile, third-octave speech-band centres, intelligibility
+  weighting, and the Welch power-spectrum band picker.
+- packages/core/src/fft.ts
+  In-place radix-2 FFT used by that picker.
+- skills/media-use/scripts/lib/duck.mjs
+  Merging speech intervals, and the 150 ms attack / 400 ms release timing.
+
+ScriptCast changes: speech times come from episode_manifest.json turn
+windows, not from re-detecting speech in the waveform. While a window is
+open the bed ducks by a fixed depth from the carve profile. HyperFrames'
+measured headroom match (analyseCarveDuck) is not ported; its headroom
+figure is still produced by carve_profile so the strength curve matches.
+
+The rest of this crate is ScriptCast code under GPL-3.0-or-later.
