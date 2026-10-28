@@ -1,0 +1,14 @@
+[package]
+name = "scriptcast-fx"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+publish = false
+
+[[bin]]
+name = "scriptcast-fx"
+path = "src/main.rs"
+
+[dependencies]
+soundcraft-audio-io = { git = "https://github.com/storytold/soundcraft", rev = "f3a19480d8cc2d7a98cda492f5464d8c54558c9f" }
+soundcraft-dsp = { git = "https://github.com/storytold/soundcraft", rev = "f3a19480d8cc2d7a98cda492f5464d8c54558c9f" }
