@@ -1984,6 +1984,7 @@ impl Browser {
                         track.center().y,
                         max_h,
                         t::WAVE_MIN,
+                        bar.pixels_per_point(),
                         |mid_x| {
                             if mid_x < centre {
                                 t::accent()
@@ -1999,7 +2000,14 @@ impl Browser {
                 vec2(t::WAVE_PLAYHEAD, track.height()),
             );
             painter.rect_filled(playhead, 0.0, t::TEXT_PRIMARY);
-            let clear = egui::Color32::TRANSPARENT;
+            // Same red, green, and blue as the track. Transparent black
+            // darkens the bars as they slide into the fade.
+            let clear = egui::Color32::from_rgba_unmultiplied(
+                t::BG_SURFACE.r(),
+                t::BG_SURFACE.g(),
+                t::BG_SURFACE.b(),
+                0,
+            );
             let fade = t::WAVE_FADE.min(track.width() / 2.0);
             let mut mesh = egui::Mesh::default();
             let left_inner = track.left() + fade;
