@@ -9,6 +9,7 @@ import pytest
 
 from scriptcast.project import Project
 from scriptcast.tools import youtube as cli
+from scriptcast import youtube
 from scriptcast.youtube import (
     DEFAULT_RES,
     card_commands,
@@ -153,6 +154,35 @@ def test_cut_duration_matches_the_manifest_window(tmp_path: Path) -> None:
     ]) == 0
     out = episode / "video" / "preview" / "960x540" / "SEG00.mp4"
     assert int(_probe(out, "stream=nb_read_frames")) == 45
+
+
+def test_a_relative_episode_dir_lists_absolute_clips(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _need_ffmpeg()
+    _episode(tmp_path)
+    listed: list[str] = []
+    original = youtube._ffmpeg
+
+    def wrapped(args: list[str]) -> None:
+        if "concat" in args:
+            listing = Path(args[args.index("-i") + 1])
+            listed.append(listing.read_text(encoding="utf-8"))
+        original(args)
+
+    monkeypatch.setattr(youtube, "_ffmpeg", wrapped)
+    monkeypatch.chdir(tmp_path)
+    assert cli.main([
+        "cut", "episode", "--shots", str(tmp_path / "shots.md"),
+        "--seg", "00", "--res", "960x540", "--fps", "15", "--no-audio",
+    ]) == 0
+    files = [
+        line.removeprefix("file '").removesuffix("'")
+        for line in listed[0].splitlines()
+        if line.startswith("file ")
+    ]
+    assert [Path(path).name for path in files] == ["S00-01.mp4", "S00-02.mp4"]
+    assert all(Path(path).is_absolute() for path in files)
 
 
 def test_conform_pads_to_the_run_length(tmp_path: Path) -> None:

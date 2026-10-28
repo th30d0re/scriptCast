@@ -299,7 +299,9 @@ def cut_segment(
         else:
             start = marks[shot.index] - marks[first_of[shot.primary]]
             _cut_window(src, clip, start, n_frames, fps)
-        listing.append(f"file '{clip}'\nduration {n_frames / fps:.6f}")
+        # The concat demuxer resolves a relative name from the list file's
+        # directory, so a relative episode path would be prefixed twice.
+        listing.append(f"file '{clip.resolve()}'\nduration {n_frames / fps:.6f}")
     concat = work / f"SEG{seg}.txt"
     concat.write_text("\n".join(listing) + "\n", encoding="utf-8")
     out = episode_dir / "video" / "preview" / res / f"SEG{seg}.mp4"

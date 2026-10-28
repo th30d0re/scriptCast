@@ -3,13 +3,13 @@ mod discrepancy_view;
 mod editing;
 mod find_replace;
 mod inspector;
-mod motion;
-mod picture;
 mod jobs;
+mod motion;
 mod phase_j;
 mod phase_k;
 mod phase_l;
 mod phase_m_ui;
+mod picture;
 mod read_along;
 mod settings;
 mod table;
@@ -17,8 +17,6 @@ mod tag_editor;
 mod timeline;
 mod view;
 
-use eframe::egui::{self, Align, Layout, Rect, Sense, StrokeKind, Ui, UiBuilder, pos2, vec2};
-use inspector::InspectorMode;
 use crate::{
     audio::AudioOut,
     cli::ExportCommand,
@@ -27,6 +25,8 @@ use crate::{
     theme as t,
     waveform::Waveforms,
 };
+use eframe::egui::{self, Align, Layout, Rect, Sense, StrokeKind, Ui, UiBuilder, pos2, vec2};
+use inspector::InspectorMode;
 use serde::{Deserialize, Serialize};
 use std::{
     path::PathBuf,
@@ -305,8 +305,7 @@ pub struct Browser {
     waveforms: Option<Waveforms>,
     retime_arm: bool,
     auto_retime_job: Option<Receiver<Result<crate::retime::Preview, String>>>,
-    auto_retime_apply:
-        Option<Receiver<Result<(crate::checkpoint::Checkpoint, usize), String>>>,
+    auto_retime_apply: Option<Receiver<Result<(crate::checkpoint::Checkpoint, usize), String>>>,
     retime_banner: Option<(String, crate::checkpoint::Checkpoint)>,
     /// Show the Missing audio card for the selected turn.
     missing_audio_card: bool,
@@ -941,9 +940,18 @@ impl Browser {
         };
         let episode = self.episode.as_ref()?;
         let row = episode.turns.get(turn)?;
+        // The player concatenates segment WAVs and leaves out the gaps the
+        // manifest keeps. The picture uses the same manifest clock as the
+        // highlighted words.
         let playhead = if self.transport.turn() == Some(turn) {
-            row.start_ms
-                .saturating_add(u64::try_from(position.as_millis()).unwrap_or(u64::MAX))
+            let cursor = u64::try_from(position.as_millis()).unwrap_or(u64::MAX);
+            let within = episode
+                .manifest
+                .turns
+                .get(turn)
+                .map(|entry| crate::word_timings::manifest_position(entry, cursor))
+                .unwrap_or(cursor);
+            row.start_ms.saturating_add(within)
         } else {
             row.start_ms
         };
@@ -2682,14 +2690,10 @@ impl Browser {
                 } else if show_stage {
                     let frame = stage_frame.as_ref().unwrap();
                     let strip_h = 148.0_f32.min(rect.height() * 0.32).max(88.0);
-                    let picture_rect = Rect::from_min_max(
-                        rect.min,
-                        pos2(rect.right(), rect.bottom() - strip_h),
-                    );
-                    let strip_rect = Rect::from_min_max(
-                        pos2(rect.left(), picture_rect.bottom()),
-                        rect.max,
-                    );
+                    let picture_rect =
+                        Rect::from_min_max(rect.min, pos2(rect.right(), rect.bottom() - strip_h));
+                    let strip_rect =
+                        Rect::from_min_max(pos2(rect.left(), picture_rect.bottom()), rect.max);
                     let stage = view::inset(picture_rect, t::SPACE_16, t::SPACE_12);
                     let (view_w, view_h) =
                         picture::fit_16_9(stage.width(), (stage.height() - 70.0).max(1.0));
@@ -2723,9 +2727,12 @@ impl Browser {
                         .body(turn)
                         .map(str::to_owned)
                         .unwrap_or_else(|| {
-                            self.episode.as_ref().unwrap().turns[turn].first_words.clone()
+                            self.episode.as_ref().unwrap().turns[turn]
+                                .first_words
+                                .clone()
                         });
-                    let followed = (self.transport.turn() == Some(turn)).then(|| self.audio_position());
+                    let followed =
+                        (self.transport.turn() == Some(turn)).then(|| self.audio_position());
                     let enabled = !self.jobs.busy() && self.pending.is_none();
                     let follow = inspector::read_along_strip(
                         &mut view::region(
@@ -2764,12 +2771,11 @@ impl Browser {
                     } else if let Some(path) = frame.as_ref().and_then(|frame| frame.clip.as_ref())
                     {
                         let clip_ms = frame.as_ref().map(|frame| frame.clip_ms).unwrap_or(0);
-                        let (decode_w, decode_h) = self.preferences.picture_preview.decode_size(
-                            rect.width(),
-                            rect.width() * 9.0 / 16.0,
-                        );
-                        self.motion
-                            .present(&ctx, path, clip_ms, decode_w, decode_h)
+                        let (decode_w, decode_h) = self
+                            .preferences
+                            .picture_preview
+                            .decode_size(rect.width(), rect.width() * 9.0 / 16.0);
+                        self.motion.present(&ctx, path, clip_ms, decode_w, decode_h)
                     } else {
                         self.motion.idle();
                         None
@@ -2828,11 +2834,7 @@ impl Browser {
                             self.request_job(crate::runner::Preset::ReadAlong, None, &ctx);
                         }
                         Some(inspector::Action::RunClipTranscripts) => {
-                            self.request_job(
-                                crate::runner::Preset::ClipTranscripts,
-                                None,
-                                &ctx,
-                            );
+                            self.request_job(crate::runner::Preset::ClipTranscripts, None, &ctx);
                         }
                         None => {}
                     }
@@ -3134,10 +3136,9 @@ fn stable_tool_text(error: &str) -> String {
 }
 
 fn install_project_fixture(app: &mut Browser) {
-    let report = crate::project::Report::parse(include_bytes!(
-        "../tests/fixtures/phase_l/show.json"
-    ))
-    .unwrap_or_else(|message| panic!("{message}"));
+    let report =
+        crate::project::Report::parse(include_bytes!("../tests/fixtures/phase_l/show.json"))
+            .unwrap_or_else(|message| panic!("{message}"));
     app.project.root = Some(report.root.clone());
     app.project.snapshot = Some(crate::project::Snapshot {
         report: report.clone(),
