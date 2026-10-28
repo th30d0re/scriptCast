@@ -54,11 +54,12 @@ def tokenize_markup(turns: list[Turn]) -> list[Turn]:
                 # the tag is the excerpt's verbatim transcript (archive.py).
                 chunks.append(MarkupChunk(kind="annotation", tag=f"clip:{tag_value.strip()}"))
             elif tag_name in {"emphasis", "tone"}:
-                chunks.append(MarkupChunk(kind="annotation", tag=tag_name))
-                _LOGGER.info(
-                    "Ignoring no-op markup tag %s in turn %s for v1",
-                    tag_name,
-                    turn.turn_index,
+                chunks.append(
+                    MarkupChunk(
+                        kind="annotation",
+                        tag=tag_name,
+                        text=tag_value.strip() if tag_value else None,
+                    )
                 )
             else:
                 _append_speech(chunks, match.group(0))
