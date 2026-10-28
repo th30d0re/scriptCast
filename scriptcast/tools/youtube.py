@@ -1,8 +1,8 @@
-"""Cut a 1920×1080 picture onto the episode clock.
+"""Cut a 16:9 picture onto the episode clock. The default is 4K.
 
     scriptcast-youtube beats EPISODE --shots shotlist.md
     scriptcast-youtube check EPISODE --shots shotlist.md
-    scriptcast-youtube conform --src clip.mp4 --out run.mp4 --frames 30 --res 1920x1080 --fps 30
+    scriptcast-youtube conform --src clip.mp4 --out run.mp4 --frames 30 --res 3840x2160 --fps 30
     scriptcast-youtube figcraft EPISODE --shots shotlist.md --primary S00-01
     scriptcast-youtube cut EPISODE --shots shotlist.md --seg 00
     scriptcast-youtube sheet EPISODE --shots shotlist.md --seg 00
@@ -23,6 +23,7 @@ from scriptcast.figcraft_mcp import FigCraftError, export_beats, start
 from scriptcast.project import current
 from scriptcast.youtube import (
     CARD_FILES,
+    DEFAULT_RES,
     _ffmpeg,
     beat_sheet,
     card_commands,
@@ -151,7 +152,7 @@ def _cmd_figcraft(args: argparse.Namespace) -> Path:
     sheet = beat_sheet(run, turns)
     directory = args.episode_dir / "video" / "figcraft" / args.primary
     directory.mkdir(parents=True, exist_ok=True)
-    commands, exports = card_commands(card, sheet["beats"], directory)
+    commands, exports = card_commands(card, sheet["beats"], directory, args.res)
     binary = args.figcraft or shutil.which("figcraft-cli")
     if not binary:
         raise ValueError("figcraft-cli is not on PATH; pass --figcraft")
@@ -169,7 +170,7 @@ def _cmd_figcraft(args: argparse.Namespace) -> Path:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="scriptcast-youtube",
-        description="Cut a 1920×1080 picture onto the episode clock.",
+        description="Cut a 16:9 picture onto the episode clock. The default is 4K.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -178,7 +179,7 @@ def main(argv: list[str] | None = None) -> int:
         cmd.add_argument("--shots", type=Path)
 
     def geometry(cmd: argparse.ArgumentParser) -> None:
-        cmd.add_argument("--res", default="1920x1080")
+        cmd.add_argument("--res", default=DEFAULT_RES)
         cmd.add_argument("--fps", type=int, default=30)
 
     beats = sub.add_parser("beats", help="write reveal times from the manifest")

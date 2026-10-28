@@ -10,11 +10,13 @@ import pytest
 from scriptcast.project import Project
 from scriptcast.tools import youtube as cli
 from scriptcast.youtube import (
+    DEFAULT_RES,
     card_commands,
     frame_index,
     frame_marks,
     hold_durations,
     load_shots,
+    parse_size,
     write_beats,
 )
 
@@ -240,3 +242,15 @@ def test_render_hook_receives_the_primary(tmp_path: Path) -> None:
         "--primary", "S00-01", "--command", f"{sys.executable} {hook}",
     ]) == 0
     assert marker.read_text() == "S00-01"
+
+
+def test_the_default_cut_is_four_k(tmp_path: Path) -> None:
+    assert DEFAULT_RES == "3840x2160"
+    assert parse_size(DEFAULT_RES) == (3840, 2160)
+    card = {"headline": "Title", "items": [{"title": "One", "detail": "A line"}]}
+    commands, _exports = card_commands(card, [{"t": 0.25}], tmp_path, DEFAULT_RES)
+    frame = next(step for step in commands if step["params"].get("name") == "beat-0")
+    assert (frame["params"]["width"], frame["params"]["height"]) == (3840, 2160)
+    headline = next(step for step in commands if step["params"].get("name") == "headline")
+    assert headline["params"]["props"]["fontSize"] == 96
+    assert headline["params"]["x"] == 160

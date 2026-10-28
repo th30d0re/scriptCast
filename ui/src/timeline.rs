@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::view;
 use eframe::egui::{self, Rect, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
 use crate::{
@@ -356,17 +358,18 @@ pub fn show(
                                 let bar_space = t::WAVE_BAR + t::WAVE_GAP;
                                 let n = (wave_rect.width() / bar_space) as usize;
                                 if n > 0 {
-                                    let bar_heights = waveform::bars(env, n);
-                                    for (i, &peak) in bar_heights.iter().enumerate() {
-                                        let h = (peak * wave_rect.height()).max(t::WAVE_MIN);
-                                        let x = wave_rect.left() + i as f32 * bar_space;
-                                        let y = wave_rect.center().y - h / 2.0;
-                                        ui.painter().rect_filled(
-                                            Rect::from_min_size(pos2(x, y), vec2(t::WAVE_BAR, h)),
-                                            0.0,
-                                            label_colour,
-                                        );
-                                    }
+                                    let bar_heights = bars_cached(ui, idx, env, n);
+                                    waveform::paint_columns(
+                                        ui.painter(),
+                                        &bar_heights,
+                                        wave_rect.left(),
+                                        bar_space,
+                                        t::WAVE_BAR,
+                                        wave_rect.center().y,
+                                        wave_rect.height(),
+                                        t::WAVE_MIN,
+                                        |_| label_colour,
+                                    );
                                 }
                             }
                         }
@@ -416,6 +419,23 @@ pub fn show(
         }
     }
     clicked
+}
+
+/// Bar heights for one turn. Recomputed only when the column count or the
+/// envelope changes, so a playing picture does not rebuild every waveform.
+fn bars_cached(ui: &Ui, idx: usize, env: &waveform::Envelope, n: usize) -> Arc<Vec<f32>> {
+    let id = ui.id().with((
+        "timeline-bars",
+        idx,
+        n,
+        Arc::as_ptr(&env.peaks) as usize,
+    ));
+    if let Some(hit) = ui.data(|data| data.get_temp::<Arc<Vec<f32>>>(id)) {
+        return hit;
+    }
+    let bars = Arc::new(waveform::bars(env, n));
+    ui.data_mut(|data| data.insert_temp(id, Arc::clone(&bars)));
+    bars
 }
 
 #[cfg(test)]

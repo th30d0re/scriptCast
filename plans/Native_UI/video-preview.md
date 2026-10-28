@@ -25,3 +25,17 @@ Skip, until those five exist as snapshots: drawing on the frame, trimming a shot
 Build in the order of the frames. The pane reads files the cutter already wrote (`video/preview/<WxH>/`). It does not call ffmpeg itself. A turn with no still and no segment shows frame 2. Space, stop, and auto-advance behave as they do now. Adding the pane does not change how a turn is selected or how a job is confirmed.
 
 Acceptance is a snapshot test on a fixture episode that has one real still and one missing shot, plus a manual pass: play across a shot boundary and watch the frame change with the voice.
+
+## Drawn
+
+Figma file `8mO8UiLLEMNEutFSkjalPD`, Page 1, to the right of the existing screens. Each frame is a copy of the current episode window. Snapshots are the build source. Do not call Figma again for these.
+
+| Frame | Node | Snapshot |
+|---|---|---|
+| Picture present | `158:2390` | `ui/design/screens/07-picture-present/screenshot.png` |
+| Picture missing | `158:2835` | `ui/design/screens/08-picture-missing/screenshot.png` |
+| Shot on the turn | `158:3277` | `ui/design/screens/09-shot-on-the-turn/screenshot.png` |
+| YouTube or Reel | `158:3726` | `ui/design/screens/10-youtube-or-reel/screenshot.png` |
+| Cut in progress | `158:4175` | `ui/design/screens/11-cut-in-progress/screenshot.png` |
+
+The 16:9 slot fills the inspector, so Previous / Next sit below the fold. The playback bar is unchanged. The hold is named in the inspector (`S00-03 · holds S00-02`). The table does not gain a shot column.

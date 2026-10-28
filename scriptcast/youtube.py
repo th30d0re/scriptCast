@@ -1,4 +1,4 @@
-"""A 1920×1080 picture locked to the episode manifest.
+"""A 16:9 picture locked to the episode manifest. The default cut is 4K.
 
 One shot is one turn. A run is a primary shot plus the holds that name it.
 Shot ``i`` occupies frames ``[F(i), F(i+1))``, where ``F(t) = round(t × fps)``
@@ -18,7 +18,12 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-SIZES = {"960x540": (960, 540), "1920x1080": (1920, 1080)}
+SIZES = {
+    "960x540": (960, 540),
+    "1920x1080": (1920, 1080),
+    "3840x2160": (3840, 2160),
+}
+DEFAULT_RES = "3840x2160"
 FRAME_RATES = frozenset({15, 30})
 REVEAL_S = 0.25
 CARD_FILES = frozenset({"figcraft", "figma-card"})
@@ -375,8 +380,12 @@ def _item_text(item: object) -> tuple[str, str]:
     return str(title), str(detail)
 
 
-def card_commands(card: dict, beats: list[dict], directory: Path) -> tuple[list[dict], list[dict]]:
-    """One 1920×1080 frame per beat. Item ``i`` is drawn from beat ``i`` onward.
+def card_commands(
+    card: dict, beats: list[dict], directory: Path, res: str = "1920x1080",
+) -> tuple[list[dict], list[dict]]:
+    """One frame per beat, at ``res``. Item ``i`` is drawn from beat ``i`` onward.
+
+    Positions are the 1920×1080 layout, scaled to ``res``.
 
     The first list is FigCraft ``node.create`` commands, in order. A ``$ref``
     names the id of an earlier command marked ``as``. The second list is one
@@ -391,6 +400,11 @@ def card_commands(card: dict, beats: list[dict], directory: Path) -> tuple[list[
         raise ValueError("card items must be a list")
     headline = str(card.get("headline") or card.get("quote") or "")
     sources = str(card.get("sources") or "")
+    width, height = parse_size(res)
+
+    def at(px: int) -> int:
+        return round(px * width / 1920)
+
     commands: list[dict] = []
     exports: list[dict] = []
     for beat_index, _beat in enumerate(beats):
@@ -402,27 +416,32 @@ def card_commands(card: dict, beats: list[dict], directory: Path) -> tuple[list[
             "params": {
                 "type": "frame",
                 "name": frame,
-                "x": beat_index * 2000,
+                "x": beat_index * at(2000),
                 "y": 0,
-                "width": 1920,
-                "height": 1080,
+                "width": width,
+                "height": height,
                 "props": {"fill": f"#{BG}"},
             },
         })
-        commands.append(_text(frame, "headline", 80, 64, 1760, 88, headline, 48, INK))
-        y = 180
+        commands.append(_text(
+            frame, "headline", at(80), at(64), at(1760), at(88), headline, at(48), INK,
+        ))
+        y = at(180)
         for item_index, item in enumerate(visible):
             title, detail = _item_text(item)
             commands.append(_text(
-                frame, f"item-{item_index}", 80, y, 1760, 48, title, 32, INK,
+                frame, f"item-{item_index}", at(80), y, at(1760), at(48), title, at(32), INK,
             ))
             if detail:
                 commands.append(_text(
-                    frame, f"item-{item_index}-detail", 80, y + 48, 1760, 64, detail, 24, DIM,
+                    frame, f"item-{item_index}-detail", at(80), y + at(48), at(1760), at(64),
+                    detail, at(24), DIM,
                 ))
-            y += 140
+            y += at(140)
         if sources:
-            commands.append(_text(frame, "sources", 80, 980, 1760, 40, sources, 22, DIM))
+            commands.append(_text(
+                frame, "sources", at(80), at(980), at(1760), at(40), sources, at(22), DIM,
+            ))
         exports.append({
             "frame": frame,
             "path": str(directory / f"beat-{beat_index:02d}.png"),

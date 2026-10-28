@@ -80,6 +80,9 @@ pub(crate) struct JobFailure {
 }
 
 fn scope(c: &Confirmation) -> String {
+    if let Preset::CutSegment(seg) = &c.preset {
+        return format!("Segment {seg} · 960×540 · episode audio");
+    }
     if c.preset == Preset::PrecisionInsert && c.affected.is_none() {
         "Whole episode: only changed turns are synthesized".into()
     } else {
@@ -453,6 +456,7 @@ impl Browser {
                 "scriptcast-relayout",
                 "scriptcast-stitch",
                 "scriptcast-turn-index",
+                "scriptcast-youtube",
             ]
             .into_iter()
             .map(|name| {
@@ -724,7 +728,8 @@ impl Browser {
             crate::phase_j::reveal(self.phase.stitch_output.as_deref().unwrap_or(&e.dir));
         }
         self.retime_button(ui);
-        let presets = [
+        self.ensure_picture();
+        let mut presets = vec![
             Preset::Relayout(self.phase.pipeline.gap_ms),
             Preset::Stitch,
             Preset::TurnIndex,
@@ -742,6 +747,9 @@ impl Browser {
             Preset::ReviewStats,
             Preset::Repair((!turns.is_empty()).then_some(turns)),
         ];
+        if matches!(self.picture, crate::picture::Source::Ready(_)) {
+            presets.insert(0, Preset::CutSegment(self.cut_segment()));
+        }
 
         egui::ScrollArea::vertical().id_salt("jobs_body").show(ui, |ui| {
             if let Some(warning) = &self.jobs.stale_warning {
