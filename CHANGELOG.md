@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - Unreleased
 
 ### Added
+- Tone TTS (`engine: tone`) through the local Qwen3 VoiceDesign checkpoint, with per-speech `[tone:…]` voice descriptions and a persistent `scriptcast-tone` worker.
 - The renderer calls `scriptcast-chunk` when an engine sets `max_chars` and a speech job is longer than that, and when a take runs away (non-finite samples, or longer than 8 seconds and slower than 0.6 seconds per character). Pieces crossfade inside the turn. A missing binary fails that render. Engines do not set a cap yet, so a stable take is still one synthesis call.
 - `scriptcast-youtube` cuts a 16:9 picture onto the episode clock: one shot per turn, frame `round(start_ms / 1000 × fps)`. The default is 3840×2160; 1920×1080 and 960×540 remain. `figcraft` draws one still per beat through `figcraft-cli` and holds it. `conform` fits an external video. The vertical 1080×1920 pipeline is unchanged.
 - The macOS app shows that shot on the playhead and plays its silent run. Preview is 1080p or 720p; a 4K master is not decoded at 4K. Timeline and playback waveforms draw as one mesh at 60 Hz.

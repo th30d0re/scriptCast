@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
+import sys
 import tempfile
 import uuid
 from abc import ABC, abstractmethod
@@ -406,6 +408,147 @@ class OmniVoiceEngine(TTSEngine):
         return 24000
 
 
+def tone_binary() -> Path:
+    """The scriptcast-tone executable. `SCRIPTCAST_TONE` wins over PATH."""
+    override = os.environ.get("SCRIPTCAST_TONE")
+    if override:
+        path = Path(override)
+        if not path.is_file():
+            raise RuntimeError(f"SCRIPTCAST_TONE is not a file: {path}")
+        return path
+    found = shutil.which("scriptcast-tone")
+    if found is None:
+        raise RuntimeError(
+            "scriptcast-tone is not on PATH. Build tone/ and set "
+            "SCRIPTCAST_TONE, or install the binary."
+        )
+    return Path(found)
+
+
+class ToneEngine(TTSEngine):
+    """Qwen3 VoiceDesign, driven by one local worker for the render."""
+
+    def __init__(self, model_id: str = "", trim_edges: bool = True) -> None:
+        del model_id
+        self.trim_edges = trim_edges
+        self._process: subprocess.Popen[str] | None = None
+        self._scratch: tempfile.TemporaryDirectory[str] | None = None
+
+    async def load(self) -> None:
+        # Stay lazy so an unused configured tone voice does not require the
+        # binary. The first rendered tone chunk starts the one render worker.
+        return None
+
+    def _start_worker(self) -> None:
+        if self._process is not None:
+            return
+        binary = tone_binary()
+        env = os.environ.copy()
+        env["SCRIPTCAST_TONE_PYTHON"] = sys.executable
+        self._scratch = tempfile.TemporaryDirectory(prefix="scriptcast-tone-")
+        self._process = subprocess.Popen(
+            [str(binary), "worker"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+            env=env,
+            cwd=str(current().root),
+        )
+        assert self._process.stdout is not None
+        line = self._process.stdout.readline()
+        if not line:
+            stderr = self._process.stderr.read() if self._process.stderr else ""
+            self.close()
+            raise RuntimeError(f"Tone worker failed to start:\n{stderr[-2000:]}")
+        try:
+            ready = json.loads(line)
+        except json.JSONDecodeError as exc:
+            self.close()
+            raise RuntimeError(f"Tone worker sent an invalid greeting: {line!r}") from exc
+        if ready != {"ready": True}:
+            self.close()
+            raise RuntimeError(f"Tone worker sent an unexpected greeting: {line!r}")
+
+    async def synthesize_chunk(
+        self,
+        text: str,
+        voice_config: VoiceConfig,
+        instruct: str | None = None,
+    ) -> numpy.ndarray:
+        if not instruct or not instruct.strip():
+            raise RuntimeError(
+                f"Speaker {voice_config.speaker_id!r} uses engine 'tone' but has no instruct."
+            )
+        self._start_worker()
+        if self._process is None or self._scratch is None:
+            raise RuntimeError("Tone worker is not running")
+
+        out_path = Path(self._scratch.name) / f"{uuid.uuid4().hex}.wav"
+        request = {
+            "text": text,
+            "instruct": instruct,
+            "out": str(out_path),
+            "lang": "english",
+        }
+        assert self._process.stdin is not None and self._process.stdout is not None
+        self._process.stdin.write(json.dumps(request) + "\n")
+        self._process.stdin.flush()
+        line = self._process.stdout.readline()
+        if not line:
+            stderr = self._process.stderr.read() if self._process.stderr else ""
+            self.close()
+            raise RuntimeError(f"Tone worker died:\n{stderr[-2000:]}")
+        try:
+            reply = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(f"Tone worker returned invalid JSON: {line!r}") from exc
+        if not reply.get("ok"):
+            raise RuntimeError(f"Tone synthesis failed: {reply.get('error')}")
+        if int(reply.get("sample_rate", 0)) != self.sample_rate:
+            out_path.unlink(missing_ok=True)
+            raise RuntimeError(
+                f"Tone worker returned sample rate {reply.get('sample_rate')}; "
+                f"expected {self.sample_rate}"
+            )
+
+        import soundfile
+
+        array, rate = soundfile.read(str(out_path), dtype="float32", always_2d=False)
+        out_path.unlink(missing_ok=True)
+        if int(rate) != self.sample_rate:
+            raise RuntimeError(
+                f"Tone WAV has sample rate {rate}; expected {self.sample_rate}"
+            )
+        array = numpy.asarray(array)
+        if array.ndim > 1:
+            array = numpy.squeeze(array)
+        if self.trim_edges:
+            trimmed = _trim_edge_silence(array, self.sample_rate)
+            return trimmed if trimmed.size else numpy.array([], dtype=numpy.float32)
+        return array
+
+    def close(self) -> None:
+        process = self._process
+        self._process = None
+        if process is not None:
+            if process.stdin is not None:
+                process.stdin.close()
+            try:
+                process.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                process.terminate()
+                process.wait(timeout=10)
+        if self._scratch is not None:
+            self._scratch.cleanup()
+            self._scratch = None
+
+    @property
+    def sample_rate(self) -> int:
+        return 24000
+
+
 class PhononEngine(TTSEngine):
     """Phonon (Gradium's on-device TTS), through its `ptts` Python package.
 
@@ -520,4 +663,5 @@ ENGINE_REGISTRY: dict[str, type[TTSEngine]] = {
     "mlx_chatterbox": MLXChatterboxEngine,
     "omnivoice": OmniVoiceEngine,
     "phonon": PhononEngine,
+    "tone": ToneEngine,
 }

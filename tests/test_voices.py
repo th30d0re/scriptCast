@@ -162,3 +162,32 @@ class LoadVoicesTests(TestCase):
 
             with self.assertRaisesRegex(ValueError, "unknown engine"):
                 load_voices(voices_path)
+
+    def test_tone_requires_non_empty_instruct_and_loads_it(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            voices_path = Path(tmp) / "voices.yaml"
+            voices_path.write_text(
+                "speakers:\n  host:\n    engine: tone\n    character_profile: Not a fallback\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "instruct"):
+                load_voices(voices_path)
+
+            voices_path.write_text(
+                "speakers:\n  host:\n    engine: tone\n"
+                "    instruct: '  A calm adult voice.  '\n",
+                encoding="utf-8",
+            )
+            voice = load_voices(voices_path)["host"]
+            self.assertEqual(voice.engine, "tone")
+            self.assertEqual(voice.instruct, "A calm adult voice.")
+
+    def test_existing_kokoro_voice_still_loads(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            voices_path = Path(tmp) / "voices.yaml"
+            voices_path.write_text(
+                "speakers:\n  host:\n    engine: kokoro\n"
+                "    kokoro_voice: af_heart\n    lang_code: a\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(load_voices(voices_path)["host"].engine, "kokoro")

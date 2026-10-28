@@ -196,6 +196,49 @@ def test_render_loop_uses_contiguous_speech_chunk_indexes_for_markup(
     ]
 
 
+def test_tone_annotations_apply_to_following_speech_jobs(tmp_path, monkeypatch) -> None:
+    turn = Turn(
+        turn_index=0,
+        turn_id="id0",
+        speaker_id="host",
+        display_name="Host",
+        timestamp_mmss="00:00",
+        timestamp_ms=0,
+        raw_text="first [tone:bright] second [tone] third",
+        clean_text="first [tone:bright] second [tone] third",
+        line_span=(1, 2),
+    )
+    tokenize_markup([turn])
+    voice = VoiceConfig(
+        speaker_id="host", engine="tone", instruct="calm fallback"
+    )
+    seen: list[tuple[str, str]] = []
+
+    class ToneFake(_FakeEngine):
+        async def synthesize_chunk(self, text, voice_config, instruct=None):
+            del voice_config
+            seen.append((text, instruct))
+            return [0.1, 0.1, 0.1]
+
+    monkeypatch.setattr(cli, "process_segment", _fake_process_segment)
+    asyncio.run(
+        cli.render_loop(
+            turns=[turn],
+            engines={"tone": ToneFake()},
+            voices={"host": voice},
+            out_dir=tmp_path,
+            episode_id="episode",
+            gap_ms=0,
+        )
+    )
+
+    assert seen == [
+        ("first", "calm fallback"),
+        ("second", "bright"),
+        ("third", "calm fallback"),
+    ]
+
+
 def test_dry_run_cli_prints_turn_summary(tmp_path, monkeypatch, capsys) -> None:
     transcript_path = tmp_path / "episode.md"
     transcript_path.write_text(

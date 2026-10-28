@@ -17,6 +17,9 @@ class VoiceConfig:
     elevenlabs_voice_id: str | None = None
     reference_audio: str | None = None
     character_profile: str = ""
+    # VoiceDesign engines use this as the speaker's natural-language voice
+    # description. It is intentionally distinct from character_profile.
+    instruct: str | None = None
     exaggeration: float = 0.0
     # Chatterbox sampling. The upstream defaults (temperature 0.8, cfg_weight
     # 0.5) are tuned for expressive one-off generation. Reading a fixed script

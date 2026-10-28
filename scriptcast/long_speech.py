@@ -72,6 +72,7 @@ async def speak(
     text: str,
     *,
     expressive: bool,
+    instruct: str | None = None,
 ) -> numpy.ndarray:
     """Audio for one speech job. One call when the text fits and the take is stable."""
     limit = getattr(engine, "max_chars", None)
@@ -80,7 +81,10 @@ async def speak(
     else:
         pieces = [text]
     audios = [
-        await _piece(engine, voice, piece, expressive=expressive, depth=0)
+        await _piece(
+            engine, voice, piece,
+            expressive=expressive, instruct=instruct, depth=0,
+        )
         for piece in pieces
     ]
     return _join(audios, int(engine.sample_rate))
@@ -92,10 +96,13 @@ async def _piece(
     text: str,
     *,
     expressive: bool,
+    instruct: str | None,
     depth: int,
 ) -> numpy.ndarray:
     speech = speech_text_for(voice.engine, text)
-    if expressive:
+    if instruct is not None:
+        raw = await engine.synthesize_chunk(speech, voice, instruct=instruct)
+    elif expressive:
         raw = await engine.synthesize_chunk(speech, voice, expressive=True)
     else:
         raw = await engine.synthesize_chunk(speech, voice)
@@ -107,7 +114,10 @@ async def _piece(
     if len(halves) < 2:
         return audio
     parts = [
-        await _piece(engine, voice, half, expressive=expressive, depth=depth + 1)
+        await _piece(
+            engine, voice, half,
+            expressive=expressive, instruct=instruct, depth=depth + 1,
+        )
         for half in halves
     ]
     return _join(parts, int(engine.sample_rate))
