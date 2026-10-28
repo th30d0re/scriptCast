@@ -82,3 +82,13 @@ Stop and report if byte-preserving moves cannot be done because a turn block's e
 ## Findings file
 
 Write `plans/Native_UI/evidence/phaseK-py-findings.md` early, and update it as you go.
+
+## Later work (2026-10-18) — not part of the contract above
+
+This brief is shipped. Tag validation stays as specified. The section below is new scope.
+
+`[tone:<text>]` is the delivery instruct for a Rust engine. The tag value (`"whisper"`, `"more energetic"`) is the instruct string passed at synthesis. Until that engine exists, `scriptcast/markup.py` still ignores the tag, and `--tags-json` still only checks that the value is non-empty.
+
+`[emphasis]` stays the OmniVoice expressive-reference switch. It is not an instruct string.
+
+The tag list stays `[pause]`, `[beat]`, `[emphasis]`, `[tone]`, `[clip]`. `[laugh]` and `[sigh]` are out of this plan. The markdown parser stays Python (`parser.py`, `markup.py`). The engine is a Rust binary the renderer calls. Do not vendor Voicebox's `backend/backends/qwen_*.py`.

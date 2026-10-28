@@ -107,3 +107,7 @@ With `--write`, it writes the best spelling to the pronunciations file through `
 ## Findings file
 
 Write `plans/Native_UI/evidence/phaseM-py-findings.md` early, and update it as you go.
+
+## Later work (2026-10-18) — not part of the contract above
+
+Audition still scores candidates and the voices file still stores one winner. Combining several samples into one voice prompt is out until the Rust instruct engine accepts more than one reference. Do not add that combine step to `scriptcast-audition` or `scriptcast-reference`.

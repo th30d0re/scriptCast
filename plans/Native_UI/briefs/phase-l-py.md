@@ -80,3 +80,11 @@ Same shape as `show`, but it exits 1 if any problem exists.
 ## Findings file
 
 Write `plans/Native_UI/evidence/phaseL-py-findings.md` early, and update it as you go.
+
+## Later work (2026-10-18) — not part of the contract above
+
+This brief is shipped. The engine list stays `kokoro` / `mlx_kokoro`, `elevenlabs`, `mlx_chatterbox`, `omnivoice`, and `archive`.
+
+When the K4 instruct engine exists, `load_voices` gains its required fields and `scriptcast-project` validates them through that loader, the same way it validates the engines above. `character_profile` stays an optional description. It is not the instruct string, and a save must keep it as its own key.
+
+The engine itself is a Rust binary. This brief does not add it, and it does not vendor Voicebox's Qwen backends. One reference clip per speaker until that engine accepts more than one sample.
