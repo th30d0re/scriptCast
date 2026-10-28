@@ -925,11 +925,11 @@ impl Browser {
         }
         let dir = episode.dir.clone();
         let root = episode.project_root.clone();
-        self.picture_for = Some(dir);
+        self.picture_for = Some(dir.clone());
         self.picture_tex = None;
         self.motion.idle();
         self.picture = match root {
-            Some(root) => picture::load_index(&root).unwrap_or_else(picture::Source::Failed),
+            Some(root) => picture::load_index(&root, &dir).unwrap_or_else(picture::Source::Failed),
             None => picture::Source::Absent,
         };
     }

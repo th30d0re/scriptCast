@@ -232,7 +232,7 @@ impl JobSpec {
                 if seg.is_empty() {
                     return Err("This turn is not in the YouTube shot list".into());
                 }
-                let shots = crate::picture::shots_path(&cwd)?
+                let shots = crate::picture::shots_path(&cwd, &e.dir)?
                     .ok_or("Set youtube.shots in scriptcast.toml")?;
                 args.extend([
                     "cut".into(),

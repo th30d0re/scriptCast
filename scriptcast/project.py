@@ -20,8 +20,9 @@ CONFIG_NAME = "scriptcast.toml"
 ROOT_ENV_VAR = "SCRIPTCAST_PROJECT"
 
 # A table, not a path. `shots` is a path relative to the project root. `render`
-# is a command the show names; ScriptCast does not invent one.
-YOUTUBE_KEYS = frozenset({"shots", "render"})
+# is a command the show names; ScriptCast does not invent one. `by_episode`
+# maps an episode directory name to its own shot list.
+YOUTUBE_KEYS = frozenset({"shots", "render", "by_episode"})
 
 DEFAULTS: dict[str, str | int | float] = {
     "tail_ms": 400,
@@ -40,9 +41,9 @@ DEFAULTS: dict[str, str | int | float] = {
 KNOWN_KEYS = frozenset(set(DEFAULTS) | {"youtube"})
 
 
-def _youtube_table(value: object, config_path: Path) -> dict[str, str]:
+def _youtube_table(value: object, config_path: Path) -> tuple[dict[str, str], dict[str, str]]:
     if value is None:
-        return {}
+        return {}, {}
     if not isinstance(value, dict):
         raise ValueError(f"{config_path}: youtube must be a table")
     unknown = sorted(set(value) - YOUTUBE_KEYS)
@@ -51,13 +52,23 @@ def _youtube_table(value: object, config_path: Path) -> dict[str, str]:
             f"{config_path}: unknown youtube key(s): {', '.join(unknown)}. "
             f"Known keys: {', '.join(sorted(YOUTUBE_KEYS))}."
         )
+    by_episode_raw = value.get("by_episode", {})
+    if not isinstance(by_episode_raw, dict):
+        raise ValueError(f"{config_path}: youtube.by_episode must be a table")
+    by_episode: dict[str, str] = {}
+    for key, item in by_episode_raw.items():
+        if not isinstance(item, str) or not item.strip():
+            raise ValueError(
+                f"{config_path}: youtube.by_episode.{key} must be a non-empty string"
+            )
+        by_episode[str(key)] = item
     parsed: dict[str, str] = {}
-    for key in sorted(YOUTUBE_KEYS & set(value)):
+    for key in sorted((YOUTUBE_KEYS - {"by_episode"}) & set(value)):
         item = value[key]
         if not isinstance(item, str) or not item.strip():
             raise ValueError(f"{config_path}: youtube.{key} must be a non-empty string")
         parsed[key] = item
-    return parsed
+    return parsed, by_episode
 
 
 def find_root(start: Path | None = None) -> Path:
@@ -89,7 +100,7 @@ class Project:
                 f"{config_path}: unknown key(s): {', '.join(unknown)}. "
                 f"Known keys: {', '.join(sorted(KNOWN_KEYS))}."
             )
-        youtube = _youtube_table(raw.get("youtube"), config_path)
+        youtube, by_episode = _youtube_table(raw.get("youtube"), config_path)
         merged = {**DEFAULTS, **{key: value for key, value in raw.items() if key != "youtube"}}
         self.tail_ms = merged["tail_ms"]
         self.speech_threshold = merged["speech_threshold"]
@@ -104,6 +115,13 @@ class Project:
         self.youtube_render = youtube.get("render")
         shots = youtube.get("shots")
         self.youtube_shots = self.resolve(shots) if shots else None
+        self.youtube_by_episode = {
+            key: self.resolve(path) for key, path in by_episode.items()
+        }
+
+    def youtube_shots_for(self, episode_id: str) -> Path | None:
+        """The shot list for this episode, or the project default."""
+        return self.youtube_by_episode.get(episode_id) or self.youtube_shots
 
     def resolve(self, value: object) -> Path:
         """`value` as an absolute path; relative values anchor at the root."""
