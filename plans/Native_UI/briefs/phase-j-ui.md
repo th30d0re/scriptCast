@@ -105,3 +105,7 @@ Real renders, end-to-end runs against the Python flags (they land on another bra
 ## Findings file
 
 Write `plans/Native_UI/evidence/phaseJ-ui-findings.md` **early**. Fill it in as you go: the files changed, the test counts, deviations from the mock-ups or the contract, and what is unverified.
+
+## Later work (2026-10-18) — not part of the contract above
+
+J9 chunking (`briefs/phase-j-py.md`) runs inside a turn. This UI keeps one `turn_start` / `turn_done` per turn, and the status strip stays "Rendering turn n of N". The chunker adds no progress events and no new Jobs control. Inter-turn gaps stay the J3 relayout slider.

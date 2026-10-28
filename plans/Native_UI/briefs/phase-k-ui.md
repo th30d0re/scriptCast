@@ -106,3 +106,7 @@ If an egui 0.36 `TextEdit` layouter cannot paint pill backgrounds without breaki
 ## Findings file
 
 Write `plans/Native_UI/evidence/phaseK-ui-findings.md` early: the files changed, the tests, deviations, and what is unverified.
+
+## Later work (2026-10-18) — not part of the contract above
+
+The Tone field already inserts `[tone:<text>]`. Leave that control as it is. Rendering the tag is the Rust engine in `briefs/phase-k-py.md` (later-work section), not a new toolbar button. Do not add Laugh or Sigh controls. Flow 0 in `plan.md` previews a tone edit by re-rendering the selected range through that engine.

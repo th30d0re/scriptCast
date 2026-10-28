@@ -11,7 +11,8 @@ A lightweight native desktop window for scriptCast, written in Rust with egui (e
 
 ## Non-goals
 
-- Reimplementing synthesis, Whisper verification, repair, mixing or exporters in Rust. Python remains the source of truth.
+- Synthesis, Whisper verification, repair, mixing, and export inside the egui process. The app calls tools. Python remains the parser and the existing Kokoro, Chatterbox, OmniVoice, ElevenLabs, and archive engines.
+- Vendoring outside Python into those tools. Engines and DSP added after 2026-10-18 are Rust binaries the tools call (`plans/Native_UI/parity-brief.md`: J9 chunking, K4 `[tone]` instruct, N6–N8 `soundcraft-dsp`).
 - Editing the engine's output files. The UI treats them as read-only except for checkpoints and explicitly confirmed Restore; other writes belong to the Python tools.
 - Cross-platform support. macOS on Apple Silicon only, matching scriptCast.
 

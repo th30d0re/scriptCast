@@ -65,6 +65,8 @@ scriptCast renders a markdown podcast script into per-turn speech, verifies it w
 
 **Scope note:** This flow extends the current browser/playback/job-runner plan. It requires a later phase for agent selection, edit proposals, concurrent jobs, conflict resolution, version history, and non-destructive audio preview. The current Phase A-C implementation remains usable without an agent connection.
 
+**Tone and pacing (2026-10-18):** an edit that changes delivery writes `[tone:…]` into the selected range. A Rust engine reads that tag as its instruct string and the preview is a re-render of the range. `[emphasis]` stays the OmniVoice expressive-reference switch. `character_profile` stays manifest metadata. This flow does not add a personality LLM, a dictation loop, or a second effects chain. The effects path is N6–N8 (`soundcraft-dsp`). Detail is in `plans/Native_UI/parity-brief.md` (J9, K4, L2).
+
 ## Flow 1: Open an Episode (Phase A)
 
 **Description:** The operator opens a rendered episode and sees every turn.
