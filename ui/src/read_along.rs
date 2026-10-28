@@ -14,14 +14,40 @@ fn normalize(word: &str) -> String {
         .collect()
 }
 
+/// `<!-- ... -->` notes sit in the script body but are not spoken, so they are
+/// not in the word timings. Skipping them keeps the highlight on the spoken word.
+fn comment_spans(text: &str) -> Vec<Range<usize>> {
+    let mut spans = Vec::new();
+    let mut from = 0;
+    while let Some(start) = text[from..].find("<!--") {
+        let start = from + start;
+        let after = start + 4;
+        let Some(end_rel) = text[after..].find("-->") else {
+            break;
+        };
+        let end = after + end_rel + 3;
+        spans.push(start..end);
+        from = end;
+    }
+    spans
+}
+
+fn overlaps(range: &Range<usize>, spans: &[Range<usize>]) -> bool {
+    spans
+        .iter()
+        .any(|span| range.start < span.end && span.start < range.end)
+}
+
 pub fn word_mapping(text: &str, words: &[Word]) -> Option<Vec<Range<usize>>> {
+    let comments = comment_spans(text);
     let mut offset = 0;
     let ranges: Vec<_> = text
         .split_whitespace()
-        .map(|word| {
+        .filter_map(|word| {
             let start = offset + text[offset..].find(word).unwrap();
             offset = start + word.len();
-            start..offset
+            let range = start..offset;
+            (!overlaps(&range, &comments)).then_some(range)
         })
         .collect();
     if ranges.len() != words.len()
@@ -408,6 +434,17 @@ mod tests {
         assert_eq!(
             active_range("Hello, WORLD!", &words("hello world"), 250),
             None
+        );
+        assert_eq!(
+            word_mapping(
+                "Hello world.\n<!-- [editorial] -->",
+                &words("Hello world.")
+            ),
+            Some(vec![0..5, 6..12])
+        );
+        assert_eq!(
+            active_range("Hello world.\n<!-- [editorial] -->", &words("Hello world."), 150),
+            Some(6..12)
         );
     }
 
