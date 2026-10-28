@@ -81,8 +81,9 @@ pub enum Source {
     Failed(String),
 }
 
-/// `youtube.shots` from the project file. `Ok(None)` when the table is absent.
-pub fn shots_path(root: &Path) -> Result<Option<PathBuf>, String> {
+/// `youtube.shots` from the project file, or `youtube.by_episode.<name>` when
+/// this episode directory has its own list. `Ok(None)` when the table is absent.
+pub fn shots_path(root: &Path, episode_dir: &Path) -> Result<Option<PathBuf>, String> {
     let path = root.join("scriptcast.toml");
     let text = match std::fs::read_to_string(&path) {
         Ok(text) => text,
@@ -91,12 +92,40 @@ pub fn shots_path(root: &Path) -> Result<Option<PathBuf>, String> {
     };
     let value: toml::Value = toml::from_str(&text)
         .map_err(|error| format!("{}: {error}", path.display()))?;
-    let Some(shots) = value.get("youtube").and_then(|table| table.get("shots")) else {
+    let Some(youtube) = value.get("youtube") else {
+        return Ok(None);
+    };
+    let episode = episode_dir
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("");
+    if let Some(listed) = youtube.get("by_episode") {
+        let Some(table) = listed.as_table() else {
+            return Err(format!(
+                "{}: youtube.by_episode must be a table",
+                path.display()
+            ));
+        };
+        if let Some(shots) = table.get(episode) {
+            let Some(shots) = shots.as_str().filter(|s| !s.trim().is_empty()) else {
+                return Err(format!(
+                    "{}: youtube.by_episode.{episode} must be a path",
+                    path.display()
+                ));
+            };
+            return Ok(Some(resolve_shot_list(root, shots)?));
+        }
+    }
+    let Some(shots) = youtube.get("shots") else {
         return Ok(None);
     };
     let Some(shots) = shots.as_str().filter(|s| !s.trim().is_empty()) else {
         return Err(format!("{}: youtube.shots must be a path", path.display()));
     };
+    Ok(Some(resolve_shot_list(root, shots)?))
+}
+
+fn resolve_shot_list(root: &Path, shots: &str) -> Result<PathBuf, String> {
     let raw = PathBuf::from(shots);
     let resolved = if raw.is_absolute() {
         raw
@@ -104,14 +133,14 @@ pub fn shots_path(root: &Path) -> Result<Option<PathBuf>, String> {
         root.join(raw)
     };
     if resolved.is_file() {
-        Ok(Some(resolved))
+        Ok(resolved)
     } else {
         Err(format!("Shot list not found: {}", resolved.display()))
     }
 }
 
-pub fn load_index(root: &Path) -> Result<Source, String> {
-    match shots_path(root)? {
+pub fn load_index(root: &Path, episode_dir: &Path) -> Result<Source, String> {
+    match shots_path(root, episode_dir)? {
         Some(path) => Ok(Source::Ready(Index {
             shots: load_shots(&path)?,
         })),
@@ -619,17 +648,24 @@ mod tests {
     fn the_slot_stays_absent_until_the_project_names_a_shot_list() {
         let dir = scratch();
         std::fs::write(dir.join("scriptcast.toml"), "tail_ms = 400\n").unwrap();
-        assert!(matches!(load_index(&dir).unwrap(), Source::Absent));
+        assert!(matches!(load_index(&dir, &dir).unwrap(), Source::Absent));
         std::fs::write(dir.join("shots.md"), LIST).unwrap();
+        std::fs::write(dir.join("ov.md"), "## S01-01 — Other\n").unwrap();
         std::fs::write(
             dir.join("scriptcast.toml"),
-            "tail_ms = 400\n\n[youtube]\nshots = \"shots.md\"\n",
+            "tail_ms = 400\n\n[youtube]\nshots = \"shots.md\"\n\n[youtube.by_episode]\nYT02v2_ov = \"ov.md\"\n",
         )
         .unwrap();
-        let Source::Ready(index) = load_index(&dir).unwrap() else {
+        let Source::Ready(index) = load_index(&dir, &dir).unwrap() else {
             panic!("shot list should load");
         };
         assert_eq!(index.shots.len(), 2);
+        let ov = dir.join("YT02v2_ov");
+        let Source::Ready(index) = load_index(&dir, &ov).unwrap() else {
+            panic!("episode shot list should load");
+        };
+        assert_eq!(index.shots.len(), 1);
+        assert_eq!(index.shots[0].id, "S01-01");
         let _ = std::fs::remove_dir_all(dir);
     }
 

@@ -46,7 +46,8 @@ from scriptcast.youtube import (
 
 
 def _shots(episode: Path, given: Path | None) -> tuple[list, Path]:
-    path = given or current(episode).youtube_shots
+    project = current(episode)
+    path = given or project.youtube_shots_for(episode.name)
     if path is None:
         raise ValueError("pass --shots, or set youtube.shots in scriptcast.toml")
     return load_shots(path), path
