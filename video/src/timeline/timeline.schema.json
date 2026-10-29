@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/th30d0re/scriptcast/video/src/timeline/timeline.schema.json",
+  "title": "ScriptCast timeline",
+  "type": "object",
+  "required": ["fps", "width", "height", "durationSec", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "fps": {"type": "integer", "minimum": 1},
+    "width": {"type": "integer", "minimum": 1},
+    "height": {"type": "integer", "minimum": 1},
+    "durationSec": {"type": "number", "exclusiveMinimum": 0},
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["card", "props", "startSec", "endSec"],
+        "additionalProperties": false,
+        "properties": {
+          "card": {"type": "string", "minLength": 1},
+          "props": {"type": "object"},
+          "startSec": {"type": "number", "minimum": 0},
+          "endSec": {"type": "number", "minimum": 0}
+        }
+      }
+    }
+  }
+}

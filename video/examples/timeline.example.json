@@ -1,0 +1,12 @@
+{
+  "fps": 30,
+  "width": 1080,
+  "height": 1920,
+  "durationSec": 4,
+  "items": [
+    {"card": "TitleCard", "startSec": 0, "endSec": 2,
+     "props": {"headline": "Two shapes", "sources": "Synthetic example", "items": [{"title": "Circle and square"}]}},
+    {"card": "CompareCard", "startSec": 2, "endSec": 4,
+     "props": {"headline": "Compare", "sources": "Synthetic example", "items": [{"title": "Circle", "points": ["Round"]}, {"title": "Square", "points": ["Four sides"]}]}}
+  ]
+}
