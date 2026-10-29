@@ -16,11 +16,16 @@ from scriptcast.tools.video_plan import COMPONENTS, build_plan
 VIDEO_DIR = Path(__file__).resolve().parents[2] / "video"
 DEFAULT_CHROME = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 
+def node_bin(name):
+    # npm workspaces install into the repository root; a standalone install stays in video/.
+    return any((root / "node_modules" / ".bin" / name).is_file() for root in (VIDEO_DIR, VIDEO_DIR.parent))
+
+
 def workspace(parser, *, dependencies=True):
     if not (VIDEO_DIR / "src" / "index.ts").is_file():
         parser.error(f"Remotion workspace not found at {VIDEO_DIR}; run from a source installation")
-    if dependencies and not (VIDEO_DIR / "node_modules" / ".bin" / "remotion").exists():
-        parser.error(f"Install the video workspace dependencies with: cd {VIDEO_DIR} && npm install")
+    if dependencies and not node_bin("remotion"):
+        parser.error(f"Install the video workspace dependencies with: cd {VIDEO_DIR.parent} && npm install")
 
 
 def browser_args():
@@ -218,8 +223,8 @@ def render_chunks(base, common, ranges, out, audio, plan, args) -> int:
 
 def svg(args, parser):
     workspace(parser, dependencies=False)
-    if not (VIDEO_DIR / "node_modules" / ".bin" / "tsc").is_file():
-        parser.error(f"Install the video workspace dependencies with: cd {VIDEO_DIR} && npm install")
+    if not node_bin("tsc"):
+        parser.error(f"Install the video workspace dependencies with: cd {VIDEO_DIR.parent} && npm install")
     command = ["npm", "run", "--silent", "quiver", "--", args.svg_command]
     if args.svg_command == "generate":
         command += [args.prompt, "--model", args.model, "--n", str(args.n)]

@@ -1,12 +1,13 @@
-import {Img, staticFile, continueRender, delayRender, useCurrentFrame, useVideoConfig} from 'remotion';
 import {ReactNode, useLayoutEffect, useRef, useState} from 'react';
-import {USABLE_BOX, WIDTH, HEIGHT} from '../safeZone';
-import {palette as p, fontFamily} from '../theme';
+import {USABLE_BOX, WIDTH, HEIGHT} from './safeZone';
+import {palette as p, fontFamily} from './theme';
 import {QrCode} from './QrCode';
-import {Reveal, useEnter} from './motion';
+import {BeatProvider, Reveal, useEnter} from './motion';
+import {useCardHost} from './host';
 
 export type ArtProp = {src: string; size?: 'strip' | 'hero'; caption?: string; animate?: boolean; atSeconds?: number};
-export type BaseProps = {headline: string; highlight?: string; sources: string; svgAsset?: string; art?: ArtProp; qr?: boolean; qrUrl?: string; qrs?: {url: string; label: string}[]};
+// progress: 0 to 1 over the card's entrance (see README). Omitted, the card is drawn finished.
+export type BaseProps = {progress?: number; headline: string; highlight?: string; sources: string; svgAsset?: string; art?: ArtProp; qr?: boolean; qrUrl?: string; qrs?: {url: string; label: string}[]};
 
 // Type sizes are fixed at their base values; Frame shrinks the content block
 // until it fits (measured in the browser). Kept for callers that pass it through.
@@ -32,18 +33,17 @@ export function getTextLength(obj: any): number {
   return 0;
 }
 
-// An SVG with CSS keyframes, inlined and driven by the frame counter. Every animation is paused
-// and given a negative delay equal to the card's own elapsed time, so each rendered frame is the
-// same no matter which browser tab draws it. A still (one-frame composition) shows time zero.
+// An SVG with CSS keyframes, inlined and held at `atSeconds` (default 0). Every animation is paused
+// and given a negative delay equal to that time, so each rendered frame is the same no matter
+// which browser tab draws it. The caller advances atSeconds with its own clock.
 function AnimatedSvg({src, atSeconds}: {src: string; atSeconds?: number}) {
+  const host = useCardHost();
   const [markup, setMarkup] = useState<string | null>(null);
-  const [handle] = useState(() => delayRender());
-  const frame = useCurrentFrame();
-  const {fps, durationInFrames} = useVideoConfig();
+  const [release] = useState(() => host.hold(`svg ${src}`));
   useLayoutEffect(() => {
-    fetch(staticFile(src)).then(r => r.text()).then(t => { setMarkup(t); continueRender(handle); }).catch(e => { throw e; });
-  }, [src, handle]);
-  const seconds = atSeconds ?? (durationInFrames <= 1 ? 0 : frame / fps);
+    fetch(host.asset(src)).then(r => r.text()).then(t => { setMarkup(t); release(); }).catch(e => { throw e; });
+  }, [src, release, host]);
+  const seconds = atSeconds ?? 0;
   if (!markup) return null;
   const css = `svg * { animation-play-state: paused !important; animation-delay: -${seconds.toFixed(3)}s !important; }`;
   return <div style={{width: '100%', flex: 1, minHeight: 0, display: 'flex'}} data-animated-svg
@@ -54,7 +54,8 @@ function AnimatedSvg({src, atSeconds}: {src: string; atSeconds?: number}) {
 // same card start at the answer instead of re-running the shrink loop.
 const fittedScale = new Map<string, number>();
 
-export function Frame({headline, highlight, sources, svgAsset, art, qr = true, qrUrl, qrs, children}: BaseProps & {children: (scale: number) => ReactNode}) {
+export function Frame({progress = 1, beats, headline, highlight, sources, svgAsset, art, qr = true, qrUrl, qrs, children}: BaseProps & {beats: number; children: (scale: number) => ReactNode}) {
+  const host = useCardHost();
   const effectiveArt = art || (svgAsset ? {src: svgAsset, size: 'strip' as const} : undefined);
   
   if (effectiveArt?.src) {
@@ -64,7 +65,7 @@ export function Frame({headline, highlight, sources, svgAsset, art, qr = true, q
     }
   }
 
-  const [handle] = useState(() => delayRender());
+  const [release] = useState(() => host.hold(`fit ${headline}`));
   const cacheKey = `${headline}\u0000${sources}`;
   const [scale, setScale] = useState(() => fittedScale.get(cacheKey) ?? 1);
   const contentRef = useRef<HTMLElement>(null);
@@ -82,9 +83,14 @@ export function Frame({headline, highlight, sources, svgAsset, art, qr = true, q
       throw new Error(`Overflow detected in card: ${headline} (content bottom ${Math.round(bottom)}px, box bottom ${Math.round(boxBottom)}px, scale ${scale})`);
     }
     fittedScale.set(cacheKey, scale);
-    continueRender(handle);
-  }, [handle, headline, scale, cacheKey]);
+    release();
+  }, [release, headline, scale, cacheKey]);
 
+  return <BeatProvider value={progress * beats}><FrameBody {...{headline, highlight, sources, qr, qrUrl, qrs, scale, contentRef}} art={effectiveArt}>{children(scale)}</FrameBody></BeatProvider>;
+}
+
+function FrameBody({headline, highlight, sources, art: effectiveArt, qr, qrUrl, qrs, scale, contentRef, children}: Omit<BaseProps, 'progress' | 'svgAsset'> & {scale: number; contentRef: React.RefObject<HTMLElement | null>; children: ReactNode}) {
+  const {asset, Image} = useCardHost();
   const ruleT = useEnter(0, 8);
   const at = highlight ? headline.indexOf(highlight) : -1;
   const headlineParts = at < 0 || !highlight ? [{text: headline, hit: false}] : [
@@ -110,12 +116,12 @@ export function Frame({headline, highlight, sources, svgAsset, art, qr = true, q
       }}>
         {effectiveArt.src && (effectiveArt.animate
           ? <AnimatedSvg src={effectiveArt.src} atSeconds={effectiveArt.atSeconds} />
-          : <Img src={staticFile(effectiveArt.src)} alt="" style={{display: 'block', width: '100%', flex: 1, minHeight: 0, objectFit: 'contain'}} />)}
+          : <Image src={asset(effectiveArt.src)} alt="" style={{display: 'block', width: '100%', flex: 1, minHeight: 0, objectFit: 'contain'}} />)}
         {effectiveArt.caption && hero && <div style={{fontSize: Math.round(26 * scale), color: p.mute, textAlign: 'center', flexShrink: 0}}>{effectiveArt.caption}</div>}
       </div>}
 
       <section ref={contentRef} style={{flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly'}}>
-        {children(scale)}
+        {children}
       </section>
 
       <Reveal delay={6} dur={8} style={{flexShrink: 0}}><footer style={{textAlign: 'center'}}>

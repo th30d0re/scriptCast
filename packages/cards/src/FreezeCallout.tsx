@@ -1,9 +1,9 @@
-import {Img, staticFile} from 'remotion';
 import {Frame, type BaseProps} from './Frame';
-import {palette as p, fontFamily} from '../theme';
-import {USABLE_BOX, WIDTH, HEIGHT} from '../safeZone';
+import {palette as p, fontFamily} from './theme';
+import {USABLE_BOX, WIDTH, HEIGHT} from './safeZone';
 import {QrCode} from './QrCode';
-import {Reveal} from './motion';
+import {FRAME_BEATS, Reveal} from './motion';
+import {useCardHost} from './host';
 
 export type Callout = {shape: 'rect' | 'ellipse'; x: number; y: number; w: number; h: number; label?: string};
 // A still frame from real footage with outlined callouts. Callout boxes are fractions
@@ -12,13 +12,17 @@ export type Callout = {shape: 'rect' | 'ellipse'; x: number; y: number; w: numbe
 // headline, caption and QR in a fading navy scrim over its top. imageTop is the picture's top edge in px.
 export type FreezeProps = BaseProps & {image: string; aspect: number; callouts: Callout[]; caption?: string; fullBleed?: boolean; imageTop?: number};
 
+// The full-bleed layout has no motion; the framed one fades the picture in over beats 0..8.
+export const freezeBeats = (_props: FreezeProps) => FRAME_BEATS;
+
 function BleedLayout(props: FreezeProps) {
+  const {asset, Image} = useCardHost();
   const top = props.imageTop ?? 380;
   const imgH = Math.round(WIDTH / props.aspect);
   const scrim = (dir: string) => `linear-gradient(${dir}, rgba(15,27,51,0.96) 0%, rgba(15,27,51,0.9) 62%, rgba(15,27,51,0) 100%)`;
   return <div style={{width: WIDTH, height: HEIGHT, background: p.navy, color: p.cream, fontFamily, position: 'relative', overflow: 'hidden'}}>
     <div style={{position: 'absolute', left: 0, top, width: WIDTH, height: imgH}}>
-      <Img src={staticFile(props.image)} alt="" style={{display: 'block', width: '100%', height: '100%'}} />
+      <Image src={asset(props.image)} alt="" style={{display: 'block', width: '100%', height: '100%'}} />
       {props.callouts.map((c, i) => <div key={i} data-callout style={{
         position: 'absolute', left: `${c.x * 100}%`, top: `${c.y * 100}%`, width: `${c.w * 100}%`, height: `${c.h * 100}%`,
         boxSizing: 'border-box', border: `6px solid ${p.gold}`, borderRadius: c.shape === 'ellipse' ? '50%' : 8, boxShadow: '0 0 0 2px rgba(15,27,51,0.6)',
@@ -46,10 +50,15 @@ export function FreezeCallout(props: FreezeProps) {
     throw new Error('image must be a relative path under public/');
   }
   if (props.fullBleed) return <BleedLayout {...props} />;
-  return <Frame {...props} qr={props.qr ?? false}>{scale => <>
+  return <FramedLayout {...props} />;
+}
+
+function FramedLayout(props: FreezeProps) {
+  const {asset, Image} = useCardHost();
+  return <Frame {...props} qr={props.qr ?? false} beats={freezeBeats(props)}>{scale => <>
     <Reveal delay={0} dur={8} style={{flex: 1, minHeight: 0, display: 'flex', justifyContent: 'center'}}>
       <div style={{height: '100%', aspectRatio: String(props.aspect), position: 'relative'}}>
-        <Img src={staticFile(props.image)} alt="" style={{display: 'block', width: '100%', height: '100%'}} />
+        <Image src={asset(props.image)} alt="" style={{display: 'block', width: '100%', height: '100%'}} />
         {props.callouts.map((c, i) => <div key={i} data-callout style={{
           position: 'absolute', left: `${c.x * 100}%`, top: `${c.y * 100}%`, width: `${c.w * 100}%`, height: `${c.h * 100}%`,
           boxSizing: 'border-box', border: `${Math.round(6 * scale)}px solid ${p.gold}`,

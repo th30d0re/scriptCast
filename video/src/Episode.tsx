@@ -1,12 +1,6 @@
 import {AbsoluteFill, Audio, Freeze, OffthreadVideo, Sequence, staticFile, useCurrentFrame} from 'remotion';
-import {TimelineCard, type TimelineProps} from './cards/TimelineCard';
-import {StatBarsCard, type StatBarsProps} from './cards/StatBarsCard';
-import {TitleCard, type TitleProps} from './cards/TitleCard';
-import {CompareCard, type CompareProps} from './cards/CompareCard';
-import {FreezeCallout, type FreezeProps} from './cards/FreezeCallout';
-import {PartsCard, type PartsProps} from './cards/PartsCard';
-import {USABLE_BOX} from './safeZone';
-import {palette} from './theme';
+import {USABLE_BOX, palette, type TimelineProps, type StatBarsProps, type TitleProps, type CompareProps, type FreezeProps, type PartsProps} from '@scriptcast/cards';
+import {TimelineCard, StatBarsCard, TitleCard, CompareCard, FreezeCallout, PartsCard} from './cards';
 
 export type Card = ({component: 'TimelineCard'} & TimelineProps)
   | ({component: 'StatBarsCard'} & StatBarsProps)
