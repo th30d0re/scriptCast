@@ -1,0 +1,14 @@
+scriptcast-media
+Copyright (C) ScriptCast contributors. Licensed under GPL-3.0-or-later.
+
+This crate contains algorithms ported from HyperFrames
+(https://github.com/heygen-com/hyperframes), Copyright HeyGen,
+licensed under the Apache License, Version 2.0:
+  - Dialogue ducking: skills/media-use/scripts/lib/duck.mjs,
+    skills/media-use/scripts/audio-duck.mjs
+  - Spectral carve: packages/core/src/audioCarve.ts,
+    skills/media-use/audio/scripts/carve.mjs
+
+The Rust code here is a re-implementation, not a copy. Apache-2.0 code may
+be combined into a GPL-3.0 work. A copy of the Apache License 2.0 is at
+https://www.apache.org/licenses/LICENSE-2.0
