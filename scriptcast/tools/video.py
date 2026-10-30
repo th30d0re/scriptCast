@@ -11,6 +11,7 @@ import tempfile
 import yaml
 
 from scriptcast.parser import parse_transcript
+from scriptcast.timeline_export import SIZES
 from scriptcast.tools.video_plan import COMPONENTS, build_plan
 
 VIDEO_DIR = Path(__file__).resolve().parents[2] / "video"
@@ -132,7 +133,8 @@ def render(args, parser):
                           yaml.safe_load(args.clips.read_text()), cards,
                           audio=str(audio), project_root=args.project_root.resolve(),
                           persist_cards=args.persist_cards,
-                          captions=json.loads(args.captions.read_text()) if args.captions else None)
+                          captions=json.loads(args.captions.read_text()) if args.captions else None,
+                          size=args.size)
 
         stage_media(plan)
         check_missing_assets([c["card"] for c in plan["cards"]], args.allow_missing_assets, parser)
@@ -264,6 +266,8 @@ def main(argv: list[str] | None = None) -> int:
     episode.add_argument("--chunks", type=int, default=1, help="render this many frame ranges in parallel Remotion processes and join them (tabs are split between them)")
     episode.add_argument("--chunk-concurrency", type=int, default=None, help="browser tabs per chunk (default: --concurrency divided by --chunks, at least 2)")
     episode.add_argument("--frames", type=lambda v: tuple(int(x) for x in v.split("-")), default=None, help="render only frames A-B (inclusive), without audio; for testing")
+    episode.add_argument("--size", choices=list(SIZES), default="shorts",
+                         help="output size: shorts (1080x1920), youtube (1920x1080) or youtube-4k (3840x2160)")
     episode.add_argument("--captions", type=Path, help="captions.json from scriptcast-captions, burned in above the cards")
     episode.add_argument("--persist-cards", action="store_true",
                          help="keep each card on screen until the next card or archive clip starts")

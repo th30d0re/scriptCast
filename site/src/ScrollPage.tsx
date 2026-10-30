@@ -1,5 +1,5 @@
 import * as cards from '@scriptcast/cards';
-import type {BaseProps} from '@scriptcast/cards';
+import type {BaseProps, CardFormat} from '@scriptcast/cards';
 import type {ComponentType} from 'react';
 import example from '../../video/examples/timeline.example.json';
 import {FitCard} from './FitCard';
@@ -27,18 +27,18 @@ const sections: Section[] = [
   {name: 'PartsCard', Card: cards.PartsCard},
 ];
 
-function CardSection({name, Card}: Section) {
+function CardSection({name, Card, format}: Section & {format: CardFormat}) {
   const {ref, progress} = useScrollProgress<HTMLElement>();
   const props = (fromExample(name) ?? fallback[name]) as BaseProps;
   return <section ref={ref} className="section" aria-label={name}>
     <div className="sticky">
-      <FitCard><Card {...props} progress={progress} /></FitCard>
+      <FitCard format={format}><Card {...props} progress={progress} /></FitCard>
       <div className="label">{name} · {Math.round(progress * 100)}%</div>
     </div>
   </section>;
 }
 
 // No CardHostProvider: the default host (plain URLs and <img>) suits the browser.
-export function ScrollPage() {
-  return <main>{sections.map(section => <CardSection key={section.name} {...section} />)}</main>;
+export function ScrollPage({format}: {format: CardFormat}) {
+  return <main>{sections.map(section => <CardSection key={section.name} {...section} format={format} />)}</main>;
 }
