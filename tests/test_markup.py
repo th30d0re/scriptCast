@@ -59,6 +59,7 @@ def test_tone_tag_produces_annotation_chunk() -> None:
     assert len(turn.markup_chunks) == 2
     assert turn.markup_chunks[0].kind == "annotation"
     assert turn.markup_chunks[0].tag == "tone"
+    assert turn.markup_chunks[0].text == "soft"
     assert turn.markup_chunks[1].kind == "speech"
 
 

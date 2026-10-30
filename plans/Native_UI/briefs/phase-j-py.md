@@ -99,3 +99,23 @@ Real synthesis on the real project, and UI integration.
 ## Findings file
 
 Write `plans/Native_UI/evidence/phaseJ-py-findings.md` **early**. Fill it in as you go: the files changed, the test counts, any deviation from the Contract (with the reason), and anything surprising.
+
+## Later work (2026-10-18) — not part of the contract above
+
+This brief is shipped. The section below is new scope for a later loop. Do not reopen the flags, the JSON shapes, or the approved file list while doing it.
+
+Operator decision: anything taken from Voicebox is rewritten in Rust. Do not copy `backend/utils/chunked_tts.py` into this package.
+
+**J9. Long-speech chunking.** `_speech_jobs` in `scriptcast/__main__.py` sends each speech markup chunk to the engine as one call. A Rust library on that path, called by the renderer for J2, Precision insert, and Regenerate, splits text that is longer than the engine's chunk limit:
+
+1. At the last real sentence end (`.!?`, and CJK `。！？`). Skip a period after an abbreviation (`Mr`, `Dr`, `U.S.`) and a period in a decimal.
+2. Never cut inside a `[...]` tag.
+3. Otherwise at the last clause boundary (`;:,—`).
+4. Otherwise at the last whitespace.
+5. Otherwise a hard cut that still lands outside a tag.
+
+If the chunk's audio is unstable, split that text in half and retry, at most twice. Concatenate the pieces with a short crossfade inside the turn. Gaps between turns stay `scriptcast-relayout` (J3).
+
+J2 progress stays one `turn_start` / `turn_done` per turn. The chunker does not add progress events.
+
+The Python renderer shells out to the Rust binary. It does not link it, and the egui app does not either.

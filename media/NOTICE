@@ -10,5 +10,5 @@ licensed under the Apache License, Version 2.0:
     skills/media-use/audio/scripts/carve.mjs
 
 The Rust code here is a re-implementation, not a copy. Apache-2.0 code may
-be combined into a GPL-3.0 work. A copy of the Apache License 2.0 is at
+be combined into a GPL-3.0 work. A copy of the Apache License 2.0 is in LICENSES/Apache-2.0.txt and at
 https://www.apache.org/licenses/LICENSE-2.0

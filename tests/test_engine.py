@@ -1,4 +1,5 @@
 import asyncio
+import stat
 from unittest.mock import MagicMock, patch
 
 import numpy
@@ -9,6 +10,7 @@ from scriptcast.engine import (
     MLXChatterboxEngine,
     MLXKokoroEngine,
     PhononEngine,
+    ToneEngine,
     _elevenlabs_api_key,
 )
 from scriptcast.models import VoiceConfig
@@ -222,3 +224,38 @@ def test_phonon_engine_seed_comes_from_environment(monkeypatch) -> None:
     monkeypatch.setenv("SCRIPTCAST_PHONON_SEED", "3")
     asyncio.run(engine.synthesize_chunk("hello", config))
     assert engine._tts.synth.call_args.kwargs == {"voice": "Zoey", "seed": 3}
+
+
+def test_tone_engine_uses_one_worker_and_reads_24000_hz_wav(tmp_path, monkeypatch) -> None:
+    binary = tmp_path / "fake-tone"
+    starts = tmp_path / "starts"
+    binary.write_text(
+        """#!/usr/bin/env python3
+import json, os, struct, sys, wave
+with open(os.environ['FAKE_TONE_STARTS'], 'a') as marker:
+    marker.write('start\\n')
+print(json.dumps({'ready': True}), flush=True)
+for line in sys.stdin:
+    request = json.loads(line)
+    with wave.open(request['out'], 'wb') as wav:
+        wav.setnchannels(1); wav.setsampwidth(2); wav.setframerate(24000)
+        wav.writeframes(struct.pack('<' + 'h' * 240, *([1000] * 240)))
+    print(json.dumps({'ok': True, 'out': request['out'], 'samples': 240,
+                      'sample_rate': 24000}), flush=True)
+""",
+        encoding="utf-8",
+    )
+    binary.chmod(binary.stat().st_mode | stat.S_IXUSR)
+    monkeypatch.setenv("SCRIPTCAST_TONE", str(binary))
+    monkeypatch.setenv("FAKE_TONE_STARTS", str(starts))
+    engine = ToneEngine(trim_edges=False)
+    voice = VoiceConfig(speaker_id="host", engine="tone", instruct="fallback")
+    try:
+        first = asyncio.run(engine.synthesize_chunk("Hello.", voice, instruct="soft"))
+        second = asyncio.run(engine.synthesize_chunk("Again.", voice, instruct="bright"))
+    finally:
+        engine.close()
+
+    assert first.shape == (240,)
+    assert second.shape == (240,)
+    assert starts.read_text(encoding="utf-8").splitlines() == ["start"]

@@ -162,6 +162,27 @@ pub struct JobSpec {
 }
 impl JobSpec {
     pub fn from_preset(p: &Preset, e: &Episode, commands: &Commands) -> Result<Self, String> {
+        Self::build(p, e, commands, true)
+    }
+
+    /// Like [`Self::from_preset`], but a one-turn re-roll is allowed when the
+    /// script file has changed and the turn count has not. The row index is
+    /// still the manifest index, so an inserted or deleted turn is refused
+    /// by the caller before this is used.
+    pub fn from_preset_matching_script(
+        p: &Preset,
+        e: &Episode,
+        commands: &Commands,
+    ) -> Result<Self, String> {
+        Self::build(p, e, commands, false)
+    }
+
+    fn build(
+        p: &Preset,
+        e: &Episode,
+        commands: &Commands,
+        require_script_hash: bool,
+    ) -> Result<Self, String> {
         let cwd = e
             .project_root
             .clone()
@@ -180,7 +201,7 @@ impl JobSpec {
         let script = script.unwrap_or(&cwd);
         let turns = p.turns();
         if matches!(p, Preset::RegenerateTurns(_) | Preset::Repair(Some(_))) {
-            if e.script_in_sync != Some(true) {
+            if require_script_hash && e.script_in_sync != Some(true) {
                 return Err(
                     "Script changed since render: run Detect changes or Precision insert first"
                         .into(),
@@ -232,7 +253,7 @@ impl JobSpec {
                 if seg.is_empty() {
                     return Err("This turn is not in the YouTube shot list".into());
                 }
-                let shots = crate::picture::shots_path(&cwd)?
+                let shots = crate::picture::shots_path(&cwd, &e.dir)?
                     .ok_or("Set youtube.shots in scriptcast.toml")?;
                 args.extend([
                     "cut".into(),

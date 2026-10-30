@@ -130,6 +130,15 @@ fn metadata_and_hash_gates() {
                 .contains("Script changed")
         );
     }
+    let forced = JobSpec::from_preset_matching_script(
+        &Preset::RegenerateTurns(vec![1]),
+        &e,
+        &c,
+    )
+    .unwrap();
+    assert!(forced.args.iter().any(|arg| arg == "--regenerate-turns"));
+    assert!(forced.args.iter().any(|arg| arg == "1"));
+    assert!(!forced.args.iter().any(|arg| arg == "--precision-insert"));
     assert!(JobSpec::from_preset(&Preset::PrecisionInsert, &e, &c).is_ok());
     e.project_root = None;
     assert!(

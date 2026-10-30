@@ -273,8 +273,18 @@ def tags_json(script: Path, project: Project) -> dict:
     for index, block in enumerate(blocks):
         body = block.body.decode("utf-8")
         clip_count = 0
-        for line_offset, line in enumerate(body.splitlines(), start=1):
+        comments = [
+            (match.start(), match.end())
+            for match in re.finditer(r"<!--.*?-->", body, flags=re.DOTALL)
+        ]
+        offset = 0
+        for line_offset, raw_line in enumerate(body.splitlines(keepends=True), start=1):
+            line = raw_line.rstrip("\r\n")
             for match in _TAG_RE.finditer(line):
+                start = offset + match.start()
+                end = offset + match.end()
+                if any(start < stop and begin < end for begin, stop in comments):
+                    continue
                 tag = match.group(1)
                 messages: list[str] = []
                 pause = re.fullmatch(r"\[pause:(\d+)(?:ms)?\]", tag)
@@ -305,6 +315,7 @@ def tags_json(script: Path, project: Project) -> dict:
                         "tag": tag,
                         "message": message,
                     })
+            offset += len(raw_line)
         voice = voices.get(block.speaker_id) or voices_by_display_id.get(block.speaker_id)
         if voice is not None and voice.engine == "archive" and clip_count == 0:
             problems.append({

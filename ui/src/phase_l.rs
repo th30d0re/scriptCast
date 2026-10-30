@@ -617,6 +617,7 @@ fn field_label(key: &str) -> &'static str {
     match key {
         "reference_audio" => "Reference audio",
         "reference_text" => "Reference text · required",
+        "instruct" => "Voice description · required",
         "character_profile" => "Character profile · optional",
         "speed" => "Speed",
         "kokoro_voice" => "Kokoro voice",
@@ -651,9 +652,13 @@ fn engine_chip_style(engine: &str) -> (&'static str, egui::Color32, egui::Color3
         "archive" => ("archive", t::BG_CONTROL, t::TEXT_MUTED),
         "kokoro" | "mlx_kokoro" => ("Kokoro", t::BG_CONTROL, t::TEXT_PRIMARY),
         "mlx_chatterbox" => ("Chatterbox", t::BG_CONTROL, t::TEXT_PRIMARY),
+        "tone" => ("Tone", t::BG_CONTROL, t::TEXT_PRIMARY),
         "elevenlabs" => ("ElevenLabs", t::BG_CONTROL, t::TEXT_PRIMARY),
         _ => ("engine", t::BG_CONTROL, t::TEXT_MUTED),
     }
+}
+fn engine_combo_label(engine: &str) -> &str {
+    if engine == "tone" { "Tone" } else { engine }
 }
 /// Dot, name, chip, and turn count painted inside `row`. Returns the name and chip rects.
 fn paint_speaker_row(
@@ -1327,12 +1332,13 @@ impl Browser {
                     .to_owned();
                 let mut next_engine = engine.clone();
                 egui::ComboBox::from_id_salt("speaker_engine")
-                    .selected_text(&engine)
+                    .selected_text(engine_combo_label(&engine))
                     .show_ui(ui, |ui| {
                         for (key, label) in [
                             ("omnivoice", "OmniVoice"),
                             ("kokoro", "Kokoro"),
                             ("mlx_chatterbox", "Chatterbox"),
+                            ("tone", "Tone"),
                             ("elevenlabs", "ElevenLabs"),
                             ("archive", "Archive"),
                         ] {
@@ -2300,6 +2306,16 @@ mod tests {
                 "name {name:?} and chip {chip:?} do not share a row"
             );
         }
+    }
+    #[test]
+    fn tone_uses_distinct_form_and_chip_labels() {
+        assert_eq!(field_label("instruct"), "Voice description · required");
+        assert_eq!(
+            field_label("character_profile"),
+            "Character profile · optional"
+        );
+        assert_eq!(engine_chip_style("tone").0, "Tone");
+        assert_eq!(engine_combo_label("tone"), "Tone");
     }
     #[test]
     fn draft_paths_are_saved_after_other_dirty_files() {

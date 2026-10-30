@@ -23,6 +23,7 @@ from scriptcast.als_generator import generate_als
 from scriptcast.engine import ENGINE_REGISTRY, TTSEngine
 from scriptcast.fcpxml_generator import generate_fcpxml
 from scriptcast.logic_exporter import export_to_logic
+from scriptcast.long_speech import speak
 from scriptcast.manifest import write_manifest
 from scriptcast.markup import tokenize_markup
 from scriptcast.models import SegmentResult, Turn, VoiceConfig
@@ -31,7 +32,6 @@ from scriptcast.platform_check import require_apple_silicon
 from scriptcast.post_processor import _measure_speech_duration, process_segment
 from scriptcast.progress import Progress
 from scriptcast.project import DEFAULTS, current
-from scriptcast.pronunciation import speech_text_for
 from scriptcast.render_state import (
     RenderState,
     SegmentPosition,
@@ -61,6 +61,7 @@ class _SpeechJob:
     markup_index: int
     text: str
     gap_after_ms: int
+    instruct: str | None = None
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
@@ -341,7 +342,11 @@ def _prepare_episode_output(
         print("Please type 'resume', 'overwrite', or 'abort'.")
 
 
-def _speech_jobs(turn: Turn, default_gap_ms: int) -> list[_SpeechJob]:
+def _speech_jobs(
+    turn: Turn,
+    default_gap_ms: int,
+    voice: VoiceConfig | None = None,
+) -> list[_SpeechJob]:
     speech_indices = [
         index
         for index, chunk in enumerate(turn.markup_chunks)
@@ -364,12 +369,35 @@ def _speech_jobs(turn: Turn, default_gap_ms: int) -> list[_SpeechJob]:
         if speech_position + 1 == len(speech_indices):
             gap_after_ms += default_gap_ms
 
+        instruct = None
+        if voice is not None and voice.engine == "tone":
+            latest_tone = next(
+                (
+                    previous
+                    for previous in reversed(turn.markup_chunks[:markup_index])
+                    if previous.kind == "annotation" and previous.tag == "tone"
+                ),
+                None,
+            )
+            instruct = (
+                latest_tone.text.strip()
+                if latest_tone is not None
+                and latest_tone.text
+                and latest_tone.text.strip()
+                else (voice.instruct or "").strip()
+            )
+            if not instruct:
+                raise RuntimeError(
+                    f"Speaker {voice.speaker_id!r} uses engine 'tone' but has no instruct."
+                )
+
         jobs.append(
             _SpeechJob(
                 chunk_index=speech_position,
                 markup_index=markup_index,
                 text=chunk.text.strip(),
                 gap_after_ms=gap_after_ms,
+                instruct=instruct,
             )
         )
 
@@ -574,7 +602,7 @@ async def render_loop(
                 total=total_turns,
             )
 
-        jobs = _speech_jobs(turn, gap_ms)
+        jobs = _speech_jobs(turn, gap_ms, voice_config)
         non_speech_gap_ms = _non_speech_turn_gap_ms(turn, gap_ms)
         stop_rendering = False
 
@@ -628,7 +656,6 @@ async def render_loop(
             # Heteronyms go to text-reading engines respelled for the reading
             # their context calls for (pronunciation.py). The script, captions
             # and verification keep the real word.
-            speech_text = speech_text_for(voice_config.engine, job.text)
             if voice_config.engine == "archive":
                 clip_id = _turn_clip_id(turn)
                 if clip_id is None or len(jobs) != 1:
@@ -637,14 +664,16 @@ async def render_loop(
                         "needs exactly one [clip:id] tag followed by its transcript."
                     )
                 raw_audio = await engine.clip_audio(clip_id)
-            elif getattr(engine, "supports_expressive", False) and _turn_is_emphasised(turn):
-                raw_audio = await engine.synthesize_chunk(
-                    speech_text, voice_config, expressive=True
-                )
             else:
-                raw_audio = await engine.synthesize_chunk(
-                    speech_text,
+                raw_audio = await speak(
+                    engine,
                     voice_config,
+                    job.text,
+                    expressive=bool(
+                        getattr(engine, "supports_expressive", False)
+                        and _turn_is_emphasised(turn)
+                    ),
+                    instruct=job.instruct,
                 )
             raw_audio_array = numpy.asarray(raw_audio)
             if raw_audio_array.size == 0:
@@ -691,6 +720,17 @@ async def render_loop(
             break
 
     return segment_results
+
+
+async def _render_with_cleanup(**kwargs) -> list[SegmentResult]:
+    engines = kwargs["engines"]
+    try:
+        return await render_loop(**kwargs)
+    finally:
+        for engine in engines.values():
+            close = getattr(engine, "close", None)
+            if callable(close):
+                close()
 
 
 def _engine_for_key(
@@ -1244,7 +1284,7 @@ def _run(args, progress: Progress) -> None:
             )
 
     segment_results = asyncio.run(
-        render_loop(
+        _render_with_cleanup(
             turns=turns,
             engines=engines,
             voices=voices,

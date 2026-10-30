@@ -13,5 +13,7 @@ video/public/episode/
 
 ui/target/
 media/target/
+fx/target/
+chunk/target/
 node_modules/
 site/dist/

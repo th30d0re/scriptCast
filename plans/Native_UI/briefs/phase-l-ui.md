@@ -128,3 +128,9 @@ The rules for every tab:
 ## Findings file
 
 Write `plans/Native_UI/evidence/phaseL-ui-findings.md` early: the files changed, the tests, deviations, and what is unverified.
+
+## Later work (2026-10-18) — not part of the contract above
+
+The Voices form above is shipped. `character_profile` stays the description field it already is. It is not sent as a delivery instruct.
+
+When the Rust instruct engine from `briefs/phase-k-py.md` lands, add its fields to the engine switch in L2, with the same live required-field check the other engines use. The reference row stays one clip, with Play. A second sample waits until that engine accepts more than one.

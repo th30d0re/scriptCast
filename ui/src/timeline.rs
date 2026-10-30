@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
 use crate::view;
-use eframe::egui::{self, Rect, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
 use crate::{
     episode::{Episode, VerificationState},
     theme as t,
     waveform::{self, Waveforms},
 };
+use eframe::egui::{self, Rect, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct TimelineView {
@@ -368,6 +368,7 @@ pub fn show(
                                         wave_rect.center().y,
                                         wave_rect.height(),
                                         t::WAVE_MIN,
+                                        ui.pixels_per_point(),
                                         |_| label_colour,
                                     );
                                 }
@@ -424,12 +425,9 @@ pub fn show(
 /// Bar heights for one turn. Recomputed only when the column count or the
 /// envelope changes, so a playing picture does not rebuild every waveform.
 fn bars_cached(ui: &Ui, idx: usize, env: &waveform::Envelope, n: usize) -> Arc<Vec<f32>> {
-    let id = ui.id().with((
-        "timeline-bars",
-        idx,
-        n,
-        Arc::as_ptr(&env.peaks) as usize,
-    ));
+    let id = ui
+        .id()
+        .with(("timeline-bars", idx, n, Arc::as_ptr(&env.peaks) as usize));
     if let Some(hit) = ui.data(|data| data.get_temp::<Arc<Vec<f32>>>(id)) {
         return hit;
     }

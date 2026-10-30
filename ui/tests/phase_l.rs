@@ -143,6 +143,28 @@ fn engine_validation_and_removal_are_live() {
     }
 }
 #[test]
+fn tone_engine_has_only_its_shipped_fields_and_requires_instruct() {
+    assert_eq!(
+        engine_fields("tone"),
+        &["name", "engine", "instruct", "character_profile"]
+    );
+    let mut fields = json!({
+        "name": "Narrator",
+        "engine": "tone",
+        "instruct": "   ",
+        "character_profile": "A measured documentary narrator."
+    })
+    .as_object()
+    .unwrap()
+    .clone();
+    assert_eq!(
+        required_errors(&fields).keys().collect::<Vec<_>>(),
+        vec!["instruct"]
+    );
+    fields.insert("instruct".into(), json!("Warm, precise, and unhurried."));
+    assert!(required_errors(&fields).is_empty());
+}
+#[test]
 fn interrupted_status_takes_precedence() {
     assert_eq!(episode_status(true, true), EpisodeStatus::Interrupted);
     assert_eq!(episode_status(true, false), EpisodeStatus::Rendered);

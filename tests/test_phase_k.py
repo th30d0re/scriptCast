@@ -219,6 +219,7 @@ def test_tags_json_all_rules(edit_project, capsys):
         b"Aisha (00:00)",
         b"[pause:1] [pause:10000ms] [beat] [emphasis] [tone:warm] [clip:speech_1]",
         b"[pause:0] [pause:10001ms] [tone:] [clip:missing] [clip:speech_1] [other]",
+        b"<!-- [book Preface] -->",
         b"",
         b"Archivist (00:10)",
         b"No archive clip.",
@@ -234,6 +235,7 @@ def test_tags_json_all_rules(edit_project, capsys):
     assert any(tag == "[clip:missing]" and "not registered" in message for tag, message in by_tag)
     assert ("[clip:speech_1]", "clip appears more than once in this turn") in by_tag
     assert ("[other]", "unrecognised tag; it will be spoken aloud") in by_tag
+    assert not any(tag == "[book Preface]" for tag, _message in by_tag)
     assert any(problem["index"] == 1 and problem["tag"] == "[clip:id]"
                for problem in result["problems"])
     assert all(problem["line"] > 0 for problem in result["problems"])

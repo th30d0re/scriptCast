@@ -99,3 +99,7 @@ The authority is `plans/Native_UI/briefs/phase-m-py.md`, section "Contract", tog
 ## Findings file
 
 Write `plans/Native_UI/evidence/phaseM-ui-findings.md` early: the files changed, the tests, deviations, and what is unverified.
+
+## Later work (2026-10-18) — not part of the contract above
+
+M3 still picks one reference. The side-by-side scores stay a comparison of candidates, and Save writes the winner only. A multi-sample voice waits on the Rust engine in `briefs/phase-l-ui.md`.

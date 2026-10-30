@@ -56,6 +56,7 @@ pub fn body(
     height: f32,
     placeholder: &str,
     min_lines: f32,
+    actions: impl FnOnce(&mut Ui),
 ) -> egui::Response {
     let mut insertion = None;
     ui.horizontal(|ui| {
@@ -90,6 +91,14 @@ pub fn body(
                 }
             });
         state.picker = picker;
+        ui.allocate_ui_with_layout(
+            egui::vec2(ui.available_width(), t::TAG_TOOLBAR_HEIGHT),
+            egui::Layout::right_to_left(egui::Align::Center),
+            |ui| {
+                ui.spacing_mut().item_spacing.x = t::SPACE_8;
+                actions(ui);
+            },
+        );
     });
     if let Some(tag) = insertion {
         let cursor = insert(text, state.cursor, &tag);

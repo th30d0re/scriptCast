@@ -130,12 +130,15 @@ def test_check_requires_the_card_file(tmp_path: Path) -> None:
 
 def test_youtube_table_in_project_config(tmp_path: Path) -> None:
     (tmp_path / "scriptcast.toml").write_text(
-        '[youtube]\nshots = "video/shots.md"\nrender = "echo render"\n',
+        '[youtube]\nshots = "video/shots.md"\nrender = "echo render"\n'
+        '\n[youtube.by_episode]\nYT02v2_ov = "video/ov.md"\n',
         encoding="utf-8",
     )
     project = Project(tmp_path)
     assert project.youtube_shots == tmp_path / "video" / "shots.md"
     assert project.youtube_render == "echo render"
+    assert project.youtube_shots_for("YT02v2") == tmp_path / "video" / "shots.md"
+    assert project.youtube_shots_for("YT02v2_ov") == tmp_path / "video" / "ov.md"
 
 
 def test_cut_duration_matches_the_manifest_window(tmp_path: Path) -> None:
