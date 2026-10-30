@@ -1,12 +1,14 @@
 import {Frame, type BaseProps} from './Frame';
-import {palette as p} from '../theme';
-import {Reveal} from './motion';
+import {palette as p} from './theme';
+import {Reveal, staggerBeats} from './motion';
 
 export type TimelineProps = BaseProps & {items: {date: string; title: string; detail: string; highlight?: boolean; badge?: string}[]; note?: string};
 
+export const timelineBeats = (props: TimelineProps) => staggerBeats(props.items.length, 5, 8);
+
 export function TimelineCard(props: TimelineProps) {
 
-  return <Frame {...props}>{scale => <div style={{display: 'flex', flexDirection: 'column', gap: Math.round(14 * scale)}}>
+  return <Frame {...props} beats={timelineBeats(props)}>{scale => <div style={{display: 'flex', flexDirection: 'column', gap: Math.round(14 * scale)}}>
     {props.items.map((item, i) => <Reveal key={i} delay={i * 5} dur={8}><div style={{display: 'grid', gridTemplateColumns: '110px 1fr', gap: Math.round(18 * scale)}}>
       <div style={{fontSize: Math.round(32 * scale), color: p.mute, whiteSpace: 'pre-line', textAlign: 'right', fontWeight: 600}}>{item.date}</div>
       <div style={{borderLeft: `5px solid ${item.highlight ? p.red : p.teal}`, paddingLeft: Math.round(18 * scale)}}>
