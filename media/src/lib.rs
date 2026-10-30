@@ -11,6 +11,14 @@
 //! Speech comes from ScriptCast's `episode_manifest.json` (`turns[].start_ms`,
 //! `turns[].end_ms`), a plain `[[start_ms, end_ms], ...]` list, or (carve only)
 //! the voice WAV itself.
+//!
+//! [`bands`] adds the strength knob and voice-driven band picking: with a
+//! strength, carve dips only the bands a voice actually occupies (or, without
+//! a voice, the ones nearest 2 kHz) instead of all nine at fixed weights.
+
+pub mod bands;
+
+pub use bands::{CarveProfile, DEFAULT_STRENGTH, VoiceSource, analyse_carve_bands, carve_profile, intelligibility_bands, mix_voices};
 
 use std::path::Path;
 
@@ -119,6 +127,16 @@ pub fn duck_gain_at(spans: &[Span], p: &DuckParams, t_ms: f64) -> f64 {
 fn ramp(from: f64, to: f64, frac: f64) -> f64 {
     let f = if frac.is_finite() { frac.clamp(0.0, 1.0) } else { 1.0 };
     from + (to - from) * f
+}
+
+/// How far into the duck the bed is, 0 (open) to 1 (fully ducked), every
+/// `step_ms` from 0 up to `duration_ms`. Same ramps as [`duck`], independent of
+/// depth, so a UI can draw the lane.
+pub fn duck_lane(spans: &[Span], p: &DuckParams, duration_ms: f64, step_ms: f64) -> Vec<f64> {
+    let merged = merge_spans(spans, p.merge_gap_ms);
+    let unit = DuckParams { target_db: f64::NEG_INFINITY, ..*p };
+    let steps = if step_ms > 0.0 && duration_ms.is_finite() { (duration_ms / step_ms).floor().max(0.0) as usize + 1 } else { 0 };
+    (0..steps).map(|i| 1.0 - duck_gain_at(&merged, &unit, i as f64 * step_ms)).collect()
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -251,11 +269,17 @@ const BLOCK: usize = 32;
 /// activity envelope, so the bed is flat (bit-exact passthrough at level 0)
 /// between turns.
 pub fn carve(bed: &mut AudioBuffer, act: &Activity, p: &CarveParams) -> CarveReport {
+    carve_with(bed, act, &carve_bands(p), p)
+}
+
+/// [`carve`] with chosen bands, for example from [`analyse_carve_bands`].
+/// `p.max_cut_db` and `p.q` are not used; each band carries its own.
+pub fn carve_with(bed: &mut AudioBuffer, act: &Activity, bands: &[CarveBand], p: &CarveParams) -> CarveReport {
     let sr = bed.sample_rate;
     let frames = bed.frames();
     let win = ((p.window_ms / 1000.0) * f64::from(sr)).round().max(1.0) as usize;
     let targets = activity_targets(act, sr, frames, p);
-    let bands = carve_bands(p);
+    let bands = bands.to_vec();
     let step = BLOCK as f64 / f64::from(sr);
     let att = 1.0 - (-step / (p.attack_ms / 1000.0)).exp();
     let rel = 1.0 - (-step / (p.release_ms / 1000.0)).exp();
@@ -273,7 +297,7 @@ pub fn carve(bed: &mut AudioBuffer, act: &Activity, p: &CarveParams) -> CarveRep
             bands.iter().map(|b| Biquad::design(FilterType::Peak, b.freq_hz as f32, b.q as f32, 0.0, sr as f32)).collect();
         for (b, block) in ch.chunks_mut(BLOCK).enumerate() {
             let l = levels[b];
-            for (f, band) in filters.iter_mut().zip(&bands) {
+            for (f, band) in filters.iter_mut().zip(bands.iter()) {
                 f.set(FilterType::Peak, band.freq_hz as f32, band.q as f32, (band.gain_db * l) as f32, sr as f32);
                 f.process_block(block);
             }
@@ -391,6 +415,27 @@ mod tests {
         let mut b = AudioBuffer { sample_rate: SR, channels: vec![mid.clone()] };
         carve(&mut b, &Activity::Spans(&[span(1000.0, 3000.0)]), &p);
         assert!(rms_db(&mid[at(1500.0)..at(2900.0)]) - rms_db(&b.channels[0][at(1500.0)..at(2900.0)]) > 10.0);
+    }
+
+    #[test]
+    fn lane_ramps_with_the_duck_and_ignores_depth() {
+        let p = DuckParams { target_db: -3.0, ..DuckParams::default() };
+        let lane = duck_lane(&[span(1000.0, 2000.0)], &p, 3000.0, 25.0);
+        assert_eq!(lane.len(), 121);
+        assert_eq!(lane[0], 0.0);
+        assert!((lane[(1075.0 / 25.0) as usize] - 0.5).abs() < 1e-9);
+        assert_eq!(lane[(1500.0 / 25.0) as usize], 1.0);
+        assert_eq!(lane[120], 0.0);
+    }
+
+    #[test]
+    fn carve_with_one_band_leaves_the_others_alone() {
+        let p = CarveParams::default();
+        let tone = sine(250.0, 2.0, 0.3);
+        let mut b = AudioBuffer { sample_rate: SR, channels: vec![tone.clone()] };
+        let report = carve_with(&mut b, &Activity::Spans(&[span(0.0, 2000.0)]), &[CarveBand { freq_hz: 2500.0, gain_db: -12.0, q: 2.0 }], &p);
+        assert_eq!(report.bands.len(), 1);
+        assert!((rms_db(&tone[at(500.0)..at(1900.0)]) - rms_db(&b.channels[0][at(500.0)..at(1900.0)])).abs() < 0.5);
     }
 
     #[test]
