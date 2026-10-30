@@ -12,4 +12,5 @@ video/.remotion/
 video/public/episode/
 
 ui/target/
+media/target/
 node_modules/
