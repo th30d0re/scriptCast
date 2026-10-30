@@ -1,13 +1,8 @@
 import {Episode, episodeMetadata, type EpisodePlan} from './Episode';
 import samplePlan from '../examples/plan.sample.json';
 import {Composition} from 'remotion';
-import {TimelineCard} from './cards/TimelineCard';
-import {StatBarsCard, type StatBarsProps} from './cards/StatBarsCard';
-import {TitleCard} from './cards/TitleCard';
-import {CompareCard} from './cards/CompareCard';
-import {FreezeCallout} from './cards/FreezeCallout';
-import {PartsCard} from './cards/PartsCard';
-import {WIDTH, HEIGHT} from './safeZone';
+import {TimelineCard, StatBarsCard, TitleCard, CompareCard, FreezeCallout, PartsCard} from './cards';
+import {WIDTH, HEIGHT} from '@scriptcast/cards';
 import g10 from '../examples/g10.json';
 import g11 from '../examples/g11.json';
 import {TimelineComposition} from './timeline/TimelineComposition';

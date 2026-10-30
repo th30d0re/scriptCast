@@ -1,11 +1,13 @@
 import {Frame, type BaseProps} from './Frame';
-import {palette as p} from '../theme';
-import {Reveal} from './motion';
+import {palette as p} from './theme';
+import {Reveal, staggerBeats} from './motion';
 
 export type CompareProps = BaseProps & {items: {title: string; points: string[]}[]; verdict?: string};
 
+export const compareBeats = (props: CompareProps) => staggerBeats(props.items.length, 6, 8);
+
 export function CompareCard(props: CompareProps) {
-  return <Frame {...props}>{scale => 
+  return <Frame {...props} beats={compareBeats(props)}>{scale => 
     <div style={{display: 'flex', flexDirection: 'column', gap: Math.round(20 * scale), flex: 1, minHeight: 0}}>
       <div style={{display: 'flex', gap: Math.round(20 * scale), flex: 1, minHeight: 0}}>
         {props.items.map((item, i) => <Reveal key={i} delay={i * 6} dur={8} style={{flex: 1, minWidth: 0, display: 'flex'}}><div style={{flex: 1, minWidth: 0, background: p.navy2, padding: Math.round(24 * scale), borderRadius: 12, display: 'flex', flexDirection: 'column', gap: Math.round(16 * scale)}}>

@@ -1,6 +1,6 @@
 import {Frame, type BaseProps} from './Frame';
-import {palette as p} from '../theme';
-import {Reveal, useEnter} from './motion';
+import {palette as p} from './theme';
+import {Reveal, staggerBeats, useEnter} from './motion';
 
 export type StatBarsProps = BaseProps & {sharedScale?: boolean; lead?: string; items: {label: string; sublabel?: string; period: string; values: number[]; delta?: string; color: string}[]; quote?: string; attribution?: string};
 
@@ -14,9 +14,12 @@ function Grow({width, delay, children}: {width: number; delay: number; children:
   return <>{children(width * useEnter(delay, 14))}</>;
 }
 
+// Bars of group i grow from beat 4 + i * 5 over 14 beats, after the group fades in.
+export const statBarsBeats = (props: StatBarsProps) => Math.max(staggerBeats(props.items.length, 5, 8), props.items.length > 0 ? 4 + (props.items.length - 1) * 5 + 14 : 0);
+
 export function StatBarsCard(props: StatBarsProps) {
 
-  return <Frame {...props}>{scale => 
+  return <Frame {...props} beats={statBarsBeats(props)}>{scale => 
     <div style={{display: 'flex', flexDirection: 'column', gap: Math.round(12 * scale), minHeight: 0}}>
       {props.lead && <div style={{fontSize: Math.round(32 * scale), lineHeight: 1.2, textAlign: 'center', marginBottom: Math.round(8 * scale)}}>{props.lead}</div>}
       

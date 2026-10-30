@@ -1,0 +1,8 @@
+{
+  // CommonJS build for Node consumers (the video copy checks). Bundlers read src/ directly.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs", "moduleResolution": "node", "noEmit": false,
+    "outDir": "dist", "rootDir": "src", "declaration": false
+  }
+}
