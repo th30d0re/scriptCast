@@ -6,6 +6,8 @@ import math
 from pathlib import Path
 import re
 
+from scriptcast.timeline_export import SIZES
+
 COMPONENTS = {"TimelineCard", "StatBarsCard", "TitleCard", "CompareCard", "FreezeCallout", "PartsCard"}
 
 
@@ -26,12 +28,16 @@ def _number(value, label: str) -> float:
 
 def build_plan(manifest: dict, script_turns: list, specs: dict, registry: dict,
                cards: dict[str, dict], *, audio: str, project_root: str | Path,
-               persist_cards: bool = False, captions: list[dict] | None = None) -> dict:
+               persist_cards: bool = False, captions: list[dict] | None = None,
+               size: str = "shorts") -> dict:
     """Resolve already-loaded inputs without reading/writing files or mutating inputs.
 
     script_turns is parse_transcript's result. cards maps filename stems to JSON.
     Relative media sources resolve against an explicit absolute project_root.
+    size names an output size in scriptcast.timeline_export.SIZES.
     """
+    if size not in SIZES:
+        raise ValueError(f"unknown size {size!r}; expected one of {', '.join(SIZES)}")
     root = Path(project_root)
     if not root.is_absolute() or not Path(audio).is_absolute():
         raise ValueError("audio and project_root must be absolute paths")
@@ -143,5 +149,6 @@ def build_plan(manifest: dict, script_turns: list, specs: dict, registry: dict,
         if frame_at(end) > frame_at(start):
             caption_list.append(dict(start_ms=start, end_ms=end, text=text.strip()))
     caption_list.sort(key=lambda c: c["start_ms"])
-    return dict(fps=30, width=1080, height=1920, duration_ms=duration, audio=audio,
+    width, height = SIZES[size]
+    return dict(fps=30, width=width, height=height, duration_ms=duration, audio=audio,
                 clips=clips, cards=windows, captions=caption_list, warnings=warnings)

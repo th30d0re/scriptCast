@@ -9,18 +9,25 @@ export type CardFormat = {
   width: number;
   height: number;
   box: {x: number; y: number; width: number; height: number};
+  // Top edge of the burned-in caption strip, below the box so captions never cover a card.
+  captionTop: number;
 };
 
 // Shorts / Reels: the platform overlays set the box (see safeZone.ts).
-export const PORTRAIT: CardFormat = {name: 'portrait', width: WIDTH, height: HEIGHT, box: USABLE_BOX};
+// Captions sit between the card area (ends at 60% of the height) and the bottom overlay (65%).
+export const PORTRAIT: CardFormat = {name: 'portrait', width: WIDTH, height: HEIGHT, box: USABLE_BOX, captionTop: 1166};
 
-// YouTube 16:9: no overlays over the picture, so the box is the 5% title-safe margin.
+// YouTube 16:9: no overlays over the picture, so the box is the 5% title-safe margin, less a
+// strip along the bottom for burned-in captions.
 const LANDSCAPE_W = 1920;
 const LANDSCAPE_H = 1080;
 const MARGIN = 0.05;
+const CAPTION_STRIP = 120;
+const landscapeBox = {x: LANDSCAPE_W * MARGIN, y: LANDSCAPE_H * MARGIN, width: LANDSCAPE_W * (1 - 2 * MARGIN),
+  height: LANDSCAPE_H * (1 - 2 * MARGIN) - CAPTION_STRIP};
 export const LANDSCAPE: CardFormat = {
-  name: 'landscape', width: LANDSCAPE_W, height: LANDSCAPE_H,
-  box: {x: LANDSCAPE_W * MARGIN, y: LANDSCAPE_H * MARGIN, width: LANDSCAPE_W * (1 - 2 * MARGIN), height: LANDSCAPE_H * (1 - 2 * MARGIN)},
+  name: 'landscape', width: LANDSCAPE_W, height: LANDSCAPE_H, box: landscapeBox,
+  captionTop: landscapeBox.y + landscapeBox.height + 18,
 };
 
 // Wider than tall is landscape; anything else is portrait.
