@@ -1,12 +1,7 @@
 import {isValidElement, type ReactNode} from 'react';
-import {Img, staticFile} from 'remotion';
-import {Frame} from '../src/cards/Frame';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {TimelineCard} from '../src/cards/TimelineCard';
-import {StatBarsCard, barWidths, type StatBarsProps} from '../src/cards/StatBarsCard';
-import {TitleCard, type TitleProps} from '../src/cards/TitleCard';
-import {CompareCard, type CompareProps} from '../src/cards/CompareCard';
-import {WIDTH, HEIGHT, TOP, BOTTOM, SIDES, BOTTOM_RIGHT, USABLE_BOX as box} from '../src/safeZone';
+import {TimelineCard, StatBarsCard, barWidths, type StatBarsProps, TitleCard, type TitleProps, CompareCard, type CompareProps,
+  WIDTH, HEIGHT, TOP, BOTTOM, SIDES, BOTTOM_RIGHT, USABLE_BOX as box} from '@scriptcast/cards';
 import g10 from '../examples/g10.json';
 import g11 from '../examples/g11.json';
 import heroArt from '../examples/hero_art.json';

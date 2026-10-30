@@ -1,5 +1,5 @@
 import qrcode from 'qrcode-generator';
-import {palette as p} from '../theme';
+import {palette as p} from './theme';
 
 // A real, scannable QR code drawn as inline SVG (dark modules on a light tile with a
 // two-module quiet zone). Error correction is L to keep the module count low, since the

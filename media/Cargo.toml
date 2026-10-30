@@ -3,11 +3,14 @@ name = "scriptcast-media"
 version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
-description = "Duck a music bed under ScriptCast speech windows and carve the speech bands"
-publish = false
+description = "ScriptCast media processing: dialogue ducking and spectral carving of music beds"
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
 soundcraft-audio-io = { git = "https://github.com/storytold/soundcraft", rev = "f3a19480d8cc2d7a98cda492f5464d8c54558c9f" }
 soundcraft-dsp = { git = "https://github.com/storytold/soundcraft", rev = "f3a19480d8cc2d7a98cda492f5464d8c54558c9f" }
+
+[[bin]]
+name = "scriptcast-media"
+path = "src/bin/scriptcast-media.rs"

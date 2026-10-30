@@ -1,11 +1,13 @@
 import {Frame, type BaseProps} from './Frame';
-import {palette as p} from '../theme';
-import {Reveal} from './motion';
+import {palette as p} from './theme';
+import {Reveal, staggerBeats} from './motion';
 
 export type TitleProps = BaseProps & {items: {title: string; emphasis?: string; detail?: string; color?: 'red' | 'green'}[]};
 
+export const titleBeats = (props: TitleProps) => staggerBeats(props.items.length, 5, 8);
+
 export function TitleCard(props: TitleProps) {
-  return <Frame {...props}>{scale => 
+  return <Frame {...props} beats={titleBeats(props)}>{scale => 
     <div style={{display: 'flex', flexDirection: 'column', gap: Math.round(24 * scale), justifyContent: 'center', flex: 1}}>
       {props.items.map((item, i) => <Reveal key={i} delay={i * 5} dur={8}><div style={{textAlign: 'center', marginBottom: Math.round(16 * scale)}}>
         <div style={{fontSize: Math.round(44 * scale), color: item.color ? p[item.color] : p.gold, fontWeight: 800, lineHeight: 1.1}}>{item.title}</div>
