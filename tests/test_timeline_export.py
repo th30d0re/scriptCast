@@ -46,3 +46,15 @@ def test_matches_schema(plan, tmp_path):
     path = write_timeline(plan, tmp_path / "timeline.json")
     jsonschema.validate(json.loads(path.read_text()), schema())
     jsonschema.validate(json.loads((VIDEO / "examples" / "timeline.example.json").read_text()), schema())
+
+
+@pytest.mark.parametrize("size, expected", [("shorts", (1080, 1920)), ("youtube", (1920, 1080)), ("youtube-4k", (3840, 2160))])
+def test_size_overrides_plan(plan, size, expected):
+    timeline = build_timeline(plan, size)
+    assert (timeline["width"], timeline["height"]) == expected
+    assert (plan["width"], plan["height"]) == (1080, 1920)
+
+
+def test_unknown_size(plan):
+    with pytest.raises(ValueError, match="youtube-4k"):
+        build_timeline(plan, "imax")
