@@ -10,3 +10,6 @@ video/node_modules/
 video/out/
 video/.remotion/
 video/public/episode/
+video/site/dist/
+video/scripts/.stage-check/
+video/public/stage/

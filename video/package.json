@@ -5,7 +5,9 @@
   "scripts": {
     "check-copy": "tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/check-copy.js",
     "check-quiver": "tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/check-quiver.js",
-    "quiver": "tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/quiver.js"
+    "quiver": "tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/quiver.js",
+    "check-stage": "node scripts/run-check-stage.mjs",
+    "site": "vite --config site/vite.config.ts"
   },
   "dependencies": {
     "@remotion/cli": "4.0.354",
