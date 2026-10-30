@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from scriptcast.tools.mix import build_command, plan_mix
+from scriptcast.tools.mix import build_command, plan_bed, plan_mix
 
 TURNS = [NS(turn_index=0, clean_text="First line here."),
          NS(turn_index=1, clean_text="It took sixty-nine days after the fact."),
@@ -20,6 +20,7 @@ def test_plan_places_overlay_after_word_and_gain_on_turn():
     plan = plan_mix(config, TURNS, MANIFEST, ASR, Path("/proj"))
     assert plan["overlays"] == [{"file": "/proj/n.wav", "at_ms": 3500, "gain_db": -20.0}]
     assert plan["gains"] == [{"start_s": 6.3, "end_s": 7.0, "gain_db": 5.0}]
+    assert plan["bed"] is None
 
 
 def test_ambiguous_or_missing_rule_raises():
@@ -35,3 +36,20 @@ def test_command_has_overlay_delay_gain_and_limiter():
     graph = cmd[cmd.index("-filter_complex") + 1]
     assert "adelay=3500|3500" in graph and "volume=-20.0dB" in graph
     assert "volume=5.0dB:enable='between(t,6.300,7.000)'" in graph and "alimiter" in graph
+
+
+def test_bed_defaults_to_duck_carve_with_turn_spans():
+    bed = plan_bed({"file": "music/bed.wav"}, MANIFEST, Path("/proj"))
+    assert bed["file"] == "/proj/music/bed.wav" and bed["treatment"] == "duck_carve"
+    assert bed["gain_db"] == -8.0 and bed["target_db"] == -12.0 and bed["merge_gap_ms"] == 600.0
+    assert bed["spans"] == [[0, 2000], [2300, 6000], [6300, 7000]]
+    with pytest.raises(ValueError):
+        plan_bed({"file": "b.wav", "treatment": "loud"}, MANIFEST, Path("."))
+
+
+def test_command_mixes_bed_at_its_gain():
+    plan = {"overlays": [], "gains": [], "bed": {"gain_db": -8.0}}
+    cmd = build_command(Path("a.mp3"), plan, Path("o.mp3"), bed_wav=Path("bed.wav"))
+    graph = cmd[cmd.index("-filter_complex") + 1]
+    assert cmd[cmd.index("bed.wav") - 1] == "-i"
+    assert "[1:a]volume=-8.0dB[bed]" in graph and "amix=inputs=2" in graph
