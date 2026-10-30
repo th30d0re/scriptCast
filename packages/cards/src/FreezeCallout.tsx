@@ -1,6 +1,6 @@
 import {Frame, type BaseProps} from './Frame';
 import {palette as p, fontFamily} from './theme';
-import {USABLE_BOX, WIDTH, HEIGHT} from './safeZone';
+import {useCardFormat} from './format';
 import {QrCode} from './QrCode';
 import {FRAME_BEATS, Reveal} from './motion';
 import {useCardHost} from './host';
@@ -17,7 +17,9 @@ export const freezeBeats = (_props: FreezeProps) => FRAME_BEATS;
 
 function BleedLayout(props: FreezeProps) {
   const {asset, Image} = useCardHost();
-  const top = props.imageTop ?? 380;
+  const {name, width: WIDTH, height: HEIGHT, box} = useCardFormat();
+  // Landscape pictures fill the frame, so they start at the top under the scrim.
+  const top = props.imageTop ?? (name === 'portrait' ? 380 : 0);
   const imgH = Math.round(WIDTH / props.aspect);
   const scrim = (dir: string) => `linear-gradient(${dir}, rgba(15,27,51,0.96) 0%, rgba(15,27,51,0.9) 62%, rgba(15,27,51,0) 100%)`;
   return <div style={{width: WIDTH, height: HEIGHT, background: p.navy, color: p.cream, fontFamily, position: 'relative', overflow: 'hidden'}}>
@@ -29,7 +31,7 @@ function BleedLayout(props: FreezeProps) {
       }} />)}
     </div>
     <div style={{position: 'absolute', left: 0, top: 0, width: WIDTH, height: top + 90, background: scrim('to bottom')}} />
-    <div style={{position: 'absolute', left: USABLE_BOX.x, top: USABLE_BOX.y, width: USABLE_BOX.width}}>
+    <div style={{position: 'absolute', left: box.x, top: box.y, width: box.width}}>
       <div style={{textAlign: 'center'}}>
         <h1 style={{margin: 0, fontSize: 56, lineHeight: 1.08, fontWeight: 800}}>{props.headline}</h1>
         <div style={{width: 160, height: 4, background: p.gold, margin: '12px auto 0'}} />

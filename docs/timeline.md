@@ -20,7 +20,15 @@ An unknown card name stops the render with an error.
 ```python
 from scriptcast.timeline_export import write_timeline
 write_timeline(plan, "timeline.json")  # plan = scriptcast.tools.video_plan.build_plan(...)
+write_timeline(plan, "timeline.json", size="youtube-4k")  # or "shorts", "youtube"
 ```
+
+## Sizes
+
+Cards pick their layout from the aspect: taller than wide is the Shorts portrait layout
+(1080x1920, kept clear of the platform overlays), wider than tall is the YouTube landscape
+layout (1920x1080, 5% title-safe margin). Any other size of the same aspect draws that layout
+scaled to fit, so `youtube-4k` (3840x2160) is the 1080p layout at 2x, rendered sharp.
 
 ## Render
 
@@ -29,3 +37,6 @@ Run from `video/`:
 ```bash
 npx remotion render Timeline out.mp4 --props=examples/timeline.example.json
 ```
+
+The width and height in the JSON set the output size. `Timeline-YouTube` and
+`Timeline-YouTube-4K` preview the example at those sizes in the Studio.

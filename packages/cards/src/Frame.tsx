@@ -1,5 +1,5 @@
 import {ReactNode, useLayoutEffect, useRef, useState} from 'react';
-import {USABLE_BOX, WIDTH, HEIGHT} from './safeZone';
+import {useCardFormat} from './format';
 import {palette as p, fontFamily} from './theme';
 import {QrCode} from './QrCode';
 import {BeatProvider, Reveal, useEnter} from './motion';
@@ -91,14 +91,15 @@ export function Frame({progress = 1, beats, headline, highlight, sources, svgAss
 
 function FrameBody({headline, highlight, sources, art: effectiveArt, qr, qrUrl, qrs, scale, contentRef, children}: Omit<BaseProps, 'progress' | 'svgAsset'> & {scale: number; contentRef: React.RefObject<HTMLElement | null>; children: ReactNode}) {
   const {asset, Image} = useCardHost();
+  const {width, height, box} = useCardFormat();
   const ruleT = useEnter(0, 8);
   const at = highlight ? headline.indexOf(highlight) : -1;
   const headlineParts = at < 0 || !highlight ? [{text: headline, hit: false}] : [
     {text: headline.slice(0, at), hit: false}, {text: highlight, hit: true}, {text: headline.slice(at + highlight.length), hit: false}];
   const hero = effectiveArt?.size === 'hero';
   
-  return <div style={{width: WIDTH, height: HEIGHT, background: p.navy, color: p.cream, fontFamily}}>
-    <main style={{position: 'absolute', left: USABLE_BOX.x, top: USABLE_BOX.y, width: USABLE_BOX.width, height: USABLE_BOX.height, boxSizing: 'border-box', padding: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: Math.round(16 * scale)}}>
+  return <div style={{width, height, background: p.navy, color: p.cream, fontFamily}}>
+    <main style={{position: 'absolute', left: box.x, top: box.y, width: box.width, height: box.height, boxSizing: 'border-box', padding: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: Math.round(16 * scale)}}>
       <div style={{flexShrink: 0, display: 'flex', flexDirection: 'column', gap: Math.round(12 * scale)}}>
         <h1 style={{margin: 0, fontSize: Math.max(32, Math.round(56 * scale)), lineHeight: 1.08, fontWeight: 800, textAlign: 'center'}}>{headlineParts.map((part, i) => part.hit ? <span key={i} data-highlight style={{borderBottom: `4px solid ${p.gold}`, paddingBottom: 2}}>{part.text}</span> : part.text)}</h1>
         {!highlight && <div style={{width: Math.round(160 * ruleT), height: 4, background: p.gold, alignSelf: 'center'}} />}

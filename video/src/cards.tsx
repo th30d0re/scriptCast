@@ -29,7 +29,15 @@ function clocked<P extends BaseProps>(Card: (props: P) => React.ReactNode, beats
     const {progress, seconds} = useCardClock(beats(props));
     // An animated SVG plays on the card's own clock unless the plan pins a moment.
     const art = props.art?.animate ? {...props.art, atSeconds: props.art.atSeconds ?? seconds} : props.art;
-    return <cards.CardHostProvider value={host}><Card {...props} art={art} progress={progress} /></cards.CardHostProvider>;
+    const {width, height} = useVideoConfig();
+    const format = cards.formatFor(width, height);
+    // Draw at the format's own size, then scale to the output (2x for 4K).
+    const scale = width / format.width;
+    return <cards.CardHostProvider value={host}><cards.CardFormatProvider value={format}>
+      <div style={{width: format.width, height: format.height, transform: scale === 1 ? undefined : `scale(${scale})`, transformOrigin: '0 0'}}>
+        <Card {...props} art={art} progress={progress} />
+      </div>
+    </cards.CardFormatProvider></cards.CardHostProvider>;
   };
 }
 
