@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from scriptcast.tools.mix import build_command, plan_bed, plan_mix
+from scriptcast.tools.mix import build_command, depth_args, plan_bed, plan_mix
 
 TURNS = [NS(turn_index=0, clean_text="First line here."),
          NS(turn_index=1, clean_text="It took sixty-nine days after the fact."),
@@ -45,6 +45,17 @@ def test_bed_defaults_to_duck_carve_with_turn_spans():
     assert bed["spans"] == [[0, 2000], [2300, 6000], [6300, 7000]]
     with pytest.raises(ValueError):
         plan_bed({"file": "b.wav", "treatment": "loud"}, MANIFEST, Path("."))
+
+
+def test_bed_depth_is_target_db_unless_strength_is_set():
+    bed = plan_bed({"file": "b.wav"}, MANIFEST, Path("."))
+    assert bed["strength"] is None
+    assert depth_args(bed, "duck") == ["--target-db", "-12.0"] and depth_args(bed, "carve") == []
+    bed = plan_bed({"file": "b.wav", "strength": 0.25}, MANIFEST, Path("."))
+    assert depth_args(bed, "duck") == depth_args(bed, "carve") == ["--strength", "0.25"]
+    for bad in ({"strength": 2}, {"strength": True}, {"strength": 0.5, "target_db": -6}):
+        with pytest.raises(ValueError):
+            plan_bed({"file": "b.wav", **bad}, MANIFEST, Path("."))
 
 
 def test_command_mixes_bed_at_its_gain():

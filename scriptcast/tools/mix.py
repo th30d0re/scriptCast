@@ -21,6 +21,8 @@ mix.yaml:
       treatment: duck_carve                 # duck_carve (default), duck, carve or none
       target_db: -12                        # duck depth during speech
       merge_gap_ms: 600                     # turns closer than this duck as one span
+      strength: 0.25                        # optional, 0..1, instead of target_db: sets the duck
+                                            # depth and carves only the bands the voice occupies
 
 The bed is ducked and carved by the scriptcast-media binary (media/ crate). It is found
 via $SCRIPTCAST_MEDIA, then PATH, then media/target/release in this repo.
@@ -90,9 +92,17 @@ def plan_bed(rule: dict | None, manifest: dict, root: Path) -> dict | None:
     treatment = rule.get("treatment", "duck_carve")
     if treatment not in BED_TREATMENTS:
         raise ValueError(f"bed treatment must be one of {BED_TREATMENTS}: {treatment!r}")
+    strength = rule.get("strength")
+    if strength is not None:
+        if "target_db" in rule:
+            raise ValueError("bed: use target_db or strength, not both")
+        if isinstance(strength, bool) or not isinstance(strength, (int, float)) or not 0 <= strength <= 1:
+            raise ValueError(f"bed strength must be a number from 0 to 1: {strength!r}")
+        strength = float(strength)
     return {"file": str((root / rule["file"]).resolve()),
             "gain_db": float(rule.get("gain_db", -8)),
             "treatment": treatment,
+            "strength": strength,
             "target_db": float(rule.get("target_db", -12)),
             "merge_gap_ms": float(rule.get("merge_gap_ms", 600)),
             "spans": [[t["start_ms"], t["end_ms"]] for t in manifest["turns"]]}
@@ -105,6 +115,13 @@ def media_binary() -> str:
         if c and Path(c).is_file():
             return c
     raise FileNotFoundError("scriptcast-media not found: build it with `cargo build --release` in media/, or set SCRIPTCAST_MEDIA")
+
+
+def depth_args(bed: dict, command: str) -> list[str]:
+    """How deep to duck or carve: the strength knob when set, else target_db (duck) or the defaults (carve)."""
+    if bed.get("strength") is not None:
+        return ["--strength", str(bed["strength"])]
+    return ["--target-db", str(bed["target_db"])] if command == "duck" else []
 
 
 def render_bed(audio: Path, bed: dict, work: Path) -> Path:
@@ -123,7 +140,7 @@ def render_bed(audio: Path, bed: dict, work: Path) -> Path:
         spans.write_text(json.dumps(bed["spans"]))
         ducked = work / "bed_ducked.wav"
         subprocess.run([binary, "duck", "--bed", str(current), "--spans", str(spans), "--out", str(ducked),
-                        "--target-db", str(bed["target_db"]), "--merge-gap-ms", str(bed["merge_gap_ms"])],
+                        *depth_args(bed, "duck"), "--merge-gap-ms", str(bed["merge_gap_ms"])],
                        check=True, capture_output=True)
         current = ducked
     if bed["treatment"] in ("duck_carve", "carve"):
@@ -131,7 +148,7 @@ def render_bed(audio: Path, bed: dict, work: Path) -> Path:
         subprocess.run(["ffmpeg", "-y", "-i", str(audio), "-ac", "1", "-ar", "48000", str(voice)], check=True, capture_output=True)
         carved = work / "bed_carved.wav"
         subprocess.run([binary, "carve", "--bed", str(current), "--voice", str(voice), "--out", str(carved),
-                        "--merge-gap-ms", str(bed["merge_gap_ms"])], check=True, capture_output=True)
+                        *depth_args(bed, "carve"), "--merge-gap-ms", str(bed["merge_gap_ms"])], check=True, capture_output=True)
         current = carved
     return current
 
