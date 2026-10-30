@@ -26,9 +26,34 @@ pub struct Span {
     pub messages: Vec<String>,
     pub blocks_save: bool,
 }
+/// `<!-- ... -->` is an editorial note. Brackets inside it are not spoken.
+fn comment_spans(text: &str) -> Vec<Range<usize>> {
+    let mut spans = Vec::new();
+    let mut from = 0;
+    while let Some(start) = text[from..].find("<!--") {
+        let start = from + start;
+        let after = start + 4;
+        let Some(end_rel) = text[after..].find("-->") else {
+            break;
+        };
+        let end = after + end_rel + 3;
+        spans.push(start..end);
+        from = end;
+    }
+    spans
+}
+
+fn inside_comment(range: &Range<usize>, comments: &[Range<usize>]) -> bool {
+    comments
+        .iter()
+        .any(|span| range.start < span.end && span.start < range.end)
+}
+
 pub fn spans(body: &str, registry: &Registry) -> Vec<Span> {
+    let comments = comment_spans(body);
     let mut clips = 0;
     TAG.find_iter(body)
+        .filter(|m| !inside_comment(&m.range(), &comments))
         .map(|m| {
             let tag = m.as_str();
             let mut messages = Vec::new();
@@ -119,4 +144,26 @@ pub fn layout(text: &str, registry: &Registry, raw: bool, width: f32) -> LayoutJ
     }
     job.append(&text[end..], 0.0, normal);
     job
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn registry() -> Registry {
+        Registry {
+            speakers: Vec::new(),
+            clips: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn an_editorial_comment_is_not_a_spoken_tag() {
+        let body = "Because cognitive bandwidth is finite.\n<!-- [book Preface] -->";
+        assert!(spans(body, &registry()).is_empty());
+        assert!(can_save(body, &registry()));
+        let spoken = spans("It says [other] aloud.", &registry());
+        assert_eq!(spoken.len(), 1);
+        assert!(spoken[0].messages[0].contains("unrecognised"));
+    }
 }

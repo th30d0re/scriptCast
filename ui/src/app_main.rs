@@ -1975,6 +1975,7 @@ impl Browser {
                 if first < last {
                     let x0 = track.left() + (first as f32 - origin) * bar_space;
                     let centre = centre_x;
+                    let fade = t::WAVE_FADE.min(track.width() / 2.0);
                     waveform::paint_columns(
                         &painter,
                         &columns[first..last],
@@ -1986,11 +1987,20 @@ impl Browser {
                         t::WAVE_MIN,
                         bar.pixels_per_point(),
                         |mid_x| {
-                            if mid_x < centre {
+                            let color = if mid_x < centre {
                                 t::accent()
                             } else {
                                 t::TEXT_MUTED
-                            }
+                            };
+                            // Fade the bar itself. A transparent overlay is black
+                            // in this renderer, and that darkens the bars as they move.
+                            let dist = (mid_x - track.left()).min(track.right() - mid_x);
+                            let alpha = if fade <= 0.0 {
+                                1.0
+                            } else {
+                                (dist / fade).clamp(0.0, 1.0)
+                            };
+                            color.gamma_multiply(alpha)
                         },
                     );
                 }
@@ -2000,32 +2010,6 @@ impl Browser {
                 vec2(t::WAVE_PLAYHEAD, track.height()),
             );
             painter.rect_filled(playhead, 0.0, t::TEXT_PRIMARY);
-            // Same red, green, and blue as the track. Transparent black
-            // darkens the bars as they slide into the fade.
-            let clear = egui::Color32::from_rgba_unmultiplied(
-                t::BG_SURFACE.r(),
-                t::BG_SURFACE.g(),
-                t::BG_SURFACE.b(),
-                0,
-            );
-            let fade = t::WAVE_FADE.min(track.width() / 2.0);
-            let mut mesh = egui::Mesh::default();
-            let left_inner = track.left() + fade;
-            mesh.colored_vertex(pos2(track.left(), track.top()), t::BG_SURFACE);
-            mesh.colored_vertex(pos2(left_inner, track.top()), clear);
-            mesh.colored_vertex(pos2(track.left(), track.bottom()), t::BG_SURFACE);
-            mesh.colored_vertex(pos2(left_inner, track.bottom()), clear);
-            mesh.add_triangle(0, 1, 2);
-            mesh.add_triangle(1, 2, 3);
-            let right_inner = track.right() - fade;
-            let base = 4;
-            mesh.colored_vertex(pos2(track.right(), track.top()), t::BG_SURFACE);
-            mesh.colored_vertex(pos2(right_inner, track.top()), clear);
-            mesh.colored_vertex(pos2(track.right(), track.bottom()), t::BG_SURFACE);
-            mesh.colored_vertex(pos2(right_inner, track.bottom()), clear);
-            mesh.add_triangle(base, base + 1, base + 2);
-            mesh.add_triangle(base + 1, base + 2, base + 3);
-            painter.add(egui::Shape::mesh(mesh));
         }
         let response = bar.interact(
             track,
@@ -3156,7 +3140,26 @@ fn install_project_fixture(app: &mut Browser) {
     app.project.pending = None;
 }
 
+/// Finder and the Dock start the bundle with only the system directories on
+/// PATH. ffmpeg, ffprobe, and uv live in Homebrew, and without them the picture
+/// stays empty with no error.
+fn extend_path() {
+    let current = std::env::var_os("PATH").unwrap_or_default();
+    let mut dirs: Vec<std::path::PathBuf> = std::env::split_paths(&current).collect();
+    for extra in ["/opt/homebrew/bin", "/usr/local/bin"] {
+        let extra = std::path::PathBuf::from(extra);
+        if extra.is_dir() && !dirs.contains(&extra) {
+            dirs.push(extra);
+        }
+    }
+    if let Ok(joined) = std::env::join_paths(dirs) {
+        // SAFETY: runs first in `run`, before any thread is spawned.
+        unsafe { std::env::set_var("PATH", joined) };
+    }
+}
+
 pub fn run() -> eframe::Result {
+    extend_path();
     if std::env::args().nth(1).as_deref() == Some("--job-worker") {
         let path = std::env::args_os().nth(2).expect("worker record");
         if let Err(message) = crate::detached::worker(std::path::Path::new(&path)) {

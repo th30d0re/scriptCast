@@ -365,6 +365,7 @@ pub fn new_editor(ui: &mut Ui, editing: &mut editing::Editing, panel: bool) {
             t::EDITOR_MIN_HEIGHT,
             &placeholder,
             t::EDITOR_BODY_LINES,
+            |_| {},
         );
     }
     if let Some(speaker) = speaker {

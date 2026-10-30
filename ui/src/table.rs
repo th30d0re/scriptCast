@@ -356,7 +356,17 @@ pub fn show(
         .then(|| editing.draft.as_ref().map(|draft| draft.turn))
         .flatten();
     let editor_height = editing.draft.as_ref().map_or(0.0, |draft| {
-        editing::row_editor_block_height(&body_ui, &draft.text, transcript_width, Some(draft))
+        let warnings = crate::tags::spans(&draft.text, &editing.registry)
+            .iter()
+            .map(|span| span.messages.len())
+            .sum();
+        editing::row_editor_block_height(
+            &body_ui,
+            &draft.text,
+            transcript_width,
+            Some(draft),
+            warnings,
+        )
     });
     let field_height = editing.draft.as_ref().map_or(0.0, |draft| {
         editing::inline_field_height(&body_ui, &draft.text, transcript_width)

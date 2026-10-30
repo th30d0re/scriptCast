@@ -459,8 +459,9 @@ pub fn strip(env: &Envelope, dur_sec: f32, bar_secs: f32) -> Vec<f32> {
 
 /// Draw `columns` as one mesh. `step` is the distance from one bar to the next.
 ///
-/// Positions are snapped to physical pixels. A fractional edge on a 1.5px bar
-/// covers a different number of pixels every frame, so the strip breathes.
+/// Each bar covers whole device pixels, with its edges pulled off the pixel
+/// boundary. A boundary edge covers a different pixel whenever it jitters, so
+/// the strip changes brightness.
 pub fn paint_columns(
     painter: &egui::Painter,
     columns: &[f32],
@@ -489,9 +490,15 @@ pub fn paint_columns(
     }
 }
 
-fn snap_px(value: f32, pixels_per_point: f32) -> f32 {
-    let ppp = pixels_per_point.max(1.0);
-    (value * ppp).round() / ppp
+/// Device-pixel span, pulled in slightly so an edge is not exactly on a pixel
+/// boundary. A boundary edge covers a different pixel whenever it jitters by a
+/// fraction, and the bar changes brightness.
+fn px_span(start_px: f32, size_px: f32, pixels_per_point: f32) -> (f32, f32) {
+    let inset = if size_px >= 2.0 { 0.15 } else { 0.0 };
+    (
+        (start_px + inset) / pixels_per_point,
+        (start_px + size_px - inset) / pixels_per_point,
+    )
 }
 
 fn columns_mesh(
@@ -509,23 +516,25 @@ fn columns_mesh(
     if columns.is_empty() || step <= 0.0 {
         return mesh;
     }
-    let width = snap_px(bar, pixels_per_point).max(snap_px(1.0, pixels_per_point));
-    let stride = snap_px(step, pixels_per_point).max(width);
-    let origin = snap_px(x0, pixels_per_point);
-    let mid_y = snap_px(center_y, pixels_per_point);
+    let ppp = pixels_per_point.max(1.0);
+    let width_px = (bar * ppp).round().max(1.0);
+    let stride_px = (step * ppp).round().max(width_px);
+    let origin_px = (x0 * ppp).round();
+    let mid_px = (center_y * ppp).round();
     mesh.vertices.reserve(columns.len() * 4);
     mesh.indices.reserve(columns.len() * 6);
     for (i, &peak) in columns.iter().enumerate() {
-        let x = origin + i as f32 * stride;
-        let h = snap_px((peak * max_h).max(min_h), pixels_per_point)
-            .max(snap_px(1.0, pixels_per_point));
-        let y = snap_px(mid_y - h / 2.0, pixels_per_point);
-        let color = color_at(x + width / 2.0);
+        let left_px = origin_px + i as f32 * stride_px;
+        let h_px = ((peak * max_h).max(min_h) * ppp).round().max(1.0);
+        let top_px = (mid_px - h_px / 2.0).round();
+        let (x, right) = px_span(left_px, width_px, ppp);
+        let (y, bottom) = px_span(top_px, h_px, ppp);
+        let color = color_at((x + right) / 2.0);
         let v = mesh.vertices.len() as u32;
         mesh.colored_vertex(egui::pos2(x, y), color);
-        mesh.colored_vertex(egui::pos2(x + width, y), color);
-        mesh.colored_vertex(egui::pos2(x, y + h), color);
-        mesh.colored_vertex(egui::pos2(x + width, y + h), color);
+        mesh.colored_vertex(egui::pos2(right, y), color);
+        mesh.colored_vertex(egui::pos2(x, bottom), color);
+        mesh.colored_vertex(egui::pos2(right, bottom), color);
         mesh.add_triangle(v, v + 2, v + 1);
         mesh.add_triangle(v + 1, v + 2, v + 3);
     }
@@ -670,13 +679,15 @@ mod tests {
         });
         assert_eq!(mesh.vertices.len(), 8);
         assert_eq!(mesh.indices.len(), 12);
-        assert!((mesh.vertices[0].pos.x - 10.0).abs() < 1e-4);
-        assert!((mesh.vertices[4].pos.x - 13.0).abs() < 1e-4);
+        assert!((mesh.vertices[0].pos.x - 10.15).abs() < 1e-3);
+        assert!((mesh.vertices[4].pos.x - 13.15).abs() < 1e-3);
         let snapped = columns_mesh(&[1.0], 10.2, 3.0, 1.5, 20.0, 10.0, 1.0, 2.0, |_| {
             egui::Color32::WHITE
         });
-        assert!((snapped.vertices[0].pos.x - 10.0).abs() < 1e-4);
-        assert!((snapped.vertices[1].pos.x - 11.5).abs() < 1e-4);
+        // 10.2 points at 2x is device pixel 20. A 1.5pt bar is 3 device pixels,
+        // inset so the edges are not on the pixel boundary.
+        assert!((snapped.vertices[0].pos.x - 10.075).abs() < 1e-3);
+        assert!((snapped.vertices[1].pos.x - 11.425).abs() < 1e-3);
     }
 
     #[test]

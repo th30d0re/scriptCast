@@ -591,14 +591,33 @@ impl Browser {
     }
 
     pub(crate) fn request_regenerate_edited(&mut self, rows: Vec<usize>, ctx: &egui::Context) {
-        let detect = match self.spec(&Preset::DetectChanges) {
-            Ok(spec) => spec,
-            Err(error) => {
-                self.job_error(error);
+        if self.jobs.busy() || self.editing.busy() {
+            self.job_error("Wait for the current job or restore to finish".into());
+            return;
+        }
+        let Some(episode) = self.episode.as_ref() else {
+            self.job_error("No episode".into());
+            return;
+        };
+        match &self.editing.turns {
+            Some(script) if script.turns.len() != episode.turns.len() => {
+                self.job_error(
+                    "Turns were added or removed since render. Re-render to sync.".into(),
+                );
                 return;
             }
-        };
-        let insert = match self.spec(&Preset::PrecisionInsert) {
+            None => {
+                self.job_error("Script text is still loading.".into());
+                return;
+            }
+            Some(_) => {}
+        }
+        let preset = Preset::RegenerateTurns(rows.clone());
+        let spec = match crate::runner::JobSpec::from_preset_matching_script(
+            &preset,
+            episode,
+            &self.jobs.commands,
+        ) {
             Ok(spec) => spec,
             Err(error) => {
                 self.job_error(error);
@@ -607,10 +626,10 @@ impl Browser {
         };
         self.jobs.regen_rows = rows.clone();
         let c = Confirmation {
-            preset: Preset::PrecisionInsert,
-            spec: insert,
+            preset,
+            spec,
             affected: Some(rows),
-            before: Some(detect),
+            before: None,
         };
         if c.spec.needs_confirmation() {
             self.jobs.confirmation = Some(c);
@@ -1509,6 +1528,8 @@ for p in &cp.files {
                      stress.json is not modified."
                 } else if c.as_ref().unwrap().preset == Preset::Verify {
                     "stress.json will be replaced. A checkpoint is saved first."
+                } else if matches!(c.as_ref().unwrap().preset, Preset::RegenerateTurns(_)) {
+                    "Only the listed turns are synthesized again. Other audio stays, and later turns keep their start times. The manifest and the Ableton set are updated for the new take. A checkpoint is saved first."
                 } else {
                     "Rendered audio, manifest, render state, turn index and Ableton set may be replaced. \
                      A checkpoint is saved first."

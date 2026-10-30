@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::mpsc::{self, Receiver};
 
 pub const FOOTNOTE: &str =
-    "Audio remains unchanged. To replace rendered audio, save this draft and confirm synthesis.";
+    "Saves the script and regenerates this turn. Confirm synthesis when asked.";
 pub const CLIP_FOOTNOTE: &str =
     "Audio clip: this corrects the transcript only. The original recording is not regenerated.";
 
@@ -241,50 +241,68 @@ pub fn inline_field_height(ui: &Ui, text: &str, width: f32) -> f32 {
         .clamp(line * t::EDITOR_ROW_MIN_LINES, t::EDITOR_MAX_HEIGHT)
 }
 
-/// Toolbar, wrapped body (at least three lines), raw-script row, and buttons.
-pub fn row_editor_block_height(ui: &Ui, text: &str, width: f32, draft: Option<&Draft>) -> f32 {
+/// Toolbar (including Save and Cancel), wrapped body, and the raw-script row.
+pub fn row_editor_block_height(
+    ui: &Ui,
+    text: &str,
+    width: f32,
+    draft: Option<&Draft>,
+    warning_lines: usize,
+) -> f32 {
+    let footnote = usize::from(draft.is_some_and(|d| script::clip_id(&d.original).is_some()));
     t::TAG_TOOLBAR_HEIGHT
         + t::SPACE_4
         + inline_field_height(ui, text, width)
-        + t::line_height(ui, t::font(t::CAPTION))
-        + t::SPACE_8
-        + inline_actions_height(ui, width, draft)
+        + t::line_height(ui, t::font(t::CAPTION)) * (1.0 + warning_lines as f32 + footnote as f32)
         + t::SPACE_4
 }
 
-fn inline_actions_width(ui: &Ui) -> f32 {
-    t::text_width(ui, "Save draftCancel", t::bold(t::SECONDARY))
-        + t::BUTTON_PAD_X * 4.0
-        + t::text_width(ui, "Unsaved draft", t::font(t::SECONDARY))
-        + t::SPACE_14
-        + t::SPACE_8 * 4.0
-}
-
-/// Rendered height of a Save draft / Cancel button: the bold label's row
-/// height plus button padding, never less than the token. OpenDyslexic's rows
-/// are taller than the token assumes, and an underestimate let the buttons
-/// spill into the next table row, which then took their clicks.
-fn inline_button_height(ui: &Ui) -> f32 {
-    let row = ui.fonts_mut(|f| f.row_height(&t::bold(t::SECONDARY)));
-    (row + ui.spacing().button_padding.y * 2.0).max(t::INLINE_BUTTON_HEIGHT)
-}
-
-pub fn inline_actions_height(ui: &Ui, width: f32, draft: Option<&Draft>) -> f32 {
-    let button = inline_button_height(ui);
-    let rows = if draft.is_some_and(Draft::changed) && width < inline_actions_width(ui) {
-        button * 2.0 + t::SPACE_4
+fn save_label(busy: bool, clip: bool) -> &'static str {
+    if busy {
+        "Saving…"
+    } else if clip {
+        "Save"
     } else {
-        button
-    };
-    rows + t::INLINE_EDITOR_BOTTOM_MARGIN
+        "Save and regenerate"
+    }
 }
 
-fn draft_warning(ui: &mut Ui) {
-    ui.add(
-        egui::Image::new(t::icon("circle-alert-14-danger"))
-            .fit_to_exact_size(egui::Vec2::splat(t::SPACE_14)),
-    );
-    ui.label(t::text("Unsaved draft", t::SECONDARY, t::STATUS_FAILED));
+fn save_buttons(ui: &mut Ui, label: &str, save_enabled: bool, cancel: bool) -> Option<Action> {
+    let mut action = None;
+    if t::primary_button(ui, label, None, save_enabled).clicked() {
+        action = Some(Action::Save);
+    }
+    if t::secondary_button(ui, "Cancel", None, cancel).clicked() {
+        action = Some(Action::Cancel);
+    }
+    action
+}
+
+/// Drawn right-to-left, so Cancel is placed first and sits on the right.
+fn inline_save_buttons(
+    ui: &mut Ui,
+    label: &str,
+    save_enabled: bool,
+    cancel: bool,
+) -> Option<Action> {
+    let mut action = None;
+    for (text, value, primary, allowed) in [
+        ("Cancel", Action::Cancel, false, cancel),
+        (label, Action::Save, true, save_enabled),
+    ] {
+        let button = egui::Button::new(t::heading(text, t::SECONDARY).color(if primary {
+            t::ON_ACCENT
+        } else {
+            t::TEXT_PRIMARY
+        }))
+        .fill(if primary { t::accent() } else { t::BG_CONTROL })
+        .corner_radius(t::RADIUS_CONTROL as u8)
+        .min_size(egui::vec2(0.0, t::INLINE_BUTTON_HEIGHT));
+        if ui.add_enabled(allowed, button).clicked() {
+            action = Some(value);
+        }
+    }
+    action
 }
 
 pub fn inline_editor(
@@ -298,6 +316,11 @@ pub fn inline_editor(
     let mut action = None;
     ui.spacing_mut().item_spacing = egui::vec2(t::SPACE_8, t::SPACE_4);
     ui.set_width(ui.available_width());
+    let clip = script::clip_id(&draft.text).is_some();
+    let save_enabled = enabled
+        && !busy
+        && crate::tags::can_save(&draft.text, &editing.registry)
+        && (draft.changed() || !clip);
     ui.add_enabled_ui(!busy, |ui| {
         let response = crate::tag_editor::body(
             ui,
@@ -307,51 +330,16 @@ pub fn inline_editor(
             height,
             "Write this turn…",
             t::EDITOR_ROW_MIN_LINES,
+            |ui| {
+                action = inline_save_buttons(ui, save_label(busy, clip), save_enabled, !busy)
+                    .or(action);
+            },
         );
         if editing.focus_requested {
             response.request_focus();
             editing.focus_requested = false;
         }
     });
-    let wrap_warning = ui.available_width() < inline_actions_width(ui);
-    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        for (label, value, primary, allowed) in [
-            ("Cancel", Action::Cancel, false, !busy),
-            (
-                if busy { "Saving…" } else { "Save draft" },
-                Action::Save,
-                true,
-                enabled
-                    && !busy
-                    && draft.changed()
-                    && crate::tags::can_save(&draft.text, &editing.registry),
-            ),
-        ] {
-            let button = egui::Button::new(t::heading(label, t::SECONDARY).color(if primary {
-                t::ON_ACCENT
-            } else {
-                t::TEXT_PRIMARY
-            }))
-            .fill(if primary { t::accent() } else { t::BG_CONTROL })
-            .corner_radius(t::RADIUS_CONTROL as u8)
-            .min_size(egui::vec2(0.0, t::INLINE_BUTTON_HEIGHT));
-            if ui.add_enabled(allowed, button).clicked() {
-                action = Some(value);
-            }
-        }
-        if draft.changed() && !wrap_warning {
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.label(t::text("Unsaved draft", t::SECONDARY, t::STATUS_FAILED));
-                ui.add(
-                    egui::Image::new(t::icon("circle-alert-14-danger"))
-                        .fit_to_exact_size(egui::Vec2::splat(t::SPACE_14)),
-                );
-            });
-        }
-    });
-    if draft.changed() && wrap_warning {
-        ui.horizontal(draft_warning);
-    }
     if script::clip_id(&draft.original).is_some() {
         ui.label(t::text(CLIP_FOOTNOTE, t::CAPTION, t::TEXT_SUBTLE));
     }
@@ -371,6 +359,16 @@ pub fn editor(
     let mut action = None;
     ui.spacing_mut().item_spacing.y = t::SPACE_12;
     t::field_label(ui, "Transcript");
+    let clip = script::clip_id(&draft.text).is_some() || script::clip_id(&draft.original).is_some();
+    let save_enabled = enabled
+        && !busy
+        && crate::tags::can_save(&draft.text, &editing.registry)
+        && (draft.changed() || !clip);
+    if !row {
+        ui.horizontal(|ui| {
+            action = save_buttons(ui, save_label(busy, clip), save_enabled, !busy).or(action);
+        });
+    }
     ui.add_enabled_ui(!busy, |ui| {
         let response = egui::ScrollArea::vertical()
             .id_salt("transcript_field_scroll")
@@ -385,6 +383,7 @@ pub fn editor(
                     height,
                     "Write this turn…",
                     t::EDITOR_BODY_LINES,
+                    |_| {},
                 )
             })
             .inner;
@@ -420,29 +419,11 @@ pub fn editor(
             action = Some(Action::UseEnsemble);
         }
     }
-    let save_enabled = enabled
-        && !busy
-        && draft.changed()
-        && crate::tags::can_save(&draft.text, &editing.registry);
-    let buttons = |ui: &mut Ui| {
-        if t::primary_button(
-            ui,
-            if busy { "Saving…" } else { "Save draft" },
-            None,
-            save_enabled,
-        )
-        .clicked()
-        {
-            action = Some(Action::Save);
-        }
-        if t::secondary_button(ui, "Cancel", None, !busy).clicked() {
-            action = Some(Action::Cancel);
-        }
-    };
     if row {
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), buttons);
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            action = save_buttons(ui, save_label(busy, clip), save_enabled, !busy).or(action);
+        });
     } else {
-        ui.horizontal(buttons);
         ui.label(t::text(footnote, t::CAPTION, t::TEXT_SUBTLE));
     }
     action
@@ -529,9 +510,18 @@ impl Browser {
         {
             return;
         }
-        let Some(draft) = self.editing.draft.as_ref().filter(|d| d.changed()) else {
+        let Some(draft) = self.editing.draft.as_ref() else {
             return;
         };
+        if !draft.changed() {
+            let clip = script::clip_id(&draft.text).is_some()
+                || script::clip_id(&draft.original).is_some();
+            if !clip {
+                let turn = draft.turn;
+                self.request_regenerate_edited(vec![turn], ctx);
+            }
+            return;
+        }
         let (Some(mut episode), Some(turn), Some(hash)) = (
             self.episode.clone(),
             self.editing.script_turn(draft.turn).cloned(),
@@ -596,9 +586,17 @@ impl Browser {
                                 cp.version,
                             ));
                         }
+                        let regenerate = self.editing.draft.as_ref().and_then(|draft| {
+                            let clip = script::clip_id(&draft.text).is_some()
+                                || script::clip_id(&draft.original).is_some();
+                            (!clip).then_some(draft.turn)
+                        });
                         self.editing.cancel();
 
                         self.refresh_checkpoints();
+                        if let Some(turn) = regenerate {
+                            self.request_regenerate_edited(vec![turn], ctx);
+                        }
                         self.reload(ctx);
                     }
                     Err(error) => {
@@ -1019,8 +1017,8 @@ mod tests {
         let ctx = egui::Context::default();
         t::apply(&ctx);
         let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
-            let short = row_editor_block_height(ui, "Hi", 160.0, None);
-            let long = row_editor_block_height(ui, &"word ".repeat(80), 160.0, None);
+            let short = row_editor_block_height(ui, "Hi", 160.0, None, 0);
+            let long = row_editor_block_height(ui, &"word ".repeat(80), 160.0, None, 0);
             let line = t::line_height(ui, t::font(t::BODY));
             assert!(short >= line * t::EDITOR_ROW_MIN_LINES);
             assert!(
