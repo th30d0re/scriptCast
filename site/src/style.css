@@ -1,0 +1,12 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #000; color: #eee; font-family: system-ui, sans-serif; }
+.nav { position: fixed; top: 8px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 4px; background: #0008; padding: 4px; border-radius: 999px; }
+.nav a { color: #ccc; text-decoration: none; padding: 4px 14px; border-radius: 999px; font-size: 14px; }
+.nav a.on { background: #fff; color: #000; }
+/* Each card scrolls for two extra viewports while it stays pinned. */
+.section { height: 300svh; }
+.sticky { position: sticky; top: 0; height: 100svh; display: flex; flex-direction: column; }
+.fit { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 48px 16px 8px; }
+.label { text-align: center; font-size: 12px; color: #888; padding-bottom: 8px; }
+.player { display: flex; justify-content: center; padding: 56px 16px 8px; }
+.player > div { max-width: calc((100svh - 64px) * 9 / 16); }
