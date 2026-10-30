@@ -1,0 +1,135 @@
+import {ReactNode, useLayoutEffect, useRef, useState} from 'react';
+import {useCardFormat} from './format';
+import {palette as p, fontFamily} from './theme';
+import {QrCode} from './QrCode';
+import {BeatProvider, Reveal, useEnter} from './motion';
+import {useCardHost} from './host';
+
+export type ArtProp = {src: string; size?: 'strip' | 'hero'; caption?: string; animate?: boolean; atSeconds?: number};
+// progress: 0 to 1 over the card's entrance (see README). Omitted, the card is drawn finished.
+export type BaseProps = {progress?: number; headline: string; highlight?: string; sources: string; svgAsset?: string; art?: ArtProp; qr?: boolean; qrUrl?: string; qrs?: {url: string; label: string}[]};
+
+// Type sizes are fixed at their base values; Frame shrinks the content block
+// until it fits (measured in the browser). Kept for callers that pass it through.
+export function computeDensity(itemCount: number, textLength: number) {
+  void itemCount; void textLength;
+  return 1.0;
+  // eslint-disable-next-line no-unreachable
+  let scale = 1.0;
+  if (textLength > 200 || itemCount > 2) scale = 0.9;
+  if (textLength > 300 || itemCount > 3) scale = 0.8;
+  if (textLength > 450 || itemCount >= 5) scale = 0.72;
+  if (textLength > 600 || itemCount >= 6) scale = 0.65;
+  return scale;
+}
+
+export function getTextLength(obj: any): number {
+  if (typeof obj === 'string') return obj.length;
+  if (typeof obj === 'number') return String(obj).length;
+  if (Array.isArray(obj)) return obj.reduce((sum: number, v) => sum + getTextLength(v), 0);
+  if (obj && typeof obj === 'object') {
+    return Object.values(obj).reduce((sum: number, v) => sum + getTextLength(v), 0);
+  }
+  return 0;
+}
+
+// An SVG with CSS keyframes, inlined and held at `atSeconds` (default 0). Every animation is paused
+// and given a negative delay equal to that time, so each rendered frame is the same no matter
+// which browser tab draws it. The caller advances atSeconds with its own clock.
+function AnimatedSvg({src, atSeconds}: {src: string; atSeconds?: number}) {
+  const host = useCardHost();
+  const [markup, setMarkup] = useState<string | null>(null);
+  const [release] = useState(() => host.hold(`svg ${src}`));
+  useLayoutEffect(() => {
+    fetch(host.asset(src)).then(r => r.text()).then(t => { setMarkup(t); release(); }).catch(e => { throw e; });
+  }, [src, release, host]);
+  const seconds = atSeconds ?? 0;
+  if (!markup) return null;
+  const css = `svg * { animation-play-state: paused !important; animation-delay: -${seconds.toFixed(3)}s !important; }`;
+  return <div style={{width: '100%', flex: 1, minHeight: 0, display: 'flex'}} data-animated-svg
+    dangerouslySetInnerHTML={{__html: markup.replace('<svg ', `<svg style="width:100%;height:100%" preserveAspectRatio="xMidYMid meet" `).replace(/<\/svg>\s*$/, `<style>${css}</style></svg>`)}} />;
+}
+
+// Fitted scale per card, kept for the life of the page so later frames of the
+// same card start at the answer instead of re-running the shrink loop.
+const fittedScale = new Map<string, number>();
+
+export function Frame({progress = 1, beats, headline, highlight, sources, svgAsset, art, qr = true, qrUrl, qrs, children}: BaseProps & {beats: number; children: (scale: number) => ReactNode}) {
+  const host = useCardHost();
+  const effectiveArt = art || (svgAsset ? {src: svgAsset, size: 'strip' as const} : undefined);
+  
+  if (effectiveArt?.src) {
+    const src = effectiveArt.src;
+    if (/^(\/|[a-z]+:)/i.test(src) || src.split('/').includes('..') || /[\\?#%]/.test(src) || !src.endsWith('.svg')) {
+      throw new Error('art.src must be a relative path under public/ and end with .svg');
+    }
+  }
+
+  const [release] = useState(() => host.hold(`fit ${headline}`));
+  const cacheKey = `${headline}\u0000${sources}`;
+  const [scale, setScale] = useState(() => fittedScale.get(cacheKey) ?? 1);
+  const contentRef = useRef<HTMLElement>(null);
+
+  // Shrink-to-fit: lower the type scale in 5% steps until every descendant of the
+  // content block sits inside it (measured in the browser). Fails loudly below the
+  // floor instead of clipping.
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    const el = contentRef.current;
+    const boxBottom = el ? el.getBoundingClientRect().bottom : 0;
+    const bottom = el ? Math.max(0, ...Array.from(el.querySelectorAll('*')).map(n => n.getBoundingClientRect().bottom)) : 0;
+    if (el && bottom > boxBottom + 2) {
+      if (scale > 0.5) { setScale(sc => Number((sc - 0.05).toFixed(2))); return; }
+      throw new Error(`Overflow detected in card: ${headline} (content bottom ${Math.round(bottom)}px, box bottom ${Math.round(boxBottom)}px, scale ${scale})`);
+    }
+    fittedScale.set(cacheKey, scale);
+    release();
+  }, [release, headline, scale, cacheKey]);
+
+  return <BeatProvider value={progress * beats}><FrameBody {...{headline, highlight, sources, qr, qrUrl, qrs, scale, contentRef}} art={effectiveArt}>{children(scale)}</FrameBody></BeatProvider>;
+}
+
+function FrameBody({headline, highlight, sources, art: effectiveArt, qr, qrUrl, qrs, scale, contentRef, children}: Omit<BaseProps, 'progress' | 'svgAsset'> & {scale: number; contentRef: React.RefObject<HTMLElement | null>; children: ReactNode}) {
+  const {asset, Image} = useCardHost();
+  const {width, height, box} = useCardFormat();
+  const ruleT = useEnter(0, 8);
+  const at = highlight ? headline.indexOf(highlight) : -1;
+  const headlineParts = at < 0 || !highlight ? [{text: headline, hit: false}] : [
+    {text: headline.slice(0, at), hit: false}, {text: highlight, hit: true}, {text: headline.slice(at + highlight.length), hit: false}];
+  const hero = effectiveArt?.size === 'hero';
+  
+  return <div style={{width, height, background: p.navy, color: p.cream, fontFamily}}>
+    <main style={{position: 'absolute', left: box.x, top: box.y, width: box.width, height: box.height, boxSizing: 'border-box', padding: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: Math.round(16 * scale)}}>
+      <div style={{flexShrink: 0, display: 'flex', flexDirection: 'column', gap: Math.round(12 * scale)}}>
+        <h1 style={{margin: 0, fontSize: Math.max(32, Math.round(56 * scale)), lineHeight: 1.08, fontWeight: 800, textAlign: 'center'}}>{headlineParts.map((part, i) => part.hit ? <span key={i} data-highlight style={{borderBottom: `4px solid ${p.gold}`, paddingBottom: 2}}>{part.text}</span> : part.text)}</h1>
+        {!highlight && <div style={{width: Math.round(160 * ruleT), height: 4, background: p.gold, alignSelf: 'center'}} />}
+      </div>
+
+      {effectiveArt?.src && <div data-svg-slot style={{
+        width: '100%',
+        height: hero ? '34%' : 64,
+        flexShrink: 0, 
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 8
+      }}>
+        {effectiveArt.src && (effectiveArt.animate
+          ? <AnimatedSvg src={effectiveArt.src} atSeconds={effectiveArt.atSeconds} />
+          : <Image src={asset(effectiveArt.src)} alt="" style={{display: 'block', width: '100%', flex: 1, minHeight: 0, objectFit: 'contain'}} />)}
+        {effectiveArt.caption && hero && <div style={{fontSize: Math.round(26 * scale), color: p.mute, textAlign: 'center', flexShrink: 0}}>{effectiveArt.caption}</div>}
+      </div>}
+
+      <section ref={contentRef} style={{flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly'}}>
+        {children}
+      </section>
+
+      <Reveal delay={6} dur={8} style={{flexShrink: 0}}><footer style={{textAlign: 'center'}}>
+        <div style={{fontSize: Math.max(16, Math.round(26 * scale)), lineHeight: 1.2, color: p.mute}}>{sources}</div>
+        {qrs && qrs.length > 0 && <div style={{display: 'flex', justifyContent: 'center', gap: Math.round(36 * scale), margin: `${Math.round(12 * scale)}px auto 0`}}>{qrs.map((q, i) => <div key={i} style={{textAlign: 'center'}}><QrCode url={q.url} size={Math.round(140 * Math.max(scale, 0.8))} /><div style={{fontSize: Math.max(18, Math.round(24 * scale)), color: p.cream, fontWeight: 700, marginTop: 6}}>{q.label}</div></div>)}</div>}
+        {!qrs && qr && (qrUrl ? <div style={{margin: `${Math.round(12 * scale)}px auto 0`, width: 150}}><QrCode url={qrUrl} size={150} /></div> : <div style={{boxSizing: 'border-box', width: 120, height: 120, border: `3px solid ${p.mute}`, borderRadius: 10, margin: `${Math.round(12 * scale)}px auto 0`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: p.mute, fontSize: 30, fontWeight: 700}}>QR</div>)}
+      </footer></Reveal>
+    </main>
+  </div>;
+}

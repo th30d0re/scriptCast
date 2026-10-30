@@ -220,3 +220,14 @@ def test_linger_next_holds_the_last_frame_until_the_next_clip(inputs):
     assert plan['clips'][0]['end_ms'] == 2033
     assert 'linger' not in plan['clips'][0]
     assert plan['clips'][1]['end_ms'] == 4033
+
+
+@pytest.mark.parametrize('size, expected', [('shorts', (1080, 1920)), ('youtube', (1920, 1080)), ('youtube-4k', (3840, 2160))])
+def test_size(inputs, size, expected):
+    plan = build_plan(**inputs, size=size)
+    assert (plan['width'], plan['height']) == expected
+
+
+def test_unknown_size(inputs):
+    with pytest.raises(ValueError, match='unknown size'):
+        build_plan(**inputs, size='imax')

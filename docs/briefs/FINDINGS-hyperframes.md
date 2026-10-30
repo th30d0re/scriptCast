@@ -238,7 +238,7 @@ Port from HyperFrames' Apache-2.0 sources with attribution in a NOTICE file.
 
 | Order | Item | Rust shape | Notes |
 |---|---|---|---|
-| 1 | Speech-envelope ducking + 9-band spectral carve (Rank 4) | **done:** `media/` crate `scriptcast-media`, `scriptcast-media carve` | manifest turn windows, soundcraft-dsp peaking biquads, 150/400 ms ramps. Default bands are 1, 1.6 and 2.5 kHz (2 kHz is not a candidate centre). Not yet called from `scriptcast-ui`. |
+| 1 | Speech-envelope ducking + 9-band spectral carve (Rank 4) | **done:** `media/` crate `scriptcast-media`, `scriptcast-media duck` and `carve` | manifest turn windows, soundcraft-dsp peaking biquads. Called from `scriptcast/tools/mix.py`; not yet from `scriptcast-ui`. |
 | 2 | Transcript cut list + PCM-intermediate concat (Rank 3) | cut-list logic in Rust, ffmpeg as subprocess | replaces AAC-splice clicks in `scriptcast-clip` |
 | 3 | SSIM diff + frame strips (Rank 6) | ffmpeg subprocess + `image` crate stacking | feeds `scriptcast-video qa` |
 | 4 | Card text fitting (Rank 2) | precompute fitted scale per card in Rust (`cosmic-text` or `swash` with the card fonts), write it into the card JSON | Remotion then renders once; removes the `Frame.tsx` shrink loop |

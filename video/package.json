@@ -3,13 +3,13 @@
   "private": true,
   "version": "0.2.0",
   "scripts": {
-    "check-copy": "tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/check-copy.js",
+    "check-copy": "npm run --silent build -w @scriptcast/cards && tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/check-copy.js",
     "check-quiver": "tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/check-quiver.js",
     "quiver": "tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/quiver.js"
   },
   "dependencies": {
     "@remotion/cli": "4.0.354",
-    "qrcode-generator": "^2.0.4",
+    "@scriptcast/cards": "0.1.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "remotion": "4.0.354"

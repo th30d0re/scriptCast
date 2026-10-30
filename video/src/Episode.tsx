@@ -1,12 +1,7 @@
-import {AbsoluteFill, Audio, Freeze, OffthreadVideo, Sequence, staticFile, useCurrentFrame} from 'remotion';
-import {TimelineCard, type TimelineProps} from './cards/TimelineCard';
-import {StatBarsCard, type StatBarsProps} from './cards/StatBarsCard';
-import {TitleCard, type TitleProps} from './cards/TitleCard';
-import {CompareCard, type CompareProps} from './cards/CompareCard';
-import {FreezeCallout, type FreezeProps} from './cards/FreezeCallout';
-import {PartsCard, type PartsProps} from './cards/PartsCard';
-import {USABLE_BOX} from './safeZone';
-import {palette} from './theme';
+import {AbsoluteFill, Audio, Freeze, OffthreadVideo, Sequence, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
+import type {ReactNode} from 'react';
+import {PORTRAIT, formatFor, palette, type TimelineProps, type StatBarsProps, type TitleProps, type CompareProps, type FreezeProps, type PartsProps} from '@scriptcast/cards';
+import {TimelineCard, StatBarsCard, TitleCard, CompareCard, FreezeCallout, PartsCard} from './cards';
 
 export type Card = ({component: 'TimelineCard'} & TimelineProps)
   | ({component: 'StatBarsCard'} & StatBarsProps)
@@ -45,9 +40,13 @@ export const clipSourceFrame = (clip: Clip, fps: number, frame: number) => {
 function ClipView({clip, fps}: {clip: Clip; fps: number}) {
   const first = frameAt(clip.in_ms, fps);
   const last = clipSourceFrame(clip, fps, Number.MAX_SAFE_INTEGER);
+  const {width, height} = useVideoConfig();
+  const format = formatFor(width, height);
+  // Portrait keeps footage inside the safe zone's side margins; landscape footage fills the frame.
+  const side = format.name === 'portrait' ? format.box.x / format.width : 0;
   const style = {
-    position: 'absolute', left: USABLE_BOX.x, top: '50%',
-    transform: 'translateY(-50%)', width: USABLE_BOX.width,
+    position: 'absolute', left: `${side * 100}%`, top: '50%',
+    transform: 'translateY(-50%)', width: `${(1 - 2 * side) * 100}%`,
     height: '100%', objectFit: 'contain',
   } as const;
   // Play the excerpt from its own in-point (startFrom seeks the source; Freeze
@@ -63,16 +62,30 @@ function ClipView({clip, fps}: {clip: Clip; fps: number}) {
     </Sequence>
   </>;
 }
-// Captions sit in the strip between the card area (ends at 60% of the height) and the
-// platform's bottom overlay (starts at 65%). Sides keep the 6% margin.
-export const CAPTION_TOP = 1166;
+// Draws children at the layout's own size and scales them to the output (2x for 4K),
+// as the card wrappers in cards.tsx do.
+function Stage({children}: {children: ReactNode}) {
+  const {width, height} = useVideoConfig();
+  const format = formatFor(width, height);
+  const scale = width / format.width;
+  return <div style={{position: 'absolute', left: 0, top: 0, width: format.width, height: format.height,
+    transform: scale === 1 ? undefined : `scale(${scale})`, transformOrigin: '0 0'}}>{children}</div>;
+}
+// Captions sit in the format's caption strip, below the card area. Portrait sides keep the
+// 6% margin; landscape sides follow the title-safe box.
+export const CAPTION_TOP = PORTRAIT.captionTop;
+const CAPTION_HEIGHT = 84;
 export function CaptionView({text}: {text: string}) {
-  return <div style={{position: 'absolute', left: 65, right: 65, top: CAPTION_TOP, height: 84,
+  const {width, height} = useVideoConfig();
+  const format = formatFor(width, height);
+  const side = format.name === 'portrait' ? 65 : format.box.x;
+  const top = format.captionTop;
+  return <Stage><div style={{position: 'absolute', left: side, right: side, top, height: CAPTION_HEIGHT,
     display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
     <span data-caption style={{fontFamily: 'Helvetica Neue, Helvetica, Arial, sans-serif', fontWeight: 800,
       fontSize: 50, lineHeight: 1.1, textAlign: 'center', color: palette.cream, background: 'rgba(15,27,51,0.78)',
       borderRadius: 14, padding: '6px 22px', textShadow: '0 2px 6px rgba(0,0,0,0.6)'}}>{text}</span>
-  </div>;
+  </div></Stage>;
 }
 export function Episode(plan: EpisodePlan) {
   return <AbsoluteFill style={{backgroundColor: palette.navy}}>

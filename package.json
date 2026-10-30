@@ -1,0 +1,9 @@
+{
+  "name": "scriptcast-js",
+  "private": true,
+  "workspaces": [
+    "packages/cards",
+    "video",
+    "site"
+  ]
+}

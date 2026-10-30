@@ -70,12 +70,18 @@ def load_voices(path: Path) -> dict[str, VoiceConfig]:
                     f"Speaker '{speaker_id}' (engine='phonon') is missing "
                     f"required field: phonon_voice"
                 )
+        elif engine == "tone":
+            if not str(config.get("instruct", "")).strip():
+                raise ValueError(
+                    f"Speaker '{speaker_id}' (engine='tone') is missing "
+                    "required field: instruct"
+                )
         elif engine == "archive":
             pass  # plays registered recordings; see scriptcast/archive.py
         else:
             raise ValueError(
                 f"Speaker '{speaker_id}' has unknown engine '{engine}'. "
-                f"Supported: kokoro, mlx_kokoro, elevenlabs, mlx_chatterbox, omnivoice, phonon, archive"
+                f"Supported: kokoro, mlx_kokoro, elevenlabs, mlx_chatterbox, omnivoice, phonon, tone, archive"
             )
 
         voices[speaker_id] = VoiceConfig(
@@ -88,6 +94,7 @@ def load_voices(path: Path) -> dict[str, VoiceConfig]:
             elevenlabs_voice_id=str(config["elevenlabs_voice_id"]) if "elevenlabs_voice_id" in config else None,
             reference_audio=str(config["reference_audio"]) if "reference_audio" in config else None,
             character_profile=str(config.get("character_profile", "")),
+            instruct=str(config["instruct"]).strip() if "instruct" in config else None,
             exaggeration=float(config.get("exaggeration", 0.0)),
             temperature=float(config.get("temperature", 0.6)),
             cfg_weight=float(config.get("cfg_weight", 0.7)),
