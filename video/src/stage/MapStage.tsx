@@ -1,5 +1,5 @@
 import React, {createContext, useContext, useId, useMemo} from 'react';
-import {geoEquirectangular, geoGraticule, geoGraticule10, geoInterpolate, geoMercator, geoNaturalEarth1, geoOrthographic, geoPath, type GeoProjection} from 'd3-geo';
+import {geoEqualEarth, geoEquirectangular, geoGraticule, geoGraticule10, geoInterpolate, geoMercator, geoNaturalEarth1, geoOrthographic, geoPath, type GeoProjection} from 'd3-geo';
 import {feature, mesh} from 'topojson-client';
 import type {Topology, GeometryCollection} from 'topojson-specification';
 import atlas from 'world-atlas/countries-50m.json';
@@ -8,8 +8,8 @@ import {useTokens} from './tokens';
 import {clamp} from './motion';
 
 export type Camera = {center: [number, number]; zoom: number};
-export type MapFit = {center: [number, number]; pxPerDeg: number};
-export type ProjectionName = 'naturalEarth' | 'equirectangular' | 'orthographic' | 'mercator';
+export type MapFit = {center: [number, number]; pxPerDeg: number; extent?: [[number, number], [number, number]]};
+export type ProjectionName = 'equalEarth' | 'naturalEarth' | 'equirectangular' | 'orthographic' | 'mercator';
 export type LandStyle = {fill: string; stroke: string; strokeWidth: number};
 export type LineStyle = {stroke: string; strokeWidth: number; opacity: number};
 export type GraticuleStyle = LineStyle & {step: number | [number, number]};
@@ -17,7 +17,8 @@ export type RhumbStyle = LineStyle & {centres: [number, number][]; spokes: numbe
 export type MapClip = {x: number; y: number; width: number; height: number};
 
 function projectionFor(kind: ProjectionName) {
-  return kind === 'naturalEarth' ? geoNaturalEarth1()
+  return kind === 'equalEarth' ? geoEqualEarth()
+    : kind === 'naturalEarth' ? geoNaturalEarth1()
     : kind === 'orthographic' ? geoOrthographic()
     : kind === 'mercator' ? geoMercator()
     : geoEquirectangular();
@@ -31,8 +32,11 @@ function orientProjection(projection: GeoProjection, center: [number, number]) {
 /**
  * Zoom mode preserves the original "zoom 1 fits the world" contract. Fit mode
  * makes `pxPerDeg` exact at the equator for equirectangular and Mercator. For
- * Natural Earth and orthographic it is the local screen-space distance of one
+ * Equal Earth, Natural Earth and orthographic use the local screen-space distance of one
  * longitude degree at `center`, which keeps authored regional diagrams stable.
+ * Optional fit.extent overrides pxPerDeg with a uniform scale containing that
+ * geographic box about center. Aspect ratio is preserved; the other axis can
+ * expose additional geography. The requested center maps to the clip centre.
  */
 export function createProjection(view: Camera | MapFit, kind: ProjectionName, width: number, height: number): GeoProjection {
   if ('zoom' in view && view.zoom <= 0) throw new Error('Map zoom must be positive');
@@ -45,6 +49,18 @@ export function createProjection(view: Camera | MapFit, kind: ProjectionName, wi
     return projection.translate([width/2, height/2]);
   }
   orientProjection(projection, view.center);
+  if (view.extent) {
+    // Uniform scale contains the requested geographic box about the requested centre.
+    projection.scale(1).translate([0, 0]);
+    const [[west, south], [east, north]] = view.extent;
+    const samples = Array.from({length: 181}, (_, i) => {
+      const t = i/180;
+      return [[west+(east-west)*t, south], [west+(east-west)*t, north], [west, south+(north-south)*t], [east, south+(north-south)*t]];
+    }).flat().map(p => projection(p as [number, number])!);
+    const x = Math.max(...samples.map(p => Math.abs(p[0]))), y = Math.max(...samples.map(p => Math.abs(p[1])));
+    if (!(x > 0 && y > 0)) throw new Error('Map fit extent must have positive area');
+    return projection.scale(Math.min(width/(2*x), height/(2*y))).translate([width/2, height/2]);
+  }
   if (kind === 'equirectangular' || kind === 'mercator') {
     projection.scale(view.pxPerDeg*180/Math.PI);
   } else {
@@ -59,7 +75,7 @@ export function createProjection(view: Camera | MapFit, kind: ProjectionName, wi
 }
 
 const MapContext = createContext<GeoProjection | null>(null);
-function useProjection() {const projection = useContext(MapContext); if (!projection) throw new Error('Map children require MapStage'); return projection;}
+export function useProjection() {const projection = useContext(MapContext); if (!projection) throw new Error('Map children require MapStage'); return projection;}
 export function useProject(): (point: [number, number]) => [number, number] {const projection = useProjection(); return point => projection(point) ?? [NaN, NaN];}
 
 const world = atlas as unknown as Topology<{countries: GeometryCollection}>;
@@ -98,7 +114,7 @@ export function MapStage({camera, fit, engraved = false, resolution = '50m', pro
   const center0 = view.center[0], center1 = view.center[1];
   const viewMode = 'zoom' in view ? 'zoom' : 'fit';
   const scale = viewMode === 'zoom' ? (view as Camera).zoom : (view as MapFit).pxPerDeg;
-  const projected = useMemo(() => createProjection(view, projection, width, height), [center0, center1, scale, viewMode, projection, width, height]);
+  const projected = useMemo(() => createProjection(view, projection, width, height), [center0, center1, scale, viewMode, projection, width, height, fit?.extent?.[0][0], fit?.extent?.[0][1], fit?.extent?.[1][0], fit?.extent?.[1][1]]);
   const data = (resolution === '110m' ? atlas110 : atlas) as unknown as typeof world;
   const drawnCountries = resolution === '110m' ? feature(data, data.objects.countries).features : countries;
   const drawnBorders = resolution === '110m' ? mesh(data, data.objects.countries, (a,b) => a !== b) : countryBorders;

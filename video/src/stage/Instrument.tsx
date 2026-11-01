@@ -40,8 +40,17 @@ export type InstrumentProps = {
   compact: () => React.ReactNode; expanded: () => React.ReactNode; settings: () => React.ReactNode;
 };
 export function Instrument(props: InstrumentProps) {
-  const {ms, interactive} = useContext(ClockContext), tokens = useTokens();
+  const {interactive} = useContext(ClockContext);
+  return interactive ? <InteractiveInstrument {...props}/> : <InstrumentFrame {...props}/>;
+}
+function InteractiveInstrument(props: InstrumentProps) {
   const [override, setOverride] = useState<InstrumentMode | null>(null);
+  const changeOverride = (mode: InstrumentMode | null) => {setOverride(mode); props.onInteractiveModeChange?.(mode);};
+  return <InstrumentFrame {...props} override={override} changeOverride={changeOverride}/>;
+}
+function InstrumentFrame(props: InstrumentProps & {override?: InstrumentMode | null; changeOverride?: (mode: InstrumentMode | null) => void}) {
+  const {ms, interactive} = useContext(ClockContext), tokens = useTokens();
+  const {override, changeOverride} = props;
   const resolved = resolveMode(ms, props.modeTimeline ?? [], props.transitionMs);
   let weights = resolved.weights;
   if (props.mode) weights = {compact: Number(props.mode === 'compact'), expanded: Number(props.mode === 'expanded'), settings: Number(props.mode === 'settings')};
@@ -51,9 +60,8 @@ export function Instrument(props: InstrumentProps) {
   const rect = {x: 0, y: 0, width: 0, height: 0};
   for (const m of modes) {const r = anchored[m]; for (const k of Object.keys(rect) as (keyof Rect)[]) rect[k] += weights[m]*r[k];}
   const active = modes.reduce((a,b) => weights[a] >= weights[b] ? a : b);
-  const changeOverride = (mode: InstrumentMode | null) => {setOverride(mode); props.onInteractiveModeChange?.(mode);};
-  return <section onMouseEnter={() => interactive && changeOverride(active === 'settings' ? 'settings' : 'expanded')} onMouseLeave={() => interactive && changeOverride(override === 'settings' ? 'settings' : null)} style={{position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height, background: tokens.colours.surface, borderRadius: tokens.radii.panel, border: `${tokens.strokes.border}px solid ${tokens.colours.border}`, overflow: 'hidden', boxSizing: 'border-box', ...(props.unstyled ? {background: 'transparent', border: 'none', borderRadius: 0} : {}), ...props.style, zIndex: override && override !== 'compact' ? 50 : props.style?.zIndex}}>
-    {modes.map(m => <div key={m} aria-hidden={active !== m} style={{position: 'absolute', inset: props.unstyled ? 0 : 20, opacity: weights[m], pointerEvents: active === m ? 'auto' : 'none', visibility: weights[m] === 0 ? 'hidden' : 'visible'}}>{props[m]()}</div>)}
-    {interactive && <button aria-label={active === 'settings' ? 'Close settings' : 'Open settings'} onClick={() => changeOverride(active === 'settings' ? 'compact' : 'settings')} style={{position: 'absolute', top: 17.6, right: 17.6, width: 28, height: 28, padding: 0, background: tokens.colours.glass, color: tokens.colours.text, border: `1.6px solid ${tokens.colours.border}`, borderRadius: 6}}>{active === 'settings' ? '×' : '⚙'}</button>}
+  return <section onMouseEnter={() => interactive && changeOverride?.(active === 'settings' ? 'settings' : 'expanded')} onMouseLeave={() => interactive && changeOverride?.(override === 'settings' ? 'settings' : null)} style={{position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height, background: tokens.colours.surface, borderRadius: tokens.radii.panel, border: `${tokens.strokes.border}px solid ${tokens.colours.border}`, overflow: 'hidden', boxSizing: 'border-box', ...(props.unstyled ? {background: 'transparent', border: 'none', borderRadius: 0} : {}), ...props.style, zIndex: override && override !== 'compact' ? 50 : props.style?.zIndex}}>
+    {modes.filter(m => weights[m] > 0).map(m => <div key={m} aria-hidden={active !== m} style={{position: 'absolute', inset: props.unstyled ? 0 : 20, opacity: weights[m], pointerEvents: active === m ? 'auto' : 'none', visibility: weights[m] === 0 ? 'hidden' : 'visible'}}>{props[m]()}</div>)}
+    {interactive && <button aria-label={active === 'settings' ? 'Close settings' : 'Open settings'} onClick={() => changeOverride?.(active === 'settings' ? 'compact' : 'settings')} style={{position: 'absolute', top: 17.6, right: 17.6, width: 28, height: 28, padding: 0, background: tokens.colours.glass, color: tokens.colours.text, border: `1.6px solid ${tokens.colours.border}`, borderRadius: 6}}>{active === 'settings' ? '×' : '⚙'}</button>}
   </section>;
 }
