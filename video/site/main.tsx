@@ -1,4 +1,9 @@
 import React, {useEffect, useRef, useState} from 'react';
+import '@fontsource/ibm-plex-sans/400.css';
+import '@fontsource/ibm-plex-sans/500.css';
+import '@fontsource/ibm-plex-sans/600.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
 // react-dom/client types are supplied locally for this dependency-light workspace.
 import {createRoot} from 'react-dom/client';
 import {ManualClock} from '../src/stage/clock';

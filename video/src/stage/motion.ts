@@ -1,3 +1,6 @@
+import {interpolateZoom} from 'd3-interpolate';
+import {geoInterpolate} from 'd3-geo';
+
 export const clamp = (n: number, low = 0, high = 1) => Math.max(low, Math.min(high, n));
 export const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 export const linear = (t: number) => t;
@@ -26,6 +29,43 @@ export function tween<T extends number | number[]>(ms: number, keys: {at: number
     }
   }
   return keys[keys.length-1].value;
+}
+
+export type FlyCamera = {center: [number, number]; zoom: number};
+const WORLD_SPAN_DEG = 360;
+export type FlyKey = {at: number; camera: FlyCamera};
+
+/**
+ * A deterministic van Wijk camera flight. `interpolateZoom` treats inverse zoom as
+ * viewport width; its planar centre progress is mapped onto the geographic
+ * great-circle so long moves never sweep across an unrelated part of the map.
+ * Key times, rather than d3's suggested duration, remain authoritative.
+ */
+export function flyTo(ms: number, keys: FlyKey[], ease: Ease = linear): FlyCamera {
+  if (!keys.length) throw new Error('flyTo requires keys');
+  if (keys.some((key, i) => key.camera.zoom <= 0 || (i > 0 && key.at <= keys[i-1].at))) {
+    throw new Error('flyTo keys must increase and zooms must be positive');
+  }
+  if (ms <= keys[0].at) return keys[0].camera;
+  for (let i = 1; i < keys.length; i++) {
+    if (ms <= keys[i].at) {
+      const from = keys[i-1], to = keys[i];
+      const t = ease(progress(ms, from.at, to.at));
+      const [x0, y0] = from.camera.center;
+      const rawLonDelta = to.camera.center[0]-x0;
+      const lonDelta = ((rawLonDelta+540)%360)-180;
+      const x1 = x0+lonDelta, y1 = to.camera.center[1];
+      // van Wijk needs viewport width in the centre's units: degrees visible, 360 at zoom 1.
+      const interpolate = interpolateZoom([x0, y0, WORLD_SPAN_DEG/from.camera.zoom], [x1, y1, WORLD_SPAN_DEG/to.camera.zoom]);
+      const [x, y, span] = interpolate(t);
+      const inverseZoom = span/WORLD_SPAN_DEG;
+      const distanceSquared = (x1-x0)**2+(y1-y0)**2;
+      const along = distanceSquared === 0 ? t : clamp(((x-x0)*(x1-x0)+(y-y0)*(y1-y0))/distanceSquared);
+      const center = geoInterpolate(from.camera.center, to.camera.center)(along) as [number, number];
+      return {center, zoom: 1/inverseZoom};
+    }
+  }
+  return keys[keys.length-1].camera;
 }
 /** Unit-mass spring response, with zero initial position and velocity; time in ms. */
 export function settle(sinceMs: number, {stiffness = 100, damping = 20}: {stiffness?: number; damping?: number} = {}) {
