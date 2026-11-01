@@ -33,6 +33,9 @@ export type InstrumentProps = {
   mode?: InstrumentMode; modeTimeline?: ModeKey[]; transitionMs?: number;
   transition?: {from: InstrumentMode; to: InstrumentMode; progress: number};
   grow?: InstrumentGrow;
+  unstyled?: boolean;
+  onInteractiveModeChange?: (mode: InstrumentMode | null) => void;
+  style?: React.CSSProperties;
   anchor: {compact: Rect; expanded: Rect; settings?: Rect};
   compact: () => React.ReactNode; expanded: () => React.ReactNode; settings: () => React.ReactNode;
 };
@@ -48,8 +51,9 @@ export function Instrument(props: InstrumentProps) {
   const rect = {x: 0, y: 0, width: 0, height: 0};
   for (const m of modes) {const r = anchored[m]; for (const k of Object.keys(rect) as (keyof Rect)[]) rect[k] += weights[m]*r[k];}
   const active = modes.reduce((a,b) => weights[a] >= weights[b] ? a : b);
-  return <section onMouseEnter={() => interactive && setOverride(v => v === 'settings' ? v : 'expanded')} onMouseLeave={() => interactive && setOverride(v => v === 'settings' ? v : null)} style={{position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height, background: tokens.colours.surface, borderRadius: tokens.radii.panel, border: `${tokens.strokes.border}px solid ${tokens.colours.border}`, overflow: 'hidden', boxSizing: 'border-box'}}>
-    {modes.map(m => <div key={m} aria-hidden={active !== m} style={{position: 'absolute', inset: 20, opacity: weights[m], pointerEvents: active === m ? 'auto' : 'none', visibility: weights[m] === 0 ? 'hidden' : 'visible'}}>{props[m]()}</div>)}
-    {interactive && <button aria-label={override === 'settings' ? 'Close settings' : 'Open settings'} onClick={() => setOverride(v => v === 'settings' ? null : 'settings')} style={{position: 'absolute', top: 8, right: 8}}>{override === 'settings' ? '×' : '⚙'}</button>}
+  const changeOverride = (mode: InstrumentMode | null) => {setOverride(mode); props.onInteractiveModeChange?.(mode);};
+  return <section onMouseEnter={() => interactive && changeOverride(active === 'settings' ? 'settings' : 'expanded')} onMouseLeave={() => interactive && changeOverride(override === 'settings' ? 'settings' : null)} style={{position: 'absolute', left: rect.x, top: rect.y, width: rect.width, height: rect.height, background: tokens.colours.surface, borderRadius: tokens.radii.panel, border: `${tokens.strokes.border}px solid ${tokens.colours.border}`, overflow: 'hidden', boxSizing: 'border-box', ...(props.unstyled ? {background: 'transparent', border: 'none', borderRadius: 0} : {}), ...props.style, zIndex: override && override !== 'compact' ? 50 : props.style?.zIndex}}>
+    {modes.map(m => <div key={m} aria-hidden={active !== m} style={{position: 'absolute', inset: props.unstyled ? 0 : 20, opacity: weights[m], pointerEvents: active === m ? 'auto' : 'none', visibility: weights[m] === 0 ? 'hidden' : 'visible'}}>{props[m]()}</div>)}
+    {interactive && <button aria-label={active === 'settings' ? 'Close settings' : 'Open settings'} onClick={() => changeOverride(active === 'settings' ? 'compact' : 'settings')} style={{position: 'absolute', top: 17.6, right: 17.6, width: 28, height: 28, padding: 0, background: tokens.colours.glass, color: tokens.colours.text, border: `1.6px solid ${tokens.colours.border}`, borderRadius: 6}}>{active === 'settings' ? '×' : '⚙'}</button>}
   </section>;
 }

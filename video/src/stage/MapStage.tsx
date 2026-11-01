@@ -3,6 +3,7 @@ import {geoEquirectangular, geoGraticule, geoGraticule10, geoInterpolate, geoMer
 import {feature, mesh} from 'topojson-client';
 import type {Topology, GeometryCollection} from 'topojson-specification';
 import atlas from 'world-atlas/countries-50m.json';
+import atlas110 from 'world-atlas/countries-110m.json';
 import {useTokens} from './tokens';
 import {clamp} from './motion';
 
@@ -23,7 +24,7 @@ function projectionFor(kind: ProjectionName) {
 }
 
 function orientProjection(projection: GeoProjection, center: [number, number]) {
-  if (projection.clipAngle() != null) projection.rotate([-center[0], -center[1]]);
+  if ((projection.clipAngle() ?? 0) > 0) projection.rotate([-center[0], -center[1]]);
   else projection.center(center);
 }
 
@@ -66,6 +67,8 @@ const countries = feature(world, world.objects.countries).features;
 const countryBorders = mesh(world, world.objects.countries, (a, b) => a !== b);
 
 type MapStageBaseProps = {
+  engraved?: boolean;
+  resolution?: '50m' | '110m';
   projection?: ProjectionName;
   highlight?: {id: string; color?: string; amount: number}[];
   land?: LandStyle;
@@ -88,7 +91,7 @@ function rayEnd(x: number, y: number, angle: number, width: number, height: numb
   return [x+dx*distance, y+dy*distance];
 }
 
-export function MapStage({camera, fit, projection = 'naturalEarth', highlight = [], land, borders, graticule = false, rhumb, clip, width = 1920, height = 1080, children}: MapStageProps) {
+export function MapStage({camera, fit, engraved = false, resolution = '50m', projection = 'naturalEarth', highlight = [], land, borders, graticule = false, rhumb, clip, width = 1920, height = 1080, children}: MapStageProps) {
   const tokens = useTokens();
   const view = camera ?? fit;
   if (!view) throw new Error('MapStage requires camera or fit');
@@ -96,9 +99,16 @@ export function MapStage({camera, fit, projection = 'naturalEarth', highlight = 
   const viewMode = 'zoom' in view ? 'zoom' : 'fit';
   const scale = viewMode === 'zoom' ? (view as Camera).zoom : (view as MapFit).pxPerDeg;
   const projected = useMemo(() => createProjection(view, projection, width, height), [center0, center1, scale, viewMode, projection, width, height]);
+  const data = (resolution === '110m' ? atlas110 : atlas) as unknown as typeof world;
+  const drawnCountries = resolution === '110m' ? feature(data, data.objects.countries).features : countries;
+  const drawnBorders = resolution === '110m' ? mesh(data, data.objects.countries, (a,b) => a !== b) : countryBorders;
+  const landGeometry = feature(data, (data.objects as unknown as {land: GeometryCollection}).land);
   const path = geoPath(projected);
   const clipId = `stage-map-clip-${useId().replace(/:/g, '')}`;
-  const graticuleGeometry = typeof graticule === 'object'
+  const graticuleGeometry = engraved ? {type: 'MultiLineString' as const, coordinates: [
+    ...Array.from({length:37},(_,i)=>Array.from({length:181},(_,j)=>[-180+i*10,-90+j])),
+    ...Array.from({length:17},(_,i)=>Array.from({length:361},(_,j)=>[-180+j,-80+i*10]))
+  ]} : typeof graticule === 'object'
     ? geoGraticule().step(Array.isArray(graticule.step) ? graticule.step : [graticule.step, graticule.step])()
     : geoGraticule10();
   const landStyle = land ?? {fill: tokens.colours.land, stroke: tokens.colours.border, strokeWidth: tokens.strokes.map};
@@ -106,11 +116,13 @@ export function MapStage({camera, fit, projection = 'naturalEarth', highlight = 
     {clip && <defs><clipPath id={clipId}><rect {...clip} /></clipPath></defs>}
     <g clipPath={clip ? `url(#${clipId})` : undefined}>
       <path d={path({type: 'Sphere'}) ?? ''} fill={tokens.colours.ocean} />
-      {countries.map(country => {
+      {!engraved && <>
+      {drawnCountries.map(country => {
         const emphasis = highlight.find(item => Number(item.id) === Number(country.id));
         return <g key={country.id}><path d={path(country) ?? ''} fill={landStyle.fill} stroke={landStyle.stroke} strokeWidth={landStyle.strokeWidth} />{emphasis && <path d={path(country) ?? ''} fill={emphasis.color ?? tokens.colours.accent} opacity={clamp(emphasis.amount)} />}</g>;
       })}
-      {borders && <path d={path(countryBorders) ?? ''} fill="none" stroke={borders.stroke} strokeWidth={borders.strokeWidth} opacity={borders.opacity} />}
+      {borders && <path d={path(drawnBorders) ?? ''} fill="none" stroke={borders.stroke} strokeWidth={borders.strokeWidth} opacity={borders.opacity} />}
+      </>}
       {graticule && <path d={path(graticuleGeometry) ?? ''} fill="none" stroke={typeof graticule === 'object' ? graticule.stroke : tokens.colours.muted} opacity={typeof graticule === 'object' ? graticule.opacity : 0.25} strokeWidth={typeof graticule === 'object' ? graticule.strokeWidth : tokens.strokes.map} />}
       {rhumb && rhumb.centres.flatMap((centre, centreIndex) => {
         const start = projected(centre);
@@ -120,6 +132,9 @@ export function MapStage({camera, fit, projection = 'naturalEarth', highlight = 
           return <line key={`${centreIndex}:${spokeIndex}`} x1={start[0]} y1={start[1]} x2={end[0]} y2={end[1]} stroke={rhumb.stroke} strokeWidth={rhumb.strokeWidth} opacity={rhumb.opacity} />;
         });
       })}
+      {engraved && <path d={path(landGeometry) ?? ''} fill={landStyle.fill} stroke={landStyle.stroke} strokeWidth={landStyle.strokeWidth} strokeLinejoin="round" />}
+      {engraved && borders && <path d={path(drawnBorders) ?? ''} fill="none" stroke={borders.stroke} strokeWidth={borders.strokeWidth} opacity={borders.opacity} />}
+      {engraved && highlight.map(item => {const country=drawnCountries.find(c => Number(c.id)===Number(item.id)); return country ? <path key={item.id} d={path(country) ?? ''} fill={item.color ?? tokens.colours.accent} opacity={item.amount} stroke={landStyle.stroke} strokeWidth={1.2} strokeLinejoin="round" /> : null;})}
       {children}
     </g>
   </svg></MapContext.Provider>;
@@ -137,16 +152,22 @@ export function MapRoute({from, to, draw, color}: {from: [number, number]; to: [
 }
 
 export type CompassRoseProps = {
+  engraved?: boolean;
   centre?: [number, number];
   center?: [number, number];
   radius: number;
   stroke?: string;
   fill?: string;
   labelColor?: string;
+  starStroke?: string;
 };
-export function CompassRose({centre, center, radius, stroke, fill = 'none', labelColor}: CompassRoseProps) {
+export function CompassRose({engraved = false, centre, center, radius, stroke, fill = 'none', labelColor, starStroke}: CompassRoseProps) {
   const tokens = useTokens(), [x, y] = centre ?? center ?? [0, 0];
   const line = stroke ?? tokens.colours.text, text = labelColor ?? line;
+  if (engraved) {
+    const points=Array.from({length:32},(_,i)=>{const a=-Math.PI/2+i*Math.PI/16,r=i%8===0?radius:i%4===0?radius*.72:i%2===0?radius*.5:radius*.2;return `${x+Math.cos(a)*r},${y+Math.sin(a)*r}`;}).join(' ');
+    return <g><circle cx={x} cy={y} r={radius*82/70} fill="none" stroke={line} strokeWidth={1}/><circle cx={x} cy={y} r={radius*66/70} fill="none" stroke={line} strokeWidth={1}/><polygon points={points} fill={fill} stroke={starStroke ?? line} strokeWidth={1}/><text x={x} y={y-89} textAnchor="middle" fill={text} fontFamily={tokens.fonts.mono} fontSize={14} fontWeight={500}>N</text></g>;
+  }
   const points = Array.from({length: 32}, (_, i) => {
     const angle = -Math.PI/2+i*Math.PI/16;
     const pointRadius = i%2 === 0 ? radius : radius*0.32;
@@ -162,8 +183,8 @@ export function CompassRose({centre, center, radius, stroke, fill = 'none', labe
 
 type Point = [number, number];
 type Cubic = {from: Point; c1: Point; c2: Point; to: Point};
-function splineSegments(points: Point[], tension: number): Cubic[] {
-  const factor = (1-clamp(tension))/6;
+function splineSegments(points: Point[], tension: number, convention: 'cardinal' | 'handoff' = 'cardinal'): Cubic[] {
+  const factor = convention === 'handoff' ? tension/3 : (1-clamp(tension))/6;
   return points.slice(0, -1).map((from, i) => {
     const before = points[Math.max(0, i-1)], to = points[i+1], after = points[Math.min(points.length-1, i+2)];
     return {from, c1: [from[0]+(to[0]-before[0])*factor, from[1]+(to[1]-before[1])*factor], c2: [to[0]-(after[0]-from[0])*factor, to[1]-(after[1]-from[1])*factor], to};
@@ -173,10 +194,10 @@ function cubicPoint(segment: Cubic, t: number): Point {
   const u = 1-t;
   return [u**3*segment.from[0]+3*u*u*t*segment.c1[0]+3*u*t*t*segment.c2[0]+t**3*segment.to[0], u**3*segment.from[1]+3*u*u*t*segment.c1[1]+3*u*t*t*segment.c2[1]+t**3*segment.to[1]];
 }
-export function catmullRomPath(points: Point[], tension = 0): {d: string; length: number} {
+export function catmullRomPath(points: Point[], tension = 0, convention: 'cardinal' | 'handoff' = 'cardinal'): {d: string; length: number} {
   if (!points.length) return {d: '', length: 0};
   if (points.length === 1) return {d: `M${points[0][0]},${points[0][1]}`, length: 0};
-  const segments = splineSegments(points, tension);
+  const segments = splineSegments(points, tension, convention);
   const d = `M${points[0][0]},${points[0][1]}${segments.map(segment => ` C${segment.c1[0]},${segment.c1[1]} ${segment.c2[0]},${segment.c2[1]} ${segment.to[0]},${segment.to[1]}`).join('')}`;
   let length = 0;
   for (const segment of segments) {
@@ -191,6 +212,8 @@ export function catmullRomPath(points: Point[], tension = 0): {d: string; length
 }
 
 export type RouteProps = {
+  convention?: 'cardinal' | 'handoff';
+  dashOverlay?: {stroke: string; strokeWidth: number; dasharray: number[]};
   waypoints: [number, number][];
   tension?: number;
   draw: number;
@@ -200,13 +223,16 @@ export type RouteProps = {
   strokeWidth?: number;
   markerRadius?: number;
 };
-export function Route({waypoints, tension = 0, draw, markers, markerIndices, stroke, strokeWidth, markerRadius = 6}: RouteProps) {
+export function Route({convention = 'cardinal', dashOverlay, waypoints, tension = 0, draw, markers, markerIndices, stroke, strokeWidth, markerRadius = 6}: RouteProps) {
   const projection = useProjection(), tokens = useTokens();
   const points = waypoints.map(point => projection(point)).filter((point): point is [number, number] => point != null);
-  const route = catmullRomPath(points, tension), amount = clamp(draw), chosen = markers ?? markerIndices ?? [];
+  const route = catmullRomPath(points, tension, convention), amount = clamp(draw), chosen = markers ?? markerIndices ?? [];
   const color = stroke ?? tokens.colours.accent;
-  return <g>
+  const maskId = `route-${useId().replace(/:/g, '')}`;
+  return <g strokeLinecap="round">
+    {dashOverlay && <><defs><mask id={maskId}><path d={route.d} fill="none" stroke="white" strokeWidth={(strokeWidth ?? tokens.strokes.route)+2} strokeDasharray={`${route.length} ${route.length}`} strokeDashoffset={route.length*(1-amount)}/></mask></defs></>}
     <path d={route.d} fill="none" stroke={color} strokeWidth={strokeWidth ?? tokens.strokes.route} strokeDasharray={`${route.length} ${route.length}`} strokeDashoffset={route.length*(1-amount)} opacity={amount > 0 ? 1 : 0} />
+    {dashOverlay && <path d={route.d} fill="none" stroke={dashOverlay.stroke} strokeWidth={dashOverlay.strokeWidth} strokeDasharray={dashOverlay.dasharray.join(" ")} mask={`url(#${maskId})`} opacity={amount > 0 ? 1 : 0}/>}
     {chosen.map(index => points[index] ? <circle key={index} cx={points[index][0]} cy={points[index][1]} r={markerRadius} fill={color} /> : null)}
   </g>;
 }
