@@ -1,0 +1,177 @@
+{
+  "good": [
+    {
+      "file": "ab_v2_e161.jpg",
+      "scene": "SequenceAsTheory t12"
+    },
+    {
+      "file": "ab_v2_e207.jpg",
+      "scene": "TermsInOneBucket t16"
+    },
+    {
+      "file": "ab_v2_e239.jpg",
+      "scene": "APAGroupDefinitions t19"
+    },
+    {
+      "file": "ab_v2_e275.jpg",
+      "scene": "TajfelCitation t22"
+    },
+    {
+      "file": "cd_v2_e294.jpg",
+      "scene": "UsThemSorting t24"
+    },
+    {
+      "file": "cd_v2_e382.jpg",
+      "scene": "PredictiveCoding t31"
+    },
+    {
+      "file": "cd_v2_e405.jpg",
+      "scene": "InstalledRacialPrior t33"
+    },
+    {
+      "file": "cd_v2_e424.5.jpg",
+      "scene": "InstalledRacialPrior t34"
+    }
+  ],
+  "bad": [
+    {
+      "file": "cd_v1_e360.png",
+      "defects": [
+        "border"
+      ],
+      "note": "question on the top border"
+    },
+    {
+      "file": "cd_v1_e392.png",
+      "defects": [
+        "border",
+        "overlap"
+      ],
+      "note": "title on border; strips over panel title"
+    },
+    {
+      "file": "cd_v1_e405.png",
+      "defects": [
+        "empty",
+        "border"
+      ],
+      "note": "empty equation band; gauge outside safe area"
+    },
+    {
+      "file": "cd_v1_e424.5.png",
+      "defects": [
+        "border",
+        "empty"
+      ],
+      "note": "cards on border, lower half empty"
+    },
+    {
+      "file": "ab_v1_e161.png",
+      "defects": [
+        "overlap"
+      ],
+      "note": "node title overprints subtitle; connectors through labels"
+    },
+    {
+      "file": "ab_v1_e169.png",
+      "defects": [
+        "empty"
+      ],
+      "note": "empty outlined rectangle"
+    },
+    {
+      "file": "ab_v1_e207.png",
+      "defects": [
+        "overlap"
+      ],
+      "note": "bucket lines through term blocks"
+    },
+    {
+      "file": "ab_v1_e264.png",
+      "defects": [
+        "overlap"
+      ],
+      "note": "tray over field; faint labels through it"
+    },
+    {
+      "file": "f_v1_e545.jpg",
+      "defects": [
+        "empty"
+      ],
+      "note": "empty stimulus window"
+    },
+    {
+      "file": "f_v1_e578.jpg",
+      "defects": [
+        "empty"
+      ],
+      "note": "Allport card mostly empty"
+    },
+    {
+      "file": "f_v1_e508.jpg",
+      "defects": [
+        "empty"
+      ],
+      "note": "empty trace boxes, duplicate heading"
+    },
+    {
+      "file": "e_v1_e441.jpg",
+      "defects": [
+        "empty"
+      ],
+      "note": "empty series plot"
+    },
+    {
+      "file": "h_v1_e751.jpg",
+      "defects": [
+        "internal"
+      ],
+      "note": "internal label TURN 63; empty dashed box"
+    },
+    {
+      "file": "v4_e476.jpg",
+      "defects": [
+        "border"
+      ],
+      "note": "term labels and ghost band across the top border and notch"
+    },
+    {
+      "file": "v4_e434.jpg",
+      "defects": [
+        "filler"
+      ],
+      "note": "filler microcopy in every panel"
+    },
+    {
+      "file": "v5_e508.jpg",
+      "defects": [
+        "empty"
+      ],
+      "note": "empty trace panel"
+    },
+    {
+      "file": "v5_e552.jpg",
+      "defects": [
+        "empty"
+      ],
+      "note": "stimulus window empty"
+    },
+    {
+      "file": "v5_e586.jpg",
+      "defects": [
+        "empty"
+      ],
+      "note": "empty lower panel"
+    }
+  ],
+  "defects": {
+    "border": "text or shapes on the frame border or in the notch zones",
+    "empty": "a container that is empty or mostly empty",
+    "overlap": "text on text, or a line or shape crossing text",
+    "ghost": "faded text left visible under other content",
+    "internal": "internal labels on screen (turn numbers, cue names)",
+    "filler": "descriptive microcopy that restates the picture"
+  },
+  "source": "YT02v2_ov frame reviews 2026-11-02, book repo outputs/YT02v2_ov/video/stage_runs",
+  "note": "Frames come at mixed sizes (1920x1080 PNG and 960x540 JPEG); normalise to 1920x1080 before measuring. 'filler' needs OCR word counts; 'ghost' has no fixture yet."
+}
