@@ -9,6 +9,7 @@ from scriptcast.tools.stage_verify import (
     EMPTY_INK,
     Element,
     OcrWord,
+    Still,
     TesseractBackend,
     _crushed_subtitles,
     check_border,
@@ -17,8 +18,10 @@ from scriptcast.tools.stage_verify import (
     check_overlap,
     check_strings,
     classify_filler,
+    composition_cues,
     evaluate_fixtures,
     fit_baseline,
+    verify_still,
 )
 
 FIXTURES = Path(__file__).resolve().parents[1] / "video" / "fixtures" / "verify"
@@ -59,6 +62,13 @@ def test_ocr_readback_present_absent_and_internal():
     assert "undeclared" in checks
     assert any("zebraword" in r.detail for r in reasons if r.check == "undeclared")
 
+    # "IN 1" is declared; tesseract glues it into IN1O. That is the label.
+    glued = check_strings(
+        [OcrWord("IN1O", 77, 10, 200, 40, 16)],
+        due=[], later=[], declared=["IN 1"], source_lines=[],
+    )
+    assert glued == []
+
     # "Turner" is a name in the approved stills, not an internal turn label.
     turner = check_strings(
         [OcrWord("Turner", 95, 100, 100, 80, 24)],
@@ -78,6 +88,73 @@ def test_filler_needs_both_word_count_and_prose():
     assert classify_filler(labels) is None
 
 
+def _caption(words: list[str], y: int, gaps: list[int]) -> list[OcrWord]:
+    x = 160
+    out = []
+    for i, word in enumerate(words):
+        if i:
+            x += gaps[i - 1]
+        out.append(OcrWord(word, 95, x, y, 90, 22))
+        x += 90
+    return out
+
+
+def test_uppercase_caption_lines_are_filler_and_one_title_is_not():
+    title = _caption(["PREDICTION", "FROM", "PRIOR", "EXPERIENCE"], 400, [20, 19, 19])
+    assert classify_filler(title) is None
+    captions = (
+        _caption(["SIMULTANEOUS", "DUAL", "INPUTS", "BELIEF", "AUTOMATIC", "TRACE"], 141, [10, 8, 26, 35, 8])
+        + _caption(["EXPLICIT", "CHANNEL", "CONSCIOUS", "COMMITMENT"], 483, [13, 38, 14])
+    )
+    flagged = classify_filler(captions)
+    assert flagged is not None and flagged.check == "filler"
+    assert "uppercase" in flagged.detail
+    assert "EXPLICIT CHANNEL" in flagged.detail
+
+
+def test_a_card_that_holds_a_drawing_is_full_and_a_ribbon_is_not_crowded():
+    image = canvas()
+    frame = Element("neural-field", "frame", 200, 200, 500, 360)
+    node = Element("n1", "mark", 300, 300, 20, 20)
+    assert check_containers(image, [frame, node]) == []
+
+    bar = canvas()
+    ImageDraw.Draw(bar).rectangle([125, 96, 1795, 168], fill=(210, 170, 70))
+    ribbon = Element("ribbon", "frame", 125, 96, 1670, 72)
+    assert check_containers(bar, [ribbon]) == []
+
+
+class _Silent:
+    name = "silent"
+
+    def read(self, image):
+        return []
+
+
+def test_lower_half_runs_at_turn_end_only_when_boxes_are_declared(monkeypatch):
+    def fail_pixel(*_args, **_kwargs):
+        raise AssertionError("pixel overlap ran on declared geometry")
+
+    monkeypatch.setattr("scriptcast.tools.stage_verify.check_pixel_overlap", fail_pixel)
+    image = canvas()
+    ImageDraw.Draw(image).rectangle([220, 180, 420, 260], fill=(180, 180, 180))
+    frame = Element("card", "frame", 180, 140, 540, 280)
+    stills = [
+        Still("HostWetware", "t25Terminology", 1000, "a.png", Path("a.png")),
+        Still("HostWetware", "t25Categorization", 2000, "b.png", Path("b.png")),
+        Still("HostWetware", "end", 3000, "c.png", Path("c.png")),
+    ]
+    cues = composition_cues(stills)
+    assert ("HostWetware", "t25Terminology") not in cues
+    assert ("HostWetware", "t25Categorization") in cues
+    assert ("HostWetware", "end") in cues
+
+    _record, early = verify_still(stills[0], image, [frame], [], [], _Silent(), None, composition=False)
+    assert not any("lower half" in r.detail for r in early)
+    _record, late = verify_still(stills[1], image, [frame], [], [], _Silent(), None, composition=True)
+    assert any("lower half" in r.detail for r in late)
+
+
 def test_empty_and_crowded_containers():
     image = canvas()
     empty = Element("card", "frame", 200, 200, 500, 360)
@@ -88,9 +165,12 @@ def test_empty_and_crowded_containers():
 
     packed = canvas()
     ImageDraw.Draw(packed).rectangle([200, 200, 700, 560], fill=(236, 228, 210))
-    crowded = check_containers(packed, [empty])
+    label = Element("label", "text", 230, 230, 180, 36, text="PACKED")
+    crowded = check_containers(packed, [empty, label])
     assert [r.check for r in crowded] == ["crowded"]
     assert crowded[0].elements == ["card"]
+    # A solid disc with no copy is the shape, not a packed panel.
+    assert check_containers(packed, [empty]) == []
 
     half = canvas()
     ImageDraw.Draw(half).rectangle([200, 200, 400, 380], fill=(236, 228, 210))

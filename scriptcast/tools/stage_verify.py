@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import statistics
 import subprocess
@@ -87,12 +88,24 @@ LINE_THROUGH_SCORE = 400
 CURVE_CROSS_PX = 8000
 FILLER_WORDS = 70
 FILLER_PROSE = 12
+# Uppercase microcopy: a caption line is >= MICROCOPY_RUN all-caps words on
+# one text line, with a middot-sized gap (the " · " these captions use).
+# One such line is a title (approved stills have that). Two or more on the
+# same beat is the filler the turn-42 captions are. Measured on the fixtures:
+# approved stills have no such line; the non-filler bad stills have at most one.
+MICROCOPY_RUN = 4
+MICROCOPY_LINES = 2
+MICROCOPY_GAP = 42.0
+MICROCOPY_SEP_LO = 22.0
+MICROCOPY_SEP_HI = 45.0
 OCR_MIN_CONF = 45
 
 _PUNCT = re.compile(r"[^a-z0-9\s]+")
 _WS = re.compile(r"\s+")
 _TURN = re.compile(r"\bturn\s+\d+\b", re.I)
 _PROSE = re.compile(r"^[a-z][a-z'-]{3,}$")
+_CAPS = re.compile(r"^[A-Z0-9][A-Z0-9'&/-]{2,}$")
+_CUE_TURN = re.compile(r"^t(\d+)")
 _TOKEN = re.compile(r"[a-z0-9]+")
 
 DEFECT_OF_CHECK = {
@@ -434,6 +447,12 @@ def check_strings(
         elif len(distinctive) == 1 and any(_similar(distinctive[0], h) for h in heard):
             reasons.append(Reason("premature", f"string from a later cue is already on screen: {phrase}"))
     allowed = tokens(" ".join([*due, *declared, *source_lines]))
+    # "IN 1" is one glyph run to OCR ("IN1O"). The compact form keeps the
+    # digit tokens() would drop, so the misread still matches the declaration.
+    for phrase in (*due, *declared, *source_lines):
+        compact = re.sub(r"[^a-z0-9]", "", phrase.lower())
+        if len(compact) > 1:
+            allowed.append(compact)
     undeclared: list[str] = []
     internal_at: list[OcrWord] = []
     for word in words:
@@ -456,12 +475,60 @@ def check_strings(
     return reasons
 
 
-def classify_filler(words: Sequence[OcrWord]) -> Reason | None:
-    """Filler microcopy: many words, and a run of sentence-case prose among them.
+def _microcopy_lines(words: Sequence[OcrWord]) -> list[list[str]]:
+    """Uppercase caption lines: a middot-separated run of short all-caps labels.
 
-    Calibrated so a frame of labels plus one definition stays under the line,
-    and a frame with a caption under every panel crosses it. The labelled
-    note on this defect is that it needs OCR word counts.
+    Words on one text line (12 px of y) stay in a run while the gap to the
+    next word is at most ``MICROCOPY_GAP``. A real caption has at least one
+    gap in the middot range; a tight title ("PREDICTION FROM PRIOR
+    EXPERIENCE") and a row of names do not both clear that and come in pairs.
+    """
+    kept = [w for w in words if w.conf >= 50 and 70 < w.y < 980]
+    kept.sort(key=lambda w: (w.y, w.x))
+    lines: list[list[OcrWord]] = []
+    for word in kept:
+        if lines and abs(word.y - lines[-1][0].y) <= 12:
+            lines[-1].append(word)
+        else:
+            lines.append([word])
+    hits: list[list[str]] = []
+    for line in lines:
+        line.sort(key=lambda w: w.x)
+        run: list[tuple[str, float | None]] = []
+        prev: OcrWord | None = None
+
+        def flush() -> None:
+            nonlocal run
+            tokens = [token for token, _gap in run]
+            gaps = [gap for _token, gap in run if gap is not None]
+            if len(tokens) >= MICROCOPY_RUN and any(MICROCOPY_SEP_LO <= gap <= MICROCOPY_SEP_HI for gap in gaps):
+                hits.append(tokens)
+            run = []
+
+        for word in line:
+            token = re.sub(r"[^A-Za-z0-9'&/-]", "", word.text)
+            gap = None if prev is None else word.x - (prev.x + prev.w)
+            if gap is not None and not (0 <= gap <= MICROCOPY_GAP):
+                flush()
+                gap = None
+            if _CAPS.match(token):
+                run.append((token, gap))
+            else:
+                flush()
+            prev = word
+        flush()
+    return hits
+
+
+def classify_filler(words: Sequence[OcrWord]) -> Reason | None:
+    """Filler microcopy on this settled beat.
+
+    Two shapes, both counted on the still itself (a beat, not the scene):
+
+    * A long sentence-case caption: many OCR words and a run of prose.
+      A frame of labels plus one definition stays under it.
+    * Two or more uppercase caption lines ("EXPLICIT CHANNEL · CONSCIOUS
+      COMMITMENT"). A single title line is normal and is not flagged.
     """
     kept = [w for w in words if w.conf >= 50 and len(w.text) >= 3]
     prose = [w for w in kept if _PROSE.match(w.text)]
@@ -470,6 +537,13 @@ def classify_filler(words: Sequence[OcrWord]) -> Reason | None:
         return Reason(
             "filler",
             f"filler microcopy: {len(kept)} OCR words, {len(prose)} of them sentence prose ({sample})",
+        )
+    captions = _microcopy_lines(words)
+    if len(captions) >= MICROCOPY_LINES:
+        shown = "; ".join(" ".join(line) for line in captions[:3])
+        return Reason(
+            "filler",
+            f"filler microcopy: {len(captions)} uppercase caption lines ({shown})",
         )
     return None
 
@@ -515,8 +589,36 @@ def _ink_stats(sl: np.ndarray) -> tuple[float, float]:
     return ink, gap
 
 
+def _inside(frame: Element, x: float, y: float) -> bool:
+    return frame.x <= x <= frame.x + frame.w and frame.y <= y <= frame.y + frame.h
+
+
+def _holds_drawing(frame: Element, elements: Sequence[Element]) -> bool:
+    """A card that holds a declared mark or stroke is full, whatever its ink.
+
+    The cleanup amendment: content of a card is the union of its text and the
+    marks and shapes inside it. A network diagram is dozens of curved edges
+    by design; measuring its pixels as empty or crowded is the wrong check.
+    """
+    for other in elements:
+        if other is frame or other.opacity <= OPACITY_MIN:
+            continue
+        if other.role == "mark":
+            if _inside(frame, other.x + other.w / 2, other.y + other.h / 2):
+                return True
+        elif other.role == "line" and other.points:
+            if any(_inside(frame, x, y) for x, y in other.points):
+                return True
+    return False
+
+
 def check_containers(image: Image.Image, elements: Sequence[Element]) -> list[Reason]:
-    """Empty below E, crowded above C, for each visible declared frame."""
+    """Empty below E, crowded above C, for each visible declared frame.
+
+    Frames that hold a drawing are exempt. A wide bar (a title ribbon, a
+    meter) is the shape itself. Crowded applies when the frame also holds
+    text: ink with no copy is the shape (a ring), not a packed panel.
+    """
     rgb = _as_rgb(image)
     lum = luminance(rgb)
     reasons: list[Reason] = []
@@ -524,6 +626,11 @@ def check_containers(image: Image.Image, elements: Sequence[Element]) -> list[Re
         if el.role != "frame" or el.opacity <= OPACITY_MIN:
             continue
         if el.w < 40 or el.h < 40:
+            continue
+        # A title ribbon or a meter is a wide bar, not a panel of content.
+        if el.h < 100 and el.w >= el.h * 6:
+            continue
+        if _holds_drawing(el, elements):
             continue
         x0 = int(max(0, round(el.x + 4)))
         y0 = int(max(0, round(el.y + 4)))
@@ -533,13 +640,19 @@ def check_containers(image: Image.Image, elements: Sequence[Element]) -> list[Re
             continue
         ink, _gap = _ink_stats(lum[y0:y1, x0:x1])
         box = (int(el.x), int(el.y), int(el.w), int(el.h))
+        holds_text = any(
+            other.role == "text" and other.opacity > OPACITY_MIN
+            and _inside(el, other.x + other.w / 2, other.y + other.h / 2)
+            for other in elements
+        )
         if ink < EMPTY_INK:
             reasons.append(Reason(
                 "empty",
                 f'container "{el.id}" is empty ({ink:.1%} ink, threshold {EMPTY_INK:.1%})',
                 [el.id], [box],
             ))
-        elif ink > CROWDED_INK:
+        elif ink > CROWDED_INK and holds_text:
+            # Ink with no declared text is the shape itself (a ring, a disc).
             reasons.append(Reason(
                 "crowded",
                 f'container "{el.id}" is crowded ({ink:.1%} ink, threshold {CROWDED_INK:.1%})',
@@ -779,7 +892,6 @@ def detect_containers(image: Image.Image) -> list[tuple[float, float, int, int, 
 
 def check_detected_containers(image: Image.Image) -> list[Reason]:
     """Empty / crowded / top-band border from panels found in the still itself."""
-    lum = luminance(_as_rgb(image))
     reasons: list[Reason] = []
     flagged: list[tuple[int, int, int, int]] = []
     for ink, gap, area, height, (x0, y0, x1, y1) in detect_containers(image):
@@ -814,16 +926,27 @@ def check_detected_containers(image: Image.Image) -> list[Reason]:
             ))
         if empty:
             flagged.append(box)
-    # Composition: the lower half of the safe area is a blank band.
+    reasons.extend(check_lower_half(image))
+    return reasons
+
+
+def check_lower_half(image: Image.Image) -> list[Reason]:
+    """The lower half of the safe area is a blank band.
+
+    This is a composition check. On a live scene it runs at the scene end and
+    at turn ends; a build-in beat may still be empty there. Fixtures have no
+    turn structure, so the detected-container path always includes it.
+    """
+    lum = luminance(_as_rgb(image))
     lower = lum[560:1000, 140:1780]
     lower_ink = float((lower >= 50).mean()) if lower.size else 0.0
     if lower_ink < LOWER_HALF_EMPTY:
-        reasons.append(Reason(
+        return [Reason(
             "empty",
             f"lower half of the safe area is empty ({lower_ink:.1%} ink < {LOWER_HALF_EMPTY:.1%})",
             boxes=[(140, 560, 1640, 440)],
-        ))
-    return reasons
+        )]
+    return []
 
 
 def _crushed_subtitles(words: Sequence[OcrWord]) -> list[Reason]:
@@ -1061,6 +1184,100 @@ def load_stills(path: Path) -> list[Still]:
     return stills
 
 
+def composition_cues(stills: Sequence[Still]) -> set[tuple[str, str]]:
+    """Scene-end and turn-end cues, where a build-in beat has finished.
+
+    The last still of a turn (``t25Categorization`` after the other ``t25*``
+    cues) and a cue named ``end``. A beat that is still arriving is not in
+    this set, so a blank lower half there is a valid layout.
+    """
+    by_scene: dict[str, list[Still]] = {}
+    for still in stills:
+        by_scene.setdefault(still.scene, []).append(still)
+    chosen: set[tuple[str, str]] = set()
+    for scene, group in by_scene.items():
+        ordered = sorted(group, key=lambda s: (s.ms, s.cue))
+        last_of_turn: dict[str, str] = {}
+        for still in ordered:
+            if still.cue == "end":
+                chosen.add((scene, still.cue))
+            match = _CUE_TURN.match(still.cue)
+            if match:
+                last_of_turn[match.group(1)] = still.cue
+        for cue in last_of_turn.values():
+            chosen.add((scene, cue))
+        if ordered:
+            chosen.add((scene, ordered[-1].cue))
+    return chosen
+
+
+def _is_episode(markup_dir: Path) -> bool:
+    return (markup_dir / "index.ts").is_file() and (markup_dir / "ov" / "stage_plan.json").is_file()
+
+
+def _stage_toolchain() -> tuple[Path, Path]:
+    """``(esbuild, @stage api)``. ``video/node_modules`` is the stage engine."""
+    node_modules = (Path(__file__).resolve().parents[2] / "video" / "node_modules").resolve()
+    esbuild = node_modules / ".bin" / "esbuild"
+    api = node_modules.parent / "src" / "stage" / "api.ts"
+    if not api.is_file():
+        api = Path("/Users/emmanuel/Documents/Theory/scriptCast-stage/video/src/stage/api.ts")
+    return esbuild, api
+
+
+def render_episode_markup(episode: Path, stills: Sequence[Still], dest: Path) -> None:
+    """Render each still's static markup at its ms into ``dest``.
+
+    ``episode`` is the book stage directory (``index.ts`` plus
+    ``ov/stage_plan.json``). HTML is written here, never back into that tree.
+    The bundle is the same one the book's check scripts use: ``PlanContext``
+    and ``ClockContext`` around the scene, at the still's ms.
+    """
+    dest.mkdir(parents=True, exist_ok=True)
+    esbuild, api = _stage_toolchain()
+    if not esbuild.is_file():
+        raise RuntimeError(f"esbuild not found at {esbuild}")
+    if not api.is_file():
+        raise RuntimeError(f"stage api not found at {api}")
+    script = Path(__file__).resolve().parents[2] / "video" / "scripts" / "render_stage_markup.tsx"
+    work = dest / ".render"
+    work.mkdir(parents=True, exist_ok=True)
+    entry = work / "entry.tsx"
+    entry.write_text(
+        f"import {{scenes}} from {json.dumps(str(episode / 'index.ts'))};\n"
+        f"import {{main}} from {json.dumps(str(script))};\n"
+        "main(scenes);\n"
+    )
+    bundle = work / "bundle.js"
+    # Resolved esbuild is node_modules/esbuild/bin/esbuild; node_modules is parents[2].
+    env = {**os.environ, "NODE_PATH": str(esbuild.resolve().parents[2])}
+    proc = subprocess.run(
+        [
+            str(esbuild), str(entry),
+            "--bundle", "--platform=node", "--format=cjs",
+            f"--outfile={bundle}",
+            "--loader:.css=empty", "--jsx=automatic",
+            f"--alias:@stage={api}",
+            "--external:remotion",
+        ],
+        capture_output=True, text=True, env=env,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(f"esbuild failed:\n{(proc.stderr or proc.stdout)[-2000:]}")
+    frames = []
+    for still in stills:
+        out = (dest / f"{still.scene}__{still.cue}.html").resolve()
+        frames.append({"scene": still.scene, "cue": still.cue, "ms": still.ms, "out": str(out)})
+    job = work / "job.json"
+    job.write_text(json.dumps({"plan": str((episode / "ov" / "stage_plan.json").resolve()), "frames": frames}))
+    proc = subprocess.run(
+        ["node", str(bundle), str(job)],
+        capture_output=True, text=True, env=env,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(f"markup render failed:\n{(proc.stderr or proc.stdout)[-2000:]}")
+
+
 def _lookup_elements(
     still: Still,
     by_cue: dict[tuple[str, str], list[Element]],
@@ -1086,8 +1303,14 @@ def verify_still(
     backend: OcrBackend,
     baseline: DensityBaseline | None,
     detect: bool = True,
+    composition: bool = True,
 ) -> tuple[dict, list[Reason]]:
-    """Run every check on one still. Returns ``(record, reasons)``."""
+    """Run every check on one still. Returns ``(record, reasons)``.
+
+    ``composition`` gates the lower-half check on a live scene. Fixtures leave
+    it on; they have no turn cues, and one labelled empty frame is only the
+    lower half. A build-in beat of a live scene passes ``composition=False``.
+    """
     t0 = time.perf_counter()
     words = backend.read(image)
     due, later = storyboard_split(storyboard, still.ms, still.cue) if storyboard else ([], [])
@@ -1103,8 +1326,13 @@ def verify_still(
     if filler:
         reasons.append(filler)
     if elements:
+        # Declared boxes replace the pixel heuristics. A designed network is
+        # a set of curved edges; the round-stroke finder cannot tell it from
+        # a tray drawn across a panel.
         reasons.extend(check_containers(image, elements))
         reasons.extend(check_overlap(elements))
+        if composition:
+            reasons.extend(check_lower_half(image))
     elif detect:
         reasons.extend(check_detected_containers(image))
     reasons.extend(check_border(image, baseline.chrome if baseline else None))
@@ -1287,6 +1515,8 @@ def evaluate_fixtures(
             "z": DENSITY_Z,
             "filler_words": FILLER_WORDS,
             "filler_prose": FILLER_PROSE,
+            "microcopy_run": MICROCOPY_RUN,
+            "microcopy_lines": MICROCOPY_LINES,
         },
         "precision_recall": scores,
         "good_failures": good_fail,
@@ -1368,6 +1598,12 @@ def verify_stills(
 ) -> dict:
     backend = backend or TesseractBackend()
     stills = load_stills(stills_path)
+    comp = composition_cues(stills)
+    if markup_dir is not None and _is_episode(markup_dir):
+        rendered = out_dir / "markup"
+        print(f"rendering markup for {len(stills)} stills from {markup_dir}")
+        render_episode_markup(markup_dir, stills, rendered)
+        markup_dir = rendered
     by_cue: dict[tuple[str, str], list[Element]] = {}
     if elements_path is not None:
         by_cue = elements_from_json(json.loads(elements_path.read_text()))
@@ -1388,8 +1624,13 @@ def verify_stills(
         image = load_frame(still.path)
         elements = _lookup_elements(still, by_cue, markup_dir)
         board = storyboard.get(still.scene, [])
+        # Pixel-heuristic fallback (no markup) keeps the lower-half check on
+        # every still: the fixtures' cues are filenames, and one labelled
+        # empty frame is only that check. Live markup gates it.
+        composition = (still.scene, still.cue) in comp if elements else True
         record, reasons = verify_still(
-            still, image, elements, board, source_lines, backend, baseline, detect=not elements,
+            still, image, elements, board, source_lines, backend, baseline,
+            detect=not elements, composition=composition,
         )
         records.append(record)
         if sheet:
@@ -1424,7 +1665,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--stills", type=Path, help="stills.json from scriptcast-stage-stills")
     parser.add_argument("--fixtures", type=Path, help="labelled fixture directory (good/, bad/, labels.json)")
     parser.add_argument("--out", type=Path, required=True, help="directory for verify.json and the contact sheet")
-    parser.add_argument("--markup-dir", type=Path, help="static-markup HTML, named {scene}__{cue}.html")
+    parser.add_argument(
+        "--markup-dir", type=Path,
+        help="episode stage dir (index.ts + ov/stage_plan.json), rendered per still at its ms, "
+             "or a directory of static markup named {scene}__{cue}.html",
+    )
     parser.add_argument("--elements", type=Path, help="declared elements JSON ({frames: [{scene, cue, elements}]})")
     parser.add_argument("--storyboard", type=Path, help="storyboard strings JSON ({scenes: {Scene: [{cue, ms, text}]}})")
     parser.add_argument("--good", type=Path, help="approved stills, for the density baseline and the frame chrome")
