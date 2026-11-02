@@ -1,0 +1,14 @@
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "stage-layout"
+version = "0.1.0"
+description = "FigCraft auto-layout for Stage and scriptCast"
+requires-python = ">=3.11"
+
+[tool.maturin]
+features = ["python"]
+module-name = "stage_layout"
+manifest-path = "Cargo.toml"
