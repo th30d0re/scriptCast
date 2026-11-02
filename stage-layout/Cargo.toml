@@ -1,0 +1,34 @@
+[package]
+name = "stage-layout"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+publish = false
+description = "FigCraft auto-layout and line breaks for Stage (WASM) and scriptCast (Python)"
+
+[lib]
+name = "stage_layout"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+# Maturin turns this on. It is not a default feature: PyO3 does not build for wasm32.
+# extension-module keeps the native cdylib from linking libpython; cargo test leaves it off.
+python = ["dep:pyo3", "pyo3/extension-module"]
+
+[dependencies]
+figcraft-doc = { git = "https://github.com/storytold/figcraft", tag = "v0.14.0" }
+figcraft-layout = { git = "https://github.com/storytold/figcraft", tag = "v0.14.0" }
+figcraft-text = { git = "https://github.com/storytold/figcraft", tag = "v0.14.0" }
+serde_json = "1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+pyo3 = { version = "0.24", optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = "0.3.77"
+wasm-bindgen = "0.2.100"
+
+[package.metadata.maturin]
+features = ["python"]
+module-name = "stage_layout"

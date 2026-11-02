@@ -1,0 +1,10 @@
+episode: apa-t21-layout
+outputs: .
+fps: 30
+width: 1920
+height: 1080
+shots:
+  - shot_id: S00-21
+    turn_id: t21
+    scene: ApaT21Layout
+    instance: ApaT21Layout
