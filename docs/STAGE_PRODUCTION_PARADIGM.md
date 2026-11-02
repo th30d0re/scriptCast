@@ -95,14 +95,41 @@ implementers.
 - agy no longer lists Gemini 3.1 Pro.
 - Research and fact-checking go to Gemini 3.8 Flash.
 
-## 6. Figma
+## 6. Design surfaces: FigCraft (headless) and Figma
 
-Any MCP-capable agent (Claude Code, Codex CLI, Cursor) can drive Figma headlessly through the
-Figma MCP server's `use_figma` tool. The earlier Figma-based picture loop was slow, and the
-code-built scenes are much higher quality, so Figma is no longer in the loop.
-- The design pass outputs a grammar spec plus a Stage wireframe.
-- Hand edits happen in the Stage player (select-and-annotate, drag overrides).
-- Figma stays as a design reference only.
+**FigCraft is the design-pass surface.**
+
+`figcraft-cli` (v0.11.2, at `~/.local/bin/figcraft-cli`) runs FigCraft with no window:
+- `run <script.json>` executes `{"command", "params"}` steps and prints one JSON result per step;
+- `mcp` serves it to any MCP-capable agent;
+- `render` and `export` write PNGs;
+- `info --json` dumps the document, including resolved geometry.
+
+FigCraft has real auto-layout:
+- horizontal, vertical and grid layouts;
+- hug and fill sizing, gap, padding, wrap and grid tracks;
+- real text layout, with `--no-system-fonts` for renders that match on every machine.
+
+**What this changes.** Any model that can write JSON and run a shell command (Codex, Kimi, Gemini
+via agy, Cursor, Claude, or a local model) can build a scene's composition with true auto-layout
+and text measurement. It never types pixel coordinates and never writes React.
+
+**How the design pass uses it.**
+1. The designer model writes a FigCraft script per scene. The frame is 1920 × 1080, with named
+   layers whose names match the spec's element ids, and auto-layout throughout.
+2. `figcraft-cli render` produces the wireframe the author reviews.
+3. The author can also open the `.figcraft` file in the FigCraft app and move things by hand. This
+   is the drag-to-adjust level, for free.
+4. `figcraft-cli info --json` gives the resolved boxes per element id. Stage consumes them as the
+   layout for that scene, so Stage still never measures the DOM, and animation and cue reveals stay
+   in Stage.
+
+**Context cost.** The command catalogue has ~1,200 commands. Give designers a curated subset
+(create frame, text, auto-layout, `node.set`, render), via `figcraft-cli commands --filter`. Never
+paste the full list.
+
+**Figma.** Any MCP-capable agent can also drive Figma through the Figma MCP server's `use_figma`
+tool. The earlier Figma picture loop was slow, so Figma stays as a design reference only.
 
 ## 7. Experiments queue (run only after the grammar and verify loop exist)
 
