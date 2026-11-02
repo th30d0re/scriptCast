@@ -241,7 +241,8 @@ pub fn inline_field_height(ui: &Ui, text: &str, width: f32) -> f32 {
         .clamp(line * t::EDITOR_ROW_MIN_LINES, t::EDITOR_MAX_HEIGHT)
 }
 
-/// Toolbar (including Save and Cancel), wrapped body, and the raw-script row.
+/// Toolbar, wrapped body, the raw-script row (with Save and Cancel), and any
+/// warning lines, with the item spacing between them and the text box's margin.
 pub fn row_editor_block_height(
     ui: &Ui,
     text: &str,
@@ -250,10 +251,18 @@ pub fn row_editor_block_height(
     warning_lines: usize,
 ) -> f32 {
     let footnote = usize::from(draft.is_some_and(|d| script::clip_id(&d.original).is_some()));
+    let gap = ui.spacing().item_spacing.y;
+    // TextEdit's default inner margin (2 px top and bottom) plus its 1 px frame stroke.
+    let margin = 6.0;
+    let actions = t::INLINE_BUTTON_HEIGHT.max(ui.spacing().interact_size.y);
+    let notes = (warning_lines + footnote) as f32;
     t::TAG_TOOLBAR_HEIGHT
-        + t::SPACE_4
+        + gap
         + inline_field_height(ui, text, width)
-        + t::line_height(ui, t::font(t::CAPTION)) * (1.0 + warning_lines as f32 + footnote as f32)
+        + margin
+        + gap
+        + actions
+        + notes * (t::line_height(ui, t::font(t::CAPTION)) + gap)
         + t::SPACE_4
 }
 
