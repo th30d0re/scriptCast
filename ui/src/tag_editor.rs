@@ -91,14 +91,6 @@ pub fn body(
                 }
             });
         state.picker = picker;
-        ui.allocate_ui_with_layout(
-            egui::vec2(ui.available_width(), t::TAG_TOOLBAR_HEIGHT),
-            egui::Layout::right_to_left(egui::Align::Center),
-            |ui| {
-                ui.spacing_mut().item_spacing.x = t::SPACE_8;
-                actions(ui);
-            },
-        );
     });
     if let Some(tag) = insertion {
         let cursor = insert(text, state.cursor, &tag);
@@ -127,7 +119,15 @@ pub fn body(
         .min_size(egui::vec2(width, height.max(line * min_lines)))
         .layouter(&mut layouter)
         .show(ui);
-    ui.checkbox(&mut state.raw, "Raw script");
+    // Actions share the raw-script row: the tag buttons can fill a narrow
+    // toolbar, and right-aligned actions there would draw over them.
+    ui.horizontal(|ui| {
+        ui.checkbox(&mut state.raw, "Raw script");
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.spacing_mut().item_spacing.x = t::SPACE_8;
+            actions(ui);
+        });
+    });
     if let Some(cursor) = output.cursor_range {
         state.cursor = Some(cursor);
     }

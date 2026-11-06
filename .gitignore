@@ -21,3 +21,10 @@ site/dist/
 ui/speaker_rates.json
 experiments/*/frames/
 experiments/**/*.jsonl
+video/site/dist/
+video/scripts/.stage-check/
+video/public/stage/
+
+# stage-layout build output
+/target/
+stage-layout/pkg/

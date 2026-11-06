@@ -1,0 +1,126 @@
+{
+  "episode": "demo",
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "duration_ms": 10800,
+  "range": {
+    "start_ms": 0,
+    "end_ms": 10800
+  },
+  "audio": "",
+  "cues": {
+    "hello": 300,
+    "world": 1200,
+    "portugal": 3400,
+    "expand": 5400,
+    "collapse": 8600,
+    "S00-01.hello": 300,
+    "S00-01.world": 1200,
+    "S00-02.portugal": 3400,
+    "S00-02.expand": 5400,
+    "S00-03.collapse": 8600
+  },
+  "segments": [
+    {
+      "instance": "S00-01",
+      "scene": "DemoTitle",
+      "start_ms": 0,
+      "end_ms": 3000,
+      "shots": [
+        {
+          "shot_id": "S00-01",
+          "turn_id": "title",
+          "turn_index": 0,
+          "start_ms": 0,
+          "end_ms": 3000,
+          "props": {
+            "title": "Stage"
+          }
+        }
+      ]
+    },
+    {
+      "instance": "dashboard",
+      "scene": "DemoMap",
+      "start_ms": 3000,
+      "end_ms": 10800,
+      "shots": [
+        {
+          "shot_id": "S00-02",
+          "turn_id": "map",
+          "turn_index": 1,
+          "start_ms": 3000,
+          "end_ms": 8000,
+          "props": {}
+        },
+        {
+          "shot_id": "S00-03",
+          "turn_id": "close",
+          "turn_index": 2,
+          "start_ms": 8000,
+          "end_ms": 10800,
+          "props": {}
+        }
+      ]
+    }
+  ],
+  "words": {
+    "title": [
+      {
+        "text": "Hello,",
+        "start_ms": 300,
+        "end_ms": 700
+      },
+      {
+        "text": "world!",
+        "start_ms": 1200,
+        "end_ms": 1700
+      }
+    ],
+    "map": [
+      {
+        "text": "Portugal",
+        "start_ms": 3400,
+        "end_ms": 3900
+      },
+      {
+        "text": "\u2014",
+        "start_ms": 4000,
+        "end_ms": 4000
+      },
+      {
+        "text": "explore",
+        "start_ms": 5400,
+        "end_ms": 5900
+      },
+      {
+        "text": "the",
+        "start_ms": 6000,
+        "end_ms": 6200
+      },
+      {
+        "text": "map.",
+        "start_ms": 6200,
+        "end_ms": 6800
+      }
+    ],
+    "close": [
+      {
+        "text": "Welcome",
+        "start_ms": 8100,
+        "end_ms": 8500
+      },
+      {
+        "text": "home.",
+        "start_ms": 8600,
+        "end_ms": 9100
+      }
+    ]
+  },
+  "warnings": [
+    "Word timings normalized from relative milliseconds",
+    "No episode MP3 found; silent episode"
+  ],
+  "episode_dir": "/Users/emmanuel/Documents/Theory/scriptCast-stage/video/episodes/_demo"
+}

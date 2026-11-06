@@ -1,14 +1,17 @@
 import {AbsoluteFill, Audio, Freeze, OffthreadVideo, Sequence, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import type {ReactNode} from 'react';
-import {PORTRAIT, formatFor, palette, type TimelineProps, type StatBarsProps, type TitleProps, type CompareProps, type FreezeProps, type PartsProps} from '@scriptcast/cards';
-import {TimelineCard, StatBarsCard, TitleCard, CompareCard, FreezeCallout, PartsCard} from './cards';
+import {PORTRAIT, formatFor, palette, type TimelineProps, type StatBarsProps, type TitleProps, type CompareProps, type FreezeProps, type PartsProps, type EquationProps, type QuoteProps, type TableProps} from '@scriptcast/cards';
+import {TimelineCard, StatBarsCard, TitleCard, CompareCard, FreezeCallout, PartsCard, EquationCard, QuoteCard, TableCard} from './cards';
 
 export type Card = ({component: 'TimelineCard'} & TimelineProps)
   | ({component: 'StatBarsCard'} & StatBarsProps)
   | ({component: 'TitleCard'} & TitleProps)
   | ({component: 'CompareCard'} & CompareProps)
   | ({component: 'FreezeCallout'} & FreezeProps)
-  | ({component: 'PartsCard'} & PartsProps);
+  | ({component: 'PartsCard'} & PartsProps)
+  | ({component: 'EquationCard'} & EquationProps)
+  | ({component: 'QuoteCard'} & QuoteProps)
+  | ({component: 'TableCard'} & TableProps);
 type Window = {start_ms: number; end_ms: number};
 type Clip = Window & {turn_index: number; clip_id: string; src: string; in_ms: number; out_ms: number};
 export type EpisodePlan = {fps: number; width: number; height: number; duration_ms: number;
@@ -22,7 +25,7 @@ export const episodeMetadata = ({props}: {props: EpisodePlan}) => ({
   durationInFrames: Math.max(1, frameAt(props.duration_ms, props.fps)),
   fps: props.fps, width: props.width, height: props.height,
 });
-function CardView({card}: {card: Card}) {
+export function CardView({card, durationInFrames}: {card: Card; durationInFrames?: number}) {
   switch (card.component) {
     case 'TimelineCard': return <TimelineCard {...card} />;
     case 'StatBarsCard': return <StatBarsCard {...card} />;
@@ -30,6 +33,9 @@ function CardView({card}: {card: Card}) {
     case 'CompareCard': return <CompareCard {...card} />;
     case 'FreezeCallout': return <FreezeCallout {...card} />;
     case 'PartsCard': return <PartsCard {...card} />;
+    case 'EquationCard': return <EquationCard {...card} durationInFrames={durationInFrames} />;
+    case 'QuoteCard': return <QuoteCard {...card} />;
+    case 'TableCard': return <TableCard {...card} />;
   }
 }
 export const clipSourceFrame = (clip: Clip, fps: number, frame: number) => {
@@ -99,7 +105,7 @@ export function Episode(plan: EpisodePlan) {
     {plan.cards.map(card => {
       const window = frameWindow(card, plan.fps);
       return window.durationInFrames > 0 && <Sequence key={card.shot_id} {...window}>
-        <CardView card={card.card} />
+        <CardView card={card.card} durationInFrames={window.durationInFrames} />
       </Sequence>;
     })}
     {(plan.captions ?? []).map((caption, index) => {

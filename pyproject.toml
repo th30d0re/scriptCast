@@ -44,6 +44,10 @@ Changelog = "https://github.com/th30d0re/scriptCast/blob/main/CHANGELOG.md"
 
 [project.scripts]
 scriptcast-export = "scriptcast.tools.export_session:main"
+scriptcast-stage-stills = "scriptcast.tools.stage_stills:main"
+scriptcast-stage-verify = "scriptcast.tools.stage_verify:main"
+scriptcast-stage-dispatch = "scriptcast.tools.stage_dispatch:main"
+scriptcast-stage = "scriptcast.tools.stage:main"
 scriptcast-video = "scriptcast.tools.video:main"
 scriptcast-shotspec = "scriptcast.tools.shotspec:main"
 scriptcast-word-timings = "scriptcast.tools.word_timings:main"

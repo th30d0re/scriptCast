@@ -5,18 +5,36 @@
   "scripts": {
     "check-copy": "npm run --silent build -w @scriptcast/cards && tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/check-copy.js",
     "check-quiver": "tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/check-quiver.js",
-    "quiver": "tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/quiver.js"
+    "quiver": "tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/quiver.js",
+    "check-stage": "node scripts/run-check-stage.mjs",
+    "check-review": "node scripts/run-check-review.mjs",
+    "site": "vite --config site/vite.config.ts"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-mono": "5.1.1",
+    "@fontsource/ibm-plex-sans": "5.1.1",
     "@remotion/cli": "4.0.354",
     "@scriptcast/cards": "0.1.0",
+    "d3-geo": "^3.1.1",
+    "d3-interpolate": "3.0.1",
+    "katex": "^0.19.0",
+    "qrcode-generator": "^2.0.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "remotion": "4.0.354"
+    "remotion": "4.0.354",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2"
   },
   "devDependencies": {
     "@quiverai/sdk": "0.9.4",
+    "@types/d3-geo": "^3.1.0",
+    "@types/d3-interpolate": "3.0.4",
+    "@types/katex": "^0.16.8",
+    "@types/node": "^22.10.2",
     "@types/react": "19.1.0",
-    "typescript": "5.9.3"
+    "@types/topojson-client": "^3.1.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "5.9.3",
+    "vite": "^6.0.7"
   }
 }
