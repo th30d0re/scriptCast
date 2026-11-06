@@ -78,7 +78,7 @@ def test_restart_supersedes_old_entry(ep):
 def test_failed_resume_marks_dead(ep):
     path, key = sd.registry_path(ep), "yt02/S/builder"
     sd.registry_start(path, key, "codex", "gpt-5.6-sol", "a", 1, 1)
-    assert sd.registry_resume(path, key, 0, 1, ok=False, compacted=False)["status"] == "dead"
+    assert sd.registry_resume(path, key, 0, 1, ok=False, compacted=False)["status"] == "failed"
 
 
 @pytest.mark.parametrize("tokens,expect", [(59, ""), (60, "Compaction"), (79, "Compaction"),

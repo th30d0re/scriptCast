@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import time
@@ -194,7 +195,7 @@ def _add_usage(entry: Dict[str, Any], tokens: int, chars: int) -> None:
 
 def registry_start(path: Path, key: str, agent: str, model: str, session_id: Optional[str],
                    tokens: int, chars: int, sizes: Optional[Dict[str, int]] = None,
-                   log_dir: Optional[Path] = None) -> Dict[str, Any]:
+                   log_dir: Optional[Path] = None, ok: bool = True) -> Dict[str, Any]:
     with Registry(path) as data:
         old = data["sessions"].get(key)
         if old:
@@ -203,7 +204,8 @@ def registry_start(path: Path, key: str, agent: str, model: str, session_id: Opt
         entry = {"agent": agent, "model": model, "session_id": session_id, "turns": 1,
                  "tokens": 0, "tokens_kind": "reported", "brief_chars": 0,
                  "context_limit": context_limit(model, sizes),
-                 "status": "live" if session_id else "dead", "summary_path": None,
+                 "status": "failed" if not ok else ("live" if session_id else "dead"),
+                 "summary_path": None,
                  "started": _utcnow(), "last_active": _utcnow()}
         _add_usage(entry, tokens, chars)
         data["sessions"][key] = entry
@@ -219,7 +221,7 @@ def registry_resume(path: Path, key: str, tokens: int, chars: int, ok: bool,
         _add_usage(entry, tokens, chars)
         entry["last_active"] = _utcnow()
         if not ok:
-            entry["status"] = "dead"
+            entry["status"] = "failed"
         elif load_fraction(entry) >= CLOSE_AT:
             entry["status"] = "close_due"
         elif compacted:
@@ -367,8 +369,6 @@ def build_resume_cmd(
         return cmd
     elif agent == "codex":
         cmd = ["codex", "exec", "resume", session_id]
-        if worktree:
-            cmd.extend(["-C", str(worktree.resolve())])
         cmd.append(message)
         return cmd
     elif agent == "kimi":
@@ -389,6 +389,7 @@ def build_resume_cmd(
 def capture_session_id(
     agent: str,
     stdout: str = "",
+    stderr: str = "",
     worktree: Optional[Path] = None,
 ) -> Tuple[Optional[str], int]:
     """Capture session id (cursor-agent --output-format json; codex/kimi/agy from session listing)."""
@@ -422,15 +423,15 @@ def capture_session_id(
                 pass
 
     elif agent == "codex":
-        idx_path = Path.home() / ".codex" / "session_index.jsonl"
-        if idx_path.is_file():
-            try:
-                lines = [l.strip() for l in idx_path.read_text().splitlines() if l.strip()]
-                if lines:
-                    entry = json.loads(lines[-1])
-                    session_id = entry.get("id")
-            except Exception:
-                pass
+        # Codex prints the ID for this invocation near the top of its output.
+        # Do not consult session_index.jsonl: it can still point at another run.
+        match = re.search(
+            r"\bsession\s+id\s*:\s*([0-9a-f]{8}-[0-9a-f-]{27,})\b",
+            stdout + "\n" + stderr,
+            flags=re.IGNORECASE,
+        )
+        if match:
+            session_id = match.group(1)
 
     elif agent == "kimi":
         try:
@@ -499,11 +500,13 @@ def cmd_start(args: argparse.Namespace) -> int:
 
     _, dirty_before = get_git_info(worktree)
     t0 = time.monotonic()
-    cp = subprocess.run(cmd, cwd=worktree, capture_output=True, text=True)
+    cp = subprocess.run(cmd, cwd=worktree, capture_output=True, text=True, stdin=subprocess.DEVNULL)
     wall_s = time.monotonic() - t0
     _, dirty_after = get_git_info(worktree)
 
-    session_id, tokens = capture_session_id(args.agent, stdout=cp.stdout, worktree=worktree)
+    session_id, tokens = capture_session_id(
+        args.agent, stdout=cp.stdout, stderr=cp.stderr, worktree=worktree
+    )
 
     verdict = "success" if cp.returncode == 0 else "failure"
     failure_mode = None if verdict == "success" else f"exit_{cp.returncode}"
@@ -542,7 +545,7 @@ def cmd_start(args: argparse.Namespace) -> int:
     print(f"Session log: {stored}")
     if reg:
         entry = registry_start(reg[0], reg[1], args.agent, args.model, session_id,
-                               tokens, brief_chars)
+                               tokens, brief_chars, ok=cp.returncode == 0)
         print(f"Registry: {reg[1]} {entry['status']} ({entry['tokens']} {entry['tokens_kind']} tokens)")
 
     print(f"Dispatched {args.agent} ({args.model}). Session ID: {session_id}")
@@ -599,11 +602,13 @@ def cmd_resume(args: argparse.Namespace) -> int:
 
     _, dirty_before = get_git_info(worktree)
     t0 = time.monotonic()
-    cp = subprocess.run(cmd, cwd=worktree, capture_output=True, text=True)
+    cp = subprocess.run(cmd, cwd=worktree, capture_output=True, text=True, stdin=subprocess.DEVNULL)
     wall_s = time.monotonic() - t0
     _, dirty_after = get_git_info(worktree)
 
-    _, tokens = capture_session_id(args.agent, stdout=cp.stdout, worktree=worktree)
+    _, tokens = capture_session_id(
+        args.agent, stdout=cp.stdout, stderr=cp.stderr, worktree=worktree
+    )
     verdict = "success" if cp.returncode == 0 else "failure"
     failure_mode = None if verdict == "success" else f"exit_{cp.returncode}"
     wrote_files = bool(dirty_after != dirty_before)
