@@ -9,6 +9,7 @@ mod phase_j;
 mod phase_k;
 mod phase_l;
 mod phase_m_ui;
+mod phase_n;
 mod picture;
 mod read_along;
 mod settings;
@@ -326,6 +327,8 @@ pub struct Browser {
     /// Full-screen discrepancy review (Phase H4).
     discrepancy_open: bool,
     discrepancy_card: usize,
+    /// Episode-level Mix editor; this replaces the workspace while open.
+    mix: phase_n::MixUi,
     /// Open discrepancy review once `--review` selection lands.
     pending_review: bool,
     /// Snapshot harness: fixture data only, no project tool, shell, or PATH lookup.
@@ -2442,6 +2445,12 @@ impl Browser {
         self.shortcuts(&ctx);
         if self.project.data_open {
             self.project_data_screen(ui);
+            self.settings_window(&ctx);
+            self.phase_j_sheets(&ctx);
+            return;
+        }
+        if self.mix.open {
+            self.mix_screen(ui);
             self.settings_window(&ctx);
             self.phase_j_sheets(&ctx);
             return;

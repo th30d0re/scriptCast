@@ -1,0 +1,10 @@
+# quiet archive aside
+overlays:
+  - file: archive/sources/nice.wav
+    turn_contains: "sixty-nine days after she'd already signed"
+    after_word: "^(69|sixtynine)$"
+    delay_ms: 120
+    gain_db: -22
+gains:
+  - turn_equals: "Interesting."
+    gain_db: 5
