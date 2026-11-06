@@ -118,3 +118,78 @@ The Stage loop keeps its existing shape (stills → verify → dispatch) and gai
 6. R5 SVG experiment with R3 as judge.
 7. R6 fine-tune and per-question promotion.
 8. v0.4 experiment X runs on R1–R4 tooling.
+
+## R7: AI sidebar
+
+The sidebar is the operator's way in to the router. It lives in the egui app (`ui/src/ai_sidebar.rs`) and knows the router only through one trait:
+
+```rust
+pub trait RouterClient {
+    fn submit(&mut self, request: &RouterRequest) -> Delivery; // Queued | Failed(String)
+    fn describe(&self) -> String;
+}
+```
+
+| Decision | Choice | Why |
+|---|---|---|
+| Transport before R1 | Append-only `queue.jsonl` (`JsonlQueueClient`) | No router process yet; a file is inspectable and R1 can drain it |
+| Queue location | `$SCRIPTCAST_ROUTER_QUEUE`, else `~/Library/Application Support/ScriptCast/router/queue.jsonl` | Outside episode folders, which are render outputs |
+| Speech to text | `SpeechToText` trait, `SttStub` in R7 | mlx-whisper needs mic capture and a large model download; deferred to R7b |
+| Layout | Fixed 320 px left strip; 36 px rail when collapsed | Leaves the existing screens' layout code untouched (they render into the remaining rect) |
+| Tests | `MemoryClient` in the harness; sidebar hidden unless `--ai-sidebar` | Existing snapshots stay byte-identical |
+
+Queue record (one per line):
+
+```json
+{"id":1,"text":"Tighten the pause after turn 2.","source":"typed","episode":"/path/to/ep","submitted_at":"2026-11-06T12:00:00Z"}
+```
+
+Failure modes: an unwritable queue path returns `Delivery::Failed`, shown as a `failed` status and a router reply with the IO error; nothing is retried. Requests with AI off or empty text are dropped before the client. Replies are local placeholders until R1 writes answers back (format to be set in R1).
+
+Design: [Figma frame](https://www.figma.com/design/FyNyDUIlkH6Kjqvc3lcR2L?node-id=1-2).
+
+
+### Decisions
+
+| # | Decision | Reason |
+|---|---|---|
+| D13 | The Rust parser re-derives the still list from `stage_plan.json` exactly as `stage_stills.py:resolve_scene_stills` does (shot-prefixed cues, bare-cue fallback, cue + 700 ms, `ceil((ms − range.start_ms) × fps / 1000)` capped at segment end, `<scene>_<cue>.png` + `<scene>_end.png`) | `stills.json` only exists after a render pass and carries absolute paths from that machine; the plan is the durable contract both producers (`stage.py plan`, `stage-stills`) already agree on. One derivation, no second source of truth. |
+| D14 | Turn sync keys on `turn_id` (shot → turn), never on row index | The browser can filter/reorder visible turns; `episode.turns` position and manifest `turn_index` are display facts, `turn_id` is the identity the plan, manifest, and `stress.json` all share. |
+| D15 | Scroll→turn fires only on a user scroll-offset change, and a scroll-driven selection suppresses the answering programmatic scroll | Otherwise turn→scroll and scroll→turn chase each other every frame. The view remembers the last synced turn; an echo of the same turn is a no-op. |
+| D16 | Ctrl+R is Control+R; Cmd+R keeps meaning Reload | macOS reserves Cmd chords for the app shell (`shortcuts()` already binds Cmd+R, Cmd+O, Cmd+F…). Control is free, and egui distinguishes the two modifiers exactly. |
+| D17 | Sending is an explicit button press; toggling compact mode off never sends | A mode toggle is navigation, not consent to dispatch work. One Send = one `submit` = one JSONL line; an empty selection disables Send. |
+| D18 | `RouterClient` is the R7-shared trait, `submit(&mut self, request: &RouterRequest) -> Delivery` + `describe()`; a stage selection travels as a `RouterRequest` with `source: Selection` whose `text` is the JSON of `SelectionContext` | R7 already defines this module (`Source::{Typed, Voice}`, `JsonlQueueClient`, `MemoryClient`); R8 adds only the `Selection` variant and `SelectionContext` so the branches merge. `JsonlQueueClient` (append one JSON line, create parent dirs) queues everything — no queue daemon, no watcher in this phase. |
+| D19 | Missing stills and missing plans degrade to placeholders/notices | Still rendering is a separate, slower pass than plan compilation; the browser must stay useful when only one of them has run. Existing episodes without a plan render byte-identically (no column is carved out). |
+
+### Data model (new, produced by the UI)
+
+**SelectionContext** (`ui/src/router_client.rs`): one queue line per Send is a `RouterRequest`; its `text` is the JSON below (`source: "selection"`, `episode` is the episode directory, `submitted_at` from `router_client::now_string()`):
+
+```json
+{"episode": "fixture-ep", "turn_ids": ["turn-1", "turn-2"], "cue_ids": ["intro", "detail"], "frame_paths": ["/…/SceneA_intro.png", "/…/SceneA_detail.png"]}
+```
+
+`turn_ids` are deduplicated in frame order (clicking two cues of one turn names the turn once); `cue_ids` are the bare cue names from the canonical `<shot_id>.<cue>` keys (`end` for the segment-end frame); `frame_paths` are the resolved still paths in frame order, whether or not the file exists yet. `RouterRequest::selection(id, context, episode_dir, submitted_at)` builds the request; `request.selection_context()` parses it back.
+
+### Components
+
+- **`ui/src/stage_view.rs`** — `StagePlan::load(plan_path, stills_dir)` (serde mirror of `build_plan` output; unknown fields ignored, `words` skipped), ordered `StageFrame { scene, shot_id, turn_id, turn_index, cue_id, cue_key, ms, frame_index, file_name, path }` derivation, `StageView` state (`compact`, `selected_frames: BTreeSet<usize>`, pending scroll target, last synced turn, texture cache), and `show(ui, view, selected_turn_id, client) -> StageAction`. Pure helpers (`frames_for_turn`, `turn_for_frame`, `selection_context`, `frame_at_offset`) carry the sync logic and are unit-tested without egui. Textures decode through the existing `image` dependency and cache per path, as in `picture.rs`.
+- **`ui/src/router_client.rs`** — shared with R7: `Source::{Typed, Voice, Selection}`, `RouterRequest { id, text, source, episode, submitted_at }`, `SelectionContext`, `RouterClient` (`submit(&mut self, &RouterRequest) -> Delivery`, `describe()`), `JsonlQueueClient { path }` appending `serde_json` + `\n` under `OpenOptions` create/append, and `MemoryClient` for tests. R8 adds `RouterRequest::selection(..)` / `selection_context()` and a `JsonlQueue` type alias.
+- **`ui/src/app_main.rs` / `capture.rs`** — `Browser` gains `stage: Option<StageView>`, `stage_client: Option<JsonlQueueClient>`, and a load notice. `accept_episode` probes `<episode>/stage_plan.json` (or `--stage-plan`), stills default to the plan directory (or `--stage-stills`), queue defaults to `<episode>/router-queue.jsonl` (or `--stage-queue`). The review row carves a stage column from its right edge (340 pt normal, 180 pt compact) only when a plan loaded. `StageAction::SelectTurn` resolves `turn_id` → `episode.turns` position and calls the existing `select()`; `Submitted` is surfaced as a transient notice. Shortcuts are untouched: the stage view consumes Ctrl+R itself, after `shortcuts()` has run, and ignores it while a text edit has focus.
+
+### Failure modes (R8 additions)
+
+| Failure | Detection | Behaviour |
+|---|---|---|
+| No `stage_plan.json` in the episode dir | probe `is_file` false | No stage column; browser unchanged |
+| Plan JSON malformed / no segments / no cues | serde / derivation error | Notice in the stage column header area; no column content, no crash; episode still loads |
+| Still PNG missing or undecodable | `is_file` / decode error | Labelled placeholder tile with the file name; frame stays selectable and submittable |
+| Queue path unwritable | `submit` returns `Delivery::Failed` | Send keeps the selection, shows the error as a notice; no partial line (single `writeln!` of the serialized request) |
+| Ctrl+R while editing text | text-edit focus check | Ignored, matching every other browser shortcut |
+| Selected turn has no cue frames | `frames_for_turn` empty | No scroll target; selection in the table is unaffected |
+
+### Tests
+
+- Unit (beside the code): plan derivation against the fixture plan (cue order, +700 ms frame math, end frame, shot→turn assignment), alias cues not double-counted, `selection_context` dedup/order, `JsonlQueueClient` appends one parseable `RouterRequest` line per submit and creates parent dirs.
+- Snapshot: `stage_scroll` in `ui/tests/snapshots.rs` (browser at 1440×900 over `ui/tests/fixtures/stage/`, turn 1 selected); regenerate with `UPDATE_SNAPSHOTS=1 cargo test --test snapshots`.
+- Interaction: `ui/tests/stage_view.rs` drives the real widget with `egui_kittest` — Ctrl+R shrinks the view (`compact` + smaller thumbnail height), clicking two frames across two turns selects both, Send produces exactly one JSONL line matching the expected `SelectionContext`, and a second Send appends a second line rather than rewriting.
