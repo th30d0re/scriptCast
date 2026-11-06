@@ -192,7 +192,79 @@ def _parse_tsv(text: str, min_conf: float) -> list[OcrWord]:
     return words
 
 
-OCR_BACKENDS: dict[str, type] = {"tesseract": TesseractBackend}
+@dataclass
+class VisionBackend(TesseractBackend):
+    """Apple Vision via the Swift helper in ``swift/StageOCR`` (``stage-ocr``).
+
+    The helper prints one JSON object per image: pixel boxes from the
+    top-left, confidence 0-100. Words are filtered like ``_parse_tsv``:
+    confidence at least ``min_conf``, text at least two characters.
+
+    This subclasses ``TesseractBackend`` on purpose: ``evaluate_fixtures``
+    replaces any backend that is not a TesseractBackend at ``min_conf`` 0
+    with ``TesseractBackend(min_conf=0)`` (one pass, low-confidence words
+    included, for the crushed-subtitle check). A ``VisionBackend`` at
+    ``min_conf`` 0 survives that swap, so the fixtures run measures Vision.
+    ``binary`` overrides the lookup; otherwise ``STAGE_OCR_BIN``, then the
+    release build under ``swift/StageOCR``.
+    """
+
+    binary: str = ""
+    min_conf: float = 0.0
+    level: str = "accurate"
+    name: str = "vision"
+
+    def _resolve_binary(self) -> str:
+        if self.binary:
+            return self.binary
+        env = os.environ.get("STAGE_OCR_BIN")
+        if env:
+            return env
+        return str(Path(__file__).resolve().parents[2] / "swift" / "StageOCR" / ".build" / "release" / "stage-ocr")
+
+    def read(self, image: Image.Image) -> list[OcrWord]:
+        binary = self._resolve_binary()
+        if not Path(binary).is_file():
+            raise RuntimeError(
+                f"stage-ocr binary not found at {binary}; build it with "
+                f"`cd swift/StageOCR && swift build -c release` (or set STAGE_OCR_BIN)"
+            )
+        with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
+            image.save(tmp.name)
+            proc = subprocess.run(
+                [binary, tmp.name, "--level", self.level],
+                capture_output=True,
+            )
+        if proc.returncode != 0:
+            err = proc.stderr.decode("utf-8", "replace")[:300]
+            raise RuntimeError(f"stage-ocr failed ({proc.returncode}): {err}")
+        return self.parse_words(proc.stdout.decode("utf-8", "replace"), self.min_conf)
+
+    @staticmethod
+    def parse_words(text: str, min_conf: float) -> list[OcrWord]:
+        """One JSON line per image; each ``words`` entry becomes an OcrWord."""
+        words: list[OcrWord] = []
+        for line in text.splitlines():
+            if not line.strip():
+                continue
+            payload = json.loads(line)
+            for item in payload.get("words", []):
+                raw = str(item.get("text", "")).strip()
+                try:
+                    conf = float(item.get("conf", 0))
+                except (TypeError, ValueError):
+                    continue
+                if conf < min_conf or len(raw) < 2:
+                    continue
+                words.append(OcrWord(
+                    raw, conf,
+                    int(item["x"]), int(item["y"]),
+                    int(item["w"]), int(item["h"]),
+                ))
+        return words
+
+
+OCR_BACKENDS: dict[str, type] = {"tesseract": TesseractBackend, "vision": VisionBackend}
 
 
 def get_backend(name: str) -> OcrBackend:
