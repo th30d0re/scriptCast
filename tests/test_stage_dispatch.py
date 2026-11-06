@@ -65,7 +65,6 @@ def test_argument_lists_exact(tmp_path):
         brief,
         "-m",
         "moonshot-v1-auto",
-        "--auto",
         "--add-dir",
         str(wt.resolve()),
     ]

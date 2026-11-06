@@ -338,7 +338,7 @@ def build_start_cmd(
         cmd.append(full_brief)
         return cmd
     elif agent == "kimi":
-        cmd = ["kimi", "-p", full_brief, "-m", model, "--auto"]
+        cmd = ["kimi", "-p", full_brief, "-m", model]  # -p cannot combine with --auto/--yolo (kimi 2.1)
         if worktree:
             cmd.extend(["--add-dir", str(worktree.resolve())])
         return cmd
