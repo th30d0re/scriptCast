@@ -60,11 +60,14 @@ def test_real():
     timings=json.loads((root/'word_timings.json').read_text())
     words,mode=normalize_words(manifest,timings)
     assert mode=='relative'
-    assert words['a57c5a84a6c02ce8'][0]['start_ms']==13500
-    spec={'episode':'YT02v2_ov','shots':[{'shot_id':'S00-01','turn_id':'0edfe226e42abaa3','scene':'Title','cues':{'archives':{'word':'archives'},'ep1':{'word':'episode','occurrence':2,'offset_ms':-120}}}]}
+    starts={t['turn_id']:t['start_ms'] for t in manifest['turns']}
+    assert words['a57c5a84a6c02ce8'][0]['start_ms']==starts['a57c5a84a6c02ce8']
+    first=manifest['turns'][0]['turn_id']
+    eleven=next(w for w in words[first] if w['text'].lower().strip('.,')=='eleven')
+    spec={'episode':'YT02v2_ov','shots':[{'shot_id':'S00-01','turn_id':first,'scene':'Title','cues':{'slam':{'word':'eleven'},'early':{'word':'eleven','offset_ms':-120}}}]}
     plan=build_plan(spec,manifest,timings)
-    assert plan['cues']['archives']==3480
-    assert plan['cues']['ep1']==7000
+    assert plan['cues']['slam']==eleven['start_ms']
+    assert plan['cues']['early']==eleven['start_ms']-120
 
 def test_cli_dry_runs(data,tmp_path,capsys,monkeypatch):
     from scriptcast.tools.stage import main

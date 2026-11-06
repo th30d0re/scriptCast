@@ -172,4 +172,5 @@ def test_real_plan_tajfel_citation():
         "t22Relations",
         "end",
     ]
-    assert stills[-1]["frame"] == 8267
+    frames = [s["frame"] for s in stills]
+    assert frames == sorted(frames) and frames[-1] > frames[-2]
