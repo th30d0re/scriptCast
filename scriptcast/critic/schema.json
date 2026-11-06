@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["verdict", "defects"],
+  "additionalProperties": false,
+  "properties": {
+    "verdict": {"enum": ["pass", "fail"]},
+    "defects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["category", "element_id", "evidence", "severity", "region"],
+        "additionalProperties": false,
+        "properties": {
+          "category": {"enum": ["Layout", "Rendering", "Appearance", "State", "Content"]},
+          "element_id": {"type": ["string", "null"]},
+          "evidence": {"type": "string", "minLength": 1},
+          "severity": {"enum": ["low", "medium", "high"]},
+          "region": {
+            "type": "array", "minItems": 4, "maxItems": 4,
+            "items": {"type": "number", "minimum": 0, "maximum": 1}
+          }
+        }
+      }
+    }
+  }
+}
