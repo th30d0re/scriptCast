@@ -33,3 +33,8 @@ stage-layout/pkg/
 .orbos/
 ui/tests/snapshots/*.diff.png
 ui/tests/snapshots/*.new.png
+experiments/e2_visual_qa/set/
+experiments/e2_visual_qa/*.jsonl
+!experiments/e2_visual_qa/truth.jsonl
+experiments/e2_visual_qa/*.log
+experiments/e2_visual_qa/_*.png

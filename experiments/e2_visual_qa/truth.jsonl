@@ -1,0 +1,60 @@
+{"frame": "clean/f00_t010.png", "defect": null}
+{"frame": "mutated/f00_t010.png", "defect": "overlap", "region": [0.4677, 0.4093, 0.4255, 0.1065]}
+{"frame": "clean/f01_t035.png", "defect": null}
+{"frame": "mutated/f01_t035.png", "defect": "clip", "region": [0.512, 0.2648, 0.1818, 0.063]}
+{"frame": "clean/f02_t060.png", "defect": null}
+{"frame": "mutated/f02_t060.png", "defect": "wrong_colour", "region": [0.3135, 0.363, 0.2177, 0.0361]}
+{"frame": "clean/f03_t085.png", "defect": null}
+{"frame": "mutated/f03_t085.png", "defect": "remove", "region": [0.0766, 0.1148, 0.5927, 0.0565]}
+{"frame": "clean/f04_t110.png", "defect": null}
+{"frame": "mutated/f04_t110.png", "defect": "duplicate", "region": [0.7349, 0.8463, 0.112, 0.0361]}
+{"frame": "clean/f05_t135.png", "defect": null}
+{"frame": "mutated/f05_t135.png", "defect": "overlap", "region": [0.6844, 0.4741, 0.1375, 0.0333]}
+{"frame": "clean/f06_t160.png", "defect": null}
+{"frame": "mutated/f06_t160.png", "defect": "clip", "region": [0.3276, 0.6037, 0.2516, 0.0306]}
+{"frame": "clean/f07_t185.png", "defect": null}
+{"frame": "mutated/f07_t185.png", "defect": "wrong_colour", "region": [0.175, 0.2694, 0.0422, 0.0287]}
+{"frame": "clean/f08_t210.png", "defect": null}
+{"frame": "mutated/f08_t210.png", "defect": "remove", "region": [0.075, 0.0972, 0.4854, 0.0491]}
+{"frame": "clean/f09_t235.png", "defect": null}
+{"frame": "mutated/f09_t235.png", "defect": "duplicate", "region": [0.7474, 0.187, 0.026, 0.0537]}
+{"frame": "clean/f10_t260.png", "defect": null}
+{"frame": "mutated/f10_t260.png", "defect": "overlap", "region": [0.1333, 0.4852, 0.224, 0.0389]}
+{"frame": "clean/f11_t285.png", "defect": null}
+{"frame": "mutated/f11_t285.png", "defect": "clip", "region": [0.125, 0.8981, 0.0677, 0.0259]}
+{"frame": "clean/f12_t310.png", "defect": null}
+{"frame": "mutated/f12_t310.png", "defect": "wrong_colour", "region": [0.213, 0.3991, 0.0479, 0.0333]}
+{"frame": "clean/f13_t335.png", "defect": null}
+{"frame": "mutated/f13_t335.png", "defect": "remove", "region": [0.1115, 0.3787, 0.126, 0.0333]}
+{"frame": "clean/f14_t360.png", "defect": null}
+{"frame": "mutated/f14_t360.png", "defect": "duplicate", "region": [0.0589, 0.862, 0.15, 0.0306]}
+{"frame": "clean/f15_t385.png", "defect": null}
+{"frame": "mutated/f15_t385.png", "defect": "overlap", "region": [0.1755, 0.9074, 0.4229, 0.0389]}
+{"frame": "clean/f16_t410.png", "defect": null}
+{"frame": "mutated/f16_t410.png", "defect": "clip", "region": [0.7865, 0.6574, 0.0661, 0.0259]}
+{"frame": "clean/f17_t435.png", "defect": null}
+{"frame": "mutated/f17_t435.png", "defect": "wrong_colour", "region": [0.0719, 0.3713, 0.1193, 0.0333]}
+{"frame": "clean/f18_t460.png", "defect": null}
+{"frame": "mutated/f18_t460.png", "defect": "remove", "region": [0.0719, 0.6065, 0.1161, 0.0259]}
+{"frame": "clean/f19_t485.png", "defect": null}
+{"frame": "mutated/f19_t485.png", "defect": "duplicate", "region": [0.5687, 0.6759, 0.3385, 0.0361]}
+{"frame": "clean/f20_t510.png", "defect": null}
+{"frame": "mutated/f20_t510.png", "defect": "overlap", "region": [0.5005, 0.7556, 0.0833, 0.0333]}
+{"frame": "clean/f21_t535.png", "defect": null}
+{"frame": "mutated/f21_t535.png", "defect": "clip", "region": [0.5, 0.5333, 0.1099, 0.0315]}
+{"frame": "clean/f22_t560.png", "defect": null}
+{"frame": "mutated/f22_t560.png", "defect": "wrong_colour", "region": [0.2073, 0.7657, 0.3047, 0.0296]}
+{"frame": "clean/f23_t585.png", "defect": null}
+{"frame": "mutated/f23_t585.png", "defect": "remove", "region": [0.0734, 0.7713, 0.2427, 0.0259]}
+{"frame": "clean/f24_t610.png", "defect": null}
+{"frame": "mutated/f24_t610.png", "defect": "duplicate", "region": [0.6536, 0.3722, 0.1698, 0.0333]}
+{"frame": "clean/f25_t635.png", "defect": null}
+{"frame": "mutated/f25_t635.png", "defect": "overlap", "region": [0.7583, 0.775, 0.75, 0.0278]}
+{"frame": "clean/f26_t660.png", "defect": null}
+{"frame": "mutated/f26_t660.png", "defect": "clip", "region": [0.251, 0.875, 0.1943, 0.0278]}
+{"frame": "clean/f27_t685.png", "defect": null}
+{"frame": "mutated/f27_t685.png", "defect": "wrong_colour", "region": [0.5198, 0.2907, 0.1323, 0.0231]}
+{"frame": "clean/f28_t710.png", "defect": null}
+{"frame": "mutated/f28_t710.png", "defect": "remove", "region": [0.0677, 0.4611, 0.0594, 0.0287]}
+{"frame": "clean/f29_t735.png", "defect": null}
+{"frame": "mutated/f29_t735.png", "defect": "duplicate", "region": [0.7193, 0.5398, 0.1307, 0.0333]}
