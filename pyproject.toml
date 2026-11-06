@@ -44,6 +44,7 @@ Issues = "https://github.com/th30d0re/scriptCast/issues"
 Changelog = "https://github.com/th30d0re/scriptCast/blob/main/CHANGELOG.md"
 
 [project.scripts]
+scriptcast-stage-route = "scriptcast.tools.stage_route:main"
 scriptcast-export = "scriptcast.tools.export_session:main"
 scriptcast-stage-stills = "scriptcast.tools.stage_stills:main"
 scriptcast-stage-verify = "scriptcast.tools.stage_verify:main"
