@@ -26,6 +26,7 @@ def main(argv=None):
             p.add_argument('-o', type=Path)
             p.add_argument('--concurrency', type=int, default=8)
             p.add_argument('--timeout-ms', type=int, default=120000)
+            p.add_argument('--scale', type=float, default=1.0, help='Output scale; 2 renders a 1080p plan at 4K')
         if name == 'render':
             p.add_argument('--per-shot', type=Path)
             p.add_argument('--chunks', type=int, default=1)
@@ -63,6 +64,8 @@ def main(argv=None):
         frame = lambda ms: math.ceil((ms-start)*fps/1000)
         total = max(1, frame(plan['range']['end_ms']))
         common = [f'--props={plan_path}', f'--timeout={args.timeout_ms}']
+        if args.scale != 1.0:
+            common.append(f'--scale={args.scale:g}')
         if args.command == 'still':
             shot = next((s for s in shots if s['shot_id'] == args.shot), None)
             if shot is None or not 0 <= args.at <= 1 or not args.o:
