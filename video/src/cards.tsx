@@ -24,7 +24,7 @@ function useCardClock(beats: number) {
   return {progress, seconds: frame / fps};
 }
 
-function clocked<P extends BaseProps>(Card: (props: P) => React.ReactNode, beats: (props: P) => number) {
+function clocked<P extends Pick<BaseProps, 'art'> & {progress?: number}>(Card: (props: P) => React.ReactNode, beats: (props: P) => number) {
   return function ClockedCard(props: P) {
     const {progress, seconds} = useCardClock(beats(props));
     // An animated SVG plays on the card's own clock unless the plan pins a moment.
@@ -47,3 +47,6 @@ export const TitleCard = clocked(cards.TitleCard, cards.titleBeats);
 export const CompareCard = clocked(cards.CompareCard, cards.compareBeats);
 export const FreezeCallout = clocked(cards.FreezeCallout, cards.freezeBeats);
 export const PartsCard = clocked(cards.PartsCard, cards.partsBeats);
+export const EquationCard = clocked(cards.EquationCard, cards.equationBeats);
+export const QuoteCard = clocked(cards.QuoteCard, cards.quoteBeats);
+export const TableCard = clocked(cards.TableCard, cards.tableBeats);

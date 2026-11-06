@@ -1,0 +1,26 @@
+episode: demo
+outputs: .
+fps: 30
+width: 1920
+height: 1080
+shots:
+  - shot_id: S00-01
+    turn_id: title
+    scene: DemoTitle
+    props: {title: Stage}
+    cues:
+      hello: {word: Hello}
+      world: {word: world}
+  - shot_id: S00-02
+    turn_id: map
+    scene: DemoMap
+    instance: dashboard
+    cues:
+      portugal: {word: Portugal}
+      expand: {word: explore}
+  - shot_id: S00-03
+    turn_id: close
+    scene: DemoMap
+    instance: dashboard
+    cues:
+      collapse: {word: home}

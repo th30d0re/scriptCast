@@ -11,3 +11,12 @@ export const USABLE_BOX = {
   // Conservatively exclude the deeper right overlay across the whole rectangle.
   height: HEIGHT * (1 - TOP - BOTTOM_RIGHT.bottom),
 } as const;
+
+export type Layout = 'portrait' | 'landscape';
+export const layoutFromDimensions = (width: number, height: number): Layout => width > height ? 'landscape' : 'portrait';
+export const LANDSCAPE = {
+  width: 1920, height: 1080,
+  box: {x: 96, y: 64.8, width: 1728, height: 864},
+  captions: {top: 928.8, height: 151.2, sides: 96},
+} as const;
+export const safeBox = (layout: Layout) => layout === 'landscape' ? LANDSCAPE.box : USABLE_BOX;

@@ -17,3 +17,6 @@ fx/target/
 chunk/target/
 node_modules/
 site/dist/
+video/site/dist/
+video/scripts/.stage-check/
+video/public/stage/
