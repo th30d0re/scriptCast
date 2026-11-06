@@ -171,14 +171,11 @@ def test_session_id_captured_and_logged(tmp_path):
 
 
 def test_session_id_capture_codex_kimi_agy(tmp_path):
-    # Codex from index
-    fake_codex_index = tmp_path / "session_index.jsonl"
-    fake_codex_index.write_text('{"id":"codex-uuid-111","thread_name":"foo"}\n')
-    with patch("pathlib.Path.home", return_value=tmp_path):
-        (tmp_path / ".codex").mkdir()
-        (tmp_path / ".codex" / "session_index.jsonl").write_text('{"id":"codex-uuid-111"}\n')
-        sid, _ = capture_session_id("codex")
-        assert sid == "codex-uuid-111"
+    # Codex must use each invocation's own output, rather than a cached index.
+    first = "session id: 01a126f5-da05-7222-8a0c-a170a5ff6081\nworking\n"
+    second = "Session ID: 9f8c7d6e-5b4a-4321-9876-fedcba098765\nworking\n"
+    assert capture_session_id("codex", stdout=first)[0] == "01a126f5-da05-7222-8a0c-a170a5ff6081"
+    assert capture_session_id("codex", stderr=second)[0] == "9f8c7d6e-5b4a-4321-9876-fedcba098765"
 
     # Kimi from session list
     with patch("scriptcast.tools.stage_dispatch.subprocess.run") as mock_kimi:
@@ -213,6 +210,7 @@ def test_resume_uses_right_flag_per_agent(tmp_path):
     cmd_codex = build_resume_cmd("codex", "sess-2", msg, worktree=tmp_path)
     assert cmd_codex[:3] == ["codex", "exec", "resume"]
     assert cmd_codex[3] == "sess-2"
+    assert "-C" not in cmd_codex
 
     # 3. kimi -S
     cmd_kimi = build_resume_cmd("kimi", "sess-3", msg, worktree=tmp_path)
