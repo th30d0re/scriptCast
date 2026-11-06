@@ -149,7 +149,7 @@ See [Tech Plan](tech-plan.md) for full context.
 
 ### Approach
 
-Seven phases, ordered so that every model decision has a referee before it has authority. R0 prepares environments and the labelled set. R1 ships the router in shadow with deterministic rules deciding. R2 adds the session registry and nlm context to the dispatcher and measures brief size against the current practice. R3 builds and calibrates the Tier 2 critic; R4 wires repair through the registry. R5 runs the SVG offload experiment with R3 as its judge. R6 fine-tunes laya on the accumulated labels and promotes individual decisions that pass the gate. R3 can start in parallel with R1–R2 because it touches disjoint files. Repair acts directly once R3's calibration gate passes; the only authority gates are the measured ones (R3 calibration, R6 promotion).
+Eight phases (R0–R7), ordered so that every model decision has a referee before it has authority. R0 prepares environments and the labelled set. R1 ships the router in shadow with deterministic rules deciding. R2 adds the session registry and nlm context to the dispatcher and measures brief size against the current practice. R3 builds and calibrates the Tier 2 critic; R4 wires repair through the registry. R5 runs the SVG offload experiment with R3 as its judge. R6 fine-tunes laya on the accumulated labels and promotes individual decisions that pass the gate. R3 can start in parallel with R1–R2 because it touches disjoint files. Repair acts directly once R3's calibration gate passes; the only authority gates are the measured ones (R3 calibration, R6 promotion).
 
 ### Implementation Steps
 
@@ -204,6 +204,16 @@ Seven phases, ordered so that every model decision has a referee before it has a
 27. When `labels.jsonl` plus labelled `router_log.jsonl` records reach 150 with every lane ≥ 20: fine-tune with the upstream PyTorch harness on MPS, convert with `laya-mlx convert`, store under `models/laya-stage-router/` (gitignored).
 28. Re-run `eval.py` on a held-out 20%. A question is promoted from shadow to deciding when, on the held-out set, accuracy ≥ 0.9, ECE ≤ 0.1, order-flip rate ≤ 0.05, and abstention ≤ 0.2. `rules.toml` gains `decider = "laya"` per promoted question; rules stay as the fallback and the override.
 
+**Phase R7 — AI sidebar (user-facing entry point)**
+
+Design: Figma [ScriptCast — R7 AI Sidebar, frame `AI Sidebar / expanded`](https://www.figma.com/design/FyNyDUIlkH6Kjqvc3lcR2L?node-id=1-2) (collapsed rail: node `1:37`). Colours are the app's `theme.rs` tokens: `BG_SURFACE` panel, `BG_SELECTED` for the operator's messages, `BG_RAISED` for router replies, accent for the AI toggle and Send, `STATUS_WARNING` (gold) for the `queued` status. The Figma frame uses Inter because OpenDyslexic is not installed in Figma; the app renders in its own fonts.
+
+29. `ui/src/ai_sidebar.rs` — `AiSidebar`: a collapsible left panel (320 px expanded, 36 px rail collapsed, toggled by `«`/`»` or Cmd+Shift+A) with an AI on/off toggle, a message list, a multiline input (Cmd+Enter sends) and a Dictate button. When AI is off nothing is sent.
+30. `RouterClient` trait (`submit(&RouterRequest) -> Delivery`, `describe()`). `RouterRequest` = id, text, source (`typed`|`voice`), open episode dir, UTC timestamp. First implementation `JsonlQueueClient` appends one JSON line per request to `$SCRIPTCAST_ROUTER_QUEUE`, default `~/Library/Application Support/ScriptCast/router/queue.jsonl`. `MemoryClient` serves the headless harness. R1's router reads the queue; when it exists, a second client replaces the queue without changing the sidebar.
+31. `SpeechToText` trait behind the mic button. R7 ships `SttStub`, which reports that dictation is not wired. Wiring mlx-whisper (already the optional `verify` extra) needs microphone capture and a model download (`mlx-community/whisper-*`, hundreds of MB); that is R7b and is not done here.
+32. `Browser::show` splits the window: sidebar strip on the left, the existing screens in the rest. The harness hides the sidebar unless `--ai-sidebar` is passed, so earlier snapshots are unchanged.
+33. Tests: unit tests in `ai_sidebar.rs` (jsonl append, empty and disabled submissions, stub dictation); `ui/tests/snapshots.rs::ai_sidebar` types a request, clicks Send and snapshots `tests/snapshots/ai_sidebar.png`.
+
 ### Data Flow Summary
 
 ```mermaid
@@ -257,9 +267,52 @@ sequenceDiagram
 | `scriptcast/tools/stage_repair.py`, `tests/test_stage_repair.py` | New (R4) |
 | `experiments/svg_offload/*` | New (R5) — cue list, harness, results, findings |
 | `models/laya-stage-router/` | New, gitignored (R6) |
+| `ui/src/ai_sidebar.rs` | New (R7) — sidebar and `SpeechToText` stub |
+| `ui/src/router_client.rs` | New (R7, shared with R8) — minimal `RouterClient`, `JsonlQueueClient`, `MemoryClient` |
+| `ui/src/app_main.rs`, `ui/src/capture.rs`, `ui/src/lib.rs` | Modified (R7) — left strip in `show`, `--ai-sidebar` flag |
+| `ui/tests/snapshots.rs`, `ui/tests/snapshots/ai_sidebar.png` | Modified/New (R7) |
 
 ---
 
-## Section 5: Plan Audit
+## Section 5: R8 — Turn-Synced Stage Scroll View + Ctrl+R Selection (ScriptCast egui app)
+
+**Branch:** `r8-scroll-view` (from `dev`). Scope is the Rust egui app in `ui/` only, plus this plan. No Stage Python tool changes, no merge or push.
+
+### Problem
+
+The operator reviews Stage cue stills outside the episode browser, so the still under discussion, the selected turn, and the note that goes to the router drift apart. R8 puts the stills inside the browser: a vertical scroll view of the stills derived from `stage_plan.json`, kept in sync with the selected turn in both directions, and a one-keystroke way to hand a chosen set of frames to the router as structured context instead of prose.
+
+### Stage plan format (as produced today)
+
+`scriptcast/tools/stage_plan.py:build_plan` writes `stage_plan.json` with `episode`, `fps`, `width`, `height`, `duration_ms`, `range {start_ms, end_ms}`, `cues` (canonical `"<shot_id>.<cue>": ms` plus a bare alias when the cue name is unique), `segments[]` (`instance`, `scene`, `start_ms`, `end_ms`, `shots[]` with `shot_id`, `turn_id`, `turn_index`, `start_ms`, `end_ms`), `words`, and `episode_dir`. `scriptcast/tools/stage_stills.py:resolve_scene_stills` derives the still list from that plan: per segment, cues are gathered by `shot_id.` prefix (falling back to bare cues inside the segment range), sorted by ms; one still per cue at cue + 700 ms (`frame = ceil((ms - range.start_ms) * fps / 1000)`, capped at the segment end frame), named `<scene>_<cue>.png`, plus one `<scene>_end.png` at segment end − 1 frame. R8's Rust parser mirrors that derivation exactly so the UI lists the same files `stage-stills` renders, without depending on `stills.json`.
+
+### Behaviour
+
+1. **Load.** When an episode opens, the browser looks for `stage_plan.json` in the episode directory (overridable with `--stage-plan PATH` / `--stage-stills DIR`). If present, a stage column appears at the right of the review row; if absent or unparsable, the browser is unchanged and the failure is shown as a notice, never a crash. Stills are resolved against the stills directory (default: the plan's directory) and decoded lazily; a missing PNG renders as a labelled placeholder, not an error.
+2. **Turn → scroll.** Selecting a turn (table click, timeline, Up/Down, `--select`) scrolls the stage view to the first cue frame whose shot carries that `turn_id`. The mapping is by `turn_id`, not row position, so reordered tables cannot desync it.
+3. **Scroll → turn.** When the user scrolls the stage view (scroll offset changes outside a programmatic scroll), the first visible frame's turn becomes the selected turn. A scroll-driven selection does not re-trigger a programmatic scroll, so the view does not jump back to the turn's first frame. Clicking a frame in normal mode also selects its turn.
+4. **Ctrl+R selection mode.** Ctrl+R (Control, not Cmd — Cmd+R stays Reload) toggles a compact mode: thumbnails shrink (narrower column, smaller frames) so more cues fit, and clicking a frame toggles it in or out of a multi-frame selection instead of moving the turn selection. The header shows the selection count. **Send selection** emits exactly one request; toggling Ctrl+R off never sends, and an empty selection sends nothing.
+5. **Router handoff.** The selection is emitted as `SelectionContext { episode, turn_ids, cue_ids, frame_paths }` — episode from the plan, `turn_ids` deduplicated in frame order, `cue_ids` and `frame_paths` in frame order — serialized as the `text` of a shared `RouterRequest { id, text, source: Selection, episode, submitted_at }` and passed to `RouterClient::submit(&mut self, &RouterRequest) -> Delivery` (`ui/src/router_client.rs`, shared with the R7 AI sidebar; `Selection` is the third `Source` beside `Typed`/`Voice`). The shipped implementation is `JsonlQueueClient`, which appends one JSON line per request to a file (`--stage-queue PATH`; default `<episode>/router-queue.jsonl`). The trait stays minimal (`submit` + `describe`) so the sidebar and stage view submit through the same surface without either side importing the other's UI.
+
+### Files
+
+| File | Change |
+|---|---|
+| `ui/src/stage_view.rs` | New — `stage_plan.json` parsing mirroring `resolve_scene_stills`, `StageView` state, vertical scroll view, two-way turn sync, Ctrl+R compact mode |
+| `ui/src/router_client.rs` | Shared with R7 — `SelectionContext`, `RouterRequest` (`text` = selection JSON, `source: Selection`), `RouterClient` trait, `JsonlQueueClient` + `MemoryClient` |
+| `ui/src/app_main.rs`, `ui/src/capture.rs` | Stage column in the review row, load-on-open, `--stage-plan` / `--stage-stills` / `--stage-queue` flags |
+| `ui/tests/fixtures/stage/` | New — one-segment `stage_plan.json` (2 turns, 2 cues + end frame), 3 tiny PNGs, minimal episode manifest so the same directory opens in the browser |
+| `ui/tests/snapshots.rs` + `ui/tests/snapshots/stage_scroll.png` | New `stage_scroll` egui_kittest snapshot (`UPDATE_SNAPSHOTS=1` to regenerate) |
+| `ui/tests/stage_view.rs` | New — Ctrl+R + click-select + send writes exactly one JSONL line; plan-derivation and selection-context unit coverage lives beside the code |
+
+### Acceptance
+
+- `cd ui && cargo test` is green, including all pre-existing tests and snapshots.
+- Selecting a turn scrolls to its first cue frame; scrolling or clicking to another turn's frame selects that turn; Ctrl+R shrinks the view, click-selects multiple frames across turns, and one Send appends exactly one JSONL line whose `turn_ids` / `cue_ids` / `frame_paths` match the clicked frames.
+- Episodes without a stage plan render exactly as before (existing snapshots unchanged).
+
+---
+
+## Section 6: Plan Audit
 
 Not started. Filled in after R4 and again after R6, in the Airlock format: plan step, actual outcome, deviation, notes.

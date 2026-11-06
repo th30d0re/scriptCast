@@ -279,6 +279,7 @@ pub struct Browser {
     logic_task: Option<DawTask>,
     daw_notice: Option<Result<String, String>>,
     episode: Option<Episode>,
+    ai: crate::ai_sidebar::AiSidebar,
     pending: Option<PendingLoad>,
     error: Option<(PathBuf, String)>,
     preferences: Preferences,
@@ -340,6 +341,15 @@ pub struct Browser {
     picture_tex: Option<(PathBuf, SystemTime, egui::TextureHandle)>,
     /// Decoder for the silent run under the playhead.
     motion: motion::Player,
+    /// Stage stills column (R8); `None` when the episode names no plan.
+    stage: Option<crate::stage_view::StageView>,
+    /// Router queue for stage selections; set alongside `stage`.
+    stage_client: Option<crate::router_client::JsonlQueueClient>,
+    /// Why the stage plan failed to load, shown in the stage column.
+    stage_error: Option<String>,
+    stage_plan_override: Option<PathBuf>,
+    stage_stills_override: Option<PathBuf>,
+    stage_queue_override: Option<PathBuf>,
 }
 
 /// Column peaks for the scrolling playback waveform. Rebuilt when the turn,
@@ -440,6 +450,9 @@ impl Browser {
     /// `live` starts the async episode/project loaders. The harness passes `false`
     /// and installs the fixture episode synchronously, with audio left closed.
     fn apply_capture_cli(&mut self, ctx: &egui::Context, cli: &capture::Cli, live: bool) {
+        self.stage_plan_override = cli.stage_plan.clone();
+        self.stage_stills_override = cli.stage_stills.clone();
+        self.stage_queue_override = cli.stage_queue.clone();
         self.init_phase_j(cli);
         self.project.picker = cli.project_picker;
         self.project.select_id = cli.project_select.clone().unwrap_or_default();
@@ -517,6 +530,12 @@ impl Browser {
         if let Some(mode) = cli.edit_mode {
             app.preferences.edit_mode = mode;
         }
+        app.ai = crate::ai_sidebar::AiSidebar::new(
+            Box::new(crate::ai_sidebar::MemoryClient::default()),
+            Box::new(crate::ai_sidebar::SttStub),
+        );
+        app.ai.expanded = cli.ai_sidebar;
+        app.ai.hidden = !cli.ai_sidebar;
         if let Some(mode) = cli.review_mode {
             app.preferences.discrepancy_mode = mode;
         }
@@ -706,6 +725,7 @@ impl Browser {
         self.editing.manifest_len = Some(episode.turns.len());
         self.episode = Some(episode);
         self.error = None;
+        self.load_stage();
         self.jobs.selected.clear();
         self.reattach_phase_j();
         self.refresh_checkpoints();
@@ -733,6 +753,41 @@ impl Browser {
                         "episode has no manifest turn {want} ({count} turns loaded)"
                     ));
                 }
+            }
+        }
+    }
+    /// (Re)load the stage stills column for the open episode (R8). The plan
+    /// defaults to `<episode>/stage_plan.json`; without one the column is
+    /// absent and the browser is exactly as before. A plan that fails to
+    /// parse keeps the column with the error instead of failing the open.
+    fn load_stage(&mut self) {
+        self.stage = None;
+        self.stage_client = None;
+        self.stage_error = None;
+        let Some(episode) = &self.episode else {
+            return;
+        };
+        let plan = match &self.stage_plan_override {
+            Some(path) => Some(path.clone()),
+            None => {
+                let candidate = episode.dir.join("stage_plan.json");
+                candidate.is_file().then_some(candidate)
+            }
+        };
+        let Some(plan) = plan else {
+            return;
+        };
+        let queue = self
+            .stage_queue_override
+            .clone()
+            .unwrap_or_else(|| episode.dir.join("router-queue.jsonl"));
+        match crate::stage_view::StageView::load(&plan, self.stage_stills_override.as_deref()) {
+            Ok(view) => {
+                self.stage_client = Some(crate::router_client::JsonlQueueClient::new(queue));
+                self.stage = Some(view);
+            }
+            Err(error) => {
+                self.stage_error = Some(error);
             }
         }
     }
@@ -2434,7 +2489,21 @@ impl Browser {
     }
 }
 impl Browser {
+    /// AI sidebar (R7) on the left, the rest of the app beside it.
     fn show(&mut self, ui: &mut Ui) {
+        if ui.ctx().input_mut(|i| {
+            i.consume_key(egui::Modifiers::COMMAND | egui::Modifiers::SHIFT, egui::Key::A)
+        }) {
+            self.ai.expanded = !self.ai.expanded;
+        }
+        let full = ui.max_rect();
+        let (side, rest) = full.split_left_right_at_x(full.left() + self.ai.width());
+        let episode = self.episode.as_ref().map(|episode| episode.dir.clone());
+        self.ai.show(ui, side, episode);
+        let mut main = ui.new_child(egui::UiBuilder::new().max_rect(rest));
+        self.show_main(&mut main);
+    }
+    fn show_main(&mut self, ui: &mut Ui) {
         let ctx = ui.ctx().clone();
         if let Some(w) = self.waveforms.as_mut() {
             w.poll();
@@ -2533,6 +2602,26 @@ impl Browser {
                 ),
             );
             let review = Rect::from_min_max(filter.left_bottom(), workspace.max);
+            // Stage stills column (R8) takes the right edge of the review
+            // row when a plan loaded; `review` below is the remaining area.
+            let stage_width = self
+                .stage
+                .as_ref()
+                .map(|stage| stage.column_width())
+                .or_else(|| self.stage_error.as_ref().map(|_| 180.0));
+            let (review, stage_rect) = match stage_width {
+                Some(width) if review.width() > width + 320.0 => {
+                    let stage = Rect::from_min_max(
+                        pos2(review.right() - width, review.top()),
+                        review.max,
+                    );
+                    (
+                        Rect::from_min_max(review.min, pos2(stage.left(), review.bottom())),
+                        Some(stage),
+                    )
+                }
+                _ => (review, None),
+            };
             self.filter_bar(&mut view::region(ui, "filters", filter, t::BG_RAISED));
             let visible = self.visible_indices();
             let (matches, playing, selected_turn) = {
@@ -2866,6 +2955,59 @@ impl Browser {
                         .clamp(min_w, max_w)
                         .min(review.width());
                     self.preferences.inspector_width = Some(next);
+                }
+            }
+            if let Some(stage_rect) = stage_rect {
+                let mut stage_ui = view::region(
+                    ui,
+                    "stage_stills",
+                    view::inset(stage_rect, t::SPACE_8, t::SPACE_8),
+                    t::BG_SURFACE,
+                );
+                if let Some(error) = self.stage_error.clone() {
+                    stage_ui.label(t::text("Stage stills", t::BODY, t::TEXT_PRIMARY).font(t::bold(t::BODY)));
+                    stage_ui.label(t::text(error, t::SECONDARY, t::STATUS_FAILED));
+                } else {
+                    let selected_turn_id = self.selected.and_then(|idx| {
+                        self.episode
+                            .as_ref()
+                            .and_then(|e| e.turns.get(idx))
+                            .map(|turn| turn.id.clone())
+                    });
+                    let action = match (&mut self.stage, &mut self.stage_client) {
+                        (Some(stage), Some(client)) => crate::stage_view::show(
+                            &mut stage_ui,
+                            stage,
+                            selected_turn_id.as_deref(),
+                            Some(client as &mut dyn crate::router_client::RouterClient),
+                        ),
+                        (Some(stage), None) => crate::stage_view::show(
+                            &mut stage_ui,
+                            stage,
+                            selected_turn_id.as_deref(),
+                            None,
+                        ),
+                        _ => crate::stage_view::StageAction::None,
+                    };
+                    match action {
+                        crate::stage_view::StageAction::SelectTurn { turn_id, .. } => {
+                            if let Some(position) = self
+                                .episode
+                                .as_ref()
+                                .and_then(|e| e.turns.iter().position(|turn| turn.id == turn_id))
+                                && self.selected != Some(position)
+                            {
+                                self.select(position);
+                            }
+                        }
+                        crate::stage_view::StageAction::Submitted(context) => {
+                            self.audio_notice = Some(format!(
+                                "Sent {} stage frame(s) to the router",
+                                context.frame_paths.len()
+                            ));
+                        }
+                        crate::stage_view::StageAction::None => {}
+                    }
                 }
             }
         } else {

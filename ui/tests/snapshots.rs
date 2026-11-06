@@ -200,8 +200,39 @@ fn audition() {
 }
 
 #[test]
+fn stage_scroll() {
+    shot(
+        "stage_scroll",
+        vec![
+            fixture("stage"),
+            OsString::from("--select"),
+            OsString::from("1"),
+        ],
+    );
+}
+
+#[test]
 fn failed_job_banner() {
     let mut args = episode_args(&["--failed-job-fixture"]);
     args.push(fixture("failed-job.log"));
     shot("failed_job_banner", args);
+}
+
+#[test]
+fn ai_sidebar() {
+    let mut harness = harness(episode_args(&["--ai-sidebar"]));
+    harness
+        .get_by_role(eframe::egui::accesskit::Role::MultilineTextInput)
+        .click();
+    harness.run_steps(2);
+    harness
+        .get_by_role(eframe::egui::accesskit::Role::MultilineTextInput)
+        .type_text("Tighten the pause after turn 2.");
+    harness.run_steps(2);
+    harness.get_by_label("Send").click();
+    harness.run_steps(4);
+    harness.get_by_label("Router");
+    harness.get_by_label("queued");
+    harness.snapshot("ai_sidebar");
+    assert_inside_window(&harness);
 }
