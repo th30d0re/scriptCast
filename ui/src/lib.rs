@@ -9,6 +9,7 @@ pub mod detached;
 pub mod discrepancy;
 pub mod episode;
 pub mod find;
+pub mod mix;
 pub mod new_episode;
 pub mod not_heard;
 pub mod phase_m;

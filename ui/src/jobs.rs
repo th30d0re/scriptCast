@@ -455,6 +455,7 @@ impl Browser {
                 "scriptcast-export",
                 "scriptcast-relayout",
                 "scriptcast-stitch",
+                "scriptcast-mix",
                 "scriptcast-turn-index",
                 "scriptcast-youtube",
             ]
@@ -732,6 +733,7 @@ impl Browser {
         let mut presets = vec![
             Preset::Relayout(self.phase.pipeline.gap_ms),
             Preset::Stitch,
+            Preset::Mix,
             Preset::TurnIndex,
             Preset::ReExport {
                 fcpxml: self.phase.export_fcpxml,
@@ -758,6 +760,12 @@ impl Browser {
             self.failure_banner(ui);
             ui.horizontal_wrapped(|ui| {
                 for p in presets {
+                    if p == Preset::Mix {
+                        if t::secondary_button(ui, "Mix", None, self.episode.is_some()).clicked() {
+                            self.open_mix();
+                        }
+                        continue;
+                    }
                     let no_clips = p == Preset::ClipTranscripts && !has_clips;
                     let spec = if no_clips {
                         Err("Episode has no clip turns".into())

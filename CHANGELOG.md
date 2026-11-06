@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - Unreleased
 
 ### Added
+- A native full-window Mix editor for text-anchored overlays, per-turn gain, rendering, and stitched/mixed A/B playback.
 - The native Voices form now supports Tone speakers with a required voice description and an optional, separate character profile.
 - Tone TTS (`engine: tone`) through the local Qwen3 VoiceDesign checkpoint, with per-speech `[tone:…]` voice descriptions and a persistent `scriptcast-tone` worker.
 - The renderer calls `scriptcast-chunk` when an engine sets `max_chars` and a speech job is longer than that, and when a take runs away (non-finite samples, or longer than 8 seconds and slower than 0.6 seconds per character). Pieces crossfade inside the turn. A missing binary fails that render. Engines do not set a cap yet, so a stable take is still one synthesis call.

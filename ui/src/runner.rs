@@ -22,6 +22,7 @@ pub enum Preset {
     Render,
     Relayout(u64),
     Stitch,
+    Mix,
     TurnIndex,
     ReExport {
         fcpxml: bool,
@@ -45,6 +46,7 @@ impl Preset {
             Self::Render => "render",
             Self::Relayout(_) => "relayout",
             Self::Stitch => "stitch",
+            Self::Mix => "mix",
             Self::TurnIndex => "turn-index",
             Self::ReExport { .. } => "re-export",
             Self::DetectChanges => "detect-changes",
@@ -64,6 +66,7 @@ impl Preset {
             Self::Render => "Render",
             Self::Relayout(_) => "Relayout",
             Self::Stitch => "Stitch MP3",
+            Self::Mix => "Render mix",
             Self::TurnIndex => "Turn index",
             Self::ReExport { .. } => "Re-export",
             Self::DetectChanges => "Detect changes",
@@ -82,6 +85,7 @@ impl Preset {
         match self {
             Self::Relayout(_) => "scriptcast-relayout",
             Self::Stitch => "scriptcast-stitch",
+            Self::Mix => "scriptcast-mix",
             Self::TurnIndex => "scriptcast-turn-index",
             Self::Verify => "scriptcast-verify",
             Self::ReadAlong => "scriptcast-word-timings",
@@ -104,6 +108,7 @@ impl Preset {
             "render" => Ok(Self::Render),
             "relayout" => Ok(Self::Relayout(250)),
             "stitch" => Ok(Self::Stitch),
+            "mix" => Ok(Self::Mix),
             "turn-index" => Ok(Self::TurnIndex),
             "re-export" => Ok(Self::ReExport {
                 fcpxml: false,
@@ -228,6 +233,27 @@ impl JobSpec {
                 ]);
             }
             Preset::Stitch => args.push(e.dir.as_os_str().into()),
+            Preset::Mix => {
+                let root = e
+                    .project_root
+                    .as_ref()
+                    .ok_or("Missing scriptcast.toml project root")?;
+                let asr = crate::mix::asr_path(&e.dir, &e.manifest.episode_id);
+                if !asr.is_file() {
+                    return Err(format!("Recognised words are missing: {}", asr.display()));
+                }
+                args.extend([
+                    e.dir.as_os_str().into(),
+                    "--script".into(),
+                    script.as_os_str().into(),
+                    "--config".into(),
+                    crate::mix::config_path(root).into_os_string(),
+                    "--out".into(),
+                    crate::mix::mixed_path(&e.dir, &e.manifest.episode_id).into_os_string(),
+                    "--asr".into(),
+                    asr.into_os_string(),
+                ]);
+            }
             Preset::CutSegment(seg) => {
                 if seg.is_empty() {
                     return Err("This turn is not in the YouTube shot list".into());
@@ -349,6 +375,12 @@ impl JobSpec {
             .collect();
         if matches!(p, Preset::Relayout(_) | Preset::ReExport { .. }) {
             overwrites.push(e.dir.join("episode_manifest.json"));
+        }
+        if p == &Preset::Mix {
+            let output = crate::mix::mixed_path(&e.dir, &e.manifest.episode_id);
+            if output.exists() {
+                overwrites.push(output);
+            }
         }
         Ok(Self {
             program: resolved.program.clone(),
