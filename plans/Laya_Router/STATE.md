@@ -10,7 +10,7 @@ Format: Airlock `Planning/Airlock_Pipeline/STATE.md` (per-phase checklist, fixes
 
 ## Channel structure (operator, 2026-11-06)
 
-Specials (whole-book concepts, e.g. What Racism Actually Is, origins of the police) are not part of Architecting the Operation, the chapter-by-chapter series. Router rule for `context_source`: special → `book` (whole-book notebook `d3f54f50…`); series episode → `chapter` (its notebook in the book repo's `chapters/v1.1.1/episode_map.json`). Canonical: TheOriginalPower `Architecting_the_operation/SERIES.md`.
+Architecting the Operation is the chapter-by-chapter series; its Ep 0 premiere (What Racism Actually Is) is a whole-book preview. Specials (origins of the police, of gun control) stand outside it. Router rule for `context_source`: Ep 0 or special → `book` (whole-book notebook `d3f54f50…`); series episode → `chapter` (its notebook in the book repo's `chapters/v1.1.1/episode_map.json`). Canonical: TheOriginalPower `Architecting_the_operation/SERIES.md`.
 
 ## Planning — 2026-11-06
 
