@@ -5,7 +5,7 @@ Format: Airlock `Planning/Airlock_Pipeline/STATE.md` (per-phase checklist, fixes
 ## High Priority (waiting on the operator)
 
 - [x] D1 — Stage tools are on origin/dev (v0.3-stage, v0.4-stage-loop fully merged). Local dev was 31 behind; synced 2026-11-06.
-- [ ] D2 — Proposed: keep book `58729638…` (43 sources), Ep 2 `f9055233…`, Ep 3 `e1e23897…`; delete `60b309ce…` (1 source, older), `c1eb4028…`, `548ad34f…` (TEST, 0 sources), `3593a8cb…`. Duplicates carry the same chapter PDF. Awaiting delete approval.
+- [ ] D2 — v1.1.1 released 2026-11-06; fresh whole-book notebook `d3f54f50-61a5-465e-a94a-55d17326c0e2` (v1.1.1 PDF) replaces `58729638…`/`60b309ce…` as `book`. 36 chapter PDFs cut to the book repo's `chapters/v1.1.1/`; the book has outgrown the Ch 0–22 episode map, so episode notebooks wait on a new episode map. Old duplicates kept until then.
 - [x] D3 — M1 Max 64 GB first; design for it; move to M3 Ultra only on a measured limit (operator, 2026-11-06).
 
 ## Planning — 2026-11-06
