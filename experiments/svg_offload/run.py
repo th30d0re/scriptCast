@@ -8,23 +8,34 @@ Condition A: a pluggable local generator (`svgen-7b`, `omnisvg-1.1`; stub
 functions returning SVG text, marked TODO while no MLX weights sit in
 ~/.cache/huggingface/hub) produces the asset once per cue; `npx svgo`
 normalises it when available; the worker is then dispatched to mount the
-pre-generated asset into the scene. Condition B: the worker draws the SVG
-inline from the same asset description.
+pre-generated asset into the scene. No SVGen/OmniSVG weights exist locally
+yet, so `--conditions A` exits with a "weights missing" error until they land.
+Condition B: the worker draws the SVG inline from the same asset description.
 
 Workers: agy `gemini-3.8-flash-low`, codex `gpt-5.6-luna`, codex
 `gpt-5.6-terra` (all dispatched via `python -m scriptcast.tools.stage_dispatch
 start --agent ... --model ...`), and Muse (`muse exec --workspace DIR
---prompt-file F`, direct CLI).
+--prompt-file F --approval-mode never`, direct CLI).
+
+Isolation: every (cue, condition, worker) cell runs in its own throwaway git
+worktree of the book repo (`git worktree add --detach <out>/wt/<cell> HEAD`),
+so concurrent workers never touch the live checkout. Artefacts (SVG, TSX
+`git diff`, metrics row) are collected under `out/<cell>/` and the worktree
+is removed afterwards.
+
+Cells run `--concurrency N` at a time (default 2); each worker subprocess gets
+`stdin=DEVNULL` and a `--timeout-min` budget (default 20) after which it is
+killed and the row records status `timeout`.
 
 Metrics land in results.csv: worker tokens when reported, TSX type-check pass,
-render pass, SVG node count and bytes, and a critic-verdict placeholder
-column.
+render pass, SVG node count and bytes, cell status, and a critic-verdict
+placeholder column.
 
 `--dry-run` prints every planned command without running (or writing) any.
 
 Usage:
     python experiments/svg_offload/run.py --dry-run
-    python experiments/svg_offload/run.py --cues book-stack,router-tree --generator omnisvg-1.1
+    python experiments/svg_offload/run.py --cues cues.csv --concurrency 4
 """
 from __future__ import annotations
 
@@ -35,21 +46,20 @@ import shlex
 import shutil
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
 EXPERIMENT_DIR = Path(__file__).resolve().parent
 HF_HUB = Path.home() / ".cache" / "huggingface" / "hub"
-DEFAULT_STAGE_DIR = Path(
-    "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation"
-    "/video/yt02/stage"
-)
-DEFAULT_WORKTREE = DEFAULT_STAGE_DIR.parent  # video/yt02 project root
+BOOK_REPO = Path("/Users/emmanuel/Documents/Theory/TheOriginalPower")
+YT02_SUBDIR = Path("Architecting_the_operation/video/yt02")
+DEFAULT_CUES_FILE = EXPERIMENT_DIR / "cues.csv"
 
 # ---------------------------------------------------------------------------
-# Candidates (experiments/svg_offload/candidates.md). The operator picks 10;
-# until then DEFAULT_CUES below stands in.
+# Candidates (experiments/svg_offload/candidates.md). The operator-approved
+# selection lives in cues.csv next to this file; --cues defaults to it.
 
 
 @dataclass(frozen=True)
@@ -112,8 +122,18 @@ CANDIDATES = [
               "speech balloon with tail, two dashed text rules, one vertical red slash"),
 ]
 
-# Operator's pick lands here via --cues; first ten are the stand-in.
-DEFAULT_CUES = [c.slug for c in CANDIDATES[:10]]
+
+def load_cues(path: Path) -> list[str]:
+    """Slugs from a selection CSV: one slug per line, optional `slug` header."""
+    slugs: list[str] = []
+    for line in path.read_text().splitlines():
+        field = line.split(",")[0].strip()
+        if field and field.lower() != "slug":
+            slugs.append(field)
+    return slugs
+
+
+DEFAULT_CUES = load_cues(DEFAULT_CUES_FILE)
 
 # ---------------------------------------------------------------------------
 # Condition A generators — pluggable. Each takes a text prompt and returns
@@ -170,6 +190,7 @@ def svgo_available() -> bool:
         cp = subprocess.run(
             ["npx", "svgo", "--version"],
             capture_output=True, text=True, timeout=180,
+            stdin=subprocess.DEVNULL,
         )
         return cp.returncode == 0
     except Exception:
@@ -201,6 +222,11 @@ WORKERS = [
 CONDITIONS = ("A", "B")
 
 
+def cell_slug(candidate: Candidate, condition: str, worker: Worker) -> str:
+    """Directory/worktree name for one (cue, condition, worker) cell."""
+    return f"{candidate.slug}-{condition}-{worker.slug}"
+
+
 def worker_command(
     worker: Worker,
     brief_path: Path,
@@ -208,12 +234,16 @@ def worker_command(
     candidate: Candidate,
     condition: str,
 ) -> list[str]:
-    """Dispatch command for one (cue, condition, worker) cell."""
+    """Dispatch command for one (cue, condition, worker) cell.
+
+    `worktree` is the yt02 project root inside the cell's throwaway worktree.
+    """
     if worker.agent == "muse":
         return [
             "muse", "exec",
             "--workspace", str(worktree),
             "--prompt-file", str(brief_path),
+            "--approval-mode", "never",
         ]
     return [
         sys.executable, "-m", "scriptcast.tools.stage_dispatch", "start",
@@ -222,9 +252,27 @@ def worker_command(
         "--brief", str(brief_path),
         "--worktree", str(worktree),
         "--project", "svg_offload",
-        "--task", f"{candidate.slug}-{condition}-{worker.slug}",
+        "--task", cell_slug(candidate, condition, worker),
         "--kind", "experiment",
     ]
+
+
+# ---------------------------------------------------------------------------
+# Isolation: per-cell throwaway worktrees of the book repo
+
+
+def worktree_add_command(book_repo: Path, wt: Path) -> list[str]:
+    return ["git", "-C", str(book_repo), "worktree", "add", "--detach", str(wt), "HEAD"]
+
+
+def worktree_remove_command(book_repo: Path, wt: Path) -> list[str]:
+    # --force: the worker's edits are uncommitted by design; the artefacts we
+    # keep (SVG, diff, metrics) have already been copied to out/<cell>/.
+    return ["git", "-C", str(book_repo), "worktree", "remove", "--force", str(wt)]
+
+
+def git_diff_command(wt: Path) -> list[str]:
+    return ["git", "-C", str(wt), "diff"]
 
 
 # ---------------------------------------------------------------------------
@@ -269,7 +317,7 @@ RESULTS_HEADER = [
     "cue", "scene", "shot", "file", "cue_id", "condition",
     "worker", "agent", "model", "generator", "brief",
     "worker_tokens", "tsx_typecheck_pass", "render_pass",
-    "svg_node_count", "svg_bytes", "critic_verdict",
+    "svg_node_count", "svg_bytes", "status", "critic_verdict",
 ]
 
 CRITIC_PLACEHOLDER = "PENDING"
@@ -316,6 +364,7 @@ def tsx_typecheck(stage_dir: Path) -> str:
     cp = subprocess.run(
         ["npx", "tsc", "--noEmit", "-p", str(tsconfig)],
         capture_output=True, text=True, cwd=str(stage_dir),
+        stdin=subprocess.DEVNULL,
     )
     return "pass" if cp.returncode == 0 else "fail"
 
@@ -331,7 +380,8 @@ def render_check(render_cmd: str | None, candidate: Candidate, cwd: Path) -> str
     cmd = shlex.split(render_cmd.format(scene=candidate.scene, frame=0))
     if not shutil.which(cmd[0]):
         return "skip"
-    cp = subprocess.run(cmd, capture_output=True, text=True, cwd=str(cwd))
+    cp = subprocess.run(cmd, capture_output=True, text=True, cwd=str(cwd),
+                        stdin=subprocess.DEVNULL)
     return "pass" if cp.returncode == 0 else "fail"
 
 
@@ -349,8 +399,6 @@ class PlannedCommand:
 
 def build_plan(args: argparse.Namespace) -> tuple[list[str], list[PlannedCommand]]:
     """(comment lines, shell commands) for the whole matrix."""
-    stage_dir: Path = args.stage_dir
-    worktree: Path = args.worktree
     out_dir: Path = args.out_dir
     candidates = [c for c in CANDIDATES if c.slug in args.cues]
     workers = [w for w in WORKERS if w.slug in args.workers]
@@ -369,8 +417,13 @@ def build_plan(args: argparse.Namespace) -> tuple[list[str], list[PlannedCommand
             )
         for condition in args.conditions:
             for worker in workers:
-                brief = (
-                    out_dir / "briefs" / f"{cand.slug}-{condition}-{worker.slug}.md"
+                cell = cell_slug(cand, condition, worker)
+                wt = out_dir / "wt" / cell
+                yt02 = wt / YT02_SUBDIR
+                brief = out_dir / cell / "brief.md"
+                commands.append(
+                    PlannedCommand(cand.slug, condition, worker.slug,
+                                   worktree_add_command(args.book_repo, wt))
                 )
                 comments.append(f"# write brief {brief}")
                 commands.append(
@@ -378,10 +431,28 @@ def build_plan(args: argparse.Namespace) -> tuple[list[str], list[PlannedCommand
                         cand.slug,
                         condition,
                         worker.slug,
-                        worker_command(worker, brief, worktree, cand, condition),
+                        worker_command(worker, brief, yt02, cand, condition),
                     )
                 )
+                comments.append(f"# copy SVG + git diff + metrics -> {out_dir / cell}/")
+                commands.append(
+                    PlannedCommand(cand.slug, condition, worker.slug,
+                                   git_diff_command(wt))
+                )
+                commands.append(
+                    PlannedCommand(cand.slug, condition, worker.slug,
+                                   worktree_remove_command(args.book_repo, wt))
+                )
     return comments, commands
+
+
+def _timeout_output(exc: subprocess.TimeoutExpired) -> str:
+    out, err = exc.stdout or "", exc.stderr or ""
+    if isinstance(out, bytes):
+        out = out.decode("utf-8", "replace")
+    if isinstance(err, bytes):
+        err = err.decode("utf-8", "replace")
+    return out + "\n" + err
 
 
 def run_cell(
@@ -391,27 +462,20 @@ def run_cell(
     args: argparse.Namespace,
     asset_path: Path | None,
 ) -> dict[str, object]:
-    """Execute one (cue, condition, worker) cell and return its CSV row."""
-    out_dir: Path = args.out_dir
-    brief = out_dir / "briefs" / f"{candidate.slug}-{condition}-{worker.slug}.md"
-    brief.parent.mkdir(parents=True, exist_ok=True)
-    brief.write_text(
-        brief_text(candidate, condition, worker, args.stage_dir, asset_path)
-    )
-    cmd = worker_command(worker, brief, args.worktree, candidate, condition)
-    cp = subprocess.run(
-        cmd, capture_output=True, text=True, cwd=str(args.worktree)
-    )
-    tokens = parse_tokens(cp.stdout + "\n" + cp.stderr)
+    """Execute one (cue, condition, worker) cell in its own worktree.
 
-    if condition == "A" and asset_path and asset_path.is_file():
-        nodes, nbytes = svg_stats(asset_path.read_text())
-    else:
-        nodes, nbytes = svg_stats(
-            extract_inline_svgs(args.stage_dir / candidate.file)
-        )
+    Adds a detached worktree of the book repo, runs the worker against the
+    yt02 subdir inside it, copies artefacts to out/<cell>/, removes the
+    worktree. The live checkout is never written to.
+    """
+    cell = cell_slug(candidate, condition, worker)
+    cell_dir: Path = args.out_dir / cell
+    wt: Path = args.out_dir / "wt" / cell
+    yt02 = wt / YT02_SUBDIR
+    stage_dir = yt02 / "stage"
+    brief = cell_dir / "brief.md"
 
-    return {
+    row: dict[str, object] = {
         "cue": candidate.slug,
         "scene": candidate.scene,
         "shot": candidate.shot,
@@ -423,38 +487,113 @@ def run_cell(
         "model": worker.model,
         "generator": args.generator if condition == "A" else "",
         "brief": str(brief),
-        "worker_tokens": tokens if tokens is not None else "",
-        "tsx_typecheck_pass": tsx_typecheck(args.stage_dir),
-        "render_pass": render_check(args.render_cmd, candidate, args.worktree),
-        "svg_node_count": nodes,
-        "svg_bytes": nbytes,
+        "worker_tokens": "",
+        "tsx_typecheck_pass": "skip",
+        "render_pass": "skip",
+        "svg_node_count": "",
+        "svg_bytes": "",
+        "status": "ok",
         "critic_verdict": CRITIC_PLACEHOLDER,
     }
+
+    cell_dir.mkdir(parents=True, exist_ok=True)
+    wt.parent.mkdir(parents=True, exist_ok=True)
+    add = subprocess.run(
+        worktree_add_command(args.book_repo, wt),
+        capture_output=True, text=True, stdin=subprocess.DEVNULL,
+    )
+    if add.returncode != 0:
+        row["status"] = "worktree-error"
+        return row
+
+    try:
+        brief.write_text(
+            brief_text(candidate, condition, worker, stage_dir, asset_path)
+        )
+        cmd = worker_command(worker, brief, yt02, candidate, condition)
+        try:
+            cp = subprocess.run(
+                cmd, capture_output=True, text=True, cwd=str(yt02),
+                stdin=subprocess.DEVNULL,
+                timeout=args.timeout_min * 60,
+            )
+            output = (cp.stdout or "") + "\n" + (cp.stderr or "")
+            if cp.returncode != 0:
+                row["status"] = "error"
+        except subprocess.TimeoutExpired as exc:
+            # subprocess.run has already killed the child at this point.
+            output = _timeout_output(exc)
+            row["status"] = "timeout"
+        tokens = parse_tokens(output)
+        row["worker_tokens"] = tokens if tokens is not None else ""
+
+        if condition == "A" and asset_path and asset_path.is_file():
+            svg_text = asset_path.read_text()
+        else:
+            svg_text = extract_inline_svgs(stage_dir / candidate.file)
+        (cell_dir / "asset.svg").write_text(svg_text)
+        if svg_text:
+            row["svg_node_count"], row["svg_bytes"] = svg_stats(svg_text)
+
+        diff = subprocess.run(
+            git_diff_command(wt),
+            capture_output=True, text=True, stdin=subprocess.DEVNULL,
+        )
+        (cell_dir / "tsx.diff").write_text(diff.stdout)
+
+        row["tsx_typecheck_pass"] = tsx_typecheck(stage_dir)
+        row["render_pass"] = render_check(args.render_cmd, candidate, yt02)
+    finally:
+        subprocess.run(
+            worktree_remove_command(args.book_repo, wt),
+            capture_output=True, text=True, stdin=subprocess.DEVNULL,
+        )
+    return row
+
+
+def resolve_cues(cues_arg: str) -> list[str]:
+    """--cues takes a selection CSV path (default: cues.csv) or a
+    comma-separated slug list."""
+    path = Path(cues_arg)
+    if path.is_file():
+        return load_cues(path)
+    return [s.strip() for s in cues_arg.split(",") if s.strip()]
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--cues", default=",".join(DEFAULT_CUES),
-                    help="comma-separated candidate slugs (default: the 10 stand-ins)")
+    ap.add_argument("--cues", default=str(DEFAULT_CUES_FILE),
+                    help="selection CSV of candidate slugs (default: cues.csv "
+                         "next to this file); a comma-separated list also works")
     ap.add_argument("--workers", default=",".join(w.slug for w in WORKERS),
                     help="comma-separated worker slugs")
-    ap.add_argument("--conditions", default="A,B", help="subset of A,B")
+    ap.add_argument("--conditions", default="B", help="subset of A,B (default: B)")
     ap.add_argument("--generator", default="svgen-7b", choices=sorted(GENERATORS),
                     help="condition A local generator")
-    ap.add_argument("--stage-dir", type=Path, default=DEFAULT_STAGE_DIR)
-    ap.add_argument("--worktree", type=Path, default=DEFAULT_WORKTREE,
-                    help="worktree the dispatched workers operate in")
+    ap.add_argument("--book-repo", type=Path, default=BOOK_REPO,
+                    help="book repo the per-cell worktrees are taken from "
+                         "(never written to directly)")
     ap.add_argument("--out-dir", type=Path, default=EXPERIMENT_DIR / "out")
     ap.add_argument("--results", type=Path, default=EXPERIMENT_DIR / "results.csv")
+    ap.add_argument("--concurrency", type=int, default=2,
+                    help="cells running at once (default: 2)")
+    ap.add_argument("--timeout-min", type=float, default=20.0,
+                    help="per-cell worker timeout in minutes; on expiry the "
+                         "worker is killed and the row records status=timeout "
+                         "(default: 20)")
     ap.add_argument("--render-cmd", default=None,
                     help="render probe template, e.g. 'npx remotion still {scene} /tmp/e3.png --frame={frame}'")
     ap.add_argument("--dry-run", action="store_true",
                     help="print every planned command; run and write nothing")
     args = ap.parse_args(argv)
 
-    args.cues = [s.strip() for s in args.cues.split(",") if s.strip()]
+    args.cues = resolve_cues(args.cues)
     args.workers = [s.strip() for s in args.workers.split(",") if s.strip()]
     args.conditions = [s.strip().upper() for s in args.conditions.split(",") if s.strip()]
+    if args.concurrency < 1:
+        ap.error("--concurrency must be >= 1")
+    if args.timeout_min <= 0:
+        ap.error("--timeout-min must be > 0")
     unknown = set(args.cues) - {c.slug for c in CANDIDATES}
     if unknown:
         ap.error(f"unknown cue slugs: {sorted(unknown)}")
@@ -465,11 +604,23 @@ def main(argv: list[str] | None = None) -> int:
     if bad_cond:
         ap.error(f"unknown conditions: {sorted(bad_cond)}")
 
+    if "A" in args.conditions:
+        frag = args.generator.split("-")[0]  # svgen / omnisvg
+        if not _hf_has_mlx_weights(frag):
+            print(
+                f"error: weights missing: condition A needs local MLX weights "
+                f"for {args.generator!r}; none found under {HF_HUB}. "
+                f"Run with --conditions B until they land.",
+                file=sys.stderr,
+            )
+            return 2
+
     comments, commands = build_plan(args)
 
     if args.dry_run:
         print(f"# E3 svg_offload plan: {len(args.cues)} cues x "
-              f"{len(args.conditions)} conditions x {len(args.workers)} workers")
+              f"{len(args.conditions)} conditions x {len(args.workers)} workers, "
+              f"concurrency={args.concurrency}, timeout={args.timeout_min}min")
         for line in comments:
             print(line)
         for planned in commands:
@@ -482,32 +633,46 @@ def main(argv: list[str] | None = None) -> int:
 
     candidates = [c for c in CANDIDATES if c.slug in args.cues]
     workers = [w for w in WORKERS if w.slug in args.workers]
-    use_svgo = svgo_available()
 
+    # Condition A assets are generated once per cue, before any cell starts.
+    assets: dict[str, Path] = {}
+    if "A" in args.conditions:
+        use_svgo = svgo_available()
+        for cand in candidates:
+            raw_svg = args.out_dir / "assets" / f"{cand.slug}.{args.generator}.raw.svg"
+            norm_svg = args.out_dir / "assets" / f"{cand.slug}.{args.generator}.svg"
+            raw_svg.parent.mkdir(parents=True, exist_ok=True)
+            raw_svg.write_text(GENERATORS[args.generator](cand.asset))
+            if use_svgo:
+                cp = subprocess.run(
+                    svgo_command(raw_svg, norm_svg),
+                    capture_output=True, text=True, stdin=subprocess.DEVNULL,
+                )
+                assets[cand.slug] = norm_svg if cp.returncode == 0 else raw_svg
+            else:
+                shutil.copyfile(raw_svg, norm_svg)
+                assets[cand.slug] = norm_svg
+
+    cells = [
+        (cand, condition, worker)
+        for cand in candidates
+        for condition in args.conditions
+        for worker in workers
+    ]
     with open(args.results, "a", newline="", encoding="utf-8") as fh:
         writer = csv.DictWriter(fh, fieldnames=RESULTS_HEADER)
         if write_header:
             writer.writeheader()
-        for cand in candidates:
-            asset_path = None
-            if "A" in args.conditions:
-                raw_svg = args.out_dir / "assets" / f"{cand.slug}.{args.generator}.raw.svg"
-                norm_svg = args.out_dir / "assets" / f"{cand.slug}.{args.generator}.svg"
-                raw_svg.parent.mkdir(parents=True, exist_ok=True)
-                raw_svg.write_text(GENERATORS[args.generator](cand.asset))
-                if use_svgo:
-                    cp = subprocess.run(
-                        svgo_command(raw_svg, norm_svg),
-                        capture_output=True, text=True,
-                    )
-                    asset_path = norm_svg if cp.returncode == 0 else raw_svg
-                else:
-                    shutil.copyfile(raw_svg, norm_svg)
-                    asset_path = norm_svg
-            for condition in args.conditions:
-                for worker in workers:
-                    row = run_cell(cand, condition, worker, args, asset_path)
-                    writer.writerow(row)
+        with ThreadPoolExecutor(max_workers=args.concurrency) as pool:
+            futures = [
+                pool.submit(run_cell, cand, condition, worker, args,
+                            assets.get(cand.slug))
+                for cand, condition, worker in cells
+            ]
+            # Iterate in submission order so results.csv stays deterministic.
+            for fut in futures:
+                writer.writerow(fut.result())
+                fh.flush()
     print(f"wrote {args.results}")
     return 0
 
