@@ -67,6 +67,20 @@ def test_turns_and_custom_output_and_default_script(episode):
     assert wt.turn_selection("5,10-12") == {5, 10, 11, 12}
 
 
+def test_partial_run_merges_into_existing_timings(episode):
+    directory, script, _, turns, calls = episode
+    assert wt.main([str(directory), "--script", str(script)]) == 0
+    full = json.loads((directory / "word_timings.json").read_text())["turns"]
+    data = json.loads((directory / "word_timings.json").read_text())
+    data["turns"]["stale-turn"] = []
+    (directory / "word_timings.json").write_text(json.dumps(data))
+    calls.clear()
+    assert wt.main([str(directory), "--script", str(script), "--turns", "2"]) == 0
+    merged = json.loads((directory / "word_timings.json").read_text())["turns"]
+    assert merged == full
+    assert calls == [("2-0.wav", wt.DEFAULT_MODEL)]
+
+
 @pytest.mark.parametrize("value", ["", "1-", "3-2", "-1", "1-2-3", "x"])
 def test_invalid_turn_selection(value):
     with pytest.raises(wt.argparse.ArgumentTypeError):

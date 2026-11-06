@@ -104,6 +104,17 @@ def build_timings(episode_dir: Path, manifest: dict, script_turns, model: str,
     return result
 
 
+def merge_base(output: Path, model: str, live_ids: set[str]) -> dict:
+    """Existing timings worth keeping under a partial run: same model, turn still live."""
+    try:
+        previous = json.loads(output.read_text())
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(previous, dict) or previous.get("model") != model:
+        return {}
+    return {tid: words for tid, words in previous.get("turns", {}).items() if tid in live_ids}
+
+
 def atomic_write(path: Path, data: dict) -> None:
     """Publish only a complete JSON file; keep the previous output on failure."""
     temporary = None
@@ -166,9 +177,14 @@ def main(argv: list[str] | None = None) -> int:
         else:
             # Same default path as before H5 when no hints exist.
             transcribe_fn = transcribe
+        timed = build_timings(episode_dir, manifest, parse_transcript(script), args.model,
+                              args.turns, transcribe_fn=transcribe_fn)
+        if args.turns is not None:
+            # A partial run updates the selected turns and keeps every other turn
+            # that is still in the manifest, so --turns never truncates the file.
+            timed = {**merge_base(output, args.model, {t["turn_id"] for t in manifest["turns"]}), **timed}
         data = {"manifest_sha256": hashlib.sha256(original).hexdigest(), "model": args.model,
-                "turns": build_timings(episode_dir, manifest, parse_transcript(script), args.model,
-                                       args.turns, transcribe_fn=transcribe_fn)}
+                "turns": timed}
         if manifest_path.read_bytes() != original:
             raise ValueError("Manifest changed during transcription; rerun timings")
         atomic_write(output, data)
