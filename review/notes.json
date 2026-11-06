@@ -1,0 +1,20 @@
+[
+  {
+    "scene": "APAGroupDefinitions",
+    "element": "definition-term",
+    "ms": 255890,
+    "cue": "t21Bias",
+    "note": "INGROUP BIAS sits tight under the card edge. Open a clearer gap beneath the gold rule.",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "APAGroupDefinitions",
+    "element": "allocation-tray",
+    "ms": 263890,
+    "cue": "t21Behavior",
+    "note": "The derived-illustration tray crowds the source line. Lift the tray so the citation keeps its safe-area gap.",
+    "author": "author",
+    "status": "open"
+  }
+]

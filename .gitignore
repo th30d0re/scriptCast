@@ -20,3 +20,7 @@ site/dist/
 video/site/dist/
 video/scripts/.stage-check/
 video/public/stage/
+
+# stage-layout build output
+/target/
+stage-layout/pkg/
