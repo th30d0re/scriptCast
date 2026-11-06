@@ -1,0 +1,120 @@
+{
+  "n": 33,
+  "questions": {
+    "lane": {
+      "rules_acc": 0.8485,
+      "laya_fwd_acc": 0.6667,
+      "laya_rev_acc": 0.4848,
+      "laya_avg_acc": 0.5758,
+      "flip_rate": 0.3939,
+      "abstain_rate": 0.3939,
+      "ece": 0.1587,
+      "acc_when_not_abstain": 0.7
+    },
+    "tier": {
+      "rules_acc": 1.0,
+      "laya_fwd_acc": 0.6364,
+      "laya_rev_acc": 0.8182,
+      "laya_avg_acc": 0.7576,
+      "flip_rate": 0.1818,
+      "abstain_rate": 0.1818,
+      "ece": 0.1368,
+      "acc_when_not_abstain": 0.7778
+    },
+    "session_action": {
+      "rules_acc": 0.9394,
+      "laya": "rules-only (D2)"
+    },
+    "context_source": {
+      "rules_acc": 0.8485,
+      "laya_fwd_acc": 0.6061,
+      "laya_rev_acc": 0.6061,
+      "laya_avg_acc": 0.6061,
+      "flip_rate": 0.0,
+      "abstain_rate": 0.0,
+      "ece": 0.2049,
+      "acc_when_not_abstain": 0.6061
+    }
+  },
+  "laya": {
+    "status": "ok",
+    "version": "0.6.0",
+    "load_ms": 1082.6,
+    "p50_ms": 323.4,
+    "p95_ms": 430.6
+  },
+  "rules_misses": [
+    [
+      "brief-L5-vision-ocr",
+      "lane",
+      "tsx_scene",
+      "audit_sweep"
+    ],
+    [
+      "brief-cinetic-qa",
+      "lane",
+      "audit_sweep",
+      "tsx_scene"
+    ],
+    [
+      "brief-hyperframes-comparison",
+      "lane",
+      "audit_sweep",
+      "tsx_scene"
+    ],
+    [
+      "brief-phase5-gemini-prompt",
+      "lane",
+      "audit_sweep",
+      "tsx_scene"
+    ],
+    [
+      "brief-stage-dashboard-engine",
+      "lane",
+      "tsx_scene",
+      "audit_sweep"
+    ],
+    [
+      "brief-FINDINGS-craft-video",
+      "session_action",
+      "spawn",
+      "resume_builder"
+    ],
+    [
+      "brief-phase5-prompt",
+      "session_action",
+      "spawn",
+      "resume_builder"
+    ],
+    [
+      "brief-L5-vision-ocr",
+      "context_source",
+      "none",
+      "chapter"
+    ],
+    [
+      "brief-gemini-cards-prompt",
+      "context_source",
+      "chapter",
+      "none"
+    ],
+    [
+      "brief-stage-dashboard-engine",
+      "context_source",
+      "none",
+      "chapter"
+    ],
+    [
+      "brief-stage-engine",
+      "context_source",
+      "none",
+      "chapter"
+    ],
+    [
+      "brief-v0.4-stage-production-loop",
+      "context_source",
+      "none",
+      "chapter"
+    ]
+  ]
+}

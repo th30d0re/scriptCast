@@ -37,9 +37,9 @@ Architecting the Operation is the chapter-by-chapter series; its Ep 0 premiere (
 | # | Check | Result | Notes |
 |---|---|---|---|
 | 1 | Checkpoint commits (scriptCast, book repo) | — | |
-| 2 | `.venv-router` with `laya-mlx==0.6.0`; probe latency | installed (uv, py3.11) | latency pending |
+| 2 | `.venv-router` with `laya-mlx==0.6.0`; probe latency | installed (uv, py3.11) | load 1.08 s; one forward+reversed call (3 questions) P50 323 ms, P95 431 ms over 33 cards (M1 Max, 2026-11-06) |
 | 3 | `.venv-critic` with `mlx-vlm`; Qwen2.5-VL-7B 4-bit and MiniCPM-V loaded | done: Qwen load 2.5 s; MiniCPM-V 4.7 1B 3.6 s; 35B-A3B 11.5 s | M1 Max |
-| 4 | `labels.jsonl` ≥ 40 labelled cards | 46 pre-filled, 0 reviewed | `python3 experiments/router_eval/review.py` |
+| 4 | `labels.jsonl` ≥ 40 labelled cards | 46 pre-filled, 33 reviewed | `python3 experiments/router_eval/review.py` |
 | 5 | Notebook ids written to `rules.toml` | — | blocked on D2 |
 
 ## E1 — Apple Vision OCR vs local VLM (experiments/e1_ocr_vlm)
@@ -48,7 +48,25 @@ Architecting the Operation is the chapter-by-chapter series; its Ep 0 premiere (
 - Qwen2.5-VL-7B: 6.3 s/frame, recall 0.98, equations correct, reads dim panels. MiniCPM-V 4.7 1B: 2.1 s/frame, recall 0.92 (min 0.32), substitutes plausible wrong values. MiniCPM-V 4.7 35B-A3B: 4.8 s/frame, recall 0.98, equations correct, invents values on dim panels. Text read-back pick: Qwen. See `experiments/e1_ocr_vlm/FINDINGS-E1.md`.
 
 ## R1 — Router in shadow
-- Status: blocked on R0
+- Status: **built, in shadow** (branch `claude/r1-router-shadow-e011a7`, 2026-11-06)
+- Files: `scriptcast/router/{cue_card.py,questions.json,rules.toml,tiers.toml,laya_runner.py}`, `scriptcast/tools/stage_route.py`, `experiments/router_eval/eval.py` (output `eval-r1.json`), `tests/test_stage_route.py` (23 tests, stub laya backend).
+- Laya runs as a subprocess in `.venv-router` (`laya_runner.py`, imports nothing from scriptcast) so the main venv needs no MLX; missing venv or load error → `laya: unavailable`, rules decide.
+- Notebook keys resolve via `scriptcast/router/notebooks.toml` (R2) when present, else the book repo `chapters/v1.1.1/episode_map.json`. Context rule: Ep 0 premiere / special → `book`; series episode → `chapter`.
+- Not done: `scriptcast-stage-route` entry point in `pyproject.toml` (left out to avoid colliding with R2's edits; run as `python -m scriptcast.tools.stage_route`).
+
+### R1 eval — 33 reviewed labels (`python experiments/router_eval/eval.py`)
+
+| Question | Rules acc | Laya fwd | Laya rev | Laya avg | Flip rate | Abstain | ECE | Laya acc when not abstaining |
+|---|---|---|---|---|---|---|---|---|
+| lane | 0.85 | 0.67 | 0.48 | 0.58 | 0.39 | 0.39 | 0.16 | 0.70 |
+| tier | 1.00 | 0.64 | 0.82 | 0.76 | 0.18 | 0.18 | 0.14 | 0.78 |
+| session_action | 0.94 | rules-only (D2) | | | | | | |
+| context_source | 0.85 | 0.61 | 0.61 | 0.61 | 0.00 | 0.00 | 0.20 | 0.61 |
+
+- Caveat: rules were written with these 33 labels in view, so rules accuracy is in-sample and optimistic (tier 1.00 especially). Measure again on R1 shadow-log overrides before trusting it.
+- Labels are free-text cards (no owned files, defect category, live-session flag), so file-glob and session rules are barely exercised. Both session misses are `resume_builder` labels with no live-session signal in the card.
+- Rules misses: lane 5 (audit vs tsx on briefs that mix both), context 5 (Stage-engine briefs labelled `chapter`).
+- Laya zero-shot: lane flips under option reversal on 39% of cards (D5 abstention justified); no question near the R6 gates (acc ≥ 0.9, ECE ≤ 0.1, flip ≤ 0.05).
 
 ## R2 — Registry + JIT context
 - Status: blocked on R1

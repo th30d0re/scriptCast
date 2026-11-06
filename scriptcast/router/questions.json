@@ -1,0 +1,43 @@
+{
+  "lane": {
+    "type": "choice",
+    "instructions": "Which worker lane should handle this video-production task?",
+    "criteria": {
+      "tsx_scene": "write or fix a React/Remotion scene component, its animation, or the tooling code around it",
+      "figcraft_layout": "move, space or resize elements in an existing scene layout",
+      "svg_asset": "draw an icon, diagram or other vector asset",
+      "on_screen_text": "change the words, captions or labels shown on screen",
+      "audit_sweep": "check or verify many scenes, files or frames for consistency",
+      "research": "answer fact-check or background questions from sources"
+    }
+  },
+  "tier": {
+    "type": "score",
+    "instructions": "How much judgment does this task need?",
+    "criteria": [
+      "mechanical: a small exact edit with no design choice",
+      "standard: a normal implementation or fix",
+      "judgment: architecture, calibration, or a wide audit"
+    ]
+  },
+  "session_action": {
+    "type": "choice",
+    "rules_only": true,
+    "instructions": "Should a live session continue this, or a new one start?",
+    "criteria": {
+      "resume_builder": "follow-up fix on a scene whose builder session is live",
+      "resume_checker": "a check for the persistent checker session",
+      "spawn": "new work for a new session"
+    }
+  },
+  "context_source": {
+    "type": "choice",
+    "instructions": "Which reference material does the worker need?",
+    "criteria": {
+      "book": "the whole book",
+      "chapter": "the chapter this episode covers",
+      "persuasion": "persuasion and video craft guidance",
+      "none": "no book content; code or tooling only"
+    }
+  }
+}

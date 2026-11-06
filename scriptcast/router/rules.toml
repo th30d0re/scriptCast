@@ -1,0 +1,106 @@
+# Deterministic router table (Laya Router R1). Rules decide; laya shadows.
+# Rows are checked in order; the first row whose every given field matches wins.
+# Match fields: kind (list), defect_category (list), file_glob (list, any owned
+# file), text (regex, case-insensitive, over the rendered card text).
+
+[promotion]
+# decider = "laya" per question once R6 gates pass. All rules for now.
+lane = "rules"
+tier = "rules"
+context_source = "rules"
+session_action = "rules"   # never laya (tech-plan D2)
+
+[laya]
+model = "aac6fef/laya-mlx"
+min_confidence = 0.15
+max_card_tokens = 400
+
+# Notebook keys. Ids resolve from scriptcast/router/notebooks.toml (R2) when
+# present, else from the book repo episode map.
+[notebooks]
+book = "d3f54f50-61a5-465e-a94a-55d17326c0e2"
+persuasion = "28147d00-0394-4241-ac8f-7b35891c351b"
+episode_map = "/Users/emmanuel/Documents/Theory/TheOriginalPower/chapters/v1.1.1/episode_map.json"
+
+[[lane]]
+id = "L1"
+value = "research"
+kind = ["research"]
+[[lane]]
+id = "L2"
+value = "research"
+text = "\\bresearch\\b|fact-check"
+[[lane]]
+id = "L3"
+value = "audit_sweep"
+kind = ["check", "review", "verify", "audit"]
+[[lane]]
+id = "L4"
+value = "audit_sweep"
+text = "\\baudit\\b|\\bverif|\\bsweep\\b|\\bQA\\b|comparison|findings:"
+[[lane]]
+id = "L5"
+value = "figcraft_layout"
+defect_category = ["layout"]
+[[lane]]
+id = "L6"
+value = "figcraft_layout"
+file_glob = ["figcraft/*", "*.figcraft"]
+[[lane]]
+id = "L7"
+value = "figcraft_layout"
+text = "figcraft|\\bgap\\b|crowd|overlap|safe[- ]area|\\blift\\b|spacing"
+[[lane]]
+id = "L8"
+value = "svg_asset"
+file_glob = ["assets/*.svg", "*.svg"]
+[[lane]]
+id = "L9"
+value = "svg_asset"
+text = "\\bsvg\\b|\\bicon\\b|vector|craft cli"
+[[lane]]
+id = "L10"
+value = "on_screen_text"
+defect_category = ["content", "text"]
+[[lane]]
+id = "L11"
+value = "on_screen_text"
+text = "caption|wording|typo|data cards|on-screen text"
+[[lane]]
+id = "L12"
+value = "tsx_scene"
+file_glob = ["*.tsx"]
+[[lane]]
+id = "L99"
+value = "tsx_scene"
+# fallback: Stage work is scene code by default
+
+[[tier]]
+id = "T1"
+text = "\\bgap\\b|\\blift\\b|nudge|rename|typo|tight|crowd"
+value = "mechanical"
+[[tier]]
+id = "T2"
+text = "spike|architecture|calibrat|visual audit|engine upgrades|scene engine"
+value = "judgment"
+[[tier]]
+id = "T99"
+value = "standard"
+
+# context_source: Ep 0 premiere and specials -> book; series episode -> chapter;
+# book-project work with no episode known -> chapter; else none.
+[[context]]
+id = "C1"
+episode_kind = ["premiere", "special"]
+value = "book"
+[[context]]
+id = "C2"
+episode_kind = ["series"]
+value = "chapter"
+[[context]]
+id = "C3"
+text = "TheOriginalPower|\\bYT0\\d|\\bepisode\\b|\\bchapter\\b"
+value = "chapter"
+[[context]]
+id = "C99"
+value = "none"
