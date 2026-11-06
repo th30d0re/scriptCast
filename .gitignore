@@ -17,3 +17,7 @@ fx/target/
 chunk/target/
 node_modules/
 site/dist/
+.DS_Store
+ui/speaker_rates.json
+experiments/*/frames/
+experiments/**/*.jsonl

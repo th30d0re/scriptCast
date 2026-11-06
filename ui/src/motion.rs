@@ -1,7 +1,7 @@
 //! Plays one silent run under the episode playhead.
 //!
 //! The file stays at its own size. The texture is the preview the picture row
-//! asked for: 1080p, or the lighter 720p. A 4K master is never decoded at 4K.
+//! asked for: 1080p, or the lighter 720p. A 4K source is never decoded at 4K.
 //!
 //! ffmpeg stays open and emits frames in order. A jump backward, or a jump
 //! more than a few frames forward, starts it again at the new frame. The

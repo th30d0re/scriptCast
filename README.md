@@ -4,16 +4,18 @@
     <source media="(prefers-color-scheme: light)" srcset="assets/logo-light.svg">
     <img alt="scriptCast logo" src="assets/logo-light.svg" width="420">
   </picture>
-  <p>Render markdown podcast scripts to per-turn speech, and export Ableton, FCPXML, and Logic sessions.</p>
+  <p>Compile markdown scripts into deterministic speech, 4K and vertical video, and Ableton, FCPXML, and Logic sessions.</p>
   <p>
     <a href="https://github.com/th30d0re/scriptCast/releases"><img src="https://img.shields.io/github/v/release/th30d0re/scriptCast?sort=semver&style=flat-square" alt="Latest release"></a>
     <a href="LICENSE"><img src="https://img.shields.io/github/license/th30d0re/scriptCast?style=flat-square" alt="License"></a>
     <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.11+-blue?style=flat-square" alt="Python 3.11+"></a>
     <img src="https://img.shields.io/badge/Platform-Apple%20Silicon%20(macOS%20arm64)-lightgrey?style=flat-square" alt="Apple Silicon">
-    <img src="https://img.shields.io/badge/Engines-Kokoro%20%C2%B7%20Chatterbox%20%C2%B7%20OmniVoice%20%C2%B7%20Phonon%20%C2%B7%20ElevenLabs-orange?style=flat-square" alt="Engines">
+    <img src="https://img.shields.io/badge/Engines-Kokoro%20%C2%B7%20Chatterbox%20%C2%B7%20OmniVoice%20%C2%B7%20Phonon%20%C2%B7%20Tone%20%C2%B7%20ElevenLabs-orange?style=flat-square" alt="Engines">
   </p>
   <p>
+    <a href="#philosophy-the-biological-diffusion-layer">Philosophy</a> ·
     <a href="#desktop-app">Desktop app</a> ·
+    <a href="#video-pipeline">Video pipeline</a> ·
     <a href="#quickstart">Quickstart</a> ·
     <a href="#how-it-works">How it works</a> ·
     <a href="#commands">Commands</a> ·
@@ -22,18 +24,18 @@
   </p>
 </div>
 
-scriptCast renders a markdown podcast script into per-turn speech audio and exports the result as an Ableton Live set, a Final Cut Pro timeline, or a Logic Pro session. Each speaker turn is synthesized by the engine its voice configuration names — MLX Kokoro, MLX Chatterbox, OmniVoice, Phonon, or ElevenLabs — post-processed onto a shared timeline, and checked against the script with on-device speech recognition.
+scriptCast compiles a markdown script into per-turn speech audio, programmatic video timelines, and native DAW sessions (Ableton Live, Final Cut Pro, and Logic Pro). Each speaker turn is synthesized by its configured engine — MLX Kokoro, MLX Chatterbox, OmniVoice, Phonon, Qwen3 Tone, or ElevenLabs — verified on-device with Whisper and Phonon-2 ensembles, and locked to a single canonical clock (`episode_manifest.json`) that drives both audio mixing and frame-accurate video assembly.
 
 <table>
   <tr>
-    <td>🗣️<br><b>Per-speaker engines</b><br>Kokoro, Chatterbox, OmniVoice, Phonon, ElevenLabs</td>
-    <td>🎞️<br><b>Archival clips</b><br>Spliced into the timeline</td>
-    <td>🕵️<br><b>Whisper verification</b><br>With heteronym stress checks</td>
+    <td>🗣️<br><b>Per-speaker engines</b><br>Kokoro, Chatterbox, OmniVoice, Phonon, Tone, ElevenLabs</td>
+    <td>🎬<br><b>Deterministic video</b><br>4K landscape, 1080×1920 cards, and Craft CLI timelines</td>
+    <td>🕵️<br><b>Whisper &amp; ensemble QA</b><br>With heteronym stress and cinetic checks</td>
   </tr>
   <tr>
-    <td>🔄<br><b>Automatic repair loop</b><br>For failed turns</td>
-    <td>⏱️<br><b>Re-timing</b><br>Without re-synthesis</td>
-    <td>🎛️<br><b>Exports</b><br>To Ableton Live, Final Cut Pro, and Logic Pro</td>
+    <td>🔄<br><b>Closed-loop repair</b><br>Re-synthesizes failed turns in place</td>
+    <td>⏱️<br><b>Content-addressed</b><br>Re-time or edit single turns without full re-renders</td>
+    <td>🎛️<br><b>DAW &amp; NLE exports</b><br>To Ableton Live, Final Cut Pro, and Logic Pro</td>
   </tr>
 </table>
 
@@ -49,9 +51,20 @@ scriptCast renders a markdown podcast script into per-turn speech audio and expo
 > [!TIP]
 > The header timestamp is a source reference. Inter-turn spacing comes from the `--gap-ms` render flag, and a turn's identity (`turn_id`) is a hash of speaker and text, so re-timestamping a script re-synthesizes nothing.
 
+## Philosophy: The Biological Diffusion Layer
+
+Probabilistic pixel-diffusion models treat video generation as an opaque, frame-by-frame lottery where changing a single line or visual cue requires regenerating the entire scene. scriptCast treats audio-visual production as **deterministic code compilation** on a local Apple Silicon execution substrate:
+
+- **Markdown as Source Code:** Structured dialogue (`scripts/*.md`), inline prosody directives (`[tone:…]`, `[pause:…]`, archival `[clip:…]` splices), and shot specifications (`shotspec`) compile into a content-addressed manifest (`episode_manifest.json`).
+- **Granular, Byte-Preserving Iteration:** Every turn is fingerprinted by `turn_id` (`render_state.json`). Modifying a sentence (`--detect-changes` / `--precision-insert`) or adjusting pacing (`--gap-ms`) recompiles only the affected turn while leaving every approved WAV segment and visual cue untouched.
+- **The Human as the Iterative Denoiser:** The human operator holds full editorial authority over narrative pacing, semantic emphasis, and visual timing across passes. Local neural voices serve as rapid vocal prototypes while shaping the timeline; at any point, the operator can record live microphone takes directly into individual turns inside `scriptcast-ui` or export the locked timeline to Ableton Live and Logic Pro.
+- **Sovereign Local Substrate:** Latency-critical UI, text chunking, loudness metering, spectral dialogue carving, and effects chains run as standalone memory-safe Rust binaries (`scriptcast-ui`, `scriptcast-chunk`, `scriptcast-fx`, `scriptcast-media`, `scriptcast-tone`) alongside offline Apple Silicon models.
+
+Read the full architectural paper in [docs/biological-diffusion-layer.md](docs/biological-diffusion-layer.md).
+
 ## Desktop app
 
-The native macOS app is `scriptcast-ui`, a Rust window. It opens a project, lays every turn on a timeline, plays the rendered audio, and edits voices, clips, and pronunciations. Synthesis still runs through the Python tools.
+The native macOS app is `scriptcast-ui`, a Rust window. It opens a project, lays every turn on a 60 Hz timeline and waveform mesh, previews synchronized silent video shots on the playhead, plays the rendered audio, records live human takes, and edits voices, clips, and pronunciations. Synthesis runs through the project tools.
 
 ![Episode workspace: a timeline of speaker turns, a table with verification, and the selected turn](ui/tests/snapshots/selected_turn.png)
 
@@ -69,6 +82,15 @@ To build it yourself:
 cargo build --release --manifest-path ui/Cargo.toml
 # ui/target/release/scriptcast-ui
 ```
+
+## Video pipeline
+
+Every visual target in scriptCast locks directly to `episode_manifest.json` (`turns[].start_ms` and `turns[].end_ms`), eliminating audio-video clock drift across edits:
+
+- **Shot specifications (`scriptcast-shotspec`):** Resolves Markdown shot lists, URL/card citations, and optional manuscript references (`--book`, `--repo`) against script turn order into exact manifest timestamps.
+- **Programmatic Remotion cards & vertical video (`scriptcast-video`):** Emits a typed JSON timeline (`video/src/timeline/timeline.schema.json`) and renders data-driven cards, manifest-cached Quiver SVG artwork (`scriptcast-video svg`), and archival video excerpts with runtime safe-zone overflow guards at `1080×1920` (Shorts), `1920×1080` (YouTube), or `3840×2160` (YouTube 4K). See [docs/timeline.md](docs/timeline.md).
+- **Landscape 4K assembly (`scriptcast-youtube`):** Cuts a `16:9` picture track onto the episode clock at exact frame boundaries (`round(start_ms / 1000 × fps)`), defaulting to `3840×2160` (`1920×1080` and `960×540` supported). `figcraft` renders one still per beat via `figcraft-cli`; `conform` fits external video footage; `cut` lays episode dialogue under a segment. `scriptcast-ui` previews these silent runs on the playhead at 1080p or 720p.
+- **Craft CLI interchange (`scriptcast-craft` & `scriptcast-captions`):** `scriptcast-craft cue` generates a `1080×1920`, 30 fps cue sheet from the manifest clock; `scriptcast-craft timeline` places silent plates from `filmcraft-cli`, `effectcraft-cli`, `vectorcraft-cli`, and `designcraft-cli` onto an FCPXML 1.10 timeline alongside script-aligned JSON, SRT, and WebVTT captions.
 
 ## Quickstart
 
@@ -166,23 +188,25 @@ scriptcast-turn-index outputs/ep01 --transcript scripts/ep01.md
 
 ```mermaid
 flowchart TD
-    A["markdown script"] --> B["parse turns and inline tags"]
+    A["markdown script + shotspec"] --> B["parse turns and inline tags"]
     B --> C{"per-speaker engine"}
-    C -->|"Kokoro"| D["post-process"]
+    C -->|"Kokoro"| D["post-process + Rust DSP"]
     C -->|"Chatterbox"| D
     C -->|"OmniVoice worker"| D
     C -->|"Phonon"| D
+    C -->|"Tone worker"| D
     C -->|"ElevenLabs"| D
     C -->|"archive clip"| D
     D --> E["timeline + render_state.json"]
     E --> F["episode_manifest.json"]
-    F --> G["exports (Ableton .als, FCPXML, Logic)"]
-    F --> H["verify"]
+    F --> G["DAW exports (Ableton .als, FCPXML, Logic)"]
+    F --> V["Video (scriptcast-video, scriptcast-youtube, scriptcast-craft)"]
+    F --> H["verify (Whisper + Phonon-2 ensemble)"]
     H --> I["repair"]
     I -.-> C
     I --> J["relayout"]
-    J --> K["stitch"]
-    K --> L["turn index"]
+    J --> K["stitch + mix"]
+    K --> L["turn index + captions"]
 ```
 
 ## Commands
@@ -281,7 +305,7 @@ Any other bracketed tag falls through and is spoken verbatim.
 
 <details><summary>Voice configuration</summary>
 
-The voices file (`voices.yaml` by default, or `--voices`) maps speaker ids to engines under a top-level `speakers` mapping. The supported engines are `kokoro` (alias `mlx_kokoro`), `phonon`, `elevenlabs`, `mlx_chatterbox`, `omnivoice`, and `archive`. `name`, `character_profile`, and `speed` (default 1.0) apply to every engine.
+The voices file (`voices.yaml` by default, or `--voices`) maps speaker ids to engines under a top-level `speakers` mapping. The supported engines are `kokoro` (alias `mlx_kokoro`), `phonon`, `tone`, `elevenlabs`, `mlx_chatterbox`, `omnivoice`, and `archive`. `name`, `character_profile`, and `speed` (default 1.0) apply to every engine.
 
 ```yaml
 speakers:
@@ -308,7 +332,12 @@ speakers:
   reader:
     name: "Reader"
     engine: "phonon"
-    phonon_voice: "emma"         # a Phonon catalog name, or a .safetensors path
+    phonon_voice: "emma"          # a Phonon catalog name, or a .safetensors path
+
+  designed:
+    name: "Designed"
+    engine: "tone"
+    instruct: "Warm baritone, measured studio cadence"  # required for tone
 ```
 
 Phonon is Gradium's on-device model, through the `ptts` package (installed with scriptCast). `phonon_voice` is either a name from the Phonon catalog or a `.safetensors` clone made with Phonon's clone-voice tool, as a path relative to the project root. The model (`hf://gradium/phonon-31m-en`) downloads on first use and runs in-process on CPU. The same text and voice always produce the same take. Set `SCRIPTCAST_PHONON_SEED` to an integer for one run when you need a different take.

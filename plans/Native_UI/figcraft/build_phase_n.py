@@ -441,9 +441,9 @@ def n4(s: Screen) -> None:
         label = ON_ACCENT if engine == "OmniVoice" else MUTED
         s.rect(f"speaker {name} chip", 60, y + 22, 110 if engine == "OmniVoice" else 72, 20, chip, radius=5)
         s.text(f"speaker {name} engine", engine, 60, y + 24, size=11, color=label, width=110 if engine == "OmniVoice" else 72, align="center")
-    s.rule("master rule", 32, 570, 288)
-    s.rect("master row", 28, 588, 296, 48, RAISED, radius=6, stroke=BORDER)
-    s.text("master label", "Master", 44, 602, size=13, bold=True)
+    s.rule("main rule", 32, 570, 288)
+    s.rect("main row", 28, 588, 296, 48, RAISED, radius=6, stroke=BORDER)
+    s.text("main label", "Main", 44, 602, size=13, bold=True)
 
     s.panel("chain", 352, 126, 1072, 500)
     s.text("chain speaker", "Aisha", 368, 142, size=16, bold=True)
@@ -496,13 +496,13 @@ def n4(s: Screen) -> None:
                 width=290,
             )
 
-    s.panel("master inset", 352, 640, 1072, 190)
-    s.text("master inset label", "Master", 368, 656, size=14, bold=True)
+    s.panel("main inset", 352, 640, 1072, 190)
+    s.text("main inset label", "Main", 368, 656, size=14, bold=True)
     s.text("maximizer", "Maximizer", 368, 690, size=12, color=MUTED)
     s.text("maximizer target", "Target  −16 LUFS", 368, 712, size=13, bold=True)
     s.text("ceiling", "Ceiling  −1.0 dBTP", 620, 712, size=13, bold=True)
     s.text("dither", "Dither  on", 900, 712, size=13, bold=True)
-    s.text("master loudness", "Integrated  −15.6 LUFS", 368, 760, size=12, color=ACCENT)
+    s.text("main loudness", "Integrated  −15.6 LUFS", 368, 760, size=12, color=ACCENT)
 
 
 def run(commands: list[dict], src: Path | None) -> list[dict]:
