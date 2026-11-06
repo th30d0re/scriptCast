@@ -11,6 +11,51 @@ from typing import Any, Dict, List, Optional, Tuple
 
 AGENTS = ("codex", "cursor-agent", "kimi", "agy")
 
+# Worker session logs. Workers write WORKER_LOG in their worktree (always
+# writable from their sandbox); the dispatcher, running on the host, moves it
+# to SESSION_LOG_DIR and indexes it in sessions.jsonl for later evaluation.
+WORKER_LOG = ".session-log.md"
+DEFAULT_SESSION_LOG_DIR = (
+    Path.home()
+    / "Library/Mobile Documents/iCloud~md~obsidian/Documents/Root/AI Session Logs/workers"
+)
+LOG_INSTRUCTIONS = (
+    f"Session log (required): before you finish, write `{WORKER_LOG}` in the worktree root "
+    "with four sections: 1. What Was Requested, 2. What I Did (steps, files changed), "
+    "3. Challenges Encountered (obstacles, failed approaches), 4. Next Ideas. "
+    "Do not commit it; the dispatcher collects it.\n"
+)
+
+
+def session_log_dir() -> Path:
+    return Path(os.environ.get("SCRIPTCAST_SESSION_LOGS", DEFAULT_SESSION_LOG_DIR))
+
+
+def collect_session_log(worktree: Path, record: Dict[str, Any], stdout: str = "",
+                        log_dir: Optional[Path] = None) -> Path:
+    """Move the worker's session log to the shared dir and index it.
+
+    Writes a stub from the tail of stdout when the worker wrote no log, so
+    every dispatch leaves a record. Returns the stored path.
+    """
+    log_dir = Path(log_dir) if log_dir else session_log_dir()
+    log_dir.mkdir(parents=True, exist_ok=True)
+    src = worktree / WORKER_LOG
+    slug = "".join(c if c.isalnum() else "-" for c in str(record.get("task", "task")))[:48].strip("-")
+    stamp = record["ts"].replace(":", "").replace("-", "")
+    dest = log_dir / f"{stamp}-{record['agent']}-{record['model']}-{slug}.md".replace("/", "_")
+    front = "---\n" + "".join(f"{k}: {json.dumps(v)}\n" for k, v in record.items()) + "---\n\n"
+    if src.is_file():
+        body, written = src.read_text(), True
+        src.unlink()
+    else:
+        tail = "\n".join(stdout.strip().splitlines()[-40:])
+        body, written = f"(worker wrote no session log; last output lines)\n\n```\n{tail}\n```\n", False
+    dest.write_text(front + body)
+    with open(log_dir / "sessions.jsonl", "a", encoding="utf-8") as f:
+        f.write(json.dumps({**record, "session_log": str(dest), "worker_wrote_log": written}) + "\n")
+    return dest
+
 
 def get_git_info(worktree: Path) -> Tuple[str, str]:
     """Retrieve checkpoint hash and dirty paths via git status."""
@@ -51,7 +96,8 @@ def make_brief_header(worktree: Path, owns: Optional[List[str]] = None) -> str:
     return (
         f"Checkpoint: {checkpoint}\n"
         f"Owned files: {owned_str}\n"
-        f"Dirty paths: {dirty_str}\n\n"
+        f"Dirty paths: {dirty_str}\n"
+        f"{LOG_INSTRUCTIONS}\n"
     )
 
 
@@ -275,6 +321,8 @@ def cmd_start(args: argparse.Namespace) -> int:
 
     if args.log:
         append_dispatch_log(Path(args.log), record)
+    stored = collect_session_log(worktree, record, cp.stdout)
+    print(f"Session log: {stored}")
 
     print(f"Dispatched {args.agent} ({args.model}). Session ID: {session_id}")
     if cp.stdout:
@@ -343,6 +391,7 @@ def cmd_resume(args: argparse.Namespace) -> int:
             "note": getattr(args, "note", ""),
         }
         append_dispatch_log(Path(args.log), record)
+        print(f"Session log: {collect_session_log(worktree, record, cp.stdout)}")
 
     print(f"Resumed {args.agent} session {args.session}.")
     if cp.stdout:

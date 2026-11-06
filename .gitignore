@@ -28,3 +28,8 @@ video/public/stage/
 # stage-layout build output
 /target/
 stage-layout/pkg/
+!experiments/router_eval/labels.jsonl
+.session-log.md
+.orbos/
+ui/tests/snapshots/*.diff.png
+ui/tests/snapshots/*.new.png

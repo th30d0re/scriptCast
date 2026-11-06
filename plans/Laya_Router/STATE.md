@@ -34,14 +34,14 @@ Format: Airlock `Planning/Airlock_Pipeline/STATE.md` (per-phase checklist, fixes
 |---|---|---|---|
 | 1 | Checkpoint commits (scriptCast, book repo) | — | |
 | 2 | `.venv-router` with `laya-mlx==0.6.0`; probe latency | installed (uv, py3.11) | latency pending |
-| 3 | `.venv-critic` with `mlx-vlm`; Qwen2.5-VL-7B 4-bit and MiniCPM-V loaded | mlx-vlm 0.7.12 installed; weights downloading | |
-| 4 | `labels.jsonl` ≥ 40 labelled cards | — | |
+| 3 | `.venv-critic` with `mlx-vlm`; Qwen2.5-VL-7B 4-bit and MiniCPM-V loaded | done: Qwen load 2.5 s; MiniCPM-V 4.7 1B 3.6 s; 35B-A3B 11.5 s | M1 Max |
+| 4 | `labels.jsonl` ≥ 40 labelled cards | 46 pre-filled, 0 reviewed | `python3 experiments/router_eval/review.py` |
 | 5 | Notebook ids written to `rules.toml` | — | blocked on D2 |
 
 ## E1 — Apple Vision OCR vs local VLM (experiments/e1_ocr_vlm)
 - 30 frames, one per 25 s of `YT02_stage_0000-1232_1080p_20261105.mp4`.
 - Vision (`stage-ocr --level accurate`): 9.8 s for 30 frames (~0.33 s/frame). Clean on prose and labels; misreads Π as Cyrillic in Eq. 2.8a frames (f16–f18); emits `å` on icons.
-- Qwen2.5-VL-7B: 6.3 s/frame, recall 0.98, equations correct, reads dim panels. MiniCPM-V 4.7 1B: 2.1 s/frame, recall 0.92 (min 0.32), substitutes plausible wrong values. 35B-A3B pending. See `experiments/e1_ocr_vlm/FINDINGS-E1.md`.
+- Qwen2.5-VL-7B: 6.3 s/frame, recall 0.98, equations correct, reads dim panels. MiniCPM-V 4.7 1B: 2.1 s/frame, recall 0.92 (min 0.32), substitutes plausible wrong values. MiniCPM-V 4.7 35B-A3B: 4.8 s/frame, recall 0.98, equations correct, invents values on dim panels. Text read-back pick: Qwen. See `experiments/e1_ocr_vlm/FINDINGS-E1.md`.
 
 ## R1 — Router in shadow
 - Status: blocked on R0

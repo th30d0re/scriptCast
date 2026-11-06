@@ -10,7 +10,15 @@ from scriptcast.tools.stage_dispatch import (
     capture_session_id,
     main,
     make_brief_header,
+    collect_session_log,
+    WORKER_LOG,
 )
+
+
+@pytest.fixture(autouse=True)
+def _session_logs_in_tmp(tmp_path, monkeypatch):
+    monkeypatch.setenv("SCRIPTCAST_SESSION_LOGS", str(tmp_path / "session-logs"))
+
 
 
 def test_argument_lists_exact(tmp_path):
@@ -218,3 +226,28 @@ def test_resume_uses_right_flag_per_agent(tmp_path):
     assert "--conversation" in cmd_agy
     idx = cmd_agy.index("--conversation")
     assert cmd_agy[idx + 1] == "sess-4"
+
+
+REC = {"ts": "2026-11-06T17:00:00Z", "agent": "codex", "model": "gpt-5.6-sol", "task": "Fix tray gap", "verdict": "success"}
+
+
+def test_brief_header_asks_for_session_log(tmp_path):
+    assert WORKER_LOG in make_brief_header(tmp_path)
+
+
+def test_collect_moves_worker_log_and_indexes(tmp_path):
+    (tmp_path / WORKER_LOG).write_text("## What Was Requested\nfix\n")
+    out = tmp_path / "logs"
+    dest = collect_session_log(tmp_path, REC, "", log_dir=out)
+    assert not (tmp_path / WORKER_LOG).exists()
+    text = dest.read_text()
+    assert text.startswith("---\n") and 'model: "gpt-5.6-sol"' in text and "What Was Requested" in text
+    idx = [json.loads(l) for l in (out / "sessions.jsonl").read_text().splitlines()]
+    assert idx[0]["worker_wrote_log"] is True and idx[0]["session_log"] == str(dest)
+
+
+def test_collect_writes_stub_when_worker_skipped_log(tmp_path):
+    out = tmp_path / "logs"
+    dest = collect_session_log(tmp_path, REC, "line1\nfinal answer", log_dir=out)
+    assert "final answer" in dest.read_text()
+    assert json.loads((out / "sessions.jsonl").read_text())["worker_wrote_log"] is False
