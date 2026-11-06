@@ -8,6 +8,10 @@ Format: Airlock `Planning/Airlock_Pipeline/STATE.md` (per-phase checklist, fixes
 - [ ] D2 — v1.1.1 released 2026-11-06; fresh whole-book notebook `d3f54f50-61a5-465e-a94a-55d17326c0e2` (v1.1.1 PDF) replaces `58729638…`/`60b309ce…` as `book`. 36 chapter PDFs cut to the book repo's `chapters/v1.1.1/`; the book has outgrown the Ch 0–22 episode map, episode map set by operator (Ep 1 What Racism Actually Is = whole book; Ch N = Ep N+3); 27 episode notebooks built, ids in the book repo `chapters/v1.1.1/episode_map.json`. Old notebooks kept by operator choice.
 - [x] D3 — M1 Max 64 GB first; design for it; move to M3 Ultra only on a measured limit (operator, 2026-11-06).
 
+## Channel structure (operator, 2026-11-06)
+
+Specials (whole-book concepts, e.g. What Racism Actually Is, origins of the police) are not part of Architecting the Operation, the chapter-by-chapter series. Router rule for `context_source`: special → `book` (whole-book notebook `d3f54f50…`); series episode → `chapter` (its notebook in the book repo's `chapters/v1.1.1/episode_map.json`). Canonical: TheOriginalPower `Architecting_the_operation/SERIES.md`.
+
 ## Planning — 2026-11-06
 
 - Status: **plan written**; no code, no loop started.
