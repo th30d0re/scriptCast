@@ -1,0 +1,178 @@
+# NotebookLM notebooks used as stage context (R2, plan step 14a).
+# Source: TheOriginalPower chapters/v1.1.1/episode_map.json. Owned by R2; rules.toml (R1) references these aliases.
+# kind = "book" (built from the manuscript, passages go in unfenced) | "public_research" (web sources, fenced).
+# The repo .tex stays the authority over any passage.
+
+[notebooks.book]
+id = "d3f54f50-61a5-465e-a94a-55d17326c0e2"
+title = "The Original Power (v1.1.1, whole book)"
+kind = "book"
+episode = 0
+
+[notebooks.persuasion]
+id = "28147d00-0394-4241-ac8f-7b35891c351b"
+title = "Persuasion Craft: Changing Minds on Contested Structural Claims"
+kind = "public_research"
+# 38 sources, web research plus a few ATO scripts; fenced as reference material.
+
+[notebooks.ep1]
+id = "24cf630a-51e2-4ebc-b612-b343fa309c45"
+title = "ATO Ep 1 — Prefaces"
+kind = "book"
+episode = 1
+
+[notebooks.ep2]
+id = "199d4949-9643-4bfd-9739-6f355f655a1e"
+title = "ATO Ep 2 — System Initialization"
+kind = "book"
+episode = 2
+
+[notebooks.ep3]
+id = "3a645772-d81c-4274-ac6c-b6af2fddc362"
+title = "ATO Ep 3 — Dynamical Systems Formulation of the Extraction Architecture"
+kind = "book"
+episode = 3
+
+[notebooks.ep4]
+id = "ebd42074-2b53-4dcc-a71c-89edb0a8943d"
+title = "ATO Ep 4 — Redefining Racism"
+kind = "book"
+episode = 4
+
+[notebooks.ep5]
+id = "fb8ccf91-8458-481b-835e-5ae3740854ef"
+title = "ATO Ep 5 — Version 1.0"
+kind = "book"
+episode = 5
+
+[notebooks.ep6]
+id = "8e2260bb-dff2-42fe-8c33-66d805879b3d"
+title = "ATO Ep 6 — The Application"
+kind = "book"
+episode = 6
+
+[notebooks.ep7]
+id = "f1b94a59-f9c8-4b71-8966-af2facd21d80"
+title = "ATO Ep 7 — The Constitutional Kernel"
+kind = "book"
+episode = 7
+
+[notebooks.ep8]
+id = "e6244f7f-de1f-4d62-aa39-c4f77224335d"
+title = "ATO Ep 8 — The Haitian Export"
+kind = "book"
+episode = 8
+
+[notebooks.ep9]
+id = "7f0a5eef-5c41-4120-8dce-022b1cdfeb66"
+title = "ATO Ep 9 — The Architecture of Kinship"
+kind = "book"
+episode = 9
+
+[notebooks.ep10]
+id = "2413985e-7263-4abf-8e29-7319efbf8502"
+title = "ATO Ep 10 — The Gendered Axis"
+kind = "book"
+episode = 10
+
+[notebooks.ep11]
+id = "9d72cdad-e776-4a21-8277-c47a1e8a6630"
+title = "ATO Ep 11 — The Enforcement Engine"
+kind = "book"
+episode = 11
+
+[notebooks.ep12]
+id = "7d9ca11f-f106-4925-97a7-47b0ff4e4d9d"
+title = "ATO Ep 12 — The Containment"
+kind = "book"
+episode = 12
+
+[notebooks.ep13]
+id = "fcf4e2f8-0076-4449-8831-38f885d26279"
+title = "ATO Ep 13 — The German Extraction Algorithm (1904–1945)"
+kind = "book"
+episode = 13
+
+[notebooks.ep14]
+id = "7f3fc7a8-70aa-4e8f-bdd7-2185cf0a49e9"
+title = "ATO Ep 14 — The Geopolitical 1.1 Patch (1948–Present)"
+kind = "book"
+episode = 14
+
+[notebooks.ep15]
+id = "f31c029a-3044-45d3-a0a3-a3fdea06bff4"
+title = "ATO Ep 15 — The Biological Extraction Kernel"
+kind = "book"
+episode = 15
+
+[notebooks.ep16]
+id = "5efe869c-3429-4b37-8b88-3c21351dff67"
+title = "ATO Ep 16 — Tweedism and the Puppet Class"
+kind = "book"
+episode = 16
+
+[notebooks.ep17]
+id = "850838b9-647b-4a22-aefb-dfed53ab473d"
+title = "ATO Ep 17 — The Recompile"
+kind = "book"
+episode = 17
+
+[notebooks.ep18]
+id = "3a1671c4-a9d3-4e95-95a8-2ed4098c78e6"
+title = "ATO Ep 18 — The Full Algorithm"
+kind = "book"
+episode = 18
+
+[notebooks.ep19]
+id = "496d3bee-a16e-47ab-a1f1-aa7a1cecd526"
+title = "ATO Ep 19 — The Pipeline Architecture"
+kind = "book"
+episode = 19
+
+[notebooks.ep20]
+id = "7382b900-5092-4c59-8be4-595647132547"
+title = "ATO Ep 20 — The Kinetic Guarantee"
+kind = "book"
+episode = 20
+
+[notebooks.ep21]
+id = "9a28a132-ef8c-463a-8ee5-bb6f17fad2cc"
+title = "ATO Ep 21 — The Contradiction"
+kind = "book"
+episode = 21
+
+[notebooks.ep22]
+id = "ba080a2c-2387-46cf-b08c-05f8316be320"
+title = "ATO Ep 22 — The Global Containment Field"
+kind = "book"
+episode = 22
+
+[notebooks.ep23]
+id = "a427edbf-7ba0-4ccf-9c9b-c65640211ce5"
+title = "ATO Ep 23 — The Algorithmic Epoch"
+kind = "book"
+episode = 23
+
+[notebooks.ep24]
+id = "1178f38f-734e-448e-bc07-c2d808c91659"
+title = "ATO Ep 24 — The Spectral Carrier"
+kind = "book"
+episode = 24
+
+[notebooks.ep25]
+id = "080e61fc-cb88-47d3-96d5-8cf35cb5f68a"
+title = "ATO Ep 25 — The Post-Kinetic Horizon"
+kind = "book"
+episode = 25
+
+[notebooks.ep26]
+id = "74cd6311-ea93-4fe0-8f45-3101b012469d"
+title = "ATO Ep 26 — The Single-Issue Trap and Multi-Axis Noise Cancellation"
+kind = "book"
+episode = 26
+
+[notebooks.ep27]
+id = "38cc95d6-bb2a-4638-866c-8aa2683c34bb"
+title = "ATO Ep 27 — Conclusion"
+kind = "book"
+episode = 27
