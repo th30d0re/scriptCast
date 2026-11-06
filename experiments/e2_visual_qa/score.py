@@ -12,7 +12,7 @@ def overlaps(a, b):
     return ax < bx + bw and bx < ax + aw and ay < by + bh and by < ay + ah
 
 
-for path in sys.argv[1:]:
+for path in [p for p in sys.argv[1:] if not p.endswith("truth.jsonl")]:
     rows = [json.loads(l) for l in Path(path).read_text().splitlines() if l.strip()]
     parsed = sum(r["parsed"] is not None for r in rows)
     clean = [r for r in rows if truth[r["frame"]]["defect"] is None]

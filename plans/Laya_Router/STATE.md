@@ -97,3 +97,6 @@ Open: the `> 80%` path asks the worker for `.session-summary.md`; seeding the fr
 
 ---
 Run records: vault `Orchestration/dispatch-log.jsonl`
+
+## E2 — visual QA (2026-11-06)
+- Done. Critic = MiniCPM-V 4.7 35B-A3B **with the approved still as reference**: recall 0.87, false-fail 0 (self-compare, optimistic), 3.7 s/frame. Qwen2.5-VL-7B passes everything; dropped as critic. Model regions unusable (0/30) → R3 grounds by element/OCR, not model boxes. Details: `experiments/e2_visual_qa/FINDINGS-E2.md`.
