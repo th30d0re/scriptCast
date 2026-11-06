@@ -1,4 +1,4 @@
-"""Wrapper for worker CLIs: codex, cursor-agent, kimi, agy."""
+"""Wrapper for worker CLIs: codex, cursor-agent, kimi, agy (+ session registry, nlm context)."""
 import argparse
 from datetime import datetime, timezone
 import json
@@ -8,6 +8,10 @@ import subprocess
 import sys
 import time
 from typing import Any, Dict, List, Optional, Tuple
+import fcntl
+import tomllib
+
+from scriptcast.tools import stage_context
 
 AGENTS = ("codex", "cursor-agent", "kimi", "agy")
 
@@ -55,6 +59,215 @@ def collect_session_log(worktree: Path, record: Dict[str, Any], stdout: str = ""
     with open(log_dir / "sessions.jsonl", "a", encoding="utf-8") as f:
         f.write(json.dumps({**record, "session_log": str(dest), "worker_wrote_log": written}) + "\n")
     return dest
+
+
+# ---------------------------------------------------------------------------
+# Session registry (Laya Router R2, plan steps 13 and 15).
+# <episode>/stage/.router/sessions.json, keyed "<episode>/<scene>/<role>".
+# Every transition also lands in the vault sessions.jsonl (event=registry_*).
+
+TIERS_TOML = Path(__file__).resolve().parents[1] / "router" / "tiers.toml"
+# Fallback context sizes (tokens) by model-name prefix; tiers.toml wins.
+DEFAULT_CONTEXT = {
+    "gpt-5": 400_000,
+    "gemini": 1_000_000,
+    "kimi": 256_000,
+    "claude": 200_000,
+    "grok": 256_000,
+    "composer": 200_000,
+}
+DEFAULT_CONTEXT_FALLBACK = 128_000
+COMPACT_AT = 0.60
+CLOSE_AT = 0.80
+CHARS_PER_TOKEN = 4
+COMPACT_MESSAGE = (
+    "\n\nCompaction (context {pct:.0%} used): before acting, summarise in five bullets "
+    "the agreed props, element ids and open defects; keep later replies short.\n"
+)
+CLOSE_MESSAGE = (
+    "\n\nContext {pct:.0%} used: after this turn, write your final state summary "
+    "(agreed props, element ids, open defects, files touched) to `.session-summary.md`. "
+    "The dispatcher will close this session and seed a fresh one with it.\n"
+)
+
+
+def _utcnow() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def load_context_sizes(path: Optional[Path] = None) -> Dict[str, int]:
+    """Per-model context sizes. Reads tiers.toml (`[context]` name = int, or
+    `[models.<name>] context = int`) when present, over the default table."""
+    sizes = dict(DEFAULT_CONTEXT)
+    path = Path(path) if path else TIERS_TOML
+    if path.is_file():
+        data = tomllib.loads(path.read_text())
+        for name, val in (data.get("context") or {}).items():
+            if isinstance(val, int):
+                sizes[name] = val
+        for name, m in (data.get("models") or {}).items():
+            if isinstance(m, dict):
+                val = m.get("context") or m.get("context_limit")
+                if isinstance(val, int):
+                    sizes[name] = val
+    return sizes
+
+
+def context_limit(model: str, sizes: Optional[Dict[str, int]] = None) -> int:
+    sizes = load_context_sizes() if sizes is None else sizes
+    if model in sizes:
+        return sizes[model]
+    best = max((k for k in sizes if model.startswith(k)), key=len, default=None)
+    return sizes[best] if best else DEFAULT_CONTEXT_FALLBACK
+
+
+def registry_path(episode: Path) -> Path:
+    return Path(episode) / "stage" / ".router" / "sessions.json"
+
+
+def registry_key(episode: Path, scene: str, role: str) -> str:
+    return f"{Path(episode).resolve().name}/{scene}/{role}"
+
+
+class Registry:
+    """sessions.json with an flock held for the read-modify-write."""
+
+    def __init__(self, path: Path):
+        self.path = Path(path)
+
+    def __enter__(self) -> Dict[str, Any]:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._lock = open(self.path.with_suffix(".lock"), "w")
+        fcntl.flock(self._lock, fcntl.LOCK_EX)
+        self.data = json.loads(self.path.read_text()) if self.path.is_file() else {}
+        self.data.setdefault("sessions", {})
+        self.data.setdefault("archive", [])
+        return self.data
+
+    def __exit__(self, exc_type, *_):
+        if exc_type is None:
+            tmp = self.path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(self.data, indent=1))
+            tmp.replace(self.path)
+        fcntl.flock(self._lock, fcntl.LOCK_UN)
+        self._lock.close()
+
+    def get(self, key: str) -> Optional[Dict[str, Any]]:
+        if not self.path.is_file():
+            return None
+        return json.loads(self.path.read_text()).get("sessions", {}).get(key)
+
+
+def log_registry_event(event: str, key: str, entry: Dict[str, Any],
+                       log_dir: Optional[Path] = None, **extra: Any) -> None:
+    log_dir = Path(log_dir) if log_dir else session_log_dir()
+    log_dir.mkdir(parents=True, exist_ok=True)
+    rec = {"ts": _utcnow(), "event": f"registry_{event}", "key": key, **entry, **extra}
+    with open(log_dir / "sessions.jsonl", "a", encoding="utf-8") as f:
+        f.write(json.dumps(rec) + "\n")
+
+
+def load_fraction(entry: Dict[str, Any]) -> float:
+    return entry.get("tokens", 0) / max(1, entry.get("context_limit") or DEFAULT_CONTEXT_FALLBACK)
+
+
+def compaction_message(entry: Dict[str, Any]) -> str:
+    """Message to append to the next resume: '' under 60%, compact 60-80%, close over 80%."""
+    pct = load_fraction(entry)
+    if pct >= CLOSE_AT:
+        return CLOSE_MESSAGE.format(pct=pct)
+    if pct >= COMPACT_AT:
+        return COMPACT_MESSAGE.format(pct=pct)
+    return ""
+
+
+def _add_usage(entry: Dict[str, Any], tokens: int, chars: int) -> None:
+    entry["brief_chars"] = entry.get("brief_chars", 0) + chars
+    if tokens and entry.get("tokens_kind") != "proxy":
+        entry["tokens"] = entry.get("tokens", 0) + tokens
+        entry["tokens_kind"] = "reported"
+    else:
+        # No reported usage: brief-character sum is the load proxy.
+        entry["tokens_kind"] = "proxy"
+        entry["tokens"] = entry["brief_chars"] // CHARS_PER_TOKEN
+
+
+def registry_start(path: Path, key: str, agent: str, model: str, session_id: Optional[str],
+                   tokens: int, chars: int, sizes: Optional[Dict[str, int]] = None,
+                   log_dir: Optional[Path] = None) -> Dict[str, Any]:
+    with Registry(path) as data:
+        old = data["sessions"].get(key)
+        if old:
+            data["archive"].append({"key": key, **old, "status": old.get("status") if old.get(
+                "status") in ("closed", "dead") else "superseded", "archived": _utcnow()})
+        entry = {"agent": agent, "model": model, "session_id": session_id, "turns": 1,
+                 "tokens": 0, "tokens_kind": "reported", "brief_chars": 0,
+                 "context_limit": context_limit(model, sizes),
+                 "status": "live" if session_id else "dead", "summary_path": None,
+                 "started": _utcnow(), "last_active": _utcnow()}
+        _add_usage(entry, tokens, chars)
+        data["sessions"][key] = entry
+    log_registry_event("start", key, entry, log_dir)
+    return entry
+
+
+def registry_resume(path: Path, key: str, tokens: int, chars: int, ok: bool,
+                    compacted: bool, log_dir: Optional[Path] = None) -> Dict[str, Any]:
+    with Registry(path) as data:
+        entry = data["sessions"][key]
+        entry["turns"] += 1
+        _add_usage(entry, tokens, chars)
+        entry["last_active"] = _utcnow()
+        if not ok:
+            entry["status"] = "dead"
+        elif load_fraction(entry) >= CLOSE_AT:
+            entry["status"] = "close_due"
+        elif compacted:
+            entry["status"] = "compacted"
+    log_registry_event("resume", key, entry, log_dir)
+    return entry
+
+
+def registry_close(path: Path, key: str, summary_path: Optional[str],
+                   log_dir: Optional[Path] = None) -> Dict[str, Any]:
+    with Registry(path) as data:
+        entry = data["sessions"].pop(key)
+        entry.update({"status": "closed", "summary_path": summary_path, "closed": _utcnow()})
+        data["archive"].append({"key": key, **entry})
+    log_registry_event("close", key, entry, log_dir)
+    return entry
+
+
+def _registry_args(args: argparse.Namespace) -> Optional[Tuple[Path, str]]:
+    ep = getattr(args, "episode", None)
+    scene = getattr(args, "scene", None)
+    if not ep and not scene:
+        return None
+    if not (ep and scene):
+        raise SystemExit("--episode and --scene go together")
+    return registry_path(Path(ep)), registry_key(Path(ep), scene, args.role)
+
+
+def context_section(args: argparse.Namespace) -> Tuple[Optional[str], int]:
+    """Fetch `--context notebook:query` sections. Returns (text, exit_code)."""
+    specs = getattr(args, "context", None) or []
+    if not specs:
+        return "", 0
+    cache = None
+    if getattr(args, "episode", None):
+        cache = registry_path(Path(args.episode)).parent / "context_cache"
+    parts = []
+    for spec in specs:
+        notebook, sep, query = spec.partition(":")
+        if not sep or not query.strip():
+            print(f"--context expects <notebook>:<query>, got {spec!r}", file=sys.stderr)
+            return None, 1
+        try:
+            parts.append(stage_context.get_context(notebook, query.strip(), cache)["section"])
+        except stage_context.ContextError as e:
+            print(str(e), file=sys.stderr)
+            return None, e.code
+    return "\n".join(parts) + "\n", 0
 
 
 def get_git_info(worktree: Path) -> Tuple[str, str]:
@@ -263,8 +476,12 @@ def cmd_start(args: argparse.Namespace) -> int:
         return 1
 
     brief_raw = brief_path.read_text()
+    ctx, code = context_section(args)
+    if ctx is None:
+        return code
+    reg = _registry_args(args)
     header = make_brief_header(worktree, args.owns)
-    full_brief = header + brief_raw
+    full_brief = header + ctx + brief_raw
     brief_chars = len(full_brief)
 
     cmd = build_start_cmd(
@@ -323,6 +540,10 @@ def cmd_start(args: argparse.Namespace) -> int:
         append_dispatch_log(Path(args.log), record)
     stored = collect_session_log(worktree, record, cp.stdout)
     print(f"Session log: {stored}")
+    if reg:
+        entry = registry_start(reg[0], reg[1], args.agent, args.model, session_id,
+                               tokens, brief_chars)
+        print(f"Registry: {reg[1]} {entry['status']} ({entry['tokens']} {entry['tokens_kind']} tokens)")
 
     print(f"Dispatched {args.agent} ({args.model}). Session ID: {session_id}")
     if cp.stdout:
@@ -341,6 +562,29 @@ def cmd_resume(args: argparse.Namespace) -> int:
         return 1
 
     message_content = msg_path.read_text()
+    ctx, code = context_section(args)
+    if ctx is None:
+        return code
+    reg = _registry_args(args)
+    entry = None
+    if reg:
+        entry = Registry(reg[0]).get(reg[1])
+        if entry is None:
+            print(f"No registry entry for {reg[1]}; use start", file=sys.stderr)
+            return 1
+        if entry["status"] in ("closed", "dead"):
+            print(f"Session {reg[1]} is {entry['status']}; start a fresh one", file=sys.stderr)
+            return 1
+        args.session = args.session or entry["session_id"]
+        args.agent = args.agent or entry["agent"]
+        if args.model == "resume":
+            args.model = entry["model"]
+    if not args.session or not args.agent:
+        print("resume needs --session and --agent, or --episode/--scene with a registry entry",
+              file=sys.stderr)
+        return 1
+    compact = compaction_message(entry) if entry else ""
+    message_content = ctx + message_content + compact
     cmd = build_resume_cmd(
         agent=args.agent,
         session_id=args.session,
@@ -392,6 +636,11 @@ def cmd_resume(args: argparse.Namespace) -> int:
         }
         append_dispatch_log(Path(args.log), record)
         print(f"Session log: {collect_session_log(worktree, record, cp.stdout)}")
+    if reg:
+        entry = registry_resume(reg[0], reg[1], tokens, len(message_content),
+                                cp.returncode == 0, bool(compact))
+        print(f"Registry: {reg[1]} turn {entry['turns']} {entry['status']} "
+              f"({load_fraction(entry):.0%} of context)")
 
     print(f"Resumed {args.agent} session {args.session}.")
     if cp.stdout:
@@ -400,6 +649,26 @@ def cmd_resume(args: argparse.Namespace) -> int:
         print(cp.stderr, file=sys.stderr)
 
     return cp.returncode
+
+
+def cmd_close(args: argparse.Namespace) -> int:
+    path, key = registry_path(args.episode), registry_key(args.episode, args.scene, args.role)
+    if Registry(path).get(key) is None:
+        print(f"No registry entry for {key}", file=sys.stderr)
+        return 1
+    summary = str(Path(args.summary).resolve()) if args.summary else None
+    entry = registry_close(path, key, summary)
+    print(f"Closed {key} after {entry['turns']} turns; summary: {summary}")
+    return 0
+
+
+def _add_registry_flags(p: argparse.ArgumentParser, context: bool = True) -> None:
+    p.add_argument("--episode", type=Path, help="Episode dir; registry at <episode>/stage/.router/sessions.json")
+    p.add_argument("--scene", help="Scene name (registry key part)")
+    p.add_argument("--role", default="builder", help="builder | checker | ... (registry key part)")
+    if context:
+        p.add_argument("--context", action="append", metavar="NOTEBOOK:QUERY",
+                       help="Prepend an nlm context section (alias from router/notebooks.toml or id)")
 
 
 def main(argv=None) -> int:
@@ -421,11 +690,12 @@ def main(argv=None) -> int:
     p_start.add_argument("--note", default="", help="Note for dispatch log")
     p_start.add_argument("--acceptance", default="not_run", help="Acceptance status")
     p_start.add_argument("--dry-run", action="store_true", help="Print command without executing")
+    _add_registry_flags(p_start)
 
     # Subcommand: resume
     p_resume = sub.add_parser("resume", help="Resume an existing session")
-    p_resume.add_argument("--session", required=True, help="Session / conversation ID")
-    p_resume.add_argument("--agent", required=True, choices=AGENTS, help="Worker CLI agent")
+    p_resume.add_argument("--session", help="Session / conversation ID (else from registry)")
+    p_resume.add_argument("--agent", choices=AGENTS, help="Worker CLI agent (else from registry)")
     p_resume.add_argument("--message", type=Path, required=True, help="Path to message file")
     p_resume.add_argument("--worktree", type=Path, help="Worktree directory (defaults to cwd)")
     p_resume.add_argument("--log", type=Path, help="Path to append dispatch log JSONL")
@@ -435,6 +705,11 @@ def main(argv=None) -> int:
     p_resume.add_argument("--note", default="", help="Note for dispatch log")
     p_resume.add_argument("--model", default="resume", help="Model name")
     p_resume.add_argument("--dry-run", action="store_true", help="Print command without executing")
+    _add_registry_flags(p_resume)
+
+    p_close = sub.add_parser("close", help="Close a registry session and archive it")
+    _add_registry_flags(p_close, context=False)
+    p_close.add_argument("--summary", type=Path, help="Final state summary file")
 
     args = parser.parse_args(argv)
 
@@ -442,6 +717,10 @@ def main(argv=None) -> int:
         return cmd_start(args)
     elif args.command == "resume":
         return cmd_resume(args)
+    elif args.command == "close":
+        if not (args.episode and args.scene):
+            parser.error("close needs --episode and --scene")
+        return cmd_close(args)
     return 0
 
 

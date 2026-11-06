@@ -51,7 +51,19 @@ Architecting the Operation is the chapter-by-chapter series; its Ep 0 premiere (
 - Status: blocked on R0
 
 ## R2 — Registry + JIT context
-- Status: blocked on R1
+- Status: **steps 13–16 done 2026-11-06** (branch `claude/r2-session-registry-77215f`); built ahead of R1 so data collection starts now. Step 17 (measurement) is **next**.
+
+| # | Step | Result | Notes |
+|---|---|---|---|
+| 13 | `stage_dispatch.py` registry | done | `<episode>/stage/.router/sessions.json`, key `<episode>/<scene>/<role>`; `start --episode --scene [--role]` registers, `resume` (session/agent/model from registry) increments, `close --summary` archives. flock + atomic write. Tokens reported, else brief-chars/4 marked `proxy`. Compaction text appended at ≥60%, final-summary request at ≥80% (status `close_due`). Context sizes from `tiers.toml` (`[context]` or `[models.X] context`) when R1 adds it, else default table in code. Every transition appends `event: registry_start/resume/close` to vault `AI Session Logs/workers/sessions.jsonl`. |
+| 14 | `scriptcast-stage-context` | done | `nlm notebook query --json`; answer ≤ 1/3 budget, cited passages fill the rest of `--max-chars 1200`; source titles via `nlm notebook get`; cache `.router/context_cache/<sha256>.json`; auth error → `nlm login` hint, exit 2. |
+| 14a | Notebook kinds | done | `scriptcast/router/notebooks.toml` (R2-owned; R1's `rules.toml` can reference its aliases): `book` = `d3f54f50…`, `ep1`–`ep27` from `episode_map.json` (all `book`), `persuasion` = `28147d00…` as `public_research` (web sources; fenced). Unknown ids are fenced. |
+| 15 | `--context <notebook>:<query>` | done | start and resume; repeatable; fails closed (exit 2), no dispatch. |
+| 16 | Tests | done | `tests/test_stage_dispatch_sessions.py` (17), `tests/test_stage_context.py` (10) with an `nlm` stub. Full suite: 503 passed, 1 skipped; 2 `test_long_speech` errors are a worktree artefact (cargo resolves the parent repo's workspace), unrelated. |
+| — | Real query | ok | `--notebook book --query "How does the book define the material wage?"`: 31.6 s uncached, 1,343-char section, cached repeat instant. |
+| 17 | Measurement | **next** | Three real YT02 fixes × (current practice vs registry + context) → `experiments/router_eval/r2_tokens.csv`. |
+
+Open: the `> 80%` path asks the worker for `.session-summary.md`; seeding the fresh session from it is a manual `close` + `start` until R4 automates it. `--no-context` (tech-plan failure-mode row) not added: dispatch without `--context` is the same thing.
 
 ## R3 — Tier 2 VLM critic
 - Status: blocked on R0
