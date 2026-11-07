@@ -82,3 +82,18 @@ Three real YT02 fixes, each run from the commit its brief was written at, Codex 
 | first-minute dictionary gutter | 5,940 | 6,437 | 530 | 417 | yes/yes |
 
 Context adds 500–1,350 chars to the brief and cut wall time 8–21% (mean 14%), with equal acceptance. n=3 per arm, one run each, so this is direction not proof. Tokens are still a brief-length proxy: Codex's reported usage is not captured. Condition B was never a true resume (no prior session per scene), so the registry's resume path remains unmeasured; the "70% token reduction" claim is untested. Diffs in `experiments/router_eval/r2_runs/`.
+
+## True resume vs fresh start (2026-11-07)
+
+One small follow-up per fix ("add a one-line comment naming the cue"), Codex gpt-5.6-luna, each arm in its own worktree with the original fix applied. Tokens are Codex's reported totals for that process (read from `~/.codex/sessions`; the counter restarts per process, so a resumed turn's total is that turn's cost). Data: `experiments/router_eval/r2_resume.csv`.
+
+| fix | resume total / cached | fresh total / cached | resume wall | fresh wall |
+|---|---|---|---|---|
+| minute-two-figure-centering | 298,277 / 197,760 | 308,740 / 272,640 | 25 s | 51 s |
+| dashboard-tray-wage-plane | 311,806 / 206,976 | 157,386 / 108,544 | 18 s | 32 s |
+| first-minute-dictionary-gutter | 346,537 / 237,184 | 295,362 / 267,008 | 20 s | 52 s |
+
+- Resume is about 2x faster on wall time.
+- Resume is not cheaper in tokens: total 956,620 vs 761,488 fresh (+26%). Uncached input is worse still, about 100k per resumed turn vs 26-48k fresh, because replaying the prior history misses the cache.
+- The plan's 70% token-reduction claim is not supported for small follow-ups. It may hold for large follow-ups where a fresh start must re-read much more; untested. n=3.
+- Harness gap: stage_dispatch did not capture reported tokens for these runs (rows fell back to the brief proxy). The codextok parser needs to read the session file, not stdout.

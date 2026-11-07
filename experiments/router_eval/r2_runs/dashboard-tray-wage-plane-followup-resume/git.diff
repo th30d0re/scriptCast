@@ -1,0 +1,344 @@
+diff --git a/Architecting_the_operation/video/yt02/stage/FINDINGS_DASHBOARD_TRAY.md b/Architecting_the_operation/video/yt02/stage/FINDINGS_DASHBOARD_TRAY.md
+index e805ce9..cf174b3 100644
+--- a/Architecting_the_operation/video/yt02/stage/FINDINGS_DASHBOARD_TRAY.md
++++ b/Architecting_the_operation/video/yt02/stage/FINDINGS_DASHBOARD_TRAY.md
+@@ -210,3 +210,30 @@ assets/index-Cn5ocv6T.js  1,805.80 kB │ gzip: 532.26 kB
+ ```
+ 
+ Vite emitted the existing chunk-size warning. The build exited 0 and wrote to `stage/review/site-dist`.
++
++## Fix pass 2
++
++The Wage plane returned to the right stack under the policy ticker. Its compact section is
++`[1695, 324, 187, 120]`, aligned to the right edge of the surrounding `[1671, 324, 211, 120]`
++rail slot. The compact content uses 10 px horizontal inset. Its title is `Buffer Class Wage`.
++The expanded and settings cards retain `[260, 138, 1400, 860]`; settings is titled
++`SETTINGS · BUFFER CLASS WAGE`.
++
++The right-stack panel boxes are Active Patch `[1671, 96, 211, 60]`, Variables
++`[1729, 164, 153, 56]`, Executing Function `[1671, 228, 211, 40]`, Policy ticker
++`[1671, 276, 211, 40]`, and Wage plane `[1671, 324, 211, 120]`.
++
++The tray contains Interference Engine, Phase Coherence, Five-Tier Cone, Compounding Ledger,
++Backlash Oscillator, Thyristor Latch, AC Extraction Meter, and Snubber Circuit. Its box remains
++`x=36…1884`, `y=944…1044`, with 8 px gaps. The exact derived cell width is 224 px: the 1848 px
++span less seven gaps is 1792 px, divided across eight cells.
++
++### Verification tails
++
++```text
++tsc: exit 0; no diagnostics
++checker: PASS: 19 frames plus all 24 tray mode renders repeated in fresh Node processes; identical stack/tray markup and whole-Dashboard hashes; state/effect/reducer hooks trap on invocation.
++checker: PASS: Equal Earth route 1296 samples / 0 land hits; 18 deterministic timeline states; right stack + 8-cell tray geometry; all 24 tray modes; 16 non-colliding polity labels.
++plans: wrote stage/review/stage_plan.json and stage/review_tray/stage_plan.json; both --dry-run commands exited 0; Chromium remained closed.
++site: ✓ 259 modules transformed; ✓ built in 2.71s; existing chunk-size warning only.
++```
+diff --git a/Architecting_the_operation/video/yt02/stage/dashboard/ComplexWagePlane.tsx b/Architecting_the_operation/video/yt02/stage/dashboard/ComplexWagePlane.tsx
+index d564bfb..c751d66 100644
+--- a/Architecting_the_operation/video/yt02/stage/dashboard/ComplexWagePlane.tsx
++++ b/Architecting_the_operation/video/yt02/stage/dashboard/ComplexWagePlane.tsx
+@@ -1683,7 +1683,7 @@ export function WagePlaneSettings({
+   const c = palette;
+   const rd = wageReadings(wageModel);
+   const content = data?.content ?? {
+-    title: 'SETTINGS · WAGE PLANE',
++    title: 'SETTINGS · BUFFER CLASS WAGE',
+     source: 'W = ψ_{m} + jψ_{s} · Log 2 · ordinal',
+     units:
+       'ψ_{m}, ψ_{s}: ordinal, −100 to 100 · θ: degrees, 0° at 6 o’clock, counterclockwise · τ zone: M above τ',
+@@ -2077,7 +2077,7 @@ export function WagePlaneSettings({
+   );
+ }
+ 
+-// Tray compact readout (177×80 content box), catalogue-suggested: mini plane with the hatched
++// Right-stack compact readout (187×120 content box), catalogue-suggested: mini plane with the hatched
+ // τ zone, clock ring and the orange W arrow at the log-2 state; clock reading and ρ_τ = M/τ
+ // beside it, the era year under them. Driven by the same model as the expanded card.
+ export function WagePlaneCompact({era}: {era?: {log: number; title?: string}}) {
+@@ -2086,7 +2086,7 @@ export function WagePlaneCompact({era}: {era?: {log: number; title?: string}}) {
+   const rho = rd.M / wageModel.tau;
+   const id = useId().replace(/:/g, '');
+   const S = 56;
+-  const pad = 4;
++  const pad = 10;
+   const H = 24;
+   const k = 0.24;
+   const C = pad + H;
+@@ -2105,7 +2105,7 @@ export function WagePlaneCompact({era}: {era?: {log: number; title?: string}}) {
+       <div
+         style={{
+           position: 'absolute',
+-          left: 0,
++          left: 10,
+           top: 1,
+           fontFamily: Tokens.fonts.mono,
+           fontSize: 11,
+@@ -2113,7 +2113,7 @@ export function WagePlaneCompact({era}: {era?: {log: number; title?: string}}) {
+           color: color('color/text/dim'),
+         }}
+       >
+-        WAGE PLANE
++        BUFFER CLASS WAGE
+       </div>
+       <svg
+         width={S}
+@@ -2121,7 +2121,7 @@ export function WagePlaneCompact({era}: {era?: {log: number; title?: string}}) {
+         viewBox={`0 0 ${S} ${S}`}
+         role="img"
+         aria-label="Mini wage plane with the τ zone and the W vector"
+-        style={{position: 'absolute', left: 0, top: 21, display: 'block', overflow: 'visible'}}
++        style={{position: 'absolute', left: 10, top: 21, display: 'block', overflow: 'visible'}}
+       >
+         <defs>
+           <clipPath id={`${id}-zone`}>
+@@ -2179,7 +2179,7 @@ export function WagePlaneCompact({era}: {era?: {log: number; title?: string}}) {
+       <div
+         style={{
+           position: 'absolute',
+-          left: 64,
++          left: 78,
+           top: 24,
+           display: 'flex',
+           flexDirection: 'column',
+diff --git a/Architecting_the_operation/video/yt02/stage/dashboard/Dashboard.tsx b/Architecting_the_operation/video/yt02/stage/dashboard/Dashboard.tsx
+index 255793e..f87fcb5 100644
+--- a/Architecting_the_operation/video/yt02/stage/dashboard/Dashboard.tsx
++++ b/Architecting_the_operation/video/yt02/stage/dashboard/Dashboard.tsx
+@@ -24,12 +24,14 @@ const frame=layout.frames['dash 1486 · compact'];
+ const compassRailItem={name:'compass',instrument:'Compass',mode:'compact',x:36,y:483.8,w:196,h:96};
+ // Right stack: Active Patch and Variables keep their slots; Executing Function and Policy
+ // ticker move up from the removed bottom strips as compact one-line panels. The Wage plane
+-// and Backlash oscillator move to the tray.
++// returns beneath the ticker in the right stack.
+ const rightStackPanels=[
+  {...frame.rightStack.panels[0]},
+  {...frame.rightStack.panels[1]},
+  {name:'executing function',instrument:'Executing Function',mode:'compact',x:1671,y:228,w:211,h:40},
+  {name:'policy ticker',instrument:'Policy ticker',mode:'compact',x:1671,y:276,w:211,h:40},
++ // Cue: expand:wage-plane opens Buffer Class Wage from this right-stack slot.
++ {name:'wage plane',instrument:'Wage plane',mode:'compact',x:1671,y:324,w:211,h:120},
+ ];
+ const trayPanels=TRAY_INSTRUMENTS.map((instrument,i)=>{const r=trayCellRect(i);return {name:instrument.toLowerCase(),instrument,mode:'compact',x:r.x,y:r.y,w:r.width,h:r.height};});
+ export const rail=[...frame.leftStack.panels,compassRailItem,...rightStackPanels,...trayPanels];
+@@ -38,7 +40,7 @@ const trayArtifactFor=(name:string)=>{
+  const TrayCell=(props:DashboardInstrumentProps)=><TrayArtifact name={name} {...props}/>;
+  return TrayCell;
+ };
+-const components=[EraClock,SystemStress,Capital,Interference,Compass,ActivePatch,Variables,ExecutingFunction,PolicyTicker,WagePlane,...TRAY_INSTRUMENTS.slice(1).map(trayArtifactFor)];
++const components=[EraClock,SystemStress,Capital,Interference,Compass,ActivePatch,Variables,ExecutingFunction,PolicyTicker,WagePlane,...TRAY_INSTRUMENTS.map(trayArtifactFor)];
+ export type DashboardProps={era?:number;world?:boolean;camera?:Camera;worldOpacity?:number;routeDraw?:number;dim?:number;lights?:number[];empty?:boolean;modes?:Record<string,InstrumentMode>;modeTimelines?:Record<string,ModeKey[]>};
+ type InteractiveState={interactiveModes?:Record<string,InstrumentMode|null>;onModeChange?:(slug:string,mode:InstrumentMode|null)=>void};
+ export function Dashboard(props:DashboardProps) {
+@@ -56,8 +58,8 @@ function DashboardFrame({era=2,world=false,camera,worldOpacity=0,routeDraw=1,dim
+  const heights=rail.map((p,i)=>{const d=instruments[p.instrument];const forced=interactiveModes[slugs[i]]??modes[slugs[i]],weights=resolveMode(ms,modeTimelines[slugs[i]]??[]).weights;return forced?d[forced].h:weights.compact*d.compact.h+weights.expanded*d.expanded.h+weights.settings*d.settings.h;});
+  return <TokensContext.Provider value={Tokens}><CameraContext.Provider value={activeCamera}><div className="yt02-dashboard" style={{position:'absolute',inset:0,width:1920,height:1080,background:Tokens.colours.background,overflow:'hidden'}}><style>{'.yt02-dashboard sub { vertical-align: baseline; position: relative; top: .2em; }'}</style><EraStrip activeLog={era} empty={empty}/><DashboardMap world={world} camera={camera} worldOpacity={worldOpacity} draw={routeDraw}/>{rail.map((p,i)=>{
+  const Component=components[i],start=i<5?0:5;
+- const y=i<9?96+heights.slice(start,i).reduce((sum,h)=>sum+h+8,0):p.y;
+- const grow:InstrumentGrow=i<5?'right-down':i<9?'left-down':'centre';
++ const y=i<10?96+heights.slice(start,i).reduce((sum,h)=>sum+h+8,0):p.y;
++ const grow:InstrumentGrow=i<5?'right-down':i<10?(i===9?'left-down':'left-down'):'centre';
+  return <Component onInteractiveModeChange={onModeChange?mode=>onModeChange(slugs[i],mode):undefined} key={slugs[i]} anchor={{x:i>=5?p.x+p.w-instruments[p.instrument].compact.w:p.x,y,width:instruments[p.instrument].compact.w,height:instruments[p.instrument].compact.h}} grow={grow} mode={modes[slugs[i]]} modeTimeline={modeTimelines[slugs[i]]} opacity={lights[i]??dim}/>;
+  })}<CompactBorder/></div></CameraContext.Provider></TokensContext.Provider>;
+ }
+diff --git a/Architecting_the_operation/video/yt02/stage/dashboard/PanelContent.tsx b/Architecting_the_operation/video/yt02/stage/dashboard/PanelContent.tsx
+index ce7300d..a6a52ba 100644
+--- a/Architecting_the_operation/video/yt02/stage/dashboard/PanelContent.tsx
++++ b/Architecting_the_operation/video/yt02/stage/dashboard/PanelContent.tsx
+@@ -76,7 +76,7 @@ const compassSpec = {
+ 
+ const wagePlaneSpec = {
+  ...spec.instruments['Wage plane'],
+- compact: {...spec.instruments['Wage plane'].compact, w: TRAY_CELL_WIDTH, h: TRAY.height},
++ compact: {...spec.instruments['Wage plane'].compact},
+  expanded: {
+   ...spec.instruments['Wage plane'].expanded,
+   w: WAGE_EXPANDED_BOX.width,
+@@ -86,6 +86,7 @@ const wagePlaneSpec = {
+   ...spec.instruments['Wage plane'].settings,
+   w: WAGE_EXPANDED_BOX.width,
+   h: WAGE_EXPANDED_BOX.height,
++  content: {...spec.instruments['Wage plane'].settings.content, title: 'SETTINGS · BUFFER CLASS WAGE'},
+  },
+ };
+ 
+diff --git a/Architecting_the_operation/video/yt02/stage/dashboard/trayLayout.ts b/Architecting_the_operation/video/yt02/stage/dashboard/trayLayout.ts
+index b9403f3..3a428eb 100644
+--- a/Architecting_the_operation/video/yt02/stage/dashboard/trayLayout.ts
++++ b/Architecting_the_operation/video/yt02/stage/dashboard/trayLayout.ts
+@@ -2,16 +2,16 @@ import type {Rect} from '@stage';
+ 
+ // Always-on instrument tray: one row of nine mini instruments just above the bottom border
+ // line (border at y=1060), spanning the inner width x 36..1884. Equal cells with 8px gaps,
+-// ~198 px each, 100 px tall; bottom edge y=1044 matches the old bottom strips' bottom edge.
++// 224 px each, 100 px tall; eight cells and seven 8 px gaps fill x=36…1884 exactly.
+ export const TRAY = {
+   left: 36,
+   right: 1884,
+   top: 944,
+   height: 100,
+   gap: 8,
+-  count: 9,
++  count: 8,
+ } as const;
+-export const TRAY_CELL_WIDTH = (TRAY.right - TRAY.left - TRAY.gap * (TRAY.count - 1)) / TRAY.count; // 198.2222
++export const TRAY_CELL_WIDTH = (TRAY.right - TRAY.left - TRAY.gap * (TRAY.count - 1)) / TRAY.count; // 224
+ export const trayCellRect = (i: number): Rect => ({
+   x: TRAY.left + i * (TRAY_CELL_WIDTH + TRAY.gap),
+   y: TRAY.top,
+@@ -19,11 +19,8 @@ export const trayCellRect = (i: number): Rect => ({
+   height: TRAY.height,
+ });
+ 
+-// Tray order, left to right (brief 2026-11-01): Complex Wage Plane, Interference Engine,
+-// Phase Coherence, Five-Tier Cone, Compounding Ledger, Backlash Oscillator, Thyristor Latch,
+-// AC Extraction Meter, Snubber Circuit. The Wage plane keeps its fix-pass-3 implementation.
++// Tray order, left to right. The Wage plane remains in the right stack.
+ export const TRAY_INSTRUMENTS = [
+-  'Wage plane',
+   'Interference Engine',
+   'Phase Coherence',
+   'Five-Tier Cone',
+diff --git a/Architecting_the_operation/video/yt02/stage/review/map-geometry-fix1.json b/Architecting_the_operation/video/yt02/stage/review/map-geometry-fix1.json
+index 290d5f1..83b5897 100644
+--- a/Architecting_the_operation/video/yt02/stage/review/map-geometry-fix1.json
++++ b/Architecting_the_operation/video/yt02/stage/review/map-geometry-fix1.json
+@@ -446,8 +446,8 @@
+     "top": 944,
+     "height": 100,
+     "gap": 8,
+-    "count": 9,
+-    "cellWidth": 198.22222222222223,
++    "count": 8,
++    "cellWidth": 224,
+     "mapLocalTop": 860
+   },
+   "hubs": [
+diff --git a/Architecting_the_operation/video/yt02/stage/review/map-geometry-fix2.json b/Architecting_the_operation/video/yt02/stage/review/map-geometry-fix2.json
+index 290d5f1..83b5897 100644
+--- a/Architecting_the_operation/video/yt02/stage/review/map-geometry-fix2.json
++++ b/Architecting_the_operation/video/yt02/stage/review/map-geometry-fix2.json
+@@ -446,8 +446,8 @@
+     "top": 944,
+     "height": 100,
+     "gap": 8,
+-    "count": 9,
+-    "cellWidth": 198.22222222222223,
++    "count": 8,
++    "cellWidth": 224,
+     "mapLocalTop": 860
+   },
+   "hubs": [
+diff --git a/Architecting_the_operation/video/yt02/stage/review_tray/stage_plan.json b/Architecting_the_operation/video/yt02/stage/review_tray/stage_plan.json
+index 863329b..f7e865f 100644
+--- a/Architecting_the_operation/video/yt02/stage/review_tray/stage_plan.json
++++ b/Architecting_the_operation/video/yt02/stage/review_tray/stage_plan.json
+@@ -150,5 +150,5 @@
+     "Word timings normalized from relative milliseconds",
+     "No episode MP3 found; silent episode"
+   ],
+-  "episode_dir": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage"
++  "episode_dir": "/private/var/folders/95/ps3stnmx59j3ws19bprd4h9r0000gn/T/r2-dashboard-tray-wage-plane-A-t9wu2rys/Architecting_the_operation/video/yt02/stage"
+ }
+diff --git a/Architecting_the_operation/video/yt02/stage/tools/check_dashboard.tsx b/Architecting_the_operation/video/yt02/stage/tools/check_dashboard.tsx
+index 6bef523..3a06c2a 100644
+--- a/Architecting_the_operation/video/yt02/stage/tools/check_dashboard.tsx
++++ b/Architecting_the_operation/video/yt02/stage/tools/check_dashboard.tsx
+@@ -63,7 +63,7 @@ if(process.env.DASHBOARD_SNAPSHOT==='1') {
+   assert.ok(!html.includes('blur('));
+   assert.ok(!html.includes('<button'));
+   assert.ok(html.includes('rgba(13,27,42,0.88)'));
+-  return {left:sections.slice(0,5),right:sections.slice(5,9),tray:sections.slice(9),whole:createHash('sha256').update(html).digest('hex')};
++  return {left:sections.slice(0,5),right:sections.slice(5,10),tray:sections.slice(10),whole:createHash('sha256').update(html).digest('hex')};
+  });
+  console.log(JSON.stringify({frames,tray:trayModeHashes()}));
+ } else {
+@@ -85,23 +85,28 @@ if(process.env.DASHBOARD_SNAPSHOT==='1') {
+ 
+  // 2. New right stack and always-on tray geometry
+  assert.equal(rail.length,18);
+- assert.deepEqual(rail.slice(5,9).map(p=>p.instrument),['Active Patch','Variables','Executing Function','Policy ticker']);
++ assert.deepEqual(rail.slice(5,10).map(p=>p.instrument),['Active Patch','Variables','Executing Function','Policy ticker','Wage plane']);
+  const policyResults=eraLog2.fields.results as string[];
+  const policyCompact=renderPanel('Policy ticker','compact'),policyExpanded=renderPanel('Policy ticker','expanded');
+  assert.ok(policyCompact.includes(policyResults.at(-1)!));
+  for(const result of policyResults) assert.ok(policyExpanded.includes(result),`expanded policy ticker missing: ${result}`);
+  assert.ok(renderPanel('Executing Function','compact').includes(String(eraLog2.fields.executing_function)));
+- assert.deepEqual(rail.slice(9).map(p=>p.instrument),[...TRAY_INSTRUMENTS]);
+- assert.deepEqual(Object.keys(ARTIFACT_VIEWS),TRAY_INSTRUMENTS.slice(1));
+- assert.deepEqual(slugs.slice(9),TRAY_INSTRUMENTS.map(name=>name.toLowerCase().replaceAll(' ','-')));
+- assert.deepEqual(TRAY,{left:36,right:1884,top:944,height:100,gap:8,count:9});
+- assert.ok(Math.abs(TRAY_CELL_WIDTH-198.2222222222)<1e-8);
++ assert.deepEqual(rail.slice(10).map(p=>p.instrument),[...TRAY_INSTRUMENTS]);
++ assert.deepEqual(Object.keys(ARTIFACT_VIEWS),TRAY_INSTRUMENTS);
++ const wageCompact=renderPanel('Wage plane','compact');
++ assert.equal(instruments['Wage plane'].compact.w,187);
++ assert.equal(instruments['Wage plane'].compact.h,120);
++ assert.ok(wageCompact.includes('BUFFER CLASS WAGE'),'wage compact title');
++ assert.ok(wageCompact.includes('left:10px'),'wage compact horizontal padding');
++ assert.deepEqual(slugs.slice(10),TRAY_INSTRUMENTS.map(name=>name.toLowerCase().replaceAll(' ','-')));
++ assert.deepEqual(TRAY,{left:36,right:1884,top:944,height:100,gap:8,count:8});
++ assert.ok(Math.abs(TRAY_CELL_WIDTH-224)<1e-8);
+  for(let i=0;i<TRAY.count;i++){
+-  const cell=trayCellRect(i),panel=rail[9+i];
++  const cell=trayCellRect(i),panel=rail[10+i];
+   assert.deepEqual(panel,{name:TRAY_INSTRUMENTS[i].toLowerCase(),instrument:TRAY_INSTRUMENTS[i],mode:'compact',x:cell.x,y:cell.y,w:cell.width,h:cell.height});
+   if(i>0) assert.ok(Math.abs(cell.x-(trayCellRect(i-1).x+TRAY_CELL_WIDTH+8))<1e-8);
+  }
+- const modelDefaultTray=new Set(['Wage plane','Phase Coherence','Five-Tier Cone','Compounding Ledger','Backlash oscillator','Thyristor Latch','AC Extraction Meter','Snubber Circuit']);
++ const modelDefaultTray=new Set(['Phase Coherence','Five-Tier Cone','Compounding Ledger','Backlash oscillator','Thyristor Latch','AC Extraction Meter','Snubber Circuit']);
+  const interactionHint=/\b(?:drag|click|arrow keys|press)\b/i;
+  for(const name of TRAY_INSTRUMENTS){
+   for(const mode of ['compact','expanded','settings'] as const){
+@@ -109,8 +114,7 @@ if(process.env.DASHBOARD_SNAPSHOT==='1') {
+    assert.ok(html.length>500,`${name} ${mode} did not render`);
+    assert.ok(!interactionHint.test(html),`${name} ${mode} leaks an interaction hint`);
+    assert.deepEqual(renderedUnderscoreText(html),[],`${name} ${mode} renders literal underscore markup text`);
+-   if(name==='Wage plane') assert.ok(html.includes(mode==='settings'?'data-settings="Wage plane"':'data-artifact="Complex Wage Plane"'));
+-   else assert.ok(html.includes(`data-artifact="${name}"`));
++   assert.ok(html.includes(`data-artifact="${name}"`));
+    if(mode==='expanded') assert.ok(html.includes('data-control="gear" data-action="open-settings"'));
+    if(mode==='settings') assert.ok(html.includes('data-control="gear" data-action="open-expanded"'));
+   }
+@@ -119,7 +123,7 @@ if(process.env.DASHBOARD_SNAPSHOT==='1') {
+  }
+  const snubberSettings=renderPanel('Snubber Circuit','settings');
+  assert.ok(snubberSettings.includes('raise')&&snubberSettings.includes('clamps the surge sooner')&&snubberSettings.includes('higher')&&snubberSettings.includes('lets a larger surge through')&&snubberSettings.includes('readings conflict'));
+- assert.deepEqual(Object.keys(TRAY_VIEW_LAYOUT_HEIGHTS),TRAY_INSTRUMENTS);
++ assert.deepEqual(Object.keys(TRAY_VIEW_LAYOUT_HEIGHTS),['Wage plane',...TRAY_INSTRUMENTS]);
+  for(const [name,layouts] of Object.entries(TRAY_VIEW_LAYOUT_HEIGHTS)) for(const [mode,total] of Object.entries(layouts)) assert.ok(total<=828,`${name} ${mode} declared layout ${total}px exceeds 828px`);
+  const thyristorCompact=renderPanel('Thyristor Latch','compact'),thyristorExpanded=renderPanel('Thyristor Latch','expanded');
+  assert.ok(thyristorCompact.includes('data-trace-points="601"')&&thyristorExpanded.includes('data-trace-points="601"'),'Thyristor compact and expanded traces must share the 601-point static history');
+@@ -217,7 +221,7 @@ if(process.env.DASHBOARD_SNAPSHOT==='1') {
+  const panelBoxesMapLocal=rail.map((p,i)=>{
+   const d=instruments[p.instrument].compact;
+   const start=i<5?0:5;
+-  const y=i<9?96+rail.slice(start,i).reduce((s,item)=>s+instruments[item.instrument].compact.h+8,0):p.y;
++  const y=i<10?96+rail.slice(start,i).reduce((s,item)=>s+instruments[item.instrument].compact.h+8,0):p.y;
+   const x=i>=5?p.x+p.w-d.w:p.x;
+   return {name:`panel:${p.name}`,box:[x-32,y-84,d.w,d.h] as [number,number,number,number]};
+  });
+@@ -297,7 +301,7 @@ if(process.env.DASHBOARD_SNAPSHOT==='1') {
+  assert.equal(transitionTrayMode('settings','click-gear'),'expanded');
+  assert.deepEqual(TRAY_EXPANDED_BOX,{x:260,y:138,width:1400,height:860});
+  for(let i=0;i<TRAY_INSTRUMENTS.length;i++){
+-  const slug=slugs[9+i],expanded=sectionRect(renderDashboard(0,{[slug]:'expanded'}),slug);
++  const slug=slugs[10+i],expanded=sectionRect(renderDashboard(0,{[slug]:'expanded'}),slug);
+   assert.deepEqual(expanded,TRAY_EXPANDED_BOX,`${slug} expanded box`);
+   const start=trayCellRect(i),moving=sectionRect(renderDashboard(300,{}, {[slug]:[{at:0,mode:'expanded'}]}),slug);
+   assert.ok(moving.x>Math.min(start.x,260)&&moving.x<Math.max(start.x,260),`${slug} x does not grow centreward`);
+@@ -337,7 +341,7 @@ if(process.env.DASHBOARD_SNAPSHOT==='1') {
+  assert.ok(wageSettingsHtml.includes('left:260px;top:138px;width:1400px;height:860px'),'settings wage card must have the same 1400×860 footprint at [260, 138]');
+  assert.ok(wageSettingsHtml.includes('data-instrument="wage-plane" data-active-mode="settings"'));
+  assert.ok(wageSettingsHtml.includes('data-settings="Wage plane"'));
+- assert.ok(wageSettingsHtml.includes('SETTINGS · WAGE PLANE'));
++ assert.ok(wageSettingsHtml.includes('SETTINGS · BUFFER CLASS WAGE'));
+  assert.ok(wageSettingsHtml.includes('data-control="gear" data-action="open-expanded"'));
+  assert.ok(wageSettingsHtml.includes('Quadrant names'));
+  assert.ok(wageSettingsHtml.includes('What comes from where'));
+@@ -396,5 +400,5 @@ if(process.env.DASHBOARD_SNAPSHOT==='1') {
+  };
+  fs.writeFileSync(new URL('../review/map-geometry-fix1.json',import.meta.url),JSON.stringify(geometry,null,2)+'\n');
+  fs.writeFileSync(new URL('../review/map-geometry-fix2.json',import.meta.url),JSON.stringify(geometry,null,2)+'\n');
+- console.log(`PASS: Equal Earth route ${samples} samples / ${hits} land hits, bounds ${routeMinX.toFixed(2)}..${routeMaxX.toFixed(2)} × ${routeMinY.toFixed(2)}..${routeMaxY.toFixed(2)} above tray y=${trayTopLocal}; Portugal height ${portugalMainlandHeightPx}px mainland (${portugalWithEnclaveHeightPx}px with 1486 Moroccan enclave); ${times.length} deterministic timeline states; right stack + 9-cell tray geometry; all 27 tray modes; 18 declared layouts ≤ 828px; no literal underscore text; shared 601-point Thyristor traces; Backlash static active preset; gear-only settings; no rendered interaction hints; 75 polities with ${polityLabelBoxes.length} non-colliding labels.`);
++ console.log(`PASS: Equal Earth route ${samples} samples / ${hits} land hits, bounds ${routeMinX.toFixed(2)}..${routeMaxX.toFixed(2)} × ${routeMinY.toFixed(2)}..${routeMaxY.toFixed(2)} above tray y=${trayTopLocal}; Portugal height ${portugalMainlandHeightPx}px mainland (${portugalWithEnclaveHeightPx}px with 1486 Moroccan enclave); ${times.length} deterministic timeline states; right stack + 8-cell tray geometry; all 24 tray modes; 18 declared layouts ≤ 828px; no literal underscore text; shared 601-point Thyristor traces; Backlash static active preset; gear-only settings; no rendered interaction hints; 75 polities with ${polityLabelBoxes.length} non-colliding labels.`);
+ }

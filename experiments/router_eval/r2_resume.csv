@@ -1,0 +1,7 @@
+fix,condition,brief_chars,tokens,tokens_kind,wall_s,accepted,exit_code,stderr_tail,cached_input
+minute-two-figure-centering,resume,65,298277,reported(codex session file),25.275,not_run,0,,197760
+minute-two-figure-centering,fresh,871,308740,reported(codex session file),50.867,not_run,0,,272640
+dashboard-tray-wage-plane,resume,65,311806,reported(codex session file),18.459,not_run,0,,206976
+dashboard-tray-wage-plane,fresh,1104,157386,reported(codex session file),32.072,not_run,0,,108544
+first-minute-dictionary-gutter,resume,65,346537,reported(codex session file),19.688,not_run,0,,237184
+first-minute-dictionary-gutter,fresh,1345,295362,reported(codex session file),52.071,not_run,0,,267008

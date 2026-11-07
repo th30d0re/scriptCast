@@ -1,0 +1,10 @@
+Session log: /Users/emmanuel/Library/Mobile Documents/iCloud~md~obsidian/Documents/Root/AI Session Logs/workers/20261107T191915Z-codex-resume-minute-two-figure-centering.md
+Resumed codex session 01a1b68a-3b18-7b31-a8f4-2944332c01b7.
+Added above `plateShift`:
+
+```tsx
+// t10Displays starts the plate shift, which completes at t10Order + 600 ms.
+```
+
+Prose and whitespace checks pass.
+
