@@ -133,3 +133,21 @@ def test_no_reference_still_runs_tier2(tmp_path):
         return {"results": [{"file": "Scene_cue.png", "raw": _reply([])}]}
     report = critic_stills(stills, plan, runner=runner)
     assert len(calls) == 1 and report["frames"][0]["tier2_ran"] is True
+
+
+def test_marks_sidecar_replaces_grid_and_preserves_ids(tmp_path):
+    stills = tmp_path / "stills"; stills.mkdir()
+    Image.new("RGB", (40, 20)).save(stills / "Scene_cue.png")
+    plan = tmp_path / "stage_plan.json"
+    plan.write_text(json.dumps({"width": 100, "height": 100, "frames": []}))
+    # This is the JSON emitted by video/scripts/stage-marks.mjs.
+    (stills / "Scene_cue.png.boxes.json").write_text(json.dumps({"frame": 12, "marks": [
+        {"id": "live-title", "kind": "text", "box": {"x": 10, "y": 20, "w": 40, "h": 10}}
+    ]}))
+    seen = []
+    def runner(request):
+        seen.append(request)
+        return {"results": [{"file": "Scene_cue.png", "raw": _reply([_defect("live-title", region=[.1, .2, .4, .1])])}]}
+    report = critic_stills(stills, plan, runner=runner)
+    assert 'live-title' in seen[0]["items"][0]["prompt"]
+    assert report["frames"][0]["defects"][0]["element_id"] == "live-title"

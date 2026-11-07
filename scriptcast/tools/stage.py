@@ -18,7 +18,7 @@ def main(argv=None):
     p.add_argument('source', type=Path)
     p.add_argument('--range')
     p.add_argument('-o', type=Path)
-    for name in ('render', 'still', 'site'):
+    for name in ('render', 'still', 'boxes', 'site'):
         p = sub.add_parser(name)
         p.add_argument('plan', type=Path)
         p.add_argument('--dry-run', action='store_true')
@@ -31,9 +31,11 @@ def main(argv=None):
             p.add_argument('--per-shot', type=Path)
             p.add_argument('--chunks', type=int, default=1)
             p.add_argument('--chunk-concurrency', type=int)
-        if name == 'still':
+        if name in ('still', 'boxes'):
             p.add_argument('--shot', required=True)
             p.add_argument('--at', type=float, default=0.5, help='Fraction through the shot, 0..1')
+        if name == 'still':
+            p.add_argument('--boxes', action='store_true', help='also write <output>.boxes.json using live Stage marks')
     args = parser.parse_args(argv)
     try:
         if args.command == 'plan':
@@ -66,12 +68,21 @@ def main(argv=None):
         common = [f'--props={plan_path}', f'--timeout={args.timeout_ms}']
         if args.scale != 1.0:
             common.append(f'--scale={args.scale:g}')
-        if args.command == 'still':
+        if args.command in ('still', 'boxes'):
+            chrome_args = video.browser_args()
+            if chrome_args:
+                env['SCRIPTCAST_CHROME'] = chrome_args[0].split('=', 1)[1]
+                prefix += f' SCRIPTCAST_CHROME={shlex.quote(env["SCRIPTCAST_CHROME"])}'
             shot = next((s for s in shots if s['shot_id'] == args.shot), None)
             if shot is None or not 0 <= args.at <= 1 or not args.o:
-                raise ValueError('still requires a known --shot, --at in 0..1, and -o')
+                raise ValueError(f'{args.command} requires a known --shot, --at in 0..1, and -o')
             at = min(frame(shot['end_ms'])-1, frame(shot['start_ms'] + args.at*(shot['end_ms']-shot['start_ms'])))
-            return run(['npx', '--no-install', 'remotion', 'still', 'src/stage/index.ts', 'StageStill', str(args.o.resolve()), *common, f'--frame={at}', *video.browser_args()])
+            boxes = args.o.resolve() if args.command == 'boxes' else args.o.resolve().with_name(args.o.name + '.boxes.json')
+            mark_command = ['node', 'scripts/stage-marks.mjs', '--plan', str(plan_path), '--frame', str(at), '--output', str(boxes)]
+            if args.command == 'boxes':
+                return run(mark_command)
+            code = run(['npx', '--no-install', 'remotion', 'still', 'src/stage/index.ts', 'StageStill', str(args.o.resolve()), *common, f'--frame={at}', *chrome_args])
+            return run(mark_command) if not code and args.boxes else code
         base = ['npx', '--no-install', 'remotion', 'render', 'src/stage/index.ts', 'StageEpisode']
         common += ['--codec', 'h264']
         if args.per_shot:

@@ -60,6 +60,8 @@ def validate_reply(value: object) -> dict | None:
 
 def _box(raw: dict, width: float, height: float) -> list[float] | None:
     value = raw.get("box", raw.get("region"))
+    if isinstance(value, dict) and all(k in value for k in ("x", "y", "w", "h")):
+        value = [value["x"], value["y"], value["w"], value["h"]]
     if value is None and all(k in raw for k in ("x", "y", "w", "h")):
         value = [raw["x"], raw["y"], raw["w"], raw["h"]]
     if not isinstance(value, (list, tuple)) or len(value) != 4:
@@ -95,6 +97,33 @@ def grid_elements() -> dict[str, list[float]]:
     """A stable whole-frame fallback for plans which declare no elements."""
     return {f"grid_{row}_{column}": [column / 3, row / 3, 1 / 3, 1 / 3]
             for row in range(3) for column in range(3)}
+
+
+def marked_elements(path: Path, plan: dict) -> dict[str, list[float]] | None:
+    """Read a StageMarks sidecar, returning ``None`` only when it is absent.
+
+    A valid empty mark list is meaningful: it says the actual frame has no
+    tagged elements, and must not quietly turn into the synthetic 3x3 grid.
+    """
+    if not path.is_file():
+        return None
+    try:
+        raw = json.loads(path.read_text())
+    except (OSError, ValueError, json.JSONDecodeError):
+        return None
+    marks = raw.get("marks", raw) if isinstance(raw, dict) else raw
+    if isinstance(marks, dict):
+        marks = marks.get("marks", [])
+    if not isinstance(marks, list):
+        return None
+    width, height = float(plan.get("width", 1920)), float(plan.get("height", 1080))
+    result = {}
+    for mark in marks:
+        if isinstance(mark, dict) and isinstance(mark.get("id"), str):
+            box = _box(mark, width, height)
+            if box:
+                result[mark["id"]] = box
+    return result
 
 
 def default_s1_threshold() -> float:
@@ -137,7 +166,7 @@ def run_runner(request: dict) -> dict:
 def critic_stills(stills: Path, plan_path: Path, model: str = DEFAULT_MODEL, reference_dir: Path | None = None,
                   only_passed: Path | None = None, runner: Callable[[dict], dict] = run_runner,
                   ocr: Callable[[Path], str] = _ocr, s1_threshold: float | None = None,
-                  tier1_only: bool = False) -> dict:
+                  tier1_only: bool = False, boxes_dir: Path | None = None) -> dict:
     plan = json.loads(Path(plan_path).read_text())
     allowed = None
     output_path = Path(stills) / "critic.json"
@@ -156,8 +185,11 @@ def critic_stills(stills: Path, plan_path: Path, model: str = DEFAULT_MODEL, ref
         scene, sep, cue = stem.rpartition("_")
         if not sep:
             scene, cue = stem, "end"
-        elements = declared_elements(plan, scene, cue)
-        if not elements:
+        sidecar = (boxes_dir / f"{image.name}.boxes.json") if boxes_dir else image.with_name(f"{image.name}.boxes.json")
+        elements = marked_elements(sidecar, plan)
+        if elements is None:
+            elements = declared_elements(plan, scene, cue)
+        if not elements and not sidecar.is_file():
             elements = grid_elements()
         # ``prompt.md`` deliberately contains a literal JSON example, so avoid
         # ``str.format`` interpreting its braces as replacement fields.
@@ -233,9 +265,10 @@ def main() -> None:
     parser.add_argument("--only-passed", type=Path, metavar="verify.json")
     parser.add_argument("--s1-threshold", type=float, help="S1 defect cutoff (defaults to s1_weights.json)")
     parser.add_argument("--tier1-only", action="store_true", help="skip MiniCPM after System 1")
+    parser.add_argument("--boxes-dir", type=Path, help="directory containing <still>.boxes.json StageMarks sidecars")
     args = parser.parse_args()
     report = critic_stills(args.stills, args.plan, args.model, args.reference_dir, args.only_passed,
-                           s1_threshold=args.s1_threshold, tier1_only=args.tier1_only)
+                           s1_threshold=args.s1_threshold, tier1_only=args.tier1_only, boxes_dir=args.boxes_dir)
     print(f"wrote {(args.only_passed.parent if args.only_passed else args.stills) / 'critic.json'} ({len(report['frames'])} stills)")
 
 
