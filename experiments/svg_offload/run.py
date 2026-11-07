@@ -524,6 +524,9 @@ def run_cell(
             # subprocess.run has already killed the child at this point.
             output = _timeout_output(exc)
             row["status"] = "timeout"
+        if worker.agent == "muse":
+            (cell_dir / "transcript.txt").write_text(output)
+
         tokens = parse_tokens(output)
         row["worker_tokens"] = tokens if tokens is not None else ""
 
@@ -541,6 +544,9 @@ def run_cell(
         )
         (cell_dir / "tsx.diff").write_text(diff.stdout)
 
+        if worker.agent == "muse" and not diff.stdout.strip():
+            row["status"] = "no_output"
+
         row["tsx_typecheck_pass"] = tsx_typecheck(stage_dir)
         row["render_pass"] = render_check(args.render_cmd, candidate, yt02)
     finally:
@@ -557,6 +563,8 @@ def resolve_cues(cues_arg: str) -> list[str]:
     path = Path(cues_arg)
     if path.is_file():
         return load_cues(path)
+    if (EXPERIMENT_DIR / cues_arg).is_file():
+        return load_cues(EXPERIMENT_DIR / cues_arg)
     return [s.strip() for s in cues_arg.split(",") if s.strip()]
 
 
@@ -583,12 +591,19 @@ def main(argv: list[str] | None = None) -> int:
                          "(default: 20)")
     ap.add_argument("--render-cmd", default=None,
                     help="render probe template, e.g. 'npx remotion still {scene} /tmp/e3.png --frame={frame}'")
+    ap.add_argument("--only-agent", default=None,
+                    help="filter workers by agent name (e.g. 'muse')")
     ap.add_argument("--dry-run", action="store_true",
                     help="print every planned command; run and write nothing")
     args = ap.parse_args(argv)
 
     args.cues = resolve_cues(args.cues)
     args.workers = [s.strip() for s in args.workers.split(",") if s.strip()]
+    if args.only_agent:
+        matched = [w.slug for w in WORKERS if w.agent == args.only_agent]
+        if not matched:
+            ap.error(f"no workers matching agent: {args.only_agent}")
+        args.workers = [s for s in matched if s in args.workers]
     args.conditions = [s.strip().upper() for s in args.conditions.split(",") if s.strip()]
     if args.concurrency < 1:
         ap.error("--concurrency must be >= 1")
