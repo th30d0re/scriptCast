@@ -1,6 +1,6 @@
 import json
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from scriptcast.critic.grounding import ground_defects, pixel_diff
 from scriptcast.tools.stage_critic import critic_stills, validate_reply
@@ -24,6 +24,15 @@ def _fixture(tmp_path):
         "elements": [{"id": "title", "box": [10, 10, 40, 20]}],
     }]}))
     return stills, plan
+
+
+def _reference(tmp_path, stills, changed=False):
+    refs = tmp_path / "references"; refs.mkdir()
+    image = Image.new("RGB", (40, 20), "black")
+    if changed:
+        ImageDraw.Draw(image).rectangle((4, 4, 25, 15), fill="white")
+    image.save(refs / "Scene_cue.png")
+    return refs
 
 
 def test_schema_validation():
@@ -81,3 +90,46 @@ def test_verdict_downgrades_when_only_defect_is_ungrounded(tmp_path):
     frame = report["frames"][0]
     assert frame["verdict"] == "pass"
     assert frame["ungrounded"] == 1
+
+
+def test_unflagged_s1_frame_skips_tier2(tmp_path):
+    stills, plan = _fixture(tmp_path)
+    refs = _reference(tmp_path, stills)
+    calls = []
+    report = critic_stills(stills, plan, reference_dir=refs, runner=lambda request: calls.append(request) or {"results": []})
+    frame = report["frames"][0]
+    assert calls == []
+    assert frame["verdict"] == "pass" and frame["tier2_ran"] is False
+    assert frame["tier1"]["flagged"] is False and frame["tier1"]["elements"][0]["id"] == "title"
+
+
+def test_flagged_s1_frame_runs_tier2_and_mentions_regions(tmp_path):
+    stills, plan = _fixture(tmp_path)
+    refs = _reference(tmp_path, stills, changed=True)
+    calls = []
+    def runner(request):
+        calls.append(request)
+        return {"results": [{"file": "Scene_cue.png", "raw": _reply([])}]}
+    report = critic_stills(stills, plan, reference_dir=refs, runner=runner)
+    assert len(calls) == 1
+    assert "Check these regions" in calls[0]["items"][0]["prompt"]
+    assert report["frames"][0]["tier2_ran"] is True
+
+
+def test_tier2_contract_error_falls_back_to_s1(tmp_path):
+    stills, plan = _fixture(tmp_path)
+    refs = _reference(tmp_path, stills, changed=True)
+    report = critic_stills(stills, plan, reference_dir=refs,
+                           runner=lambda _: {"results": [{"file": "Scene_cue.png", "raw": "bad"}]})
+    frame = report["frames"][0]
+    assert frame["status"] == "s1_only" and frame["verdict"] == "fail" and frame["tier2_ran"] is True
+
+
+def test_no_reference_still_runs_tier2(tmp_path):
+    stills, plan = _fixture(tmp_path)
+    calls = []
+    def runner(request):
+        calls.append(request)
+        return {"results": [{"file": "Scene_cue.png", "raw": _reply([])}]}
+    report = critic_stills(stills, plan, runner=runner)
+    assert len(calls) == 1 and report["frames"][0]["tier2_ran"] is True

@@ -52,7 +52,8 @@ def pixel_diff(approved_png: str | Path, new_png: str | Path, box: list[float]) 
 
 def ground_defects(defects: Iterable[dict], elements: dict[str, list[float]], ocr_text: str,
                    approved_png: str | Path | None = None,
-                   new_png: str | Path | None = None) -> tuple[list[dict], int]:
+                   new_png: str | Path | None = None,
+                   grounded_element_ids: set[str] | None = None) -> tuple[list[dict], int]:
     """Return supported defects and the number rejected as ungrounded.
 
     A named defect needs only a declared element.  Model-supplied regions are
@@ -69,7 +70,7 @@ def ground_defects(defects: Iterable[dict], elements: dict[str, list[float]], oc
             box = elements.get(ident)
             region_agrees = box is not None and overlap_fraction(defect["region"], box) >= 0.30
             valid = box is not None
-            if valid and approved_png is not None and new_png is not None:
+            if valid and approved_png is not None and new_png is not None and ident not in (grounded_element_ids or set()):
                 valid = pixel_diff(approved_png, new_png, box) >= 0.01
         elif defect.get("category") == "Content":
             quotes = quoted_text(defect.get("evidence", ""))

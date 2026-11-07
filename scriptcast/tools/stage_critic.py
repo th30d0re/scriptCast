@@ -10,10 +10,12 @@ import json
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Callable
 
 from scriptcast.critic.grounding import ground_defects
+from scriptcast.critic.s1 import judge_frame
 
 DEFAULT_MODEL = "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit"
 ROOT = Path(__file__).resolve().parents[2]
@@ -89,6 +91,26 @@ def declared_elements(plan: dict, scene: str, cue: str) -> dict[str, list[float]
     return result
 
 
+def grid_elements() -> dict[str, list[float]]:
+    """A stable whole-frame fallback for plans which declare no elements."""
+    return {f"grid_{row}_{column}": [column / 3, row / 3, 1 / 3, 1 / 3]
+            for row in range(3) for column in range(3)}
+
+
+def default_s1_threshold() -> float:
+    """Read the S1 cutoff without making its training data part of this tool."""
+    weights = Path(__file__).resolve().parents[1] / "critic" / "s1_weights.json"
+    try:
+        return float(json.loads(weights.read_text()).get("threshold", .5))
+    except (OSError, ValueError, json.JSONDecodeError):
+        return .5
+
+
+def _s1_boxes(elements: dict[str, list[float]]) -> list[dict[str, float | str]]:
+    return [{"element_id": ident, "x": box[0], "y": box[1], "w": box[2], "h": box[3]}
+            for ident, box in elements.items()]
+
+
 def scene_spec(plan: dict, scene: str, cue: str) -> str:
     frames = plan.get("frames", plan.get("critic_frames", []))
     if isinstance(frames, list):
@@ -114,7 +136,8 @@ def run_runner(request: dict) -> dict:
 
 def critic_stills(stills: Path, plan_path: Path, model: str = DEFAULT_MODEL, reference_dir: Path | None = None,
                   only_passed: Path | None = None, runner: Callable[[dict], dict] = run_runner,
-                  ocr: Callable[[Path], str] = _ocr) -> dict:
+                  ocr: Callable[[Path], str] = _ocr, s1_threshold: float | None = None,
+                  tier1_only: bool = False) -> dict:
     plan = json.loads(Path(plan_path).read_text())
     allowed = None
     output_path = Path(stills) / "critic.json"
@@ -123,7 +146,8 @@ def critic_stills(stills: Path, plan_path: Path, model: str = DEFAULT_MODEL, ref
         allowed = {str(x.get("file")) for x in verify.get("frames", []) if x.get("pass") is True}
         output_path = Path(only_passed).parent / "critic.json"
     images = sorted(p for p in Path(stills).iterdir() if p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"})
-    items, metadata = [], {}
+    threshold = default_s1_threshold() if s1_threshold is None else s1_threshold
+    items, metadata, tier1_by_file = [], {}, {}
     for image in images:
         if allowed is not None and image.name not in allowed:
             continue
@@ -133,18 +157,45 @@ def critic_stills(stills: Path, plan_path: Path, model: str = DEFAULT_MODEL, ref
         if not sep:
             scene, cue = stem, "end"
         elements = declared_elements(plan, scene, cue)
+        if not elements:
+            elements = grid_elements()
         # ``prompt.md`` deliberately contains a literal JSON example, so avoid
         # ``str.format`` interpreting its braces as replacement fields.
         prompt = (PROMPT.replace("{scene_spec}", scene_spec(plan, scene, cue))
                         .replace("{elements}", json.dumps(sorted(elements))))
         reference = reference_dir / image.name if reference_dir and (reference_dir / image.name).is_file() else None
-        items.append({"file": image.name, "still": str(image), "reference": str(reference) if reference else None, "prompt": prompt})
+        tier1 = {"elements": [], "flagged": False, "ms": 0.0}
+        if reference:
+            started = time.perf_counter()
+            judged = judge_frame(reference, image, _s1_boxes(elements), threshold=threshold)
+            tier1 = {"elements": [{"id": item["element_id"], "p_defect": item["p_defect"]}
+                                 for item in judged["elements"]],
+                     "flagged": judged["verdict"] == "fail",
+                     "ms": (time.perf_counter() - started) * 1000}
+        flagged = {item["id"]: elements[item["id"]] for item in tier1["elements"]
+                   if item["p_defect"] >= threshold}
+        if not tier1_only and (reference is None or tier1["flagged"]):
+            region_note = json.dumps(flagged) if flagged else "the full frame (no reference still is available)"
+            items.append({"file": image.name, "still": str(image), "reference": str(reference) if reference else None,
+                          "prompt": f"{prompt}\n\nCheck these regions: {region_note}."})
         metadata[image.name] = (image, elements, reference)
-    answer = runner({"model": model, "items": items})
+        tier1_by_file[image.name] = tier1
+    answer = runner({"model": model, "items": items}) if items else {"results": []}
     raw_by_file = {str(x.get("file")): x.get("raw", "") for x in answer.get("results", [])}
     records = []
-    for item in items:
-        raw = raw_by_file.get(item["file"], "")
+    for image in images:
+        if allowed is not None and image.name not in allowed:
+            continue
+        tier1 = tier1_by_file[image.name]
+        image_path, elements, reference = metadata[image.name]
+        if image.name not in raw_by_file:
+            # A reference-backed S1 pass needs no slow-model confirmation.
+            s1_verdict = "fail" if tier1["flagged"] else "pass"
+            records.append({"file": image.name, "status": "s1_only" if tier1_only else "ok", "verdict": s1_verdict,
+                            "defects": [], "ungrounded": 0, "tier1": tier1, "tier2_ran": False})
+            continue
+        raw = raw_by_file.get(image.name, "")
+        item = next(x for x in items if x["file"] == image.name)
         parsed = validate_reply(_json_object(raw))
         if parsed is None:
             # One retry for a schema failure, as required by the contract.
@@ -152,15 +203,22 @@ def critic_stills(stills: Path, plan_path: Path, model: str = DEFAULT_MODEL, ref
             raw = retry[0].get("raw", "") if retry else ""
             parsed = validate_reply(_json_object(raw))
             if parsed is None:
-                records.append({"file": item["file"], "status": "contract_error", "raw": raw})
+                if reference:
+                    records.append({"file": item["file"], "status": "s1_only",
+                                    "verdict": "fail" if tier1["flagged"] else "pass", "defects": [],
+                                    "ungrounded": 0, "tier1": tier1, "tier2_ran": True, "raw": raw})
+                else:
+                    records.append({"file": item["file"], "status": "contract_error", "raw": raw,
+                                    "tier1": tier1, "tier2_ran": True})
                 continue
-        image, elements, reference = metadata[item["file"]]
+        image = image_path
         needs_ocr = any(d["element_id"] is None and d["category"] == "Content" for d in parsed["defects"])
         kept, ungrounded = ground_defects(
             parsed["defects"], elements, ocr(image) if needs_ocr else "", reference, image,
+            {entry["id"] for entry in tier1["elements"] if entry["p_defect"] >= threshold},
         )
         records.append({"file": item["file"], "status": "ok", "verdict": "fail" if kept else "pass",
-                        "defects": kept, "ungrounded": ungrounded})
+                        "defects": kept, "ungrounded": ungrounded, "tier1": tier1, "tier2_ran": True})
     report = {"model": model, "frames": records}
     output_path.write_text(json.dumps(report, indent=2) + "\n")
     return report
@@ -173,8 +231,11 @@ def main() -> None:
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--reference-dir", type=Path)
     parser.add_argument("--only-passed", type=Path, metavar="verify.json")
+    parser.add_argument("--s1-threshold", type=float, help="S1 defect cutoff (defaults to s1_weights.json)")
+    parser.add_argument("--tier1-only", action="store_true", help="skip MiniCPM after System 1")
     args = parser.parse_args()
-    report = critic_stills(args.stills, args.plan, args.model, args.reference_dir, args.only_passed)
+    report = critic_stills(args.stills, args.plan, args.model, args.reference_dir, args.only_passed,
+                           s1_threshold=args.s1_threshold, tier1_only=args.tier1_only)
     print(f"wrote {(args.only_passed.parent if args.only_passed else args.stills) / 'critic.json'} ({len(report['frames'])} stills)")
 
 
