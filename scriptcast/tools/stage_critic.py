@@ -14,6 +14,9 @@ import time
 from pathlib import Path
 from typing import Callable
 
+import numpy as np
+from PIL import Image, ImageFilter
+
 from scriptcast.critic.grounding import ground_defects
 from scriptcast.critic.s1 import judge_frame
 
@@ -147,6 +150,46 @@ def _s1_boxes(elements: dict[str, list[float]]) -> list[dict[str, float | str]]:
             for ident, box in elements.items()]
 
 
+def outside_boxes(ref_path: Path, still_path: Path, elements: dict[str, list[float]]) -> list[dict[str, object]]:
+    """Find substantial pixel changes outside the declared element boxes."""
+    ref = Image.open(ref_path).convert("L")
+    still = Image.open(still_path).convert("L").resize(ref.size, Image.Resampling.BILINEAR)
+    ref = ref.filter(ImageFilter.GaussianBlur(1.0))
+    still = still.filter(ImageFilter.GaussianBlur(1.0))
+    a, b = np.asarray(ref, dtype=np.float32) / 255.0, np.asarray(still, dtype=np.float32) / 255.0
+    height, width = a.shape
+    outside = np.ones((height, width), dtype=bool)
+    for x, y, w, h in elements.values():
+        px, py, pw, ph = x * width, y * height, w * width, h * height
+        # Pad each declared box by 2% of its dimensions, clamped to the frame.
+        pad_x, pad_y = pw * .02, ph * .02
+        left, top = max(0, int(np.floor(px - pad_x))), max(0, int(np.floor(py - pad_y)))
+        right, bottom = min(width, int(np.ceil(px + pw + pad_x))), min(height, int(np.ceil(py + ph + pad_y)))
+        outside[top:bottom, left:right] = False
+    changed = (np.abs(a - b) > .2) & outside
+    seen = np.zeros_like(changed)
+    minimum = max(1, int(np.ceil(width * height * .0015)))
+    regions = []
+    for y, x in zip(*np.where(changed & ~seen)):
+        if seen[y, x]:
+            continue
+        stack, seen[y, x] = [(int(y), int(x))], True
+        points = []
+        while stack:
+            cy, cx = stack.pop(); points.append((cy, cx))
+            for ny, nx in ((cy - 1, cx), (cy + 1, cx), (cy, cx - 1), (cy, cx + 1)):
+                if 0 <= ny < height and 0 <= nx < width and changed[ny, nx] and not seen[ny, nx]:
+                    seen[ny, nx] = True; stack.append((ny, nx))
+        if len(points) >= minimum:
+            ys, xs = zip(*points)
+            left, right, top, bottom = min(xs), max(xs) + 1, min(ys), max(ys) + 1
+            score = float(np.abs(a - b)[ys, xs].mean())
+            regions.append({"id": f"extra@{left},{top},{right-left},{bottom-top}",
+                            "score": score, "region": [left / width, top / height,
+                            (right-left) / width, (bottom-top) / height]})
+    return regions
+
+
 def scene_spec(plan: dict, scene: str, cue: str) -> str:
     frames = plan.get("frames", plan.get("critic_frames", []))
     if isinstance(frames, list):
@@ -173,7 +216,8 @@ def run_runner(request: dict) -> dict:
 def critic_stills(stills: Path, plan_path: Path, model: str = DEFAULT_MODEL, reference_dir: Path | None = None,
                   only_passed: Path | None = None, runner: Callable[[dict], dict] = run_runner,
                   ocr: Callable[[Path], str] = _ocr, s1_threshold: float | None = None,
-                  tier1_only: bool = False, boxes_dir: Path | None = None) -> dict:
+                  tier1_only: bool = False, boxes_dir: Path | None = None,
+                  outside_check: bool = True) -> dict:
     plan = json.loads(Path(plan_path).read_text())
     allowed = None
     output_path = Path(stills) / "critic.json"
@@ -203,7 +247,7 @@ def critic_stills(stills: Path, plan_path: Path, model: str = DEFAULT_MODEL, ref
         prompt = (PROMPT.replace("{scene_spec}", scene_spec(plan, scene, cue))
                         .replace("{elements}", json.dumps(sorted(elements))))
         reference = reference_dir / image.name if reference_dir and (reference_dir / image.name).is_file() else None
-        tier1 = {"elements": [], "flagged": False, "ms": 0.0}
+        tier1 = {"elements": [], "flagged": False, "ms": 0.0, "outside_boxes": []}
         if reference:
             started = time.perf_counter()
             judged = judge_frame(reference, image, _s1_boxes(elements), threshold=threshold)
@@ -211,6 +255,9 @@ def critic_stills(stills: Path, plan_path: Path, model: str = DEFAULT_MODEL, ref
                                  for item in judged["elements"]],
                      "flagged": judged["verdict"] == "fail",
                      "ms": (time.perf_counter() - started) * 1000}
+            extras = outside_boxes(reference, image, elements) if outside_check else []
+            tier1["outside_boxes"] = extras
+            tier1["flagged"] = tier1["flagged"] or any(x["score"] >= threshold for x in extras)
         flagged = {item["id"]: elements[item["id"]] for item in tier1["elements"]
                    if item["p_defect"] >= threshold}
         if not tier1_only and (reference is None or tier1["flagged"]):
@@ -273,9 +320,11 @@ def main() -> None:
     parser.add_argument("--s1-threshold", type=float, help="S1 defect cutoff (defaults to s1_weights.json)")
     parser.add_argument("--tier1-only", action="store_true", help="skip MiniCPM after System 1")
     parser.add_argument("--boxes-dir", type=Path, help="directory containing <still>.boxes.json StageMarks sidecars")
+    parser.add_argument("--no-outside-check", action="store_true", help="disable extra-mark detection outside element boxes")
     args = parser.parse_args()
     report = critic_stills(args.stills, args.plan, args.model, args.reference_dir, args.only_passed,
-                           s1_threshold=args.s1_threshold, tier1_only=args.tier1_only, boxes_dir=args.boxes_dir)
+                           s1_threshold=args.s1_threshold, tier1_only=args.tier1_only, boxes_dir=args.boxes_dir,
+                           outside_check=not args.no_outside_check)
     print(f"wrote {(args.only_passed.parent if args.only_passed else args.stills) / 'critic.json'} ({len(report['frames'])} stills)")
 
 

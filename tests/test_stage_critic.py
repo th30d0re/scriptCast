@@ -170,3 +170,35 @@ def test_report_records_s1_threshold(tmp_path):
     stills, plan = _fixture(tmp_path)
     report = critic_stills(stills, plan, s1_threshold=.2, runner=lambda _: {"results": []})
     assert report["s1_threshold"] == .2
+
+
+def test_outside_blob_is_flagged(tmp_path):
+    stills, plan = _fixture(tmp_path)
+    refs = _reference(tmp_path, stills)
+    image = Image.open(stills / "Scene_cue.png")
+    ImageDraw.Draw(image).rectangle((30, 15, 39, 19), fill="white")
+    image.save(stills / "Scene_cue.png")
+    report = critic_stills(stills, plan, reference_dir=refs, s1_threshold=.2,
+                           runner=lambda _: {"results": []})
+    tier1 = report["frames"][0]["tier1"]
+    assert tier1["flagged"] is True
+    assert tier1["outside_boxes"] and tier1["outside_boxes"][0]["id"].startswith("extra@")
+
+
+def test_inside_change_is_not_outside_flag(tmp_path):
+    stills, plan = _fixture(tmp_path)
+    refs = _reference(tmp_path, stills)
+    image = Image.open(stills / "Scene_cue.png")
+    ImageDraw.Draw(image).rectangle((6, 3, 15, 5), fill="white")
+    image.save(stills / "Scene_cue.png")
+    report = critic_stills(stills, plan, reference_dir=refs, s1_threshold=.2,
+                           runner=lambda _: {"results": []})
+    assert report["frames"][0]["tier1"]["outside_boxes"] == []
+
+
+def test_identical_images_pass_outside_check(tmp_path):
+    stills, plan = _fixture(tmp_path)
+    refs = _reference(tmp_path, stills)
+    report = critic_stills(stills, plan, reference_dir=refs, runner=lambda _: {"results": []})
+    tier1 = report["frames"][0]["tier1"]
+    assert tier1["outside_boxes"] == [] and tier1["flagged"] is False
