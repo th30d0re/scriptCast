@@ -45,3 +45,24 @@ def test_dispatch_starts_when_builder_is_absent_and_limits_each_element_to_two(t
     assert calls[0][0] == "start"
     assert [row["action"] for row in rows] == ["operator_queue"]
     assert len(calls) == 2
+
+
+def test_stem_sidecar_and_s1_only_elements_build_top_three_briefs(tmp_path):
+    ep, stills, plan, _ = fixture(tmp_path)
+    exact = stills / "Scene_cue.png.boxes.json"
+    exact.unlink()
+    (stills / "Scene_cue.boxes.json").write_text(json.dumps({"marks": [
+        {"id": "audit-beam", "box": {"x": 1, "y": 2, "w": 3, "h": 4}},
+        {"id": "debate-funnel", "box": {"x": 5, "y": 6, "w": 7, "h": 8}},
+        {"id": "third", "box": {"x": 9, "y": 10, "w": 11, "h": 12}},
+        {"id": "below", "box": {"x": 0, "y": 0, "w": 1, "h": 1}},
+    ]}))
+    report = {"s1_threshold": .2, "frames": [{"file": "Scene_cue.png", "verdict": "fail",
+        "defects": [], "tier1": {"flagged": True, "elements": [
+            {"id": "audit-beam", "p_defect": .98}, {"id": "debate-funnel", "p_defect": .48},
+            {"id": "third", "p_defect": .3}, {"id": "below", "p_defect": .1},
+            {"id": "grid_0_0", "p_defect": .99}]}}]}
+    rows = repair_briefs(report, stills, plan)
+    assert [row["element_id"] for row in rows] == ["audit-beam", "debate-funnel", "third"]
+    assert rows[0]["box"] == {"x": 1, "y": 2, "w": 3, "h": 4}
+    assert "System 1 flagged this element (p=0.98)" in rows[0]["defect"]

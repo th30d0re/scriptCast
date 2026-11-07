@@ -151,3 +151,22 @@ def test_marks_sidecar_replaces_grid_and_preserves_ids(tmp_path):
     report = critic_stills(stills, plan, runner=runner)
     assert 'live-title' in seen[0]["items"][0]["prompt"]
     assert report["frames"][0]["defects"][0]["element_id"] == "live-title"
+
+
+def test_stem_sidecar_name_is_accepted(tmp_path):
+    stills, plan = _fixture(tmp_path)
+    (stills / "Scene_cue.boxes.json").write_text(json.dumps({"marks": [
+        {"id": "stem-title", "box": {"x": 10, "y": 20, "w": 40, "h": 10}}
+    ]}))
+    seen = []
+    def runner(request):
+        seen.append(request)
+        return {"results": [{"file": "Scene_cue.png", "raw": _reply([_defect("stem-title")])}]}
+    report = critic_stills(stills, plan, runner=runner)
+    assert "stem-title" in seen[0]["items"][0]["prompt"]
+
+
+def test_report_records_s1_threshold(tmp_path):
+    stills, plan = _fixture(tmp_path)
+    report = critic_stills(stills, plan, s1_threshold=.2, runner=lambda _: {"results": []})
+    assert report["s1_threshold"] == .2
