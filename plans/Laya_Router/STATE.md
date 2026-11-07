@@ -32,15 +32,15 @@ Architecting the Operation is the chapter-by-chapter series; its Ep 0 premiere (
 
 ## R0 — Prerequisites
 
-- Status: not started
+- Status: mostly done (notebook ids in `rules.toml` still missing, blocked on D2)
 
 | # | Check | Result | Notes |
 |---|---|---|---|
-| 1 | Checkpoint commits (scriptCast, book repo) | — | |
+| 1 | Checkpoint commits (scriptCast, book repo) | done | dev commit `ddc8f88` |
 | 2 | `.venv-router` with `laya-mlx==0.6.0`; probe latency | installed (uv, py3.11) | load 1.08 s; one forward+reversed call (3 questions) P50 323 ms, P95 431 ms over 33 cards (M1 Max, 2026-11-06) |
 | 3 | `.venv-critic` with `mlx-vlm`; Qwen2.5-VL-7B 4-bit and MiniCPM-V loaded | done: Qwen load 2.5 s; MiniCPM-V 4.7 1B 3.6 s; 35B-A3B 11.5 s | M1 Max |
 | 4 | `labels.jsonl` ≥ 40 labelled cards | 46 pre-filled, 33 reviewed | `python3 experiments/router_eval/review.py` |
-| 5 | Notebook ids written to `rules.toml` | — | blocked on D2 |
+| 5 | Notebook ids written to `rules.toml` | — | missing, blocked on D2 |
 
 ## E1 — Apple Vision OCR vs local VLM (experiments/e1_ocr_vlm)
 - 30 frames, one per 25 s of `YT02_stage_0000-1232_1080p_20261105.mp4`.
@@ -48,11 +48,11 @@ Architecting the Operation is the chapter-by-chapter series; its Ep 0 premiere (
 - Qwen2.5-VL-7B: 6.3 s/frame, recall 0.98, equations correct, reads dim panels. MiniCPM-V 4.7 1B: 2.1 s/frame, recall 0.92 (min 0.32), substitutes plausible wrong values. MiniCPM-V 4.7 35B-A3B: 4.8 s/frame, recall 0.98, equations correct, invents values on dim panels. Text read-back pick: Qwen. See `experiments/e1_ocr_vlm/FINDINGS-E1.md`.
 
 ## R1 — Router in shadow
-- Status: **built, in shadow** (branch `claude/r1-router-shadow-e011a7`, 2026-11-06)
+- Status: **done (shadow)** (merged on dev, commit `263531d`, entrypoints `b2926cc`)
 - Files: `scriptcast/router/{cue_card.py,questions.json,rules.toml,tiers.toml,laya_runner.py}`, `scriptcast/tools/stage_route.py`, `experiments/router_eval/eval.py` (output `eval-r1.json`), `tests/test_stage_route.py` (23 tests, stub laya backend).
 - Laya runs as a subprocess in `.venv-router` (`laya_runner.py`, imports nothing from scriptcast) so the main venv needs no MLX; missing venv or load error → `laya: unavailable`, rules decide.
 - Notebook keys resolve via `scriptcast/router/notebooks.toml` (R2) when present, else the book repo `chapters/v1.1.1/episode_map.json`. Context rule: Ep 0 premiere / special → `book`; series episode → `chapter`.
-- Not done: `scriptcast-stage-route` entry point in `pyproject.toml` (left out to avoid colliding with R2's edits; run as `python -m scriptcast.tools.stage_route`).
+- Console entry points added: `scriptcast-stage-route` and `scriptcast-stage-context` in `pyproject.toml`.
 
 ### R1 eval — 33 reviewed labels (`python experiments/router_eval/eval.py`)
 
@@ -69,7 +69,7 @@ Architecting the Operation is the chapter-by-chapter series; its Ep 0 premiere (
 - Laya zero-shot: lane flips under option reversal on 39% of cards (D5 abstention justified); no question near the R6 gates (acc ≥ 0.9, ECE ≤ 0.1, flip ≤ 0.05).
 
 ## R2 — Registry + JIT context
-- Status: **steps 13–16 done 2026-11-06** (branch `claude/r2-session-registry-77215f`); built ahead of R1 so data collection starts now. Step 17 (measurement) is **next**.
+- Status: **built + step 17 run** (context arm 14% faster, equal acceptance, tokens proxy, true resume unmeasured; see `experiments/r2_measure/FINDINGS-R2.md` and `experiments/router_eval/r2_tokens.csv`)
 
 | # | Step | Result | Notes |
 |---|---|---|---|
@@ -79,21 +79,29 @@ Architecting the Operation is the chapter-by-chapter series; its Ep 0 premiere (
 | 15 | `--context <notebook>:<query>` | done | start and resume; repeatable; fails closed (exit 2), no dispatch. |
 | 16 | Tests | done | `tests/test_stage_dispatch_sessions.py` (17), `tests/test_stage_context.py` (10) with an `nlm` stub. Full suite: 503 passed, 1 skipped; 2 `test_long_speech` errors are a worktree artefact (cargo resolves the parent repo's workspace), unrelated. |
 | — | Real query | ok | `--notebook book --query "How does the book define the material wage?"`: 31.6 s uncached, 1,343-char section, cached repeat instant. |
-| 17 | Measurement | **next** | Three real YT02 fixes × (current practice vs registry + context) → `experiments/router_eval/r2_tokens.csv`. |
+| 17 | Measurement | done | Three real YT02 fixes run from the commit their briefs were written at (Codex gpt-5.6-luna): context arm cuts wall time 8–21% (mean 14%), equal acceptance (yes/yes, n=3); tokens proxy; true resume unmeasured. Results in `experiments/router_eval/r2_tokens.csv` and `experiments/r2_measure/FINDINGS-R2.md`. |
 
 Open: the `> 80%` path asks the worker for `.session-summary.md`; seeding the fresh session from it is a manual `close` + `start` until R4 automates it. `--no-context` (tech-plan failure-mode row) not added: dispatch without `--context` is the same thing.
 
 ## R3 — Tier 2 VLM critic
-- Status: blocked on R0
+- Status: **built two-tier + element boxes, first calibration 7 bad/8 good** (merged on dev; see commits `b1fc9ad`, `682fb2d`, `12a5be6`, `cad2b93`, and `experiments/r3_calibration/FINDINGS-R3.md`, `docs/stage-marks.md`, `docs/stage-review.md`)
+- First calibration results: S1 catches 6/7 at threshold 0.2; MiniCPM vetoes true flags (overturns most of S1's correct flags to pass, reducing two-tier recall); gate needs ≥20 bad labels to set authority. Element box extraction built via `StageMarks` Remotion composition (`stage boxes`, `docs/stage-marks.md`). Grounded defect reporting in `scriptcast/tools/stage_critic.py`.
 
 ## R4 — Repair
-- Status: blocked on R2, R3
+- Status: **stage_repair built report-only** (merged on dev, commit `aa903a6`; see `docs/stage-repair.md`, `scriptcast/tools/stage_repair.py`, `tests/test_stage_repair.py`)
+- Reads grounded `critic.json`, produces one repair brief per failed marked element; default is report-only; optional `--dispatch` resumes builder registry session; logs before/after verdicts to `repairs.jsonl`.
 
 ## R5 — SVG offload
-- Status: blocked on R3
+- Status: **condition B done, round 2 Muse rerun ranked, condition A blocked on weights** (merged on dev; see `experiments/svg_offload/FINDINGS-E3.md`)
+- Condition B: inline SVG across 10 cues, 4 workers. Round 2 Muse rerun with stdout capture and author ranking in `author_rank_round2.csv`. Rule: `svg_asset` → Codex gpt-5.6-terra default, agy gemini-3.8-flash-low when cheap, Luna only behind a critic, Muse second-opinion only. Condition A (local generation via SVGen/OmniSVG) blocked on weights.
 
 ## R6 — Fine-tune and promote
-- Status: blocked on labels (≥ 150, each lane ≥ 20)
+- Status: **blocked (46 labels, need 150)**
+- Requires ≥ 150 labelled cue cards with every lane ≥ 20 before fine-tuning and running promotion evaluation. Currently 46 pre-filled, 33 reviewed in `experiments/router_eval/labels.jsonl`.
+
+## R7 — AI sidebar + stage view
+- Status: **merged** (commits `31ab295`, `bd8c724`; see `ui/src/ai_sidebar.rs`, `ui/src/stage_view.rs`, `docs/stage-review.md`)
+- Merged R7 AI sidebar and R8 stage scroll view into egui UI with two-way turn sync, Ctrl+R selection mode, and Reject button in stage view appending to `rejections.jsonl` (CLI `scriptcast-stage reject`).
 
 ---
 Run records: vault `Orchestration/dispatch-log.jsonl`
