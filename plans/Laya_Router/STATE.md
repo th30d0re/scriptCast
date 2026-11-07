@@ -103,3 +103,6 @@ Run records: vault `Orchestration/dispatch-log.jsonl`
 
 ## E3 — inline SVG by worker (2026-11-06)
 - Done (condition B). Author ranking: Terra 7 top placements, Gemini Flash 5, Luna 2, Muse 2 (from only 3 deliveries). Rule: `svg_asset` → codex gpt-5.6-terra by default, gemini-3.8-flash-low when cheap; Luna only behind a critic; Muse second-opinion only. Condition A blocked on weights. Critic schema failures 21/37 → R3 follow-up. `experiments/svg_offload/FINDINGS-E3.md`.
+
+## E4 — System 1 visual judge (2026-11-06)
+- Done, passes gate. Per-element features (SSIM, edge, palette, abs diff) + logistic regression, NumPy/PIL only (optional MLX embedding). Held-out: recall 0.958, false-fail 0.056 incl. benign re-render noise, precision 0.55, 3–7 ms/element. E2 frames: recall 0.80, localisation 0.77 (vs 0/30 for VLM regions). Plan: S1 on every frame, MiniCPM only on S1 flags. `experiments/e4_visual_s1/FINDINGS-E4.md`.
