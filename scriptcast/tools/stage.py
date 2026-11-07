@@ -7,8 +7,34 @@ import os
 from pathlib import Path
 import shlex
 import subprocess
+from datetime import datetime, timezone
 from scriptcast.tools import video
 from scriptcast.tools.stage_plan import compile_plan
+
+
+def append_rejection(episode_dir: Path, *, shot: str, still_path: Path,
+                     frame: int, reason: str, element_id: str | None = None,
+                     ts: str | None = None) -> Path:
+    """Append one human still rejection to ``stage/review/rejections.jsonl``."""
+    reason = reason.strip()
+    if not reason:
+        raise ValueError("rejection reason must not be empty")
+    path = Path(episode_dir) / 'review' / 'rejections.jsonl'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        'shot': shot,
+        'still_path': str(Path(still_path).resolve()),
+        'frame': int(frame),
+        'reason': reason,
+        'ts': ts or datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+    }
+    if element_id:
+        record['element_id'] = element_id
+    with path.open('a', encoding='utf-8') as handle:
+        handle.write(json.dumps(record, ensure_ascii=False) + '\n')
+        handle.flush()
+        os.fsync(handle.fileno())
+    return path
 
 
 def main(argv=None):
@@ -18,6 +44,13 @@ def main(argv=None):
     p.add_argument('source', type=Path)
     p.add_argument('--range')
     p.add_argument('-o', type=Path)
+    p = sub.add_parser('reject', help='record a rejected Stage still')
+    p.add_argument('plan', type=Path)
+    p.add_argument('--shot', required=True)
+    p.add_argument('--reason', required=True)
+    p.add_argument('--still', type=Path, help='still image path (defaults to <plan-dir>/<shot>.png)')
+    p.add_argument('--frame', type=int, help='render frame (defaults to the shot midpoint)')
+    p.add_argument('--element-id')
     for name in ('render', 'still', 'boxes', 'site'):
         p = sub.add_parser(name)
         p.add_argument('plan', type=Path)
@@ -52,6 +85,24 @@ def main(argv=None):
             raise ValueError(f'No stage.yaml in {episode_dir}')
         env = dict(os.environ, STAGE_EPISODE_DIR=str(episode_dir))
         prefix = f'STAGE_EPISODE_DIR={shlex.quote(str(episode_dir))}'
+        if args.command == 'reject':
+            shots = [s for seg in plan['segments'] for s in seg['shots']]
+            shot = next((s for s in shots if s['shot_id'] == args.shot), None)
+            if shot is None:
+                raise ValueError(f'reject requires a known --shot (got {args.shot!r})')
+            fps = plan['fps']
+            start = plan['range']['start_ms']
+            frame = args.frame
+            if frame is None:
+                midpoint = (shot['start_ms'] + shot['end_ms']) / 2
+                frame = math.ceil((midpoint - start) * fps / 1000)
+            still = args.still or plan_path.parent / f'{args.shot}.png'
+            path = append_rejection(
+                episode_dir, shot=args.shot, still_path=still, frame=frame,
+                reason=args.reason, element_id=args.element_id,
+            )
+            print(f'appended rejection to {path}')
+            return 0
         def run(command):
             if args.dry_run:
                 print(prefix, shlex.join(command)); return 0

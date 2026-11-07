@@ -84,6 +84,28 @@ def test_cli_dry_runs(data,tmp_path,capsys,monkeypatch):
     assert main(['still',str(source),'--shot','S0','--at','0.5','-o',str(tmp_path/'x.png'),'--dry-run'])==0
     assert '--frame=75' in capsys.readouterr().out
 
+def test_reject_cli_appends_a_review_record(data, tmp_path, capsys):
+    from scriptcast.tools.stage import main
+    plan = build_plan(*data)
+    (tmp_path/'stage.yaml').write_text('episode: test')
+    plan['episode_dir'] = str(tmp_path)
+    source = tmp_path/'plan.json'
+    source.write_text(json.dumps(plan))
+    still = tmp_path/'S0.png'
+    still.write_bytes(b'png fixture')
+    assert main(['reject', str(source), '--shot', 'S0', '--reason', 'text overlaps', '--still', str(still), '--frame', '44']) == 0
+    record = json.loads((tmp_path/'review/rejections.jsonl').read_text())
+    assert record['shot'] == 'S0'
+    assert record['still_path'] == str(still.resolve())
+    assert record['frame'] == 44
+    assert record['reason'] == 'text overlaps'
+    assert record['ts'].endswith('Z')
+
+def test_rejection_writer_rejects_blank_reason(tmp_path):
+    from scriptcast.tools.stage import append_rejection
+    with pytest.raises(ValueError, match='reason'):
+        append_rejection(tmp_path, shot='S0', still_path=tmp_path/'S0.png', frame=1, reason='  ')
+
 def test_staging_audio(tmp_path):
     import shutil
     demo=Path(__file__).parents[1]/'video/episodes/_demo'

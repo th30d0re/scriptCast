@@ -18,6 +18,8 @@ use eframe::egui::{self, Align, Rect, Sense, Ui, vec2};
 use serde::Deserialize;
 use std::{
     collections::{BTreeSet, HashMap},
+    fs::OpenOptions,
+    io::Write,
     path::{Path, PathBuf},
 };
 
@@ -313,6 +315,59 @@ pub enum StageAction {
     Submitted(SelectionContext),
 }
 
+/// Append a rejection in the shared Stage review format used by the CLI.
+pub fn append_rejection(
+    stage_dir: &Path,
+    frame: &StageFrame,
+    reason: &str,
+    element_id: Option<&str>,
+) -> Result<PathBuf, String> {
+    let reason = reason.trim();
+    if reason.is_empty() {
+        return Err("Rejection reason cannot be empty".into());
+    }
+    let path = stage_dir.join("review/rejections.jsonl");
+    std::fs::create_dir_all(path.parent().expect("review log has a parent"))
+        .map_err(|error| format!("{}: {error}", path.display()))?;
+    let mut record = serde_json::json!({
+        "shot": frame.shot_id,
+        "still_path": frame.path,
+        "frame": frame.frame_index,
+        "reason": reason,
+        "ts": crate::router_client::now_string(),
+    });
+    if let Some(element_id) = element_id.filter(|id| !id.is_empty()) {
+        record["element_id"] = serde_json::Value::String(element_id.to_owned());
+    }
+    let mut output = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&path)
+        .map_err(|error| format!("{}: {error}", path.display()))?;
+    writeln!(
+        output,
+        "{}",
+        serde_json::to_string(&record).expect("rejection record serializes")
+    )
+    .map_err(|error| format!("{}: {error}", path.display()))?;
+    output
+        .flush()
+        .map_err(|error| format!("{}: {error}", path.display()))?;
+    output
+        .sync_data()
+        .map_err(|error| format!("{}: {error}", path.display()))?;
+    Ok(path)
+}
+
+fn stage_dir(plan_path: &Path) -> PathBuf {
+    plan_path
+        .ancestors()
+        .find(|path| path.file_name().is_some_and(|name| name == "stage"))
+        .map(Path::to_path_buf)
+        .or_else(|| plan_path.parent().map(Path::to_path_buf))
+        .unwrap_or_else(|| PathBuf::from("."))
+}
+
 /// State for the stage column. Texture handles cache per still path.
 pub struct StageView {
     pub plan: StagePlan,
@@ -325,6 +380,8 @@ pub struct StageView {
     synced_turn: Option<String>,
     last_offset: f32,
     textures: HashMap<PathBuf, Option<egui::TextureHandle>>,
+    rejecting_frame: Option<usize>,
+    rejection_reason: String,
 }
 
 impl StageView {
@@ -339,6 +396,8 @@ impl StageView {
             synced_turn: None,
             last_offset: 0.0,
             textures: HashMap::new(),
+            rejecting_frame: None,
+            rejection_reason: String::new(),
         }
     }
 
@@ -483,6 +542,7 @@ pub fn show(
     let frames: Vec<StageFrame> = view.plan.frames.clone();
     let mut rects: Vec<(usize, Rect)> = Vec::new();
     let mut clicked: Option<usize> = None;
+    let mut reject_clicked: Option<usize> = None;
     let output = egui::ScrollArea::vertical()
         .id_salt("stage_scroll")
         .auto_shrink([false, false])
@@ -521,6 +581,14 @@ pub fn show(
                 if button.clicked() {
                     clicked = Some(idx);
                 }
+                ui.horizontal(|ui| {
+                    // Approval remains a handoff decision; rejection is the
+                    // actionable, machine-readable feedback path.
+                    let _ = ui.small_button("Approve");
+                    if ui.small_button("Reject").clicked() {
+                        reject_clicked = Some(idx);
+                    }
+                });
                 rects.push((idx, rect.union(button.rect)));
                 if view.scroll_to_frame == Some(idx) {
                     button.scroll_to_me(Some(Align::TOP));
@@ -529,6 +597,53 @@ pub fn show(
             }
         });
     view.scroll_to_frame = None;
+
+    if let Some(idx) = reject_clicked {
+        view.rejecting_frame = Some(idx);
+        view.rejection_reason.clear();
+    }
+    if let Some(idx) = view.rejecting_frame {
+        let frame = &frames[idx];
+        let mut close = false;
+        egui::Window::new("Reject still")
+            .id(egui::Id::new("stage_rejection"))
+            .collapsible(false)
+            .resizable(false)
+            .show(ui.ctx(), |ui| {
+                ui.label(format!("{} · {}", frame.shot_id, frame.file_name));
+                ui.add(
+                    egui::TextEdit::singleline(&mut view.rejection_reason)
+                        .hint_text("Short reason"),
+                );
+                ui.horizontal(|ui| {
+                    if ui.button("Cancel").clicked() {
+                        close = true;
+                    }
+                    if ui.button("Record rejection").clicked() {
+                        match append_rejection(
+                            &stage_dir(&view.plan.plan_path),
+                            frame,
+                            &view.rejection_reason,
+                            None,
+                        ) {
+                            Ok(path) => {
+                                view.notice = Some(format!(
+                                    "Rejected {} · {}",
+                                    frame.file_name,
+                                    path.display()
+                                ));
+                                close = true;
+                            }
+                            Err(error) => view.notice = Some(format!("Reject failed: {error}")),
+                        }
+                    }
+                });
+            });
+        if close {
+            view.rejecting_frame = None;
+            view.rejection_reason.clear();
+        }
+    }
 
     // Scroll → turn: only when the user actually scrolled this frame.
     let offset_changed = (output.state.offset.y - view.last_offset).abs() > 0.5;
@@ -654,5 +769,26 @@ mod tests {
         assert!(view.column_width() < normal_w, "compact column shrinks");
         view.toggle_compact();
         assert!(!view.compact);
+    }
+
+    #[test]
+    fn rejection_writer_appends_the_shared_record_shape() {
+        let temp =
+            std::env::temp_dir().join(format!("scriptcast-stage-rejection-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&temp);
+        let mut plan = fixture_plan();
+        let frame = plan.frames.remove(0);
+        let path = append_rejection(&temp, &frame, "text overlaps", Some("caption"))
+            .expect("rejection writes");
+        let record: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).expect("rejection log exists"))
+                .expect("rejection log is JSONL");
+        assert_eq!(record["shot"], frame.shot_id);
+        assert_eq!(record["still_path"], frame.path.to_string_lossy().as_ref());
+        assert_eq!(record["frame"], frame.frame_index);
+        assert_eq!(record["reason"], "text overlaps");
+        assert_eq!(record["element_id"], "caption");
+        assert!(record["ts"].as_str().is_some_and(|ts| ts.ends_with('Z')));
+        let _ = std::fs::remove_dir_all(temp);
     }
 }
