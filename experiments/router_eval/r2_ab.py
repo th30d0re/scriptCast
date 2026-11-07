@@ -24,7 +24,7 @@ FIXES = Path(__file__).with_name("r2_fixes.json")
 CSV = Path(__file__).with_name("r2_tokens.csv")
 DEFAULT_BOOK = Path("/Users/emmanuel/Documents/Theory/TheOriginalPower")
 DISPATCH = ROOT / "scriptcast/tools/stage_dispatch.py"
-FIELDS = ["fix", "condition", "brief_chars", "tokens", "tokens_kind", "wall_s", "accepted"]
+FIELDS = ["fix", "condition", "brief_chars", "tokens", "tokens_kind", "wall_s", "accepted", "exit_code", "stderr_tail"]
 
 
 def load_fixes(path: Path = FIXES) -> list[dict]:
@@ -100,6 +100,20 @@ def _accept_cmd(log: Path, fix: dict, passed: bool) -> list[str]:
             "--status", "pass" if passed else "fail", "--log", str(log)]
 
 
+def _dispatch_record(log: Path) -> dict:
+    if not log.is_file():
+        return {}
+    records = []
+    for line in log.read_text().splitlines():
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(record, dict):
+            records.append(record)
+    return records[-1] if records else {}
+
+
 def run(args: argparse.Namespace) -> int:
     fixes = load_fixes(args.fixes)
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -115,17 +129,27 @@ def run(args: argparse.Namespace) -> int:
                 cmd = commands(args.book_repo, worktree, fix, condition, dry_run=not args.execute)[0]
                 print(shlex.join(cmd))
                 if not args.execute:
-                    rows.append({"fix": fix["id"], "condition": condition, "brief_chars": "", "tokens": "", "tokens_kind": "dry-run", "wall_s": "", "accepted": "not_run"})
+                    rows.append({"fix": fix["id"], "condition": condition, "brief_chars": "", "tokens": "", "tokens_kind": "dry-run", "wall_s": "", "accepted": "not_run", "exit_code": "", "stderr_tail": ""})
                     continue
                 t0 = time.monotonic()
-                proc = subprocess.run(cmd[:-1], cwd=worktree, stdin=subprocess.DEVNULL, capture_output=True, text=True)
+                env = os.environ.copy()
+                env["PYTHONPATH"] = str(ROOT) + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
+                proc = subprocess.run(cmd, cwd=worktree, stdin=subprocess.DEVNULL,
+                                      capture_output=True, text=True, env=env)
                 wall = time.monotonic() - t0
-                check = subprocess.run(fix["acceptance_check"], cwd=_episode(worktree) / "stage", shell=True, executable="/bin/zsh").returncode == 0
-                log = worktree / f".r2-{fix['id']}-{condition}.dispatch.jsonl"
-                subprocess.run(_accept_cmd(log, fix, check), cwd=worktree, stdin=subprocess.DEVNULL, check=False)
-                rows.append({"fix": fix["id"], "condition": condition, "brief_chars": "", "tokens": "", "tokens_kind": "reported_or_proxy", "wall_s": f"{wall:.3f}", "accepted": str(check).lower()})
+                stderr_tail = "\n".join(proc.stderr.splitlines()[-10:])
                 if proc.returncode:
-                    return proc.returncode
+                    print(stderr_tail, file=os.sys.stderr)
+                log = worktree / f".r2-{fix['id']}-{condition}.dispatch.jsonl"
+                record = _dispatch_record(log)
+                check = subprocess.run(fix["acceptance_check"], cwd=_episode(worktree) / "stage", shell=True, executable="/bin/zsh").returncode == 0
+                subprocess.run(_accept_cmd(log, fix, check), cwd=worktree, stdin=subprocess.DEVNULL, check=False)
+                rows.append({"fix": fix["id"], "condition": condition,
+                             "brief_chars": record.get("brief_chars", ""),
+                             "tokens": record.get("tokens", ""),
+                             "tokens_kind": record.get("tokens_kind", ""),
+                             "wall_s": f"{wall:.3f}", "accepted": str(check).lower(),
+                             "exit_code": proc.returncode, "stderr_tail": stderr_tail})
             finally:
                 if args.execute:
                     subprocess.run(["git", "-C", str(args.book_repo), "worktree", "remove", "--force", str(worktree)], check=False)

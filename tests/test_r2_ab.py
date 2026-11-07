@@ -29,3 +29,18 @@ def test_dry_run_emits_six_rows(tmp_path, capsys):
 def test_dispatch_accept_command_shape():
     cmd = r2_ab._accept_cmd(Path("dispatch.jsonl"), {"id": "x"}, True)
     assert cmd[-4:] == ["--status", "pass", "--log", "dispatch.jsonl"]
+
+
+def test_execute_dispatch_command_keeps_log_argument(tmp_path, monkeypatch):
+    fix = r2_ab.load_fixes()[0]
+    worktree = tmp_path / "worktree"
+    episode = worktree / "Architecting_the_operation/video/yt02"
+    brief = episode / "stage/BRIEF_MINUTE_TWO_FIX2.md"
+    brief.parent.mkdir(parents=True)
+    brief.write_text("brief")
+    monkeypatch.setattr(r2_ab, "_registry_exists", lambda *_: False)
+
+    cmd = r2_ab.commands(tmp_path, worktree, fix, "A", dry_run=False)[0]
+
+    assert "--dry-run" not in cmd
+    assert cmd[-2:] == ["--log", str(worktree / ".r2-minute-two-figure-centering-A.dispatch.jsonl")]
