@@ -201,14 +201,15 @@ fn audition() {
 
 #[test]
 fn stage_scroll() {
-    shot(
-        "stage_scroll",
-        vec![
-            fixture("stage"),
-            OsString::from("--select"),
-            OsString::from("1"),
-        ],
-    );
+    let mut harness = harness(vec![
+        fixture("stage"),
+        OsString::from("--select"),
+        OsString::from("1"),
+    ]);
+    assert_eq!(harness.get_all_by_label("Approve").count(), 3);
+    assert_eq!(harness.get_all_by_label("Reject").count(), 3);
+    harness.snapshot("stage_scroll");
+    assert_inside_window(&harness);
 }
 
 #[test]

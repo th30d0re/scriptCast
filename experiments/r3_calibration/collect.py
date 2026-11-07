@@ -2,10 +2,10 @@
 """Collect *only documented* R3 Stage-critic labels into a CSV manifest.
 
 The current YT02 Stage tree has four author-approved dashboard handoff frames
-and byte-identical logged renders.  It does not contain rejected-frame label
-records.  This collector deliberately does not turn names such as ``fix1`` or
-``review`` into labels: a calibration set with guessed negatives is worse than
-an incomplete one.
+and byte-identical logged renders. Rejections recorded by the Stage UI or CLI
+are explicit bad labels. This collector deliberately does not turn names such
+as ``fix1`` or ``review`` into labels: a calibration set with guessed negatives
+is worse than an incomplete one.
 """
 from __future__ import annotations
 
@@ -101,6 +101,37 @@ def explicit_label_rows(stage: Path) -> list[dict[str, str]]:
     return rows
 
 
+def rejection_rows(stage: Path) -> list[dict[str, str]]:
+    """Read append-only Stage still rejections as documented bad labels."""
+    labels = stage / "review" / "rejections.jsonl"
+    if not labels.is_file():
+        return []
+    rows: list[dict[str, str]] = []
+    for line_number, raw in enumerate(labels.read_text(encoding="utf-8").splitlines(), 1):
+        if not raw.strip():
+            continue
+        try:
+            record = json.loads(raw)
+        except ValueError:
+            continue
+        if not isinstance(record, dict):
+            continue
+        raw_path = record.get("still_path")
+        if not isinstance(raw_path, str) or not raw_path:
+            continue
+        still = Path(raw_path)
+        if not still.is_absolute():
+            still = (labels.parent / still).resolve()
+        if not still.is_file() or still.suffix.lower() not in IMAGE_SUFFIXES:
+            continue
+        rows.append({
+            "still_path": str(still), "reference_path": str(still), "label": "bad",
+            "shot": str(record.get("shot") or shot_name(still)),
+            "source": f"{labels}:{line_number}",
+        })
+    return rows
+
+
 def deduplicate(rows: Iterable[dict[str, str]]) -> list[dict[str, str]]:
     """Keep first provenance for a labelled still; disagreeing labels are unsafe."""
     result: dict[str, dict[str, str]] = {}
@@ -126,7 +157,10 @@ def main() -> None:
     parser.add_argument("--stage", type=Path, default=Path("/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage"))
     parser.add_argument("--output", type=Path, default=Path(__file__).with_name("manifest.csv"))
     args = parser.parse_args()
-    rows = deduplicate([*approved_dashboard_rows(args.stage), *explicit_label_rows(args.stage)])
+    rows = deduplicate([
+        *approved_dashboard_rows(args.stage), *explicit_label_rows(args.stage),
+        *rejection_rows(args.stage),
+    ])
     write_manifest(rows, args.output)
     bad = sum(row["label"] == "bad" for row in rows)
     print(f"wrote {args.output} ({len(rows)} rows: {len(rows) - bad} good, {bad} bad)")
