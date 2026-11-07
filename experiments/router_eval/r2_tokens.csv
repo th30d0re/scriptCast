@@ -1,16 +1,7 @@
 fix,condition,brief_chars,tokens,tokens_kind,wall_s,accepted,exit_code,stderr_tail
-minute-two-figure-centering,A,2880,720,proxy,207.427,false,0,
-minute-two-figure-centering,B,,,,0.810,false,1,"nlm exited 1: {
-  ""status"": ""error"",
-  ""error"": ""Query failed: API error (code 5): NOT_FOUND""
-}"
-dashboard-tray-wage-plane,A,4561,1140,proxy,169.135,false,0,
-dashboard-tray-wage-plane,B,,,,0.851,false,1,"nlm exited 1: {
-  ""status"": ""error"",
-  ""error"": ""Query failed: API error (code 5): NOT_FOUND""
-}"
-first-minute-dictionary-gutter,A,5940,1485,proxy,116.694,false,0,
-first-minute-dictionary-gutter,B,,,,0.745,false,1,"nlm exited 1: {
-  ""status"": ""error"",
-  ""error"": ""Query failed: API error (code 5): NOT_FOUND""
-}"
+minute-two-figure-centering,A,,,dry-run,,not_run,,
+minute-two-figure-centering,B,,,dry-run,,not_run,,
+dashboard-tray-wage-plane,A,,,dry-run,,not_run,,
+dashboard-tray-wage-plane,B,,,dry-run,,not_run,,
+first-minute-dictionary-gutter,A,,,dry-run,,not_run,,
+first-minute-dictionary-gutter,B,,,dry-run,,not_run,,
