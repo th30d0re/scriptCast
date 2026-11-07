@@ -19,6 +19,7 @@ import tempfile
 import time
 import re
 import tomllib
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -68,8 +69,26 @@ def acceptance_command(episode: Path, fix: dict) -> list[str]:
     return ["/bin/zsh", "-c", f"{script} && ! git diff --quiet"]
 
 
-def _save_run_artifacts(worktree: Path, fix: dict, condition: str, stdout: str) -> None:
-    dest = ARTIFACTS / f"{fix['id']}-{condition}"
+def _create_worktree(book: Path, fix: dict, condition: str) -> Path:
+    worktree = Path(tempfile.mkdtemp(prefix=f"r2-{fix['id']}-{condition}-"))
+    try:
+        subprocess.run(["git", "-C", str(book.resolve()), "worktree", "add",
+                        "--detach", str(worktree), fix.get("base", "HEAD")],
+                       stdin=subprocess.DEVNULL, check=True)
+    except Exception:
+        shutil.rmtree(worktree, ignore_errors=True)
+        raise
+    return worktree
+
+
+def _remove_worktree(book: Path, worktree: Path) -> None:
+    subprocess.run(["git", "-C", str(book.resolve()), "worktree", "remove",
+                    "--force", str(worktree)], stdin=subprocess.DEVNULL, check=True)
+
+
+def _save_run_artifacts(worktree: Path, fix: dict, condition: str, stdout: str,
+                        artifacts: Path = ARTIFACTS) -> None:
+    dest = artifacts / f"{fix['id']}-{condition}"
     dest.mkdir(parents=True, exist_ok=True)
     diff = subprocess.run(["git", "diff"], cwd=worktree, capture_output=True, text=True, check=False)
     (dest / "git.diff").write_text(diff.stdout)
@@ -157,15 +176,97 @@ def _dispatch_record(log: Path) -> dict:
     return records[-1] if records else {}
 
 
+def _session_id_from_run(fix_id: str, runs: Path = ARTIFACTS) -> str:
+    """Read the original Codex session from stage_dispatch's saved output."""
+    path = runs / f"{fix_id}-A" / "worker.stdout.tail"
+    matches = re.findall(
+        r"^Dispatched codex \([^\r\n]*\)\. Session ID: "
+        r"([0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})\s*$",
+        path.read_text(), re.MULTILINE,
+    )
+    if not matches:
+        raise ValueError(f"no Codex session id in {path}")
+    return matches[-1]
+
+
+def _followup_commands(worktree: Path, fix: dict, condition: str, session_id: str,
+                       followup: Path, brief: Path, dry_run: bool) -> list[str]:
+    common = [sys.executable, str(DISPATCH)]
+    log = worktree / f".r2-{fix['id']}-{condition}.dispatch.jsonl"
+    if condition == "resume":
+        cmd = common + ["resume", "--session", session_id, "--agent", "codex", "--message", str(followup),
+                        "--worktree", str(worktree), "--task", fix["id"], "--log", str(log)]
+    else:
+        cmd = common + ["start", "--agent", "codex", "--model", "gpt-5.6-luna",
+                        "--brief", str(brief), "--worktree", str(worktree),
+                        "--task", fix["id"], "--log", str(log)]
+    if dry_run:
+        cmd.append("--dry-run")
+    return cmd
+
+
 def run(args: argparse.Namespace) -> int:
     fixes = load_fixes(args.fixes)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     rows = []
+    if args.resume_followup:
+        for fix in fixes:
+            session_id = _session_id_from_run(fix["id"], args.runs)
+            with tempfile.TemporaryDirectory(prefix=f"r2-followup-{fix['id']}-") as temp:
+                temp_dir = Path(temp)
+                followup = temp_dir / "followup.txt"
+                followup.write_text(fix["followup"] + "\n")
+                brief = temp_dir / "followup-brief.txt"
+                brief.write_text(f"{fix['followup']}\n\nFile: {fix['file']}\n")
+                for condition in ("resume", "fresh"):
+                    worktree = temp_dir / condition
+                    cmd = _followup_commands(worktree, fix, condition, session_id,
+                                             followup, brief, dry_run=not args.execute)
+                    print(shlex.join(cmd))
+                    if not args.execute:
+                        rows.append({"fix": fix["id"], "condition": condition,
+                                     "brief_chars": "", "tokens": "", "tokens_kind": "dry-run",
+                                     "wall_s": "", "accepted": "not_run", "exit_code": "",
+                                     "stderr_tail": ""})
+                        continue
+                    worktree = _create_worktree(args.book_repo, fix, f"followup-{condition}")
+                    stdout = ""
+                    try:
+                        subprocess.run(
+                            ["git", "apply", str((args.runs / f"{fix['id']}-A" / "git.diff").resolve())],
+                            cwd=worktree, stdin=subprocess.DEVNULL, check=True,
+                        )
+                        cmd = _followup_commands(worktree, fix, condition, session_id,
+                                                 followup, brief, dry_run=False)
+                        t0 = time.monotonic()
+                        env = os.environ.copy()
+                        env["PYTHONPATH"] = str(ROOT.resolve())
+                        proc = subprocess.run(cmd, cwd=worktree, stdin=subprocess.DEVNULL,
+                                              capture_output=True, text=True, env=env)
+                        stdout = proc.stdout
+                        wall = time.monotonic() - t0
+                        record = _dispatch_record(worktree / f".r2-{fix['id']}-{condition}.dispatch.jsonl")
+                    finally:
+                        try:
+                            _save_run_artifacts(worktree, fix, f"followup-{condition}", stdout, args.runs)
+                        finally:
+                            _remove_worktree(args.book_repo, worktree)
+                    tokens = record.get("tokens", "") or _codex_tokens_from_stdout(proc.stdout) or ""
+                    rows.append({"fix": fix["id"], "condition": condition,
+                                 "brief_chars": record.get("brief_chars", ""), "tokens": tokens,
+                                 "tokens_kind": record.get("tokens_kind", "") or ("reported" if tokens else ""),
+                                 "wall_s": f"{wall:.3f}", "accepted": "not_run",
+                                 "exit_code": proc.returncode,
+                                 "stderr_tail": "\n".join(proc.stderr.splitlines()[-10:])})
+        with args.output.open("w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=FIELDS)
+            writer.writeheader()
+            writer.writerows(rows)
+        return 0
     for fix in fixes:
         for condition in ("A", "B"):
             if args.execute:
-                worktree = Path(tempfile.mkdtemp(prefix=f"r2-{fix['id']}-{condition}-"))
-                subprocess.run(["git", "-C", str(args.book_repo), "worktree", "add", "--detach", str(worktree), fix.get("base", "HEAD")], check=True)
+                worktree = _create_worktree(args.book_repo, fix, condition)
             else:
                 worktree = args.book_repo
             try:
@@ -200,8 +301,7 @@ def run(args: argparse.Namespace) -> int:
             finally:
                 if args.execute:
                     _save_run_artifacts(worktree, fix, condition, locals().get("proc").stdout if "proc" in locals() else "")
-                    subprocess.run(["git", "-C", str(args.book_repo), "worktree", "remove", "--force", str(worktree)], check=False)
-                    shutil.rmtree(worktree, ignore_errors=True)
+                    _remove_worktree(args.book_repo, worktree)
     with args.output.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=FIELDS)
         writer.writeheader()
@@ -213,9 +313,14 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--book-repo", type=Path, default=DEFAULT_BOOK)
     ap.add_argument("--fixes", type=Path, default=FIXES)
-    ap.add_argument("--output", type=Path, default=CSV)
+    ap.add_argument("--output", type=Path)
     ap.add_argument("--execute", action="store_true", help="run workers; omitted by design in this sandbox")
-    return run(ap.parse_args(argv))
+    ap.add_argument("--resume-followup", action="store_true", help="run true resume/fresh follow-up arms")
+    ap.add_argument("--runs", type=Path, default=ARTIFACTS, help="prior run artifacts containing dispatch logs")
+    args = ap.parse_args(argv)
+    if args.output is None:
+        args.output = CSV.with_name("r2_resume.csv") if args.resume_followup else CSV
+    return run(args)
 
 
 if __name__ == "__main__":
