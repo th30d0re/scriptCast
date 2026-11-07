@@ -1,6 +1,7 @@
 import json
 
 from PIL import Image
+import pytest
 
 from scriptcast.tools import stage_dispatch as sd
 from scriptcast.tools.stage_repair import repair_briefs, run_repairs
@@ -66,3 +67,33 @@ def test_stem_sidecar_and_s1_only_elements_build_top_three_briefs(tmp_path):
     assert [row["element_id"] for row in rows] == ["audit-beam", "debate-funnel", "third"]
     assert rows[0]["box"] == {"x": 1, "y": 2, "w": 3, "h": 4}
     assert "System 1 flagged this element (p=0.98)" in rows[0]["defect"]
+
+
+@pytest.mark.parametrize(("still_box", "reference_box", "expected"), [
+    ({"x": 50, "y": 10, "w": 10, "h": 10}, {"x": 10, "y": 10, "w": 10, "h": 10}, "moved"),
+    ({"x": 5, "y": 5, "w": 20, "h": 20}, {"x": 10, "y": 10, "w": 10, "h": 10}, "resized"),
+    (None, {"x": 10, "y": 10, "w": 10, "h": 10}, "missing"),
+    ({"x": 10, "y": 10, "w": 10, "h": 10}, None, "extra"),
+    ({"x": 10, "y": 10, "w": 10, "h": 10}, {"x": 11, "y": 11, "w": 10, "h": 10}, "appearance"),
+])
+def test_briefs_classify_boxes_and_write_reference_crops(tmp_path, still_box, reference_box, expected):
+    stills, references = tmp_path / "stills", tmp_path / "approved"
+    stills.mkdir(); references.mkdir()
+    Image.new("RGB", (100, 100), "red").save(stills / "Scene_cue.png")
+    Image.new("RGB", (100, 100), "blue").save(references / "Scene_cue.png")
+    if still_box:
+        (stills / "Scene_cue.png.boxes.json").write_text(json.dumps({"marks": [{"id": "thing", "box": still_box}]}))
+    if reference_box:
+        (references / "Scene_cue.png.boxes.json").write_text(json.dumps({"marks": [{"id": "thing", "box": reference_box}]}))
+    plan = tmp_path / "stage_plan.json"
+    plan.write_text(json.dumps({"segments": [{"scene": "Scene", "source_file": "scenes/ActualScene.tsx",
+                                                "shots": [{"shot_id": "S01"}]}]}))
+    report = {"frames": [{"file": "Scene_cue.png", "verdict": "fail",
+                           "defects": [{"element_id": "thing", "evidence": "critic evidence"}]}]}
+    rows = repair_briefs(report, stills, plan, reference_dir=references, report_dir=tmp_path / "report")
+    row = rows[0]
+    assert row["defect_class"] == expected
+    assert row["source_file"] == "scenes/ActualScene.tsx"
+    assert f"In scenes/ActualScene.tsx (scene Scene), element thing is {expected}:" in row["brief"]
+    assert (tmp_path / "report" / "thing-still.png").is_file()
+    assert (tmp_path / "report" / "thing-ref.png").is_file()
