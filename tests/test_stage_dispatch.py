@@ -8,6 +8,7 @@ from scriptcast.tools.stage_dispatch import (
     build_start_cmd,
     build_resume_cmd,
     capture_session_id,
+    codex_rollout_usage,
     main,
     make_brief_header,
     collect_session_log,
@@ -214,6 +215,31 @@ def test_codex_turn_completed_usage_fixture():
         '{"type":"turn.completed","usage":{"input_tokens":120,"output_tokens":30,"total_tokens":150}}\n'
     )
     assert capture_session_id("codex", stdout=output)[1] == 150
+
+
+def test_codex_rollout_usage_uses_last_task_turn(tmp_path, monkeypatch):
+    sid = "01a126f5-da05-7222-8a0c-a170a5ff6081"
+    rollout = tmp_path / "sessions" / "2026" / "11" / "07"
+    rollout.mkdir(parents=True)
+    (rollout / f"rollout-abc-{sid}.jsonl").write_text("\n".join([
+        json.dumps({"payload": {"type": "task_started"}}),
+        json.dumps({"payload": {"type": "token_count", "info": {"total_token_usage": {
+            "input_tokens": 10, "cached_input_tokens": 2, "output_tokens": 3,
+            "reasoning_output_tokens": 1, "total_tokens": 15}}}}),
+        json.dumps({"payload": {"type": "task_started"}}),
+        json.dumps({"payload": {"type": "token_count", "info": {"total_token_usage": {
+            "input_tokens": 100, "cached_input_tokens": 40, "output_tokens": 25,
+            "reasoning_output_tokens": 5, "total_tokens": 125}}}}),
+    ]))
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path))
+    assert codex_rollout_usage(sid) == {
+        "total_tokens": 125, "cached_input_tokens": 40, "output_tokens": 25,
+    }
+
+
+def test_codex_rollout_usage_missing_file_returns_none(tmp_path, monkeypatch):
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path))
+    assert codex_rollout_usage("01a126f5-da05-7222-8a0c-a170a5ff6081") is None
 
 
 def test_resume_uses_right_flag_per_agent(tmp_path):
