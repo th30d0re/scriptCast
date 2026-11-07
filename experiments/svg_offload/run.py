@@ -41,11 +41,14 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
+import os
 import re
 import shlex
 import shutil
 import subprocess
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import lru_cache
@@ -56,6 +59,68 @@ HF_HUB = Path.home() / ".cache" / "huggingface" / "hub"
 BOOK_REPO = Path("/Users/emmanuel/Documents/Theory/TheOriginalPower")
 YT02_SUBDIR = Path("Architecting_the_operation/video/yt02")
 DEFAULT_CUES_FILE = EXPERIMENT_DIR / "cues.csv"
+MUSE_CONFIG_DIR = Path.home() / ".config" / "muse"
+MUSE_TRUST_FILE = MUSE_CONFIG_DIR / "trust.json"
+_TRUST_LOCK = threading.Lock()
+_TRUST_BACKED_UP = False
+
+
+def get_trust_file_path() -> Path:
+    override = os.environ.get("TRUST_FILE")
+    if override:
+        return Path(override)
+    return MUSE_TRUST_FILE
+
+
+def add_muse_trust(worktree_path: Path) -> None:
+    """Add worktree's absolute path to Muse trust.json; keep a backup once."""
+    global _TRUST_BACKED_UP
+    target = get_trust_file_path()
+    abs_path = str(worktree_path.resolve())
+
+    with _TRUST_LOCK:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        bak_file = target.with_name(target.name + ".bak")
+        if target.is_file() and not _TRUST_BACKED_UP:
+            if not bak_file.exists():
+                shutil.copyfile(target, bak_file)
+            _TRUST_BACKED_UP = True
+
+        data: dict = {}
+        if target.is_file():
+            try:
+                data = json.loads(target.read_text(encoding="utf-8"))
+            except Exception:
+                data = {}
+
+        if not isinstance(data, dict):
+            data = {}
+        if "schema_version" not in data:
+            data["schema_version"] = 1
+        if "projects" not in data or not isinstance(data["projects"], dict):
+            data["projects"] = {}
+
+        data["projects"][abs_path] = {"decision": "trusted"}
+        target.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
+def remove_muse_trust(worktree_path: Path) -> None:
+    """Remove worktree's absolute path from Muse trust.json."""
+    target = get_trust_file_path()
+    abs_path = str(worktree_path.resolve())
+
+    with _TRUST_LOCK:
+        if not target.is_file():
+            return
+        try:
+            data = json.loads(target.read_text(encoding="utf-8"))
+        except Exception:
+            return
+
+        if isinstance(data, dict) and isinstance(data.get("projects"), dict):
+            if abs_path in data["projects"]:
+                del data["projects"][abs_path]
+                target.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 # ---------------------------------------------------------------------------
 # Candidates (experiments/svg_offload/candidates.md). The operator-approved
@@ -511,19 +576,25 @@ def run_cell(
             brief_text(candidate, condition, worker, stage_dir, asset_path)
         )
         cmd = worker_command(worker, brief, yt02, candidate, condition)
+        if worker.agent == "muse":
+            add_muse_trust(wt)
         try:
-            cp = subprocess.run(
-                cmd, capture_output=True, text=True, cwd=str(yt02),
-                stdin=subprocess.DEVNULL,
-                timeout=args.timeout_min * 60,
-            )
-            output = (cp.stdout or "") + "\n" + (cp.stderr or "")
-            if cp.returncode != 0:
-                row["status"] = "error"
-        except subprocess.TimeoutExpired as exc:
-            # subprocess.run has already killed the child at this point.
-            output = _timeout_output(exc)
-            row["status"] = "timeout"
+            try:
+                cp = subprocess.run(
+                    cmd, capture_output=True, text=True, cwd=str(yt02),
+                    stdin=subprocess.DEVNULL,
+                    timeout=args.timeout_min * 60,
+                )
+                output = (cp.stdout or "") + "\n" + (cp.stderr or "")
+                if cp.returncode != 0:
+                    row["status"] = "error"
+            except subprocess.TimeoutExpired as exc:
+                # subprocess.run has already killed the child at this point.
+                output = _timeout_output(exc)
+                row["status"] = "timeout"
+        finally:
+            if worker.agent == "muse":
+                remove_muse_trust(wt)
         if worker.agent == "muse":
             (cell_dir / "transcript.txt").write_text(output)
 
