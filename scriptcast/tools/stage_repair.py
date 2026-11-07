@@ -34,6 +34,13 @@ def _marks(path: Path) -> dict[str, Any]:
             if isinstance(mark, dict) and mark.get("id") and mark.get("box") is not None}
 
 
+def _sidecar_path(path: Path, boxes_dir: Path | None = None) -> Path:
+    """Resolve exact-still sidecars first, then the documented stem form."""
+    base = boxes_dir if boxes_dir is not None else path.parent
+    exact = base / f"{path.name}.boxes.json"
+    return exact if exact.is_file() else base / f"{path.stem}.boxes.json"
+
+
 def _shot(plan: Path, scene: str) -> str:
     """Resolve the Stage shot id for a scene; old plans use the scene as shot."""
     data = json.loads(plan.read_text())
@@ -55,7 +62,8 @@ def stage_boxes(plan: Path, shot: str, output: Path) -> dict[str, Any]:
 
 def repair_briefs(report: dict, stills: Path, plan: Path, boxes_dir: Path | None = None,
                   reference_dir: Path | None = None,
-                  boxes: Callable[[Path, str, Path], dict[str, Any]] = stage_boxes) -> list[dict]:
+                  boxes: Callable[[Path, str, Path], dict[str, Any]] = stage_boxes,
+                  s1_threshold: float | None = None) -> list[dict]:
     """Build one brief per grounded critic defect, resolving live Stage boxes."""
     out = []
     for frame in report.get("frames", []):
@@ -63,9 +71,21 @@ def repair_briefs(report: dict, stills: Path, plan: Path, boxes_dir: Path | None
             continue
         file = str(frame.get("file", "")); scene, cue = _frame_name(file); shot = _shot(plan, scene)
         still = stills / file
-        sidecar = (boxes_dir / f"{file}.boxes.json") if boxes_dir else still.with_name(f"{file}.boxes.json")
+        sidecar = _sidecar_path(still, boxes_dir)
         marks = _marks(sidecar)
-        for defect in frame.get("defects", []):
+        defects = list(frame.get("defects", []))
+        if not defects and frame.get("tier1", {}).get("flagged"):
+            threshold = s1_threshold
+            if threshold is None:
+                threshold = float(report.get("s1_threshold", 0.2))
+            candidates = [element for element in frame.get("tier1", {}).get("elements", [])
+                          if element.get("p_defect", 0) >= threshold and not str(element.get("id", "")).startswith("grid_")]
+            defects = [{"element_id": element["id"],
+                        "evidence": (f"System 1 flagged this element (p={element['p_defect']:.2f}) "
+                                     "as differing from the approved reference"),
+                        "_p_defect": element["p_defect"]}
+                       for element in sorted(candidates, key=lambda item: item.get("p_defect", 0), reverse=True)[:3]]
+        for defect in defects:
             element_id = defect.get("element_id")
             # Anonymous Content defects do not have a builder-addressable mark.
             if not element_id:
@@ -104,7 +124,7 @@ def _recritic(stills: Path, plan: Path, brief: dict, reference_dir: Path | None,
     source = stills / brief["file"]
     with tempfile.TemporaryDirectory(prefix="stage-repair-") as temp:
         target = Path(temp); shutil.copy2(source, target / source.name)
-        sidecar = source.with_name(f"{source.name}.boxes.json")
+        sidecar = _sidecar_path(source)
         if sidecar.is_file(): shutil.copy2(sidecar, target / sidecar.name)
         refs = None
         if reference_dir and (reference_dir / source.name).is_file():

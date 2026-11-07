@@ -126,6 +126,13 @@ def marked_elements(path: Path, plan: dict) -> dict[str, list[float]] | None:
     return result
 
 
+def _sidecar_path(path: Path, boxes_dir: Path | None = None) -> Path:
+    """Resolve both documented StageMarks sidecar naming conventions."""
+    base = boxes_dir if boxes_dir is not None else path.parent
+    exact = base / f"{path.name}.boxes.json"
+    return exact if exact.is_file() else base / f"{path.stem}.boxes.json"
+
+
 def default_s1_threshold() -> float:
     """Read the S1 cutoff without making its training data part of this tool."""
     weights = Path(__file__).resolve().parents[1] / "critic" / "s1_weights.json"
@@ -185,7 +192,7 @@ def critic_stills(stills: Path, plan_path: Path, model: str = DEFAULT_MODEL, ref
         scene, sep, cue = stem.rpartition("_")
         if not sep:
             scene, cue = stem, "end"
-        sidecar = (boxes_dir / f"{image.name}.boxes.json") if boxes_dir else image.with_name(f"{image.name}.boxes.json")
+        sidecar = _sidecar_path(image, boxes_dir)
         elements = marked_elements(sidecar, plan)
         if elements is None:
             elements = declared_elements(plan, scene, cue)
@@ -251,7 +258,7 @@ def critic_stills(stills: Path, plan_path: Path, model: str = DEFAULT_MODEL, ref
         )
         records.append({"file": item["file"], "status": "ok", "verdict": "fail" if kept else "pass",
                         "defects": kept, "ungrounded": ungrounded, "tier1": tier1, "tier2_ran": True})
-    report = {"model": model, "frames": records}
+    report = {"model": model, "s1_threshold": threshold, "frames": records}
     output_path.write_text(json.dumps(report, indent=2) + "\n")
     return report
 
