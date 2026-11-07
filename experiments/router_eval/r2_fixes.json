@@ -1,0 +1,23 @@
+[
+  {
+    "id": "minute-two-figure-centering",
+    "scene": "S00-10",
+    "file": "minutetwo/FigureTwoThree.tsx",
+    "description": "Keep the definition fragments free of leading whitespace and center Figure 2.3 after the rail flight; preserve the ten-sample text hand-off regression check.",
+    "acceptance_check": "test -f minutetwo/FigureTwoThree.tsx && grep -q 'final plate' tools/check_minute_two.mjs && grep -Eiq 'equal|center' tools/check_minute_two.mjs"
+  },
+  {
+    "id": "dashboard-tray-wage-plane",
+    "scene": "dashboard",
+    "file": "dashboard/Dashboard.tsx",
+    "description": "Move Wage plane back under the Result ticker as Buffer Class Wage, use the five-panel right stack and eight-cell tray ranges, and retain the non-interactive hint and route-clearance checks.",
+    "acceptance_check": "test -f dashboard/Dashboard.tsx && grep -q 'Buffer Class Wage' dashboard/Dashboard.tsx && grep -Eiq 'count: 8|tray.*8|8.*tray' tools/check_dashboard.mjs"
+  },
+  {
+    "id": "first-minute-dictionary-gutter",
+    "scene": "DictionaryEntry",
+    "file": "firstminute/DictionaryEntry.tsx",
+    "description": "Apply the first-minute Fix pass 1 geometry: shift the dictionary panel before the order cue, lift sense numbers into a clear gutter, and keep the causal chain clear of the gutter.",
+    "acceptance_check": "test -f firstminute/DictionaryEntry.tsx && grep -q 'DICTIONARY_LAYOUT' firstminute/DictionaryEntry.tsx && grep -q 'DictionaryEntry' tools/check_first_minute.mjs"
+  }
+]
