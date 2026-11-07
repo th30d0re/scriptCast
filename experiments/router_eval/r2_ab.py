@@ -17,12 +17,16 @@ import shutil
 import subprocess
 import tempfile
 import time
+import re
+import tomllib
 
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXES = Path(__file__).with_name("r2_fixes.json")
 CSV = Path(__file__).with_name("r2_tokens.csv")
 DEFAULT_BOOK = Path("/Users/emmanuel/Documents/Theory/TheOriginalPower")
+NOTEBOOKS = ROOT / "scriptcast/router/notebooks.toml"
+ARTIFACTS = ROOT / "experiments/router_eval/r2_runs"
 DISPATCH = ROOT / "scriptcast/tools/stage_dispatch.py"
 FIELDS = ["fix", "condition", "brief_chars", "tokens", "tokens_kind", "wall_s", "accepted", "exit_code", "stderr_tail"]
 
@@ -36,6 +40,45 @@ def load_fixes(path: Path = FIXES) -> list[dict]:
         if required - set(row):
             raise ValueError(f"fix is missing fields: {row}")
     return rows
+
+
+def _episode_number(episode: Path) -> int:
+    match = re.search(r"yt(\d+)$", Path(episode).name, re.I)
+    if not match:
+        raise ValueError(f"cannot resolve notebook episode from {episode}")
+    # YT02 is the premiere (episode 0) in the book's episode map.
+    return int(match.group(1)) - 2
+
+
+def notebook_id_for_episode(episode: Path, notebooks: Path = NOTEBOOKS) -> str:
+    """Resolve the NotebookLM id from the episode number, never its title."""
+    data = tomllib.loads(Path(notebooks).read_text())
+    wanted = _episode_number(episode)
+    for entry in (data.get("notebooks") or {}).values():
+        if entry.get("episode") == wanted and entry.get("id"):
+            return entry["id"]
+    raise KeyError(f"no notebook configured for episode {wanted}")
+
+
+def acceptance_command(episode: Path, fix: dict) -> list[str]:
+    """Return the real stage check and require a worker diff."""
+    script = fix["acceptance_check"]
+    if not script.startswith("node tools/"):
+        raise ValueError(f"acceptance_check must be a node stage check: {script}")
+    return ["/bin/zsh", "-c", f"{script} && ! git diff --quiet"]
+
+
+def _save_run_artifacts(worktree: Path, fix: dict, condition: str, stdout: str) -> None:
+    dest = ARTIFACTS / f"{fix['id']}-{condition}"
+    dest.mkdir(parents=True, exist_ok=True)
+    diff = subprocess.run(["git", "diff"], cwd=worktree, capture_output=True, text=True, check=False)
+    (dest / "git.diff").write_text(diff.stdout)
+    (dest / "worker.stdout.tail").write_text("\n".join(stdout.splitlines()[-80:]) + ("\n" if stdout else ""))
+
+
+def _codex_tokens_from_stdout(stdout: str) -> int | None:
+    matches = re.findall(r"tokens?\s+used\s*[:=]\s*([\d,]+)", stdout, re.I)
+    return int(matches[-1].replace(",", "")) if matches else None
 
 
 def _brief(book: Path, fix: dict) -> Path:
@@ -88,7 +131,7 @@ def commands(book: Path, worktree: Path, fix: dict, condition: str, dry_run: boo
         cmd = common + ["start", "--agent", "codex", "--model", "gpt-5.6-luna",
                         "--brief", str(brief), "--worktree", str(worktree),
                         "--episode", str(episode), "--scene", fix["scene"],
-                        "--context", "NOTEBOOK:The Original Power:retrieve the relevant YT02 scene fix guidance",
+                        "--context", f"{notebook_id_for_episode(episode)}:retrieve the relevant YT02 scene fix guidance",
                         "--task", fix["id"], "--log", str(log)]
     if dry_run:
         cmd.append("--dry-run")
@@ -122,7 +165,7 @@ def run(args: argparse.Namespace) -> int:
         for condition in ("A", "B"):
             if args.execute:
                 worktree = Path(tempfile.mkdtemp(prefix=f"r2-{fix['id']}-{condition}-"))
-                subprocess.run(["git", "-C", str(args.book_repo), "worktree", "add", "--detach", str(worktree), "HEAD"], check=True)
+                subprocess.run(["git", "-C", str(args.book_repo), "worktree", "add", "--detach", str(worktree), fix.get("base", "HEAD")], check=True)
             else:
                 worktree = args.book_repo
             try:
@@ -142,16 +185,21 @@ def run(args: argparse.Namespace) -> int:
                     print(stderr_tail, file=os.sys.stderr)
                 log = worktree / f".r2-{fix['id']}-{condition}.dispatch.jsonl"
                 record = _dispatch_record(log)
-                check = subprocess.run(fix["acceptance_check"], cwd=_episode(worktree) / "stage", shell=True, executable="/bin/zsh").returncode == 0
+                check = subprocess.run(acceptance_command(_episode(worktree), fix), cwd=_episode(worktree) / "stage").returncode == 0
                 subprocess.run(_accept_cmd(log, fix, check), cwd=worktree, stdin=subprocess.DEVNULL, check=False)
+                _save_run_artifacts(worktree, fix, condition, proc.stdout)
+                tokens = record.get("tokens", "")
+                if not tokens and "--agent codex" in shlex.join(cmd):
+                    tokens = _codex_tokens_from_stdout(proc.stdout) or ""
                 rows.append({"fix": fix["id"], "condition": condition,
                              "brief_chars": record.get("brief_chars", ""),
-                             "tokens": record.get("tokens", ""),
-                             "tokens_kind": record.get("tokens_kind", ""),
+                             "tokens": tokens,
+                             "tokens_kind": record.get("tokens_kind", "") or ("reported" if tokens else ""),
                              "wall_s": f"{wall:.3f}", "accepted": str(check).lower(),
                              "exit_code": proc.returncode, "stderr_tail": stderr_tail})
             finally:
                 if args.execute:
+                    _save_run_artifacts(worktree, fix, condition, locals().get("proc").stdout if "proc" in locals() else "")
                     subprocess.run(["git", "-C", str(args.book_repo), "worktree", "remove", "--force", str(worktree)], check=False)
                     shutil.rmtree(worktree, ignore_errors=True)
     with args.output.open("w", newline="") as f:

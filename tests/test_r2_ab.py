@@ -13,7 +13,19 @@ def test_fixture_has_three_real_fixes_and_checks():
     }
     for row in rows:
         assert row["file"].endswith((".tsx", ".ts", ".mjs"))
-        assert row["acceptance_check"].startswith("test -f")
+        assert row["acceptance_check"].startswith("node tools/check_")
+
+
+def test_episode_resolves_premiere_notebook_id():
+    episode = Path("Architecting_the_operation/video/yt02")
+    assert r2_ab.notebook_id_for_episode(episode) == "d3f54f50-61a5-465e-a94a-55d17326c0e2"
+
+
+def test_acceptance_command_runs_real_check_and_requires_diff():
+    fix = r2_ab.load_fixes()[0]
+    command = r2_ab.acceptance_command(Path("Architecting_the_operation/video/yt02"), fix)
+    assert command[:2] == ["/bin/zsh", "-c"]
+    assert command[2] == "node tools/check_minute_two.mjs && ! git diff --quiet"
 
 
 def test_dry_run_emits_six_rows(tmp_path, capsys):
