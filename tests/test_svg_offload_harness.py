@@ -2,6 +2,7 @@
 (10 cues x 1 condition x 4 workers, condition B) with per-cell worktree
 isolation, without running or writing anything."""
 import importlib.util
+import json
 import re
 import subprocess
 import sys
@@ -379,4 +380,185 @@ def test_muse_cell_ok_when_diff_produced(tmp_path, monkeypatch):
     assert row["status"] == "ok"
     assert (cell_dir / "transcript.txt").read_text() == "done\n\n"
     assert (cell_dir / "tsx.diff").read_text() == "diff --git a/foo b/foo\n"
+
+
+def test_muse_trust_add_and_remove(tmp_path, monkeypatch):
+    """Trust file adds absolute path before cell and removes after, preserving other entries."""
+    trust_file = tmp_path / "muse" / "trust.json"
+    trust_file.parent.mkdir(parents=True)
+    initial_content = {
+        "schema_version": 1,
+        "projects": {
+            "/existing/project": {"decision": "trusted"}
+        }
+    }
+    trust_file.write_text(json.dumps(initial_content, indent=2))
+    monkeypatch.setenv("TRUST_FILE", str(trust_file))
+
+    wt_path = tmp_path / "test_wt"
+    wt_path.mkdir()
+
+    # Reset module backup flag
+    run._TRUST_BACKED_UP = False
+
+    run.add_muse_trust(wt_path)
+
+    # Backup should exist
+    bak_file = trust_file.with_name("trust.json.bak")
+    assert bak_file.is_file()
+    assert json.loads(bak_file.read_text()) == initial_content
+
+    # Path should be added
+    data = json.loads(trust_file.read_text())
+    assert data["schema_version"] == 1
+    assert data["projects"]["/existing/project"] == {"decision": "trusted"}
+    assert data["projects"][str(wt_path.resolve())] == {"decision": "trusted"}
+
+    # Remove
+    run.remove_muse_trust(wt_path)
+    data = json.loads(trust_file.read_text())
+    assert str(wt_path.resolve()) not in data["projects"]
+    assert data["projects"]["/existing/project"] == {"decision": "trusted"}
+
+
+def test_muse_trust_keeps_backup_only_once(tmp_path, monkeypatch):
+    trust_file = tmp_path / "trust.json"
+    initial_content = {"schema_version": 1, "projects": {"/initial": {"decision": "trusted"}}}
+    trust_file.write_text(json.dumps(initial_content))
+    monkeypatch.setenv("TRUST_FILE", str(trust_file))
+
+    run._TRUST_BACKED_UP = False
+    run.add_muse_trust(tmp_path / "wt1")
+
+    bak_file = trust_file.with_name("trust.json.bak")
+    assert json.loads(bak_file.read_text()) == initial_content
+
+    # Overwrite backup content to verify it's not touched on second add
+    bak_file.write_text("sentinel")
+    run.add_muse_trust(tmp_path / "wt2")
+    assert bak_file.read_text() == "sentinel"
+
+    run.remove_muse_trust(tmp_path / "wt1")
+    run.remove_muse_trust(tmp_path / "wt2")
+
+
+def test_muse_cell_adds_and_removes_trust_around_muse_run(tmp_path, monkeypatch):
+    trust_file = tmp_path / "trust.json"
+    trust_file.write_text(json.dumps({"schema_version": 1, "projects": {}}))
+    monkeypatch.setenv("TRUST_FILE", str(trust_file))
+    run._TRUST_BACKED_UP = False
+
+    cand = run.CANDIDATES[0]
+    worker = next(w for w in run.WORKERS if w.agent == "muse")
+    out_dir = tmp_path / "out"
+    args = run.argparse.Namespace(
+        out_dir=out_dir,
+        book_repo=tmp_path / "fake_book",
+        timeout_min=1.0,
+        render_cmd=None,
+        generator="svgen-7b",
+    )
+
+    trust_during_run = []
+
+    def fake_subprocess_run(cmd, *a, **kw):
+        cmd_str = " ".join(cmd)
+        if "worktree" in cmd_str and "remove" in cmd_str:
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        elif "worktree" in cmd_str and "add" in cmd_str:
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        elif cmd[0] == "git" and "diff" in cmd:
+            return subprocess.CompletedProcess(cmd, 0, stdout="diff", stderr="")
+        elif cmd[0] == "muse":
+            # Check trust.json right when muse runs
+            data = json.loads(trust_file.read_text())
+            trust_during_run.append(list(data["projects"].keys()))
+            return subprocess.CompletedProcess(cmd, 0, stdout="ok", stderr="")
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_subprocess_run)
+
+    row = run.run_cell(cand, "B", worker, args, None)
+    assert row["status"] == "ok"
+    assert len(trust_during_run) == 1
+    cell_wt = (out_dir / "wt" / run.cell_slug(cand, "B", worker)).resolve()
+    assert str(cell_wt) in trust_during_run[0]
+
+    # After cell finishes, trust entry is gone
+    final_data = json.loads(trust_file.read_text())
+    assert str(cell_wt) not in final_data["projects"]
+
+
+def test_muse_cell_removes_trust_on_error(tmp_path, monkeypatch):
+    trust_file = tmp_path / "trust.json"
+    trust_file.write_text(json.dumps({"schema_version": 1, "projects": {}}))
+    monkeypatch.setenv("TRUST_FILE", str(trust_file))
+    run._TRUST_BACKED_UP = False
+
+    cand = run.CANDIDATES[0]
+    worker = next(w for w in run.WORKERS if w.agent == "muse")
+    out_dir = tmp_path / "out"
+    args = run.argparse.Namespace(
+        out_dir=out_dir,
+        book_repo=tmp_path / "fake_book",
+        timeout_min=1.0,
+        render_cmd=None,
+        generator="svgen-7b",
+    )
+
+    def fake_subprocess_run(cmd, *a, **kw):
+        cmd_str = " ".join(cmd)
+        if "worktree" in cmd_str and "remove" in cmd_str:
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        elif "worktree" in cmd_str and "add" in cmd_str:
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        elif cmd[0] == "git" and "diff" in cmd:
+            return subprocess.CompletedProcess(cmd, 0, stdout="diff", stderr="")
+        elif cmd[0] == "muse":
+            raise RuntimeError("muse crash")
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_subprocess_run)
+
+    with pytest.raises(RuntimeError, match="muse crash"):
+        run.run_cell(cand, "B", worker, args, None)
+
+    cell_wt = (out_dir / "wt" / run.cell_slug(cand, "B", worker)).resolve()
+    final_data = json.loads(trust_file.read_text())
+    assert str(cell_wt) not in final_data["projects"]
+
+
+def test_non_muse_cell_does_not_touch_trust(tmp_path, monkeypatch):
+    trust_file = tmp_path / "trust.json"
+    trust_file.write_text(json.dumps({"schema_version": 1, "projects": {}}))
+    monkeypatch.setenv("TRUST_FILE", str(trust_file))
+    run._TRUST_BACKED_UP = False
+
+    cand = run.CANDIDATES[0]
+    worker = next(w for w in run.WORKERS if w.agent == "agy")
+    out_dir = tmp_path / "out"
+    args = run.argparse.Namespace(
+        out_dir=out_dir,
+        book_repo=tmp_path / "fake_book",
+        timeout_min=1.0,
+        render_cmd=None,
+        generator="svgen-7b",
+    )
+
+    def fake_subprocess_run(cmd, *a, **kw):
+        cmd_str = " ".join(cmd)
+        if "worktree" in cmd_str and "remove" in cmd_str:
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        elif "worktree" in cmd_str and "add" in cmd_str:
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        elif cmd[0] == "git" and "diff" in cmd:
+            return subprocess.CompletedProcess(cmd, 0, stdout="diff", stderr="")
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_subprocess_run)
+
+    run.run_cell(cand, "B", worker, args, None)
+    assert not trust_file.with_name("trust.json.bak").exists()
+    assert json.loads(trust_file.read_text()) == {"schema_version": 1, "projects": {}}
+
 
