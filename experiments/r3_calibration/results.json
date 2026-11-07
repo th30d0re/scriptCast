@@ -1,0 +1,1535 @@
+{
+  "dry_run": false,
+  "results": [
+    {
+      "threshold": 0.1,
+      "mode": "tier1_only",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 174.65122398425592,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 187.4281669734046,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.71595800248906,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.2572499588132,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.2330829896964,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 179.1420839726925,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 187.65279196668416,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 174.96450000908226,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 170.8159580011852,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.1,
+      "mode": "two_tier",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 164.54506787704304,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.16237501753494,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 161.03974997531623,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 163.35824999259785,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 173.35566703695804,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 174.0337919909507,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 161.28783399472013,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.16104200389236,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.96183300437406,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.2,
+      "mode": "tier1_only",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 164.42399973311694,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.79420803766698,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 171.8939999700524,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.04379096720368,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 161.441832955461,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.7317079906352,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.85229198588058,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 155.32420796807855,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 170.30995798995718,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.2,
+      "mode": "two_tier",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 164.3917710171081,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 183.09708399465308,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 159.14045902900398,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 157.36937505425885,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.96995800500736,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.07733401097357,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 163.11837499961257,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.2696250025183,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 157.0919580408372,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.3,
+      "mode": "tier1_only",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 165.6259271185263,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.35079200891778,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 159.04112497810274,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 161.78849997231737,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 157.38770901225507,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 181.11183296423405,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.47820801194757,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.22616700967774,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.62308299075812,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.3,
+      "mode": "two_tier",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 165.79979686503066,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.49604195076972,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.71179202198982,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.9260829910636,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 169.39770797034726,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.19166704872623,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.82524998718873,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.80799995688722,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 172.0418329932727,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.4,
+      "mode": "tier1_only",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 166.95486975368112,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 180.2384170005098,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 179.69908297527581,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.7342500402592,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 166.48825001902878,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.0392499868758,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.9799999706447,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 154.31558300042525,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.1441250364296,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.4,
+      "mode": "two_tier",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 160.18316138070077,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 166.9124590116553,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 157.73166599683464,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 154.00016703642905,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.59737499663606,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.22604095796123,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.2183749829419,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.111250043381,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 150.66795801976696,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.5,
+      "mode": "tier1_only",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 164.39334887400037,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.96712503349409,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 181.89616600284353,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 178.5599589929916,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.36995899211615,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.3657910018228,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 158.46891701221466,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 152.20958297140896,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 154.30929098511115,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.5,
+      "mode": "two_tier",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 157.15591151092667,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 161.44358401652426,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 153.98662502411753,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.33862500544637,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.4300419613719,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 159.75575003540143,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 151.59100003074855,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 155.54437501123175,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 153.15729100257158,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.6,
+      "mode": "tier1_only",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 156.93991124862805,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.7504170234315,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 154.75229104049504,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 161.89645795384422,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 149.42037494620308,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 158.75191701343283,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.21349998563528,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 150.42779099894688,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 159.30654102703556,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.6,
+      "mode": "two_tier",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 157.8576720203273,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 158.86912500718608,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 155.10758297750726,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 157.5845000334084,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.9739170372486,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 153.87304202886298,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.2629590043798,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.9947080570273,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.19554201699793,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.7,
+      "mode": "tier1_only",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 157.90146850486053,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 152.61416701832786,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 157.3506660060957,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.61041603097692,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.27858298225328,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 152.4667920311913,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 153.4096659743227,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.52804099814966,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.95341699756682,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.7,
+      "mode": "two_tier",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 161.00960949552245,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 159.65641697403044,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.63387498352677,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.78829202242196,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.80724999401718,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 157.70895895548165,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.27720803767443,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 173.26474998844787,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 154.94012500857934,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.8,
+      "mode": "tier1_only",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 162.11272411601385,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 163.7882919749245,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.06124999048188,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.04208301194012,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 171.27329198410735,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.736875009723,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 153.19550002459437,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 150.4255419713445,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 161.37895896099508,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.8,
+      "mode": "two_tier",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 168.92789562552935,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.36312498990446,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.46841600211337,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 174.226000031922,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 169.99500000383705,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.2800829722546,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.46195798926055,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.069082995411,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 184.5595000195317,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.9,
+      "mode": "tier1_only",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 169.11104188329773,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 181.60329200327396,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 174.3104589986615,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 157.7959589776583,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 155.06320801796392,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 173.29766700277105,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 172.55933303385973,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 177.50645900378004,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.75195802841336,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.9,
+      "mode": "two_tier",
+      "n": 8,
+      "bad_n": 0,
+      "good_n": 8,
+      "recall": null,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 162.03805724944687,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.0112499804236,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 163.5010419995524,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 159.14291702210903,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.36391602130607,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 171.3961249915883,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 158.06658298242837,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 157.53541700541973,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 159.28720799274743,
+          "status": "ok"
+        }
+      ]
+    }
+  ]
+}
