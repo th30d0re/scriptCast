@@ -490,6 +490,48 @@ def capture_session_id(
     return session_id, tokens
 
 
+def codex_rollout_usage(session_id: Optional[str]) -> Optional[Dict[str, int]]:
+    """Read the last Codex turn's token usage from its rollout JSONL file."""
+    if not session_id:
+        return None
+    root = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex")))
+    matches = list((root / "sessions").glob(f"**/rollout-*-{session_id}.jsonl"))
+    if not matches:
+        return None
+
+    # There should be one file per session; use the newest if stale duplicates
+    # exist.  A task_started resets the per-process counter, so only usage
+    # after the final task_started belongs to this dispatch turn.
+    rollout = max(matches, key=lambda p: p.stat().st_mtime)
+    last_started = False
+    usage: Optional[Dict[str, int]] = None
+    try:
+        lines = rollout.read_text().splitlines()
+    except OSError:
+        return None
+    for line in lines:
+        try:
+            event = json.loads(line)
+        except (TypeError, ValueError):
+            continue
+        payload = event.get("payload") if isinstance(event, dict) else None
+        if not isinstance(payload, dict):
+            continue
+        event_type = payload.get("type")
+        if event_type == "task_started":
+            last_started = True
+            usage = None
+        elif event_type == "token_count" and last_started:
+            info = payload.get("info")
+            total = info.get("total_token_usage") if isinstance(info, dict) else None
+            if isinstance(total, dict) and isinstance(total.get("total_tokens"), (int, float)):
+                usage = {
+                    key: int(total.get(key, 0) or 0)
+                    for key in ("total_tokens", "cached_input_tokens", "output_tokens")
+                }
+    return usage
+
+
 def append_dispatch_log(log_path: Path, record: Dict[str, Any]) -> None:
     """Append one record to dispatch log following standard schema."""
     log_path = Path(log_path).resolve()
@@ -550,6 +592,9 @@ def cmd_start(args: argparse.Namespace) -> int:
     session_id, tokens = capture_session_id(
         args.agent, stdout=cp.stdout, stderr=cp.stderr, worktree=worktree
     )
+    rollout_usage = codex_rollout_usage(session_id) if args.agent == "codex" else None
+    if rollout_usage is not None:
+        tokens = rollout_usage["total_tokens"]
 
     verdict = "success" if cp.returncode == 0 else "failure"
     failure_mode = None if verdict == "success" else f"exit_{cp.returncode}"
@@ -583,6 +628,9 @@ def cmd_start(args: argparse.Namespace) -> int:
         "failure_mode": failure_mode,
         "note": args.note or "",
     }
+    if rollout_usage is not None:
+        record["cached_input_tokens"] = rollout_usage["cached_input_tokens"]
+        record["output_tokens"] = rollout_usage["output_tokens"]
 
     append_dispatch_log(Path(args.log) if args.log else default_dispatch_log(), record)
     stored = collect_session_log(worktree, record, cp.stdout)
@@ -653,6 +701,9 @@ def cmd_resume(args: argparse.Namespace) -> int:
     _, tokens = capture_session_id(
         args.agent, stdout=cp.stdout, stderr=cp.stderr, worktree=worktree
     )
+    rollout_usage = codex_rollout_usage(args.session) if args.agent == "codex" else None
+    if rollout_usage is not None:
+        tokens = rollout_usage["total_tokens"]
     verdict = "success" if cp.returncode == 0 else "failure"
     failure_mode = None if verdict == "success" else f"exit_{cp.returncode}"
     wrote_files = files_changed_since(worktree, dirty_before, dirty_after, checkpoint, checkpoint_after)
@@ -684,6 +735,9 @@ def cmd_resume(args: argparse.Namespace) -> int:
             "failure_mode": failure_mode,
             "note": getattr(args, "note", ""),
         }
+    if rollout_usage is not None:
+        record["cached_input_tokens"] = rollout_usage["cached_input_tokens"]
+        record["output_tokens"] = rollout_usage["output_tokens"]
     append_dispatch_log(Path(args.log) if args.log else default_dispatch_log(), record)
     print(f"Session log: {collect_session_log(worktree, record, cp.stdout)}")
     if reg:
