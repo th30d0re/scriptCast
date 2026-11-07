@@ -19,3 +19,9 @@ Rendered with `judge.py` (cue still + approved reference); zoomed comparison she
 ## Not settled
 - Automatic critic: MiniCPM-V returned schema-invalid output on 21/37 renders and found 0 defects in the rest, so it can't rank yet (R3 needs a stricter prompt/retry).
 - Condition A (local generation) awaits model weights.
+
+## Round 2: Muse rerun with output capture (2026-11-07)
+
+Muse delivered 8/10 cues (pulse-network and dual-rails lost to quota exhaustion). Author ranking in `author_rank_round2.csv`. Muse rerun placed first or tied first on 4 of 8 (group-boundary alone, where all others were unusable; debate-funnel, term-glyphs, comparator-loop tied), was unusable on compressed-bus, made no visible change on router-tree, and looked unfinished on doctrine-chain. Terra placed first or tied first on 6 of 8; Luna was last or unusable on 4. Two cues (practice-network, comparator-loop) did not separate workers at all, so they carry no routing signal.
+
+Routing rule unchanged: Terra default, Flash when cheap. Muse is worth a second-opinion cell on layout-heavy cues (it alone rescued group-boundary), not as the default; its output also varies run to run (doctrine-chain best in round 1, unfinished in round 2).
