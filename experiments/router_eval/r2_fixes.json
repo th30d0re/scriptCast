@@ -6,7 +6,8 @@
     "description": "Keep the definition fragments free of leading whitespace and center Figure 2.3 after the rail flight; preserve the ten-sample text hand-off regression check.",
     "acceptance_check": "node tools/check_minute_two.mjs",
     "check_requirements": "Node dependencies; use the repository root node_modules if stage/node_modules is absent.",
-    "base": "3bf6d36"
+    "base": "3bf6d36",
+    "followup": "Add a one-line comment above the change you made naming the cue."
   },
   {
     "id": "dashboard-tray-wage-plane",
@@ -15,7 +16,8 @@
     "description": "Move Wage plane back under the Result ticker as Buffer Class Wage, use the five-panel right stack and eight-cell tray ranges, and retain the non-interactive hint and route-clearance checks.",
     "acceptance_check": "node tools/check_dashboard.mjs",
     "check_requirements": "Node dependencies; use the repository root node_modules if stage/node_modules is absent.",
-    "base": "57969bc"
+    "base": "57969bc",
+    "followup": "Add a one-line comment above the change you made naming the cue."
   },
   {
     "id": "first-minute-dictionary-gutter",
@@ -24,6 +26,7 @@
     "description": "Apply the first-minute Fix pass 1 geometry: shift the dictionary panel before the order cue, lift sense numbers into a clear gutter, and keep the causal chain clear of the gutter.",
     "acceptance_check": "node tools/check_first_minute.mjs",
     "check_requirements": "Node dependencies; use the repository root node_modules if stage/node_modules is absent.",
-    "base": "0cbb07d"
+    "base": "0cbb07d",
+    "followup": "Add a one-line comment above the change you made naming the cue."
   }
 ]
