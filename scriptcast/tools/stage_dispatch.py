@@ -392,9 +392,30 @@ def capture_session_id(
     stderr: str = "",
     worktree: Optional[Path] = None,
 ) -> Tuple[Optional[str], int]:
-    """Capture session id (cursor-agent --output-format json; codex/kimi/agy from session listing)."""
+    """Capture this run's session id and reported token usage where available."""
     session_id: Optional[str] = None
     tokens: int = 0
+
+    # All supported workers may emit JSON usage or a human-readable "tokens
+    # used" line.  Parse only the supplied invocation output for usage.
+    output = stdout + "\n" + stderr
+    for line in output.splitlines():
+        try:
+            data = json.loads(line)
+        except Exception:
+            data = None
+        if isinstance(data, dict):
+            usage = data.get("usage")
+            if isinstance(usage, dict):
+                tokens += sum(int(usage.get(k, 0) or 0) for k in
+                              ("inputTokens", "outputTokens", "input_tokens", "output_tokens",
+                               "prompt_tokens", "completion_tokens", "total_tokens"))
+            for key in ("tokens_used", "tokensUsed", "total_tokens"):
+                if isinstance(data.get(key), (int, float)):
+                    tokens = max(tokens, int(data[key]))
+        match = re.search(r"tokens?\s+used\s*[:=]\s*([\d,]+)", line, re.I)
+        if match:
+            tokens = max(tokens, int(match.group(1).replace(",", "")))
 
     if agent == "cursor-agent":
         for line in stdout.splitlines():
@@ -408,7 +429,7 @@ def capture_session_id(
                         session_id = data["session_id"]
                     if "usage" in data and isinstance(data["usage"], dict):
                         u = data["usage"]
-                        tokens = u.get("inputTokens", 0) + u.get("outputTokens", 0)
+                        tokens = max(tokens, u.get("inputTokens", 0) + u.get("outputTokens", 0))
             except Exception:
                 pass
         if not session_id and stdout.strip():
@@ -418,7 +439,7 @@ def capture_session_id(
                     session_id = data.get("session_id")
                     if "usage" in data and isinstance(data["usage"], dict):
                         u = data["usage"]
-                        tokens = u.get("inputTokens", 0) + u.get("outputTokens", 0)
+                        tokens = max(tokens, u.get("inputTokens", 0) + u.get("outputTokens", 0))
             except Exception:
                 pass
 
@@ -469,6 +490,20 @@ def append_dispatch_log(log_path: Path, record: Dict[str, Any]) -> None:
         f.write(json.dumps(record) + "\n")
 
 
+def default_dispatch_log() -> Path:
+    return session_log_dir() / "dispatch-log.jsonl"
+
+
+def files_changed_since(worktree: Path, before_dirty: str, after_dirty: str,
+                        checkpoint: str, checkpoint_after: str) -> bool:
+    if before_dirty != after_dirty:
+        return True
+    if checkpoint_after != checkpoint:
+        if checkpoint and checkpoint != "unknown":
+            return True
+    return False
+
+
 def cmd_start(args: argparse.Namespace) -> int:
     worktree = Path(args.worktree).resolve() if args.worktree else Path.cwd().resolve()
     brief_path = Path(args.brief).resolve()
@@ -498,11 +533,11 @@ def cmd_start(args: argparse.Namespace) -> int:
         print("Dry run command:", shlex.join(cmd))
         return 0
 
-    _, dirty_before = get_git_info(worktree)
+    checkpoint, dirty_before = get_git_info(worktree)
     t0 = time.monotonic()
     cp = subprocess.run(cmd, cwd=worktree, capture_output=True, text=True, stdin=subprocess.DEVNULL)
     wall_s = time.monotonic() - t0
-    _, dirty_after = get_git_info(worktree)
+    checkpoint_after, dirty_after = get_git_info(worktree)
 
     session_id, tokens = capture_session_id(
         args.agent, stdout=cp.stdout, stderr=cp.stderr, worktree=worktree
@@ -510,7 +545,7 @@ def cmd_start(args: argparse.Namespace) -> int:
 
     verdict = "success" if cp.returncode == 0 else "failure"
     failure_mode = None if verdict == "success" else f"exit_{cp.returncode}"
-    wrote_files = bool(dirty_after != dirty_before)
+    wrote_files = files_changed_since(worktree, dirty_before, dirty_after, checkpoint, checkpoint_after)
 
     # Flags string for log: omit prompt body
     if args.agent == "agy":
@@ -530,7 +565,9 @@ def cmd_start(args: argparse.Namespace) -> int:
         "flags": flags_str,
         "brief_chars": brief_chars,
         "wall_s": round(wall_s, 2),
-        "tokens": tokens,
+        "tokens": tokens or brief_chars // CHARS_PER_TOKEN,
+        "tokens_kind": "reported" if tokens else "proxy",
+        "checkpoint": checkpoint,
         "wrote_files": wrote_files,
         "acceptance": getattr(args, "acceptance", "not_run"),
         "iterations": 1,
@@ -539,8 +576,7 @@ def cmd_start(args: argparse.Namespace) -> int:
         "note": args.note or "",
     }
 
-    if args.log:
-        append_dispatch_log(Path(args.log), record)
+    append_dispatch_log(Path(args.log) if args.log else default_dispatch_log(), record)
     stored = collect_session_log(worktree, record, cp.stdout)
     print(f"Session log: {stored}")
     if reg:
@@ -600,18 +636,18 @@ def cmd_resume(args: argparse.Namespace) -> int:
         print("Dry run resume command:", shlex.join(cmd))
         return 0
 
-    _, dirty_before = get_git_info(worktree)
+    checkpoint, dirty_before = get_git_info(worktree)
     t0 = time.monotonic()
     cp = subprocess.run(cmd, cwd=worktree, capture_output=True, text=True, stdin=subprocess.DEVNULL)
     wall_s = time.monotonic() - t0
-    _, dirty_after = get_git_info(worktree)
+    checkpoint_after, dirty_after = get_git_info(worktree)
 
     _, tokens = capture_session_id(
         args.agent, stdout=cp.stdout, stderr=cp.stderr, worktree=worktree
     )
     verdict = "success" if cp.returncode == 0 else "failure"
     failure_mode = None if verdict == "success" else f"exit_{cp.returncode}"
-    wrote_files = bool(dirty_after != dirty_before)
+    wrote_files = files_changed_since(worktree, dirty_before, dirty_after, checkpoint, checkpoint_after)
 
     if args.agent == "agy":
         flags_list = [c for c in cmd[1:] if not c.startswith("--print=")]
@@ -619,8 +655,7 @@ def cmd_resume(args: argparse.Namespace) -> int:
         flags_list = cmd[1:-1]
     flags_str = " ".join(flags_list)
 
-    if args.log:
-        record = {
+    record = {
             "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "session_id": args.session,
             "project": getattr(args, "project", None) or worktree.name or "scriptcast",
@@ -631,7 +666,9 @@ def cmd_resume(args: argparse.Namespace) -> int:
             "flags": flags_str,
             "brief_chars": len(message_content),
             "wall_s": round(wall_s, 2),
-            "tokens": tokens,
+            "tokens": tokens or len(message_content) // CHARS_PER_TOKEN,
+            "tokens_kind": "reported" if tokens else "proxy",
+            "checkpoint": checkpoint,
             "wrote_files": wrote_files,
             "acceptance": getattr(args, "acceptance", "not_run"),
             "iterations": 1,
@@ -639,8 +676,8 @@ def cmd_resume(args: argparse.Namespace) -> int:
             "failure_mode": failure_mode,
             "note": getattr(args, "note", ""),
         }
-        append_dispatch_log(Path(args.log), record)
-        print(f"Session log: {collect_session_log(worktree, record, cp.stdout)}")
+    append_dispatch_log(Path(args.log) if args.log else default_dispatch_log(), record)
+    print(f"Session log: {collect_session_log(worktree, record, cp.stdout)}")
     if reg:
         entry = registry_resume(reg[0], reg[1], tokens, len(message_content),
                                 cp.returncode == 0, bool(compact))
@@ -665,6 +702,23 @@ def cmd_close(args: argparse.Namespace) -> int:
     entry = registry_close(path, key, summary)
     print(f"Closed {key} after {entry['turns']} turns; summary: {summary}")
     return 0
+
+
+def cmd_accept(args: argparse.Namespace) -> int:
+    path = Path(args.log) if args.log else default_dispatch_log()
+    if not path.is_file():
+        print(f"Dispatch log not found: {path}", file=sys.stderr)
+        return 1
+    records = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    for record in reversed(records):
+        if record.get("task") == args.task:
+            record["acceptance"] = args.status
+            if args.note is not None:
+                record["note"] = args.note
+            path.write_text("\n".join(json.dumps(r) for r in records) + "\n")
+            return 0
+    print(f"No dispatch record for task {args.task}", file=sys.stderr)
+    return 1
 
 
 def _add_registry_flags(p: argparse.ArgumentParser, context: bool = True) -> None:
@@ -716,6 +770,12 @@ def main(argv=None) -> int:
     _add_registry_flags(p_close, context=False)
     p_close.add_argument("--summary", type=Path, help="Final state summary file")
 
+    p_accept = sub.add_parser("accept", help="Set acceptance on the latest record for a task")
+    p_accept.add_argument("--task", required=True)
+    p_accept.add_argument("--status", required=True, choices=("pass", "fail"))
+    p_accept.add_argument("--note")
+    p_accept.add_argument("--log", type=Path)
+
     args = parser.parse_args(argv)
 
     if args.command == "start":
@@ -726,6 +786,8 @@ def main(argv=None) -> int:
         if not (args.episode and args.scene):
             parser.error("close needs --episode and --scene")
         return cmd_close(args)
+    elif args.command == "accept":
+        return cmd_accept(args)
     return 0
 
 
