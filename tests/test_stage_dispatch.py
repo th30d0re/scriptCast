@@ -195,6 +195,27 @@ def test_session_id_capture_codex_kimi_agy(tmp_path):
         assert sid == "agy-uuid-333"
 
 
+def test_codex_probe_output_has_no_usage_fixture():
+    # Exact stderr captured from `codex exec ...` on this machine; failed
+    # startup must remain an unreported/proxy-eligible invocation.
+    stderr = (
+        "WARNING: proceeding, even though we could not create PATH aliases: Operation not permitted (os error 1)\n"
+        "Reading additional input from stdin...\n"
+        "Error: failed to initialize in-process app-server client: Operation not permitted (os error 1)\n"
+    )
+    assert capture_session_id("codex", stderr=stderr) == (None, 0)
+
+
+def test_codex_turn_completed_usage_fixture():
+    # Codex --json JSONL usage is taken from the terminal turn.completed
+    # event. total_tokens, when present, is authoritative and not double-counted.
+    output = (
+        '{"type":"thread.started","thread_id":"sess-codex-1"}\n'
+        '{"type":"turn.completed","usage":{"input_tokens":120,"output_tokens":30,"total_tokens":150}}\n'
+    )
+    assert capture_session_id("codex", stdout=output)[1] == 150
+
+
 def test_resume_uses_right_flag_per_agent(tmp_path):
     msg = "Please fix the failing test."
     msg_file = tmp_path / "fix_message.md"

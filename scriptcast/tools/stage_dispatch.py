@@ -407,9 +407,17 @@ def capture_session_id(
         if isinstance(data, dict):
             usage = data.get("usage")
             if isinstance(usage, dict):
-                tokens += sum(int(usage.get(k, 0) or 0) for k in
-                              ("inputTokens", "outputTokens", "input_tokens", "output_tokens",
-                               "prompt_tokens", "completion_tokens", "total_tokens"))
+                # Codex JSONL's terminal `turn.completed` event reports
+                # input/output components, and some versions also report a
+                # total. Prefer the total to avoid counting components twice.
+                total = usage.get("total_tokens") or usage.get("totalTokens")
+                if isinstance(total, (int, float)):
+                    tokens = max(tokens, int(total))
+                else:
+                    parts = sum(int(usage.get(k, 0) or 0) for k in
+                                ("inputTokens", "outputTokens", "input_tokens", "output_tokens",
+                                 "prompt_tokens", "completion_tokens"))
+                    tokens = max(tokens, parts)
             for key in ("tokens_used", "tokensUsed", "total_tokens"):
                 if isinstance(data.get(key), (int, float)):
                     tokens = max(tokens, int(data[key]))
