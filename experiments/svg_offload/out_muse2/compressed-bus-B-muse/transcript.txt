@@ -1,0 +1,23 @@
+Drew the bus topology inline in [HostWetware.tsx](/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/compressed-bus-B-muse/Architecting_the_operation/video/yt02/stage/min3_7/c/HostWetware.tsx:131), gated on `t26Bandwidth`.
+
+The new full-frame diagram (`viewBox="0 0 1920 1080"`, the scene's layout box) contains:
+
+- Four input sockets (`data-bus-input-socket="1..4"`) at the existing `SOCKETS` positions, drawn as gold-ringed circles on `color('color/bg/field')`.
+- Four feeder lines (`data-bus-feed`) from each socket east to the collector at x=1165, in `color('color/line/wire')`.
+- A horizontal spine (`data-bus-spine`, 1165→1250 at y=530) and a vertical riser (`data-bus-riser`, x=1250, y 324→736, draw-in animated with `bandwidthP`), both in `color('color/fill/gold')`.
+- Three output channels (`data-bus-output-channel="1..3"`) from the riser to each card in `HOST_WETWARE_LAYOUT.outputCards`.
+
+All elements are declared to the layout audit via `shapeAttrs`/`lineAttrs`, derived from the scene's existing layout constants, and fade in with `bandwidthP`.
+
+Verification:
+
+- Typecheck passes clean: `tsc --noEmit -p stage/tsconfig.json`.
+- An independent render probe confirms the bus is absent 100 ms before the cue and present at `t26Bandwidth+700` with exactly 4 sockets, 4 feeders, spine, riser, and 3 channels; a 250 ms sweep of all 122 frames of the scene reports zero layout-audit violations.
+- The repo's `check_min3_7_c.mjs` runner fails identically on the untouched base (a React context error in its snapshot subprocess), so that failure is pre-existing and unrelated to this change.
+
+muse: workspace root: /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/compressed-bus-B-muse/Architecting_the_operation/video/yt02 (explicit)
+muse: warning: rules file at /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/compressed-bus-B-muse/AGENTS.md exists, but the workspace is untrusted, so it is skipped for this session; restart with --trust-workspace to load project rules
+muse: Skills: 89 loaded · 1 warning · 17 details hidden
+muse:   `skills_catalog` was trimmed to fit its size limit (32 KB): 62 descriptions compacted, 0 skill ids omitted
+muse:   Run `muse skills list --source all` for full diagnostics.
+muse: Agent delegation: auto unavailable: workspace is untrusted.

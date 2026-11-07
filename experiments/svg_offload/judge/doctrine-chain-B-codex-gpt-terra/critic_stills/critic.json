@@ -1,0 +1,10 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "SenseTwo_t8Determine.png",
+      "status": "contract_error",
+      "raw": "{\"verdict\":\"fail\",\"defects\":[{\"category\":\"Layout\",\"element_id\":null,\"evidence\":\"The diagram in the lower box has been altered. In the reference (image 1), the flow is 'racial groups' -> 'biological differences' with a label 'claimed to determine'. In the candidate (image 2), the flow is extended to 'racial groups' -> 'biological differences' -> 'culture' -> 'achievement', labeled as 'claimed causal chain'. This is a significant layout and content change.\",\"severity\":\"high\",\"region\":[320,550,680,750]}]}}"
+    }
+  ]
+}

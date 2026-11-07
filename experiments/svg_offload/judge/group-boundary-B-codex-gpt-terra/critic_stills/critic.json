@@ -1,0 +1,10 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "APAGroupDefinitions_t19Ingroup.png",
+      "status": "contract_error",
+      "raw": "{\"verdict\":\"fail\",\"defects\":[{\"category\":\"State\",\"element_id\":null,\"evidence\":\"Additional yellow dots and arrows have been added to the diagram in image 2, which are not present in the reference image 1. Specifically, yellow dots appear over some of the person icons inside the circle, and three yellow arrows point from the circle to the outside group.\",\"severity\":\"high\",\"region\":[390,250,870,650]}]}"
+    }
+  ]
+}

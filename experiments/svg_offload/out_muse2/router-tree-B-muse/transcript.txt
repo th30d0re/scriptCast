@@ -1,0 +1,22 @@
+Done. Redrew the router-tree asset inline at cue `t14Default` in [HeartsAudit.tsx](/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/router-tree-B-muse/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.tsx:90).
+
+The drawing, sized to the scene's layout box (`viewBox="0 0 370 420"`):
+
+- Three explicit gold paths (`color('color/fill/gold')`, `strokeWidth 2`) entering at y 120 / 210 / 300.
+- Top and bottom lines turn through quadratic elbow joints (`Q 225 120 225 210` / `Q 225 300 225 210`) into the center; the middle line runs straight. All three merge into one output trunk to x 348, marked by a 4px convergence node at (225, 210).
+- Gating preserved: panel only renders at `ms >= cue.t14Default.at`, lines stagger in at +0/+90/+180 ms. Audit `lineAttrs` boxes match the original geometry exactly (e.g. `router-line-1` data-points `768,430 916,430 975,520 1098,520`).
+
+Verification observed:
+
+- `tsc --noEmit -p stage/tsconfig.json` — pass, no errors.
+- Package A check (47 cue frames, layout audit, storyboard beats incl. `t14Default`) — PASS. The repo's own `check_min3_7_a.mjs` fails in this worktree before and after my edit due to a duplicate React copy up-tree (`scriptCast/node_modules`); I ran the identical check with React pinned to one copy and it passes.
+- Render probe at `t14Default + 700ms` shows all three paths and the node; at `t14Default − 100ms` the router markup is absent.
+
+Only [HeartsAudit.tsx](/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/router-tree-B-muse/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.tsx:90) changed (4 insertions, 1 deletion), left uncommitted.
+
+muse: workspace root: /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/router-tree-B-muse/Architecting_the_operation/video/yt02 (explicit)
+muse: warning: rules file at /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/router-tree-B-muse/AGENTS.md exists, but the workspace is untrusted, so it is skipped for this session; restart with --trust-workspace to load project rules
+muse: Skills: 89 loaded · 1 warning · 17 details hidden
+muse:   `skills_catalog` was trimmed to fit its size limit (32 KB): 62 descriptions compacted, 0 skill ids omitted
+muse:   Run `muse skills list --source all` for full diagnostics.
+muse: Agent delegation: auto unavailable: workspace is untrusted.

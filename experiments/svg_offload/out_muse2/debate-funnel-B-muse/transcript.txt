@@ -1,0 +1,8 @@
+Drawn inline at cue `t13Audit` in [HeartsAudit.tsx](/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/debate-funnel-B-muse/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.tsx:48): a single `<g opacity={auditP}>` gated on `ms>=cue.t13Audit.at` inside the 880×590 layout-box SVG, containing the funnel polygon `M 70 145 H 550 L 680 280 L 550 415 H 70 Z` narrowing to the apex, the audit-beam triangle `M 680 280 L 860 245 L 860 315 Z`, and three tapering ordering strokes, all using `color('color/...')` tokens.
+
+muse: workspace root: /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/debate-funnel-B-muse/Architecting_the_operation/video/yt02 (explicit)
+muse: warning: rules file at /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/debate-funnel-B-muse/AGENTS.md exists, but the workspace is untrusted, so it is skipped for this session; restart with --trust-workspace to load project rules
+muse: Skills: 89 loaded · 1 warning · 17 details hidden
+muse:   `skills_catalog` was trimmed to fit its size limit (32 KB): 62 descriptions compacted, 0 skill ids omitted
+muse:   Run `muse skills list --source all` for full diagnostics.
+muse: Agent delegation: auto unavailable: workspace is untrusted.

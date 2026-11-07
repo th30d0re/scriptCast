@@ -1,0 +1,10 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "HeartsAudit_t13Audit.png",
+      "status": "contract_error",
+      "raw": "{\"verdict\":\"fail\",\"defects\":[{\"category\":\"Appearance\",\"element_id\":null,\"evidence\":\"The red lines in the 'INDIVIDUAL AUDIT' section have changed from a dark, muted red in image 1 to a bright, saturated red in image 2, altering the intended visual style.\",\"severity\":\"medium\",\"region\":[458,450,542,550]}]}"
+    }
+  ]
+}

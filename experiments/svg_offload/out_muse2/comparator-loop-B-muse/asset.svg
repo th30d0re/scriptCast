@@ -1,0 +1,24 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true">
+        <path {...lineAttrs('percept-axis',[[PERCEPT.left,PERCEPT.y],[PERCEPT.right,PERCEPT.y]])} d={`M${PERCEPT.left} ${PERCEPT.y}H${PERCEPT.right}`} stroke={color('color/line/hairline')} strokeWidth="2" opacity={frameP}/>
+        <circle {...shapeAttrs('comparator',{x:COMPARATOR.x-COMPARATOR.r,y:COMPARATOR.y-COMPARATOR.r,w:2*COMPARATOR.r,h:2*COMPARATOR.r},'mark')} cx={COMPARATOR.x} cy={COMPARATOR.y} r={COMPARATOR.r} fill={color('color/bg/field')} stroke={accent} strokeWidth="3" opacity={frameP}/>
+        <path {...lineAttrs('output-wire',OUTPUT_WIRE)} d={pathFrom(OUTPUT_WIRE)} fill="none" stroke={color('color/line/wire')} strokeWidth="3" opacity={frameP}/>
+      </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true">
+      <circle data-percept-marker="true" {...shapeAttrs('percept-marker',{x:perceptX(outputMean)-15,y:PERCEPT.y-15,w:30,h:30},'mark')} cx={perceptX(outputMean)} cy={PERCEPT.y} r="15" fill={gold} opacity={enter(ms,cue.perception.at)}/>
+    </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true"><path {...lineAttrs('prediction-wire',PREDICTION_WIRE)} d={pathFrom(PREDICTION_WIRE)} fill="none" stroke={color('color/line/wire')} strokeWidth="3" opacity={priorP}/></svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true"><path {...lineAttrs('evidence-wire',EVIDENCE_WIRE)} d={pathFrom(EVIDENCE_WIRE)} fill="none" stroke={gold} strokeWidth="3" opacity={evidenceP}/></svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true"><path {...lineAttrs('update-path',UPDATE_PATH)} d={pathFrom(UPDATE_PATH)} fill="none" stroke={accent} strokeWidth="4" pathLength="1" strokeDasharray="1" strokeDashoffset={1-updateP}/></svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true"><circle data-sensory-mark="true" {...shapeAttrs('sensory-mark',{x:markX-SENSORY_MARK.r,y:SENSORY_MARK.y-SENSORY_MARK.r,w:2*SENSORY_MARK.r,h:2*SENSORY_MARK.r},'mark')} cx={markX} cy={SENSORY_MARK.y} r={SENSORY_MARK.r} fill={gold} opacity={enter(ms,cue.guesses.at)}/></svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true" opacity={enter(ms,cue.compares.at)}>
+        <path {...lineAttrs('comparator-axis',[[L.core.x+12,COMPARATOR.y],[COMPARATOR.x-COMPARATOR.r,COMPARATOR.y]])} d={pathFrom([[L.core.x+12,COMPARATOR.y],[COMPARATOR.x-COMPARATOR.r,COMPARATOR.y]])} fill="none" stroke={color('color/line/hairline')} strokeWidth="2"/>
+        <path {...lineAttrs('prediction-wire',PREDICTION_WIRE)} d={pathFrom(PREDICTION_WIRE)} fill="none" stroke={color('color/line/wire')} strokeWidth="3"/>
+        <path {...lineAttrs('evidence-wire',EVIDENCE_WIRE)} d={pathFrom(EVIDENCE_WIRE)} fill="none" stroke={color('color/fill/gold')} strokeWidth="3"/>
+        <path {...lineAttrs('update-path',UPDATE_PATH)} d={pathFrom(UPDATE_PATH)} fill="none" stroke={color('color/text/accent')} strokeWidth="4"/>
+        <path {...lineAttrs('output-wire',OUTPUT_WIRE)} d={pathFrom(OUTPUT_WIRE)} fill="none" stroke={color('color/line/wire')} strokeWidth="3"/>
+        <path {...lineAttrs('bracket-left',BRACKET_LEFT)} d={pathFrom(BRACKET_LEFT)} fill="none" stroke={color('color/fill/gold')} strokeWidth="3"/>
+        <path {...lineAttrs('bracket-right',BRACKET_RIGHT)} d={pathFrom(BRACKET_RIGHT)} fill="none" stroke={color('color/fill/gold')} strokeWidth="3"/>
+        <circle {...shapeAttrs('comparator',{x:COMPARATOR.x-COMPARATOR.r,y:COMPARATOR.y-COMPARATOR.r,w:2*COMPARATOR.r,h:2*COMPARATOR.r},'mark')} cx={COMPARATOR.x} cy={COMPARATOR.y} r={COMPARATOR.r} fill={color('color/bg/field')} stroke={color('color/text/accent')} strokeWidth="3"/>
+      </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true"><circle data-guess-marker="true" {...shapeAttrs('guess-marker',{x:perceptX(priorMean)-11,y:PERCEPT.guessY-11,w:22,h:22},'mark')} cx={perceptX(priorMean)} cy={PERCEPT.guessY} r="11" fill={red} opacity={clamp(.2+guessCycle)*enter(ms,cue.tilt.at)}/></svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true"><path {...lineAttrs('legal-link',[[1520,L.bus.y],[1520,L.gauge.y+L.gauge.h]])} d={`M1520 ${L.bus.y}V${L.gauge.y+L.gauge.h}`} stroke={red} strokeWidth="4" opacity={enter(ms,cue.legally.at)}/></svg>

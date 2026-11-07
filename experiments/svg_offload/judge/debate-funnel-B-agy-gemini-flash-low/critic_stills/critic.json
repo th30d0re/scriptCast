@@ -1,0 +1,10 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "HeartsAudit_t13Audit.png",
+      "status": "contract_error",
+      "raw": "{\"verdict\":\"fail\",\"defects\":[{\"category\":\"Rendering\",\"element_id\":\"null\",\"evidence\":\"The red lines in the 'INDIVIDUAL AUDIT' section are rendered differently. In the reference image (image 1), they are a dense, dark cluster. In the candidate image (image 2), they are distinct, thin red lines forming a fan shape, indicating a rendering or state change defect.\",\"severity\":\"medium\",\"region\":[540,430,630,530]}]}"
+    }
+  ]
+}

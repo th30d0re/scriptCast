@@ -1,0 +1,37 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position: 'absolute', inset: 0}} aria-hidden="true">
+              {!hasCard && explicitThroughDrawn.length >= 2 && (
+                <path {...lineAttrs('explicit-rail-through', explicitThroughDrawn)} d={pathFrom(explicitThroughDrawn)} fill="none" stroke={gold} strokeWidth="3" opacity={explicitP} />
+              )}
+              {hasCard && explicitInDrawn.length >= 2 && (
+                <path {...lineAttrs('explicit-rail-in', explicitInDrawn)} d={pathFrom(explicitInDrawn)} fill="none" stroke={gold} strokeWidth="3" opacity={consciouslyP} />
+              )}
+              {hasCard && explicitOutDrawn.length >= 2 && (
+                <path {...lineAttrs('explicit-rail-out', explicitOutDrawn)} d={pathFrom(explicitOutDrawn)} fill="none" stroke={gold} strokeWidth="3" opacity={consciouslyP} />
+              )}
+            </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position: 'absolute', inset: 0}} aria-hidden="true">
+                <path {...lineAttrs('implicit-rail', implicitDrawn)} d={pathFrom(implicitDrawn)} fill="none" stroke={raceRed} strokeWidth="3" opacity={implicitP} />
+                {ms >= cue.t39Automatic && (
+                  <>
+                    <circle cx={1180} cy={690} r={9} fill={raceRed} opacity={automaticP} />
+                    <circle cx={1260} cy={690} r={9} fill={raceRed} opacity={automaticP} />
+                    <circle cx={1340} cy={690} r={9} fill={raceRed} opacity={automaticP} />
+                  </>
+                )}
+              </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position: 'absolute', inset: 0}} aria-hidden="true">
+                <path {...lineAttrs('meter-lead-explicit', leaderExplicitToMeter)} d={pathFrom(leaderExplicitToMeter)} fill="none" stroke={gold} strokeWidth="2.5" strokeDasharray="4 4" />
+                <path {...lineAttrs('meter-lead-implicit', leaderImplicitToMeter)} d={pathFrom(leaderImplicitToMeter)} fill="none" stroke={raceRed} strokeWidth="2.5" strokeDasharray="4 4" />
+              </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position: 'absolute', inset: 0}} aria-hidden="true">
+              <path {...lineAttrs('cite-rule', citeRulePoints)} d={pathFrom(citeRulePoints)} fill="none" stroke={gold} strokeWidth="2" />
+            </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position: 'absolute', inset: 0}} aria-hidden="true">
+              <path {...lineAttrs('t40-exp-rail', t40ExpRail)} d={pathFrom(t40ExpRail)} fill="none" stroke={gold} strokeWidth="3" />
+              <path {...lineAttrs('t40-imp-rail', t40ImpRail)} d={pathFrom(t40ImpRail)} fill="none" stroke={raceRed} strokeWidth="3" />
+              <circle cx={1180} cy={747} r={8} fill={raceRed} />
+              <circle cx={1260} cy={747} r={8} fill={raceRed} />
+              <circle cx={1340} cy={747} r={8} fill={raceRed} />
+              <path {...lineAttrs('t40-lead-exp', t40LeadExp)} d={pathFrom(t40LeadExp)} fill="none" stroke={gold} strokeWidth="2.5" strokeDasharray="4 4" />
+              <path {...lineAttrs('t40-lead-imp', t40LeadImp)} d={pathFrom(t40LeadImp)} fill="none" stroke={raceRed} strokeWidth="2.5" strokeDasharray="4 4" />
+            </svg>

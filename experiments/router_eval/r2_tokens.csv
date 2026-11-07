@@ -1,7 +1,7 @@
 fix,condition,brief_chars,tokens,tokens_kind,wall_s,accepted,exit_code,stderr_tail
-minute-two-figure-centering,A,,,dry-run,,not_run,,
-minute-two-figure-centering,B,,,dry-run,,not_run,,
-dashboard-tray-wage-plane,A,,,dry-run,,not_run,,
-dashboard-tray-wage-plane,B,,,dry-run,,not_run,,
-first-minute-dictionary-gutter,A,,,dry-run,,not_run,,
-first-minute-dictionary-gutter,B,,,dry-run,,not_run,,
+minute-two-figure-centering,A,2880,720,proxy,344.261,true,0,
+minute-two-figure-centering,B,4233,1058,proxy,295.945,true,0,
+dashboard-tray-wage-plane,A,4561,1140,proxy,380.386,true,0,
+dashboard-tray-wage-plane,B,5058,1264,proxy,349.886,true,0,
+first-minute-dictionary-gutter,A,5940,1485,proxy,530.096,true,0,
+first-minute-dictionary-gutter,B,6437,1609,proxy,417.084,true,0,

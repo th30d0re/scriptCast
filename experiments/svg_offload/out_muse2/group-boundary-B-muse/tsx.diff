@@ -1,0 +1,25 @@
+diff --git a/Architecting_the_operation/video/yt02/stage/min3_7/b/APAGroupDefinitions.tsx b/Architecting_the_operation/video/yt02/stage/min3_7/b/APAGroupDefinitions.tsx
+index b5f707d..371eaf2 100644
+--- a/Architecting_the_operation/video/yt02/stage/min3_7/b/APAGroupDefinitions.tsx
++++ b/Architecting_the_operation/video/yt02/stage/min3_7/b/APAGroupDefinitions.tsx
+@@ -64,9 +64,19 @@ export function APAGroupDefinitions({segment}:SceneProps){
+     {ms>=cue.american19&&<DefinitionPanel phase={phase} progress={cardP} sourceOnly={!phase}/>}
+     {ms>=cue.baseline&&<div data-sorting-field="radial" {...shapeAttrs('apa-field',L.field,'frame')} style={{position:'absolute',left:L.field.x,top:L.field.y,width:L.field.w,height:L.field.h,overflow:'hidden',background:color('color/fill/panel-render'),border:`1px solid ${color('color/line/hairline')}`,opacity:baselineP}}>
+       <svg width={L.field.w} height={L.field.h} viewBox={`0 0 ${L.field.w} ${L.field.h}`} style={{position:'absolute',inset:0}} aria-hidden="true">
+-        <defs><mask id="apa-exterior-mask"><rect width={L.field.w} height={L.field.h} fill="white"/><circle cx={L.field.cx} cy={L.field.cy} r={L.field.r} fill="black"/></mask></defs>
++        <defs><mask id="apa-exterior-mask"><rect width={L.field.w} height={L.field.h} fill="white"/><circle cx={L.field.cx} cy={L.field.cy} r={L.field.r} fill="black"/></mask><clipPath id="apa-boundary-clip"><circle cx={L.field.cx} cy={L.field.cy} r={L.field.r*boundaryP}/></clipPath></defs>
+         {!biasPhase&&ms>=cue.outside&&<rect data-exterior-shade="true" {...shapeAttrs('exterior-shade',L.field,'frame')} width={L.field.w} height={L.field.h} fill={color('color/surface/well')} opacity={.35*outsideP} mask="url(#apa-exterior-mask)"/>}
++        {ms>=cue.ingroup&&!biasPhase&&<g data-token-lattice="true" clipPath="url(#apa-boundary-clip)" opacity={boundaryP}>
++          {[-72,0,72].map(dy=>[-108,-36,36,108].map(dx=><line key={`lat-line-${dx}-${dy}`} x1={L.field.cx-150} y1={L.field.cy+dy} x2={L.field.cx+150} y2={L.field.cy+dy} stroke={color('color/line/graticule')} strokeWidth="1"/>))}
++          {[-108,-36,36,108].map(dx=>[-72,0,72].map(dy=><line key={`lat-line-v-${dx}-${dy}`} x1={L.field.cx+dx} y1={L.field.cy-110} x2={L.field.cx+dx} y2={L.field.cy+110} stroke={color('color/line/graticule')} strokeWidth="1"/>))}
++          {[-72,0,72].flatMap((dy,row)=>[-108,-36,36,108].map((dx,col)=>{const n=row*4+col+1,x=L.field.cx+dx,y=L.field.cy+dy;return <circle key={n} data-lattice-token={n} cx={x} cy={y} r="8" fill={color('color/fill/gold')} fillOpacity=".55" stroke={color('color/line/hairline-strong')} strokeWidth="1.5"/>;}))}
++        </g>}
+         {ms>=cue.ingroup&&<circle data-group-boundary="true" {...shapeAttrs('group-boundary',boundaryBox,'frame')} cx={L.field.cx} cy={L.field.cy} r={L.field.r*boundaryP} fill={color('color/fill/gold-wash')} fillOpacity={.7*boundaryP} stroke={color('color/fill/gold')} strokeWidth="3" opacity={boundaryP}/>}
++        {ms>=cue.ingroup&&!biasPhase&&<g data-outgoing-arrows="true" opacity={boundaryP} stroke={color('color/fill/gold')} fill={color('color/fill/gold')}>
++          <g data-outgoing-arrow="east"><line x1={L.field.cx+190} y1={L.field.cy} x2={L.field.cx+268} y2={L.field.cy} strokeWidth="3"/><polygon stroke="none" points={`${L.field.cx+286},${L.field.cy} ${L.field.cx+268},${L.field.cy-8} ${L.field.cx+268},${L.field.cy+8}`}/></g>
++          <g data-outgoing-arrow="north-east"><line x1={L.field.cx+131} y1={L.field.cy-131} x2={L.field.cx+186} y2={L.field.cy-186} strokeWidth="3"/><polygon stroke="none" points={`${L.field.cx+199},${L.field.cy-199} ${L.field.cx+182},${L.field.cy-196} ${L.field.cx+196},${L.field.cy-182}`}/></g>
++          <g data-outgoing-arrow="south-east"><line x1={L.field.cx+131} y1={L.field.cy+131} x2={L.field.cx+186} y2={L.field.cy+186} strokeWidth="3"/><polygon stroke="none" points={`${L.field.cx+199},${L.field.cy+199} ${L.field.cx+196},${L.field.cy+182} ${L.field.cx+182},${L.field.cy+196}`}/></g>
++        </g>}
+         {!biasPhase&&ms>=cue.membership&&APA_MARKS.filter(mark=>mark.own&&!mark.center).map(mark=>{const x=mark.initialX+(mark.finalX-mark.initialX)*sortP,y=mark.initialY+(mark.finalY-mark.initialY)*sortP;
+             // Each tie stops at the figures' edges (centre mark 38 px, member 30 px) so no line crosses a person.
+             const length=Math.hypot(x-L.field.cx,y-L.field.cy)||1,t0=Math.min(.45,38/length),t1=Math.max(.55,1-30/length);

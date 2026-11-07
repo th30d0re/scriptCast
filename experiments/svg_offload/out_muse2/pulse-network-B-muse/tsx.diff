@@ -1,0 +1,12 @@
+diff --git a/Architecting_the_operation/video/yt02/stage/min3_7/d/InstalledRacialPrior.tsx b/Architecting_the_operation/video/yt02/stage/min3_7/d/InstalledRacialPrior.tsx
+index feff846..35b62c8 100644
+--- a/Architecting_the_operation/video/yt02/stage/min3_7/d/InstalledRacialPrior.tsx
++++ b/Architecting_the_operation/video/yt02/stage/min3_7/d/InstalledRacialPrior.tsx
+@@ -90,6 +90,7 @@ export function InstalledRacialPrior({segment}:SceneProps) {
+     const [x,y]=d<40?[1760+d,832]:d<362?[1800,832-(d-40)]:[1800-(d-362),510];
+     return {x,y};
+   }):[];
++  const tokenSquares=Array.from({length:12},(_,index)=>({x:1764+(index%2)*48, y:531+Math.floor(index/2)*48}));
+   const cartridgeP=enter(ms,cue.installed.at,600), cartridgeX=L.socket.x+40*(1-cartridgeP);
+   const tokens=ms>=cue.stereotypes.at?[0,1,2,3].map(index=>{
+     const t=enter(ms,cue.stereotypes.at+index*120,600);

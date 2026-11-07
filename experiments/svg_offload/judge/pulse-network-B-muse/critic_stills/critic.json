@@ -1,0 +1,10 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "InstalledRacialPrior_t33Institutions.png",
+      "status": "contract_error",
+      "raw": "{\"verdict\":\"fail\",\"defects\":[{\"category\":\"State\",\"element_id\":null,\"evidence\":\"Additional UI elements (three small square icons) have been added to the right side of the 'DERIVED - NORMALIZED PRIOR PRECISION \u03b1' box in image 2, which are not present in image 1.\",\"severity\":\"medium\",\"region\":[880,580,920,750]}]}"
+    }
+  ]
+}

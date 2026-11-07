@@ -1,0 +1,10 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "SenseTwo_t8Determine.png",
+      "status": "contract_error",
+      "raw": "{\"verdict\":\"fail\",\"defects\":[{\"category\":\"Content\",\"element_id\":null,\"evidence\":\"The diagram in the candidate image (image 2) has been altered from the reference (image 1). Specifically, the box labeled 'racial groups' and the label 'claimed to determine' are missing, and new boxes 'ideological belief' and 'achievement' have been added to the flow.\", \"severity\":\"high\",\"region\":[350,550,650,750]}]}"
+    }
+  ]
+}

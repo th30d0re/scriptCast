@@ -70,3 +70,15 @@ The three 22:16:12 starts ran concurrently for ~1–2 h each, wrote nothing, and
 2. Fix codex session-id capture (collisions above); record per-call usage where the CLI exposes it.
 3. Set `acceptance` on registry-era runs; exit code alone passes workers that wrote nothing.
 4. Then run the planned 3-fixes-×-2-conditions experiment and record `experiments/router_eval/r2_tokens.csv` as the plan specifies.
+
+## Step 17 A/B run (2026-11-07)
+
+Three real YT02 fixes, each run from the commit its brief was written at, Codex gpt-5.6-luna. A = current-practice brief, fresh start. B = no registry session existed, so start with `--context` from the premiere notebook (d3f54f50). Acceptance = the episode's own `tools/check_*.mjs` passes and the worker changed files.
+
+| fix | A brief chars | B brief chars | A wall s | B wall s | accepted A/B |
+|---|---|---|---|---|---|
+| minute-two figure centring | 2,880 | 4,233 | 344 | 296 | yes/yes |
+| dashboard wage plane | 4,561 | 5,058 | 380 | 350 | yes/yes |
+| first-minute dictionary gutter | 5,940 | 6,437 | 530 | 417 | yes/yes |
+
+Context adds 500–1,350 chars to the brief and cut wall time 8–21% (mean 14%), with equal acceptance. n=3 per arm, one run each, so this is direction not proof. Tokens are still a brief-length proxy: Codex's reported usage is not captured. Condition B was never a true resume (no prior session per scene), so the registry's resume path remains unmeasured; the "70% token reduction" claim is untested. Diffs in `experiments/router_eval/r2_runs/`.

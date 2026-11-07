@@ -1,0 +1,55 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "SenseTwo_t8Determine.png",
+      "status": "ok",
+      "verdict": "pass",
+      "defects": [],
+      "ungrounded": 0,
+      "tier1": {
+        "elements": [
+          {
+            "id": "grid_2_1",
+            "p_defect": 0.3208303785462252
+          },
+          {
+            "id": "grid_1_1",
+            "p_defect": 0.24542936160704024
+          },
+          {
+            "id": "grid_2_2",
+            "p_defect": 0.09554996373326771
+          },
+          {
+            "id": "grid_1_2",
+            "p_defect": 0.07453438382838712
+          },
+          {
+            "id": "grid_2_0",
+            "p_defect": 0.05461106594392063
+          },
+          {
+            "id": "grid_1_0",
+            "p_defect": 0.053611205725142545
+          },
+          {
+            "id": "grid_0_0",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_0_1",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_0_2",
+            "p_defect": 0.04440958529303469
+          }
+        ],
+        "flagged": false,
+        "ms": 160.9662079717964
+      },
+      "tier2_ran": false
+    }
+  ]
+}

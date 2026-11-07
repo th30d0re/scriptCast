@@ -1,0 +1,19 @@
+Done. The doctrine-chain asset is drawn inline in [SenseTwo.tsx](/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/doctrine-chain-B-muse/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx:56), in the scene's layout box (`viewBox 0 0 1240 410`).
+
+What the SVG now contains:
+
+- Four boxed nodes in a row, each gated on its own cue: "ideological belief" (`t8Ideological`), "racial groups" (`t8Groups`), "biological differences" (`t8Biological`), "achievement" (`t8Achievement`). Box width narrowed from 300 to 240 so all four fit the bubble.
+- Three marker arrows joining them, gated on `t8Determine` under `data-doctrine-chain="true"`, using the `sense2-arrow` marker and the "claimed to determine" label.
+- The dashed rounded boundary (thought bubble, `strokeDasharray 10 8`, "doctrine" tab) and the two orbit circles below it, unchanged.
+- All fills and strokes use `color('color/...')` tokens (gold arrows, hairline boundary, panel-render boxes).
+
+Verification: `tsc --noEmit -p stage` passes. A focused render probe against the real component and plan ([/tmp/probe_sensetwo.tsx](/tmp/probe_sensetwo.tsx), [/tmp/run_probe.mjs](/tmp/run_probe.mjs)) passes: chain and label absent before `t8Determine`, 3 `marker-end` arrows at `t8Determine+700`, exactly 4 `data-diagram-box` nodes and 2 circles at the end frame.
+
+One caveat: `node stage/tools/check_minute_two.mjs` crashes in this environment with a React `useContext` error in `EntryOpen`. I confirmed it fails identically on the unmodified tree (via stash), so it is pre-existing here and not caused by this change.
+
+muse: workspace root: /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/doctrine-chain-B-muse/Architecting_the_operation/video/yt02 (explicit)
+muse: warning: rules file at /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/doctrine-chain-B-muse/AGENTS.md exists, but the workspace is untrusted, so it is skipped for this session; restart with --trust-workspace to load project rules
+muse: Skills: 89 loaded · 1 warning · 17 details hidden
+muse:   `skills_catalog` was trimmed to fit its size limit (32 KB): 62 descriptions compacted, 0 skill ids omitted
+muse:   Run `muse skills list --source all` for full diagnostics.
+muse: Agent delegation: auto unavailable: workspace is untrusted.

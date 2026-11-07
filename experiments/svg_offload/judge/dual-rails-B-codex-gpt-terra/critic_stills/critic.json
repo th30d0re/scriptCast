@@ -1,0 +1,12 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "ExplicitImplicitChannels_t39Implicit.png",
+      "status": "ok",
+      "verdict": "pass",
+      "defects": [],
+      "ungrounded": 0
+    }
+  ]
+}

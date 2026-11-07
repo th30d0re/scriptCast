@@ -1,0 +1,10 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "SenseThree_t9Practices.png",
+      "status": "contract_error",
+      "raw": "{\"verdict\":\"fail\",\"defects\":[{\"category\":\"Appearance\",\"element_id\":null,\"evidence\":\"The connecting lines in the diagram have changed from solid to dashed, altering the visual style from the reference image.\",\"severity\":\"medium\",\"region\":[370,480,630,680]}]}"
+    }
+  ]
+}

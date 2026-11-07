@@ -1,0 +1,55 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "InstalledRacialPrior_t33Institutions.png",
+      "status": "ok",
+      "verdict": "pass",
+      "defects": [],
+      "ungrounded": 0,
+      "tier1": {
+        "elements": [
+          {
+            "id": "grid_0_0",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_0_1",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_0_2",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_1_0",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_1_1",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_1_2",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_2_0",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_2_1",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_2_2",
+            "p_defect": 0.04440958529303469
+          }
+        ],
+        "flagged": false,
+        "ms": 141.7683749459684
+      },
+      "tier2_ran": false
+    }
+  ]
+}

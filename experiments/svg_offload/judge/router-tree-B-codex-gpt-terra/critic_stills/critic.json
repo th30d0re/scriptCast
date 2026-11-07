@@ -1,0 +1,10 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "HeartsAudit_t14Default.png",
+      "status": "contract_error",
+      "raw": "{\"verdict\":\"fail\",\"defects\":[{\"category\":\"State\",\"element_id\":null,\"evidence\":\"A red arrow and a yellow dot have been added to the 'DEFAULT DEFINITION' diagram in image 2, which are not present in image 1.\",\"severity\":\"medium\",\"region\":[430,430,570,570]}]}"
+    }
+  ]
+}

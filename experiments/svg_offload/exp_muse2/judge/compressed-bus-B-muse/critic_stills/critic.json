@@ -1,0 +1,55 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "HostWetware_t26Bandwidth.png",
+      "status": "ok",
+      "verdict": "pass",
+      "defects": [],
+      "ungrounded": 0,
+      "tier1": {
+        "elements": [
+          {
+            "id": "grid_1_1",
+            "p_defect": 0.3462344716410022
+          },
+          {
+            "id": "grid_0_1",
+            "p_defect": 0.27209589884130325
+          },
+          {
+            "id": "grid_1_0",
+            "p_defect": 0.21782724989983995
+          },
+          {
+            "id": "grid_0_0",
+            "p_defect": 0.08573020016596075
+          },
+          {
+            "id": "grid_1_2",
+            "p_defect": 0.04442036965685773
+          },
+          {
+            "id": "grid_0_2",
+            "p_defect": 0.04441026799077513
+          },
+          {
+            "id": "grid_2_0",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_2_1",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_2_2",
+            "p_defect": 0.04440958529303469
+          }
+        ],
+        "flagged": false,
+        "ms": 157.88816701387987
+      },
+      "tier2_ran": false
+    }
+  ]
+}

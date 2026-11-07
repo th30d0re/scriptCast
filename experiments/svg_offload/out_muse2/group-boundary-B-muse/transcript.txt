@@ -1,0 +1,17 @@
+Done. Drew the ingroup boundary asset inline in [APAGroupDefinitions.tsx](/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/group-boundary-B-muse/Architecting_the_operation/video/yt02/stage/min3_7/b/APAGroupDefinitions.tsx:67), inside the field SVG (`viewBox 0 0 960 520`, the scene's layout box):
+
+- **12-token lattice** — a 4×3 grid of gold tokens (`data-lattice-token` 1–12) on faint graticule lines, clipped to the growing boundary via a new `apa-boundary-clip` clipPath so it is revealed as the circle expands.
+- **Boundary circle** — the existing gold circle over the lattice, kept gated on `t19Ingroup` with its `boundaryP` grow/fade.
+- **Outgoing arrows** — three gold arrows (east, north-east, south-east) crossing the boundary toward the outgroup field, gated with the boundary.
+- **Exterior mask shading** — kept in the same SVG (mask def + shaded rect), retaining its scripted `t20Outside` timing so the scene's cue choreography and checks still hold.
+
+All fills/strokes use design tokens (`color('color/fill/gold')`, `color/line/graticule`, `color/line/hairline-strong`, etc.), and the lattice/arrows retire with the bias phase like the other ingroup-phase elements.
+
+Verified: `tsc -p stage/tsconfig.json --noEmit` passes; a render probe at `t19Ingroup+700` shows exactly 12 lattice tokens, 3 outgoing arrows, and the boundary (all absent 1 ms before the cue), with the exterior shade appearing at `t20Outside`; the layout audit reports zero violations at the ingroup, membership, outside, competition, and behavior frames. Note: the repo's `check_min3_7_b.mjs` crashes with a React hook-dispatcher error in this environment, but it fails identically on the untouched tree, so that failure is pre-existing and unrelated to this change.
+
+muse: workspace root: /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/group-boundary-B-muse/Architecting_the_operation/video/yt02 (explicit)
+muse: warning: rules file at /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/group-boundary-B-muse/AGENTS.md exists, but the workspace is untrusted, so it is skipped for this session; restart with --trust-workspace to load project rules
+muse: Skills: 89 loaded · 1 warning · 17 details hidden
+muse:   `skills_catalog` was trimmed to fit its size limit (32 KB): 62 descriptions compacted, 0 skill ids omitted
+muse:   Run `muse skills list --source all` for full diagnostics.
+muse: Agent delegation: auto unavailable: workspace is untrusted.

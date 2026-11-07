@@ -1,0 +1,55 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "PredictiveCoding_t30Compares.png",
+      "status": "ok",
+      "verdict": "pass",
+      "defects": [],
+      "ungrounded": 0,
+      "tier1": {
+        "elements": [
+          {
+            "id": "grid_1_1",
+            "p_defect": 0.04974948726063852
+          },
+          {
+            "id": "grid_1_2",
+            "p_defect": 0.04466573363339724
+          },
+          {
+            "id": "grid_1_0",
+            "p_defect": 0.044460070318038995
+          },
+          {
+            "id": "grid_0_0",
+            "p_defect": 0.044435140976859626
+          },
+          {
+            "id": "grid_0_2",
+            "p_defect": 0.04442533542491447
+          },
+          {
+            "id": "grid_0_1",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_2_0",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_2_2",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_2_1",
+            "p_defect": 0.044409561342052206
+          }
+        ],
+        "flagged": false,
+        "ms": 170.31566600780934
+      },
+      "tier2_ran": false
+    }
+  ]
+}

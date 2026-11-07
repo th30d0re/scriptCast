@@ -1,0 +1,32 @@
+<svg width="880" height="590" viewBox="0 0 880 590" style={{position:'absolute',inset:0}} aria-hidden="true">
+        {ms>=cue.t13Audit.at&&<g opacity={auditP}>
+          <path {...shapeAttrs('debate-funnel',{x:230,y:395,w:610,h:270},'frame')} d="M 70 145 H 550 L 680 280 L 550 415 H 70 Z" fill={color('color/fill/gold-wash')} stroke={color('color/line/hairline-strong')} strokeWidth="2" strokeLinejoin="round"/>
+          <path {...shapeAttrs('audit-beam',{x:840,y:495,w:180,h:70},'mark','audit-beam')} d="M 680 280 L 860 245 L 860 315 Z" fill={color('color/fill/red-faint')} stroke={color('color/marker/race')} strokeWidth="1.5" strokeLinejoin="round"/>
+          <path {...shapeAttrs('ordering-stroke-1',{x:240,y:440,w:310,h:8},'mark')} d="M 80 190 H 390" fill="none" stroke={color('color/text/muted')} strokeWidth="8" strokeLinecap="round" opacity={0.22}/>
+          <path {...shapeAttrs('ordering-stroke-2',{x:240,y:520,w:292,h:8},'mark')} d="M 80 270 H 372" fill="none" stroke={color('color/text/muted')} strokeWidth="8" strokeLinecap="round" opacity={0.22}/>
+          <path {...shapeAttrs('ordering-stroke-3',{x:240,y:600,w:274,h:8},'mark')} d="M 80 350 H 354" fill="none" stroke={color('color/text/muted')} strokeWidth="8" strokeLinecap="round" opacity={0.22}/>
+          <ScanLines x={690} y={245} w={170} h={70} progress={auditP}/>
+        </g>}
+      </svg>
+<svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><path d="M5 17 L24 6 L43 17 Z M9 21 V38 M19 21 V38 M29 21 V38 M39 21 V38 M5 42 H43" fill="none" stroke={color('color/text/soft')} strokeWidth="2.3"/></svg>
+<svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><rect x="7" y="7" width="34" height="34" fill="none" stroke={color('color/text/soft')} strokeWidth="2"/>{[16,25,34].flatMap(x=>[16,25,34].map(y=><rect key={`${x}-${y}`} x={x-2} y={y-2} width="4" height="4" fill={color('color/fill/gold')}/>))}</svg>
+<svg width="370" height="420" viewBox="0 0 370 420" aria-hidden="true">
+        {[120,210,300].map((y,index)=>{const points:Point[]=[[768,HEARTS_LAYOUT.router.y+y],[916,HEARTS_LAYOUT.router.y+y],[975,520],[1098,520]];return <path key={y} {...lineAttrs(`router-line-${index+1}`,points)} d={`M 18 ${y} H 166 Q 225 ${y} 225 210 H 348`} fill="none" stroke={color('color/fill/gold')} strokeWidth="2" opacity={enter(ms,cue.t14Default.at+index*90,500)}/>;})}
+      </svg>
+<svg width="550" height="620" viewBox="0 0 550 620" aria-hidden="true">
+        <circle {...shapeAttrs('thought-head',{x:1373,y:373,w:224,h:224},'frame')} cx="275" cy="255" r="112" fill="none" stroke={color('color/line/hairline-strong')} strokeWidth="3"/>
+        <path d="M 205 370 Q 275 430 345 370" fill="none" stroke={color('color/line/hairline-strong')} strokeWidth="3"/>
+        <line {...lineAttrs('malice-probe',[[1690,335],[1510+(1-malice)*160,460+(1-malice)*-100]])} x1="480" y1="105" x2={300+(1-malice)*160} y2={230+(1-malice)*-100} stroke={color('color/marker/race')} strokeWidth="4"/>
+        <circle cx={300+(1-malice)*160} cy={230+(1-malice)*-100} r="12" fill={color('color/marker/race')}/>
+      </svg>
+<svg width="490" height="530" viewBox="0 0 490 530" aria-hidden="true">
+        {ms>=cue.t15Testable.at&&<path {...lineAttrs('claim-test-lead',[[375,510],[375,680],[600,680]])} d="M245 260 V430 H470" fill="none" stroke={color('color/fill/gold')} strokeWidth="3" strokeDasharray="10 9" opacity={testable}/>}
+      </svg>
+<svg width="440" height="600" viewBox="0 0 440 600" aria-hidden="true">
+        {ms>=cue.t15Checked.at&&Array.from({length:6},(_,index)=><g key={index} opacity={enter(ms,cue.t15Checked.at+index*80,420)}>
+          <rect {...shapeAttrs(`archive-folio-${index+1}`,{x:1386+(index%2)*190,y:330+Math.floor(index/2)*116,w:150,h:86},'frame')} x={56+(index%2)*190} y={110+Math.floor(index/2)*116} width="150" height="86" fill={color('color/surface/1')} stroke={color('color/line/hairline')}/>
+          <path d={`M ${74+(index%2)*190} ${137+Math.floor(index/2)*116} H ${184+(index%2)*190} M ${74+(index%2)*190} ${160+Math.floor(index/2)*116} H ${164+(index%2)*190}`} stroke={color('color/text/muted')} strokeWidth="2"/>
+        </g>)}
+        {ms>=cue.t15Centuries.at&&<line x1="26" y1="100" x2="26" y2={100+410*centuries} stroke={color('color/fill/gold')} strokeWidth="4"/>}
+        {ms>=cue.t15Records.at&&<rect x="78" y="480" width="284" height="72" fill={color('color/fill/red-faint')} stroke={color('color/marker/race')} strokeWidth="2" opacity={records}/>}
+      </svg>

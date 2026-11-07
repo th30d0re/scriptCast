@@ -1,0 +1,10 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "ExplicitImplicitChannels_t39Implicit.png",
+      "status": "contract_error",
+      "raw": "{\"verdict\":\"fail\",\"defects\":[{\"category\":\"Layout\",\"element_id\":null,\"evidence\":\"The horizontal lines extending from the 'CONSCIOUSLY ENDORSED JUDGMENT' box and the 'AUTOMATIC MENTAL ASSOCIATION' line have been altered. In the candidate image, the solid lines in the upper channel have been replaced with dashed lines on the right side, and the lower channel's line also shows a dashed segment. Additionally, the '+' symbols on the horizontal lines in the upper channel are different from the reference.\",\"severity\":\"medium\",\"region\":[430,350,800,500]}]}"
+    }
+  ]
+}

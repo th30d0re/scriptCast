@@ -1,0 +1,55 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "HeartsAudit_t13Audit.png",
+      "status": "ok",
+      "verdict": "pass",
+      "defects": [],
+      "ungrounded": 0,
+      "tier1": {
+        "elements": [
+          {
+            "id": "grid_1_1",
+            "p_defect": 0.1733823564185166
+          },
+          {
+            "id": "grid_1_0",
+            "p_defect": 0.058378407720289655
+          },
+          {
+            "id": "grid_0_0",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_0_1",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_0_2",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_1_2",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_2_0",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_2_1",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_2_2",
+            "p_defect": 0.04440958529303469
+          }
+        ],
+        "flagged": false,
+        "ms": 156.8734580068849
+      },
+      "tier2_ran": false
+    }
+  ]
+}

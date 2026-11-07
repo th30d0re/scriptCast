@@ -1,0 +1,16 @@
+diff --git a/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.tsx b/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.tsx
+index 7c9ef5f..56b3b36 100644
+--- a/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.tsx
++++ b/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.tsx
+@@ -88,7 +88,10 @@ function TurnFourteen({ms,cue}:{ms:number;cue:CueMap}) {
+     {ms>=cue.t14Default.at&&<div data-definition-router="true" {...shapeAttrs('definition-router',HEARTS_LAYOUT.router,'frame')} style={{...PANEL_STYLE,left:HEARTS_LAYOUT.router.x,top:HEARTS_LAYOUT.router.y,width:HEARTS_LAYOUT.router.w,height:HEARTS_LAYOUT.router.h,opacity:route}}>
+       <div {...textAttrs('definition-router-title',{x:780,y:345,w:310,h:30},{size:22,lh:1.25})} style={{position:'absolute',left:30,top:35,width:310,textAlign:'center',font:'500 22px "IBM Plex Mono"',color:color('color/fill/gold')}}>DEFAULT DEFINITION</div>
+       <svg width="370" height="420" viewBox="0 0 370 420" aria-hidden="true">
+-        {[120,210,300].map((y,index)=>{const points:Point[]=[[768,HEARTS_LAYOUT.router.y+y],[916,HEARTS_LAYOUT.router.y+y],[975,520],[1098,520]];return <path key={y} {...lineAttrs(`router-line-${index+1}`,points)} d={`M 18 ${y} H 166 Q 225 ${y} 225 210 H 348`} fill="none" stroke={color('color/fill/gold')} strokeWidth="2" opacity={enter(ms,cue.t14Default.at+index*90,500)}/>;})}
++        <path {...lineAttrs('router-line-1',[[768,430],[916,430],[975,520],[1098,520]])} d="M 18 120 H 166 Q 225 120 225 210 H 348" fill="none" stroke={color('color/fill/gold')} strokeWidth="2" opacity={enter(ms,cue.t14Default.at,500)}/>
++        <path {...lineAttrs('router-line-2',[[768,520],[916,520],[975,520],[1098,520]])} d="M 18 210 H 348" fill="none" stroke={color('color/fill/gold')} strokeWidth="2" opacity={enter(ms,cue.t14Default.at+90,500)}/>
++        <path {...lineAttrs('router-line-3',[[768,610],[916,610],[975,520],[1098,520]])} d="M 18 300 H 166 Q 225 300 225 210 H 348" fill="none" stroke={color('color/fill/gold')} strokeWidth="2" opacity={enter(ms,cue.t14Default.at+180,500)}/>
++        <circle cx="225" cy="210" r="4" fill={color('color/fill/gold')} opacity={enter(ms,cue.t14Default.at+180,500)}/>
+       </svg>
+     </div>}
+     {ms>=cue.t14Malice.at&&<div {...shapeAttrs('thought-audit-panel',HEARTS_LAYOUT.thoughts,'frame')} style={{...PANEL_STYLE,left:HEARTS_LAYOUT.thoughts.x,top:HEARTS_LAYOUT.thoughts.y,width:HEARTS_LAYOUT.thoughts.w,height:HEARTS_LAYOUT.thoughts.h,opacity:malice}}>

@@ -1,0 +1,365 @@
+diff --git a/Architecting_the_operation/video/yt02/stage/FINDINGS_FIRST_MINUTE.md b/Architecting_the_operation/video/yt02/stage/FINDINGS_FIRST_MINUTE.md
+index a6da675..9cbd746 100644
+--- a/Architecting_the_operation/video/yt02/stage/FINDINGS_FIRST_MINUTE.md
++++ b/Architecting_the_operation/video/yt02/stage/FINDINGS_FIRST_MINUTE.md
+@@ -163,3 +163,29 @@ assets/index-D2DsRSt0.js                                     1,832.19 kB │ gzi
+ ```
+ 
+ Vite emitted its existing chunk-size warning.
++
++## Fix pass 1
++
++Model: GPT-5 Codex
++
++### Geometry and scene fixes
++
++- `DictionaryEntry`: the entry panel now uses `x=170, y=370, w=850, h=430`. Lifted sense numbers use a dedicated gutter beginning at `x=1040`; the causal chain begins at `x=1110, y=408`. The entry and chain occupy the lower centre while the header and source line retain their original anchors.
++- `TitleOpen`: method tiles are `340 × 240`, with enlarged graphics. The pre-fold title block uses `top=170` and tile baseline `y=330`; the post-episode block uses the episode line at `top=405` and subtitle at `top=515`. The archive header is inset to `x=58` within the folio.
++- `WhyLadder`: header and thumbnail rows share `x=140`, satisfying the `x ≥ 120` constraint. Slot 1 carries `rac·ism · senses 1–3` at 19 px. The Virginia label has a panel backing plate.
++- `LiteratureStack`: blocks move to `y=180, 300, 420`; the tripartite row moves to `top=570`; the boundary is `y=770`. Connector paths use elbow segments through the right gutter rather than crossing definition text.
++
++### RoadmapBoot and dashboard fixes
++
++- `Dashboard` adds optional `eraClockStandby` and `suppressHistory` props. `RoadmapBoot` enables both. The Era clock displays `—` and `STANDBY`; the policy ticker suppresses the inherited 1486 policy string. World mode renders the outline without the Portugal label or polity highlight. Default dashboard props remain unchanged.
++
++### Check tails
++
++```text
++Episode tsc: PASS; no diagnostics.
++check_first_minute: PASS: 43 first-minute frames rendered in two fresh processes; all markup hashes match.
++check_first_minute contracts: PASS: 43 cue-derived frames; five scene contracts, manuscript strings, real subscripts, hook policy, underscore policy, and interaction-hint policy verified.
++check_roadmap_boot: PASS: 17 deterministic frames; 13 labels land on cues and are absent before; standby history assertions pass; console and panel geometry pass.
++```
++
++The requested plan compile could not run in this isolated worktree because the configured `outputs/YT02v2_ov/episode_manifest.json` and `word_timings.json` inputs are absent here. The dashboard check likewise requires the absent `review/stage_plan.json`. No fallback files were created.
+diff --git a/Architecting_the_operation/video/yt02/stage/dashboard/Dashboard.tsx b/Architecting_the_operation/video/yt02/stage/dashboard/Dashboard.tsx
+index b9257a6..019c8bf 100644
+--- a/Architecting_the_operation/video/yt02/stage/dashboard/Dashboard.tsx
++++ b/Architecting_the_operation/video/yt02/stage/dashboard/Dashboard.tsx
+@@ -39,7 +39,7 @@ const trayArtifactFor=(name:string)=>{
+  return TrayCell;
+ };
+ const components=[EraClock,SystemStress,Capital,Interference,Compass,ActivePatch,Variables,ExecutingFunction,PolicyTicker,WagePlane,...TRAY_INSTRUMENTS.map(trayArtifactFor)];
+-export type DashboardProps={era?:number;world?:boolean;camera?:Camera;worldOpacity?:number;routeDraw?:number;dim?:number;lights?:number[];empty?:boolean;mapOpacity?:number;modes?:Record<string,InstrumentMode>;modeTimelines?:Record<string,ModeKey[]>};
++export type DashboardProps={era?:number;world?:boolean;camera?:Camera;worldOpacity?:number;routeDraw?:number;dim?:number;lights?:number[];empty?:boolean;mapOpacity?:number;eraClockStandby?:boolean;suppressHistory?:boolean;modes?:Record<string,InstrumentMode>;modeTimelines?:Record<string,ModeKey[]>};
+ type InteractiveState={interactiveModes?:Record<string,InstrumentMode|null>;onModeChange?:(slug:string,mode:InstrumentMode|null)=>void};
+ export function Dashboard(props:DashboardProps) {
+  const {interactive}=useContext(ClockContext);
+@@ -49,7 +49,7 @@ function InteractiveDashboard(props:DashboardProps) {
+  const [interactiveModes,setInteractiveModes]=useState<Record<string,InstrumentMode|null>>({});
+  return <DashboardFrame {...props} interactiveModes={interactiveModes} onModeChange={(slug,mode)=>setInteractiveModes(previous=>({...previous,[slug]:mode}))}/>;
+ }
+-function DashboardFrame({era=2,world=false,camera,worldOpacity=0,routeDraw=1,dim=1,lights=[],empty=false,mapOpacity,modes={},modeTimelines={},interactiveModes={},onModeChange}:DashboardProps & InteractiveState) {
++function DashboardFrame({era=2,world=false,camera,worldOpacity=0,routeDraw=1,dim=1,lights=[],empty=false,mapOpacity,eraClockStandby=false,suppressHistory=false,modes={},modeTimelines={},interactiveModes={},onModeChange}:DashboardProps & InteractiveState) {
+  const ms=useStageMs();
+  if(era!==2) throw new Error(`YT02 handoff supplies instrument content for log 2; received ${era}`);
+  const activeCamera=camera??(world?worldCamera:iberiaCamera);
+@@ -58,6 +58,6 @@ function DashboardFrame({era=2,world=false,camera,worldOpacity=0,routeDraw=1,dim
+  const Component=components[i],start=i<5?0:5;
+  const y=i<10?96+heights.slice(start,i).reduce((sum,h)=>sum+h+8,0):p.y;
+  const grow:InstrumentGrow=i<5?'right-down':i<10?'left-down':'centre';
+- return <Component onInteractiveModeChange={onModeChange?mode=>onModeChange(slugs[i],mode):undefined} key={slugs[i]} anchor={{x:i>=5?p.x+p.w-instruments[p.instrument].compact.w:p.x,y,width:instruments[p.instrument].compact.w,height:instruments[p.instrument].compact.h}} grow={grow} mode={modes[slugs[i]]} modeTimeline={modeTimelines[slugs[i]]} opacity={lights[i]??dim}/>;
++ return <Component onInteractiveModeChange={onModeChange?mode=>onModeChange(slugs[i],mode):undefined} key={slugs[i]} anchor={{x:i>=5?p.x+p.w-instruments[p.instrument].compact.w:p.x,y,width:instruments[p.instrument].compact.w,height:instruments[p.instrument].compact.h}} grow={grow} mode={modes[slugs[i]]} modeTimeline={modeTimelines[slugs[i]]} opacity={lights[i]??dim} standby={eraClockStandby&&p.instrument==='Era clock'} suppressHistory={suppressHistory}/>;
+  })}<CompactBorder/></div></CameraContext.Provider></TokensContext.Provider>;
+ }
+diff --git a/Architecting_the_operation/video/yt02/stage/dashboard/DashboardInstrument.tsx b/Architecting_the_operation/video/yt02/stage/dashboard/DashboardInstrument.tsx
+index f558277..b27f4a1 100644
+--- a/Architecting_the_operation/video/yt02/stage/dashboard/DashboardInstrument.tsx
++++ b/Architecting_the_operation/video/yt02/stage/dashboard/DashboardInstrument.tsx
+@@ -1,8 +1,8 @@
+ import React from 'react';
+ import {Instrument,type InstrumentMode,type ModeKey,type Rect,type InstrumentGrow} from '@stage';
+ import {PanelContent,instruments} from './PanelContent';
+-export type DashboardInstrumentProps={anchor:Rect;grow:InstrumentGrow;mode?:InstrumentMode;modeTimeline?:ModeKey[];opacity?:number;onInteractiveModeChange?:(mode:InstrumentMode|null)=>void};
+-export function DashboardInstrument({name,anchor,grow,mode,modeTimeline,opacity=1,onInteractiveModeChange}:{name:string}&DashboardInstrumentProps) {
++export type DashboardInstrumentProps={anchor:Rect;grow:InstrumentGrow;mode?:InstrumentMode;modeTimeline?:ModeKey[];opacity?:number;standby?:boolean;suppressHistory?:boolean;onInteractiveModeChange?:(mode:InstrumentMode|null)=>void};
++export function DashboardInstrument({name,anchor,grow,mode,modeTimeline,opacity=1,standby=false,suppressHistory=false,onInteractiveModeChange}:{name:string}&DashboardInstrumentProps) {
+  const data=instruments[name];
+- return <Instrument onInteractiveModeChange={onInteractiveModeChange} unstyled mode={mode} modeTimeline={modeTimeline} grow={grow} style={{opacity}} anchor={{compact:anchor,expanded:{...anchor,width:data.expanded.w,height:data.expanded.h},settings:{...anchor,width:data.settings.w,height:data.settings.h}}} compact={()=><PanelContent name={name} mode="compact"/>} expanded={()=><PanelContent name={name} mode="expanded"/>} settings={()=><PanelContent name={name} mode="settings"/>}/>;
++ return <Instrument onInteractiveModeChange={onInteractiveModeChange} unstyled mode={mode} modeTimeline={modeTimeline} grow={grow} style={{opacity}} anchor={{compact:anchor,expanded:{...anchor,width:data.expanded.w,height:data.expanded.h},settings:{...anchor,width:data.settings.w,height:data.settings.h}}} compact={()=><PanelContent name={name} mode="compact" standby={standby} suppressHistory={suppressHistory}/>} expanded={()=><PanelContent name={name} mode="expanded" standby={standby} suppressHistory={suppressHistory}/>} settings={()=><PanelContent name={name} mode="settings" standby={standby} suppressHistory={suppressHistory}/>}/>;
+ }
+diff --git a/Architecting_the_operation/video/yt02/stage/dashboard/DashboardMap.tsx b/Architecting_the_operation/video/yt02/stage/dashboard/DashboardMap.tsx
+index a6edb7f..b489fa2 100644
+--- a/Architecting_the_operation/video/yt02/stage/dashboard/DashboardMap.tsx
++++ b/Architecting_the_operation/video/yt02/stage/dashboard/DashboardMap.tsx
+@@ -12,7 +12,7 @@ export const defaultPolities1486 = polities1486 as unknown as Polities;
+ function Overlays({draw,world}:{draw:number;world:boolean}) {
+  const project=useProject();
+  const portugal=project([-8.5,39.5]);
+- if(world) return <text x={portugal[0]+12} y={portugal[1]-6} fontFamily={Tokens.fonts.mono} fontSize={12} letterSpacing={1} fill={color(map.world.label.fill)}>{map.world.label.text}</text>;
++ if(world) return null;
+  return <><Route waypoints={points} tension={.4} convention="handoff" draw={draw} stroke={color(m.route.stroke)} strokeWidth={m.route.strokeWidth} dashOverlay={{stroke:color(m.route.dashOverlay.stroke),strokeWidth:1,dasharray:m.route.dashOverlay.dasharray}}/>{m.markers.map((v,i)=>{const [x,y]=project(v.lonlat as [number,number]);const offset=labelOffsets[i];return <g key={v.name} opacity={draw>0?1:0}><circle cx={x} cy={y} r={v.marker.diameter/2} fill={color(v.marker.fill)} stroke={color(v.marker.stroke)} strokeWidth={v.marker.strokeWidth}/><text x={x+offset[0]} y={y+offset[1]+12} fontFamily={Tokens.fonts.mono} fontSize={12} letterSpacing={1} fill={color('color/text/primary')}>{v.label.text}</text></g>;})}</>;
+ }
+ export type PolityProperties={Name?:string;FromYear?:number;ToYear?:number;style?:{fill?:string;stroke?:string;strokeWidth?:number;strokeDasharray?:string;opacity?:number};label?:{text:string;at:[number,number];color?:string}};
+@@ -25,7 +25,7 @@ export type DashboardMapProps={world?:boolean;camera?:Camera;draw?:number;worldO
+ export function DashboardMap({world=false,camera,draw=1,worldOpacity=0,mapOpacity,polities}:DashboardMapProps) {
+  const activePolities=world?undefined:(polities??defaultPolities1486);
+  const hasPeriodPortugal=Boolean(activePolities?.features.some(f=>f.properties?.Name==='Kingdom of Portugal'));
+- const common={width:1856,height:968,engraved:true,clip:{x:0,y:0,width:1856,height:968},land:{fill:color(m.land.fill),stroke:color(m.land.stroke),strokeWidth:m.land.strokeWidth},graticule:{step:10,stroke:color(m.graticule.stroke),strokeWidth:.8,opacity:1},highlight:hasPeriodPortugal?[]:[{id:'620',color:color(m.portugal.fill),amount:1}]};
++ const common={width:1856,height:968,engraved:true,clip:{x:0,y:0,width:1856,height:968},land:{fill:color(m.land.fill),stroke:color(m.land.stroke),strokeWidth:m.land.strokeWidth},graticule:{step:10,stroke:color(m.graticule.stroke),strokeWidth:.8,opacity:1},highlight:world||hasPeriodPortugal?[]:[{id:'620',color:color(m.portugal.fill),amount:1}]};
+  return <div style={{position:'absolute',left:32,top:84,width:1856,height:968,overflow:'hidden',...(mapOpacity===undefined?{}:{opacity:mapOpacity})}}>
+  <MapStage {...common} {...(world?{camera:{center:[0,0] as [number,number],zoom:1}}:camera?{camera}:{fit:iberiaFit})} projection="equalEarth" rhumb={world?undefined:{centres:m.rhumbLines.hubs_lonlat as [number,number][],spokes:16,stroke:color(m.rhumbLines.stroke),strokeWidth:.8,opacity:1}}><PolityLayer polities={activePolities}/><Overlays draw={draw} world={world}/></MapStage>
+  </div>;
+diff --git a/Architecting_the_operation/video/yt02/stage/dashboard/PanelContent.tsx b/Architecting_the_operation/video/yt02/stage/dashboard/PanelContent.tsx
+index 653fd6b..da869af 100644
+--- a/Architecting_the_operation/video/yt02/stage/dashboard/PanelContent.tsx
++++ b/Architecting_the_operation/video/yt02/stage/dashboard/PanelContent.tsx
+@@ -297,9 +297,9 @@ function ExecutingFunctionCompact() {
+   <div style={{position:'absolute',left:10,top:20,right:10,fontFamily:Tokens.fonts.sans,fontSize:12,lineHeight:'15px',color:color('color/text/primary'),whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{text}</div>
+  </>;
+ }
+-function PolicyTickerCompact() {
++function PolicyTickerCompact({suppressHistory=false}:{suppressHistory?:boolean}={}) {
+  const results=(eraLog2.fields.results as string[]|undefined)??[];
+- const latest=results[results.length-1]??'';
++  const latest=suppressHistory?'':(results[results.length-1]??'');
+  return <>
+   <div style={{position:'absolute',left:10,top:6,right:10,fontFamily:Tokens.fonts.mono,fontSize:9.5,letterSpacing:0.6,color:color('color/text/dim'),whiteSpace:'nowrap'}}>RESULT</div>
+   <div style={{position:'absolute',left:10,top:21,width:3,height:13,background:color('color/fill/accent'),borderRadius:1}}/>
+@@ -385,20 +385,21 @@ function ArtifactContent({name,mode,interactive}:{name:string;mode:InstrumentMod
+  </div>;
+ }
+ 
+-export function PanelContent({name,mode}:{name:string;mode:InstrumentMode}) {
++export function PanelContent({name,mode,standby=false,suppressHistory=false}:{name:string;mode:InstrumentMode;standby?:boolean;suppressHistory?:boolean}) {
+  const {interactive}=useContext(ClockContext);
+  const data=instruments[name][mode],compact=mode==='compact';
+  const renderFill=`linear-gradient(${color('color/fill/panel-wash')}, ${color('color/fill/panel-wash')}), ${color('color/fill/panel-render')}`;
+  const fill=interactive?color(compact?'color/fill/panel-wash':'color/fill/glass'):renderFill;
+  const isArtifact=name in ARTIFACT_VIEWS;
+  return <GlassPanel fill={fill} blur={interactive&&compact?6:0} padding={0} radius={compact?8:10} style={{backdropFilter:interactive&&compact?'blur(6px)':'none',WebkitBackdropFilter:interactive&&compact?'blur(6px)':'none',position:'relative',width:data.w,height:data.h,border:'none',boxShadow:`inset 0 0 0 ${compact?1:1.6}px ${color('color/line/hairline')}`,color:color('color/text/primary')}}>{
+- isArtifact?<ArtifactContent name={name} mode={mode} interactive={interactive}/>
++ standby&&name==='Era clock'?<><div style={{position:'absolute',left:10,top:8,fontFamily:Tokens.fonts.mono,fontSize:18,color:color('color/text/primary')}}>—</div><div style={{position:'absolute',left:10,top:34,fontFamily:Tokens.fonts.mono,fontSize:11,letterSpacing:1.1,color:color('color/text/muted')}}>STANDBY</div></>
++ :isArtifact?<ArtifactContent name={name} mode={mode} interactive={interactive}/>
+  :name==='Wage plane'&&mode==='compact'?<div data-artifact="Complex Wage Plane" data-compact-padding-x="11"><Nodes nodes={data.children} compact/></div>
+  :name==='Wage plane'&&mode==='expanded'?<ComplexWagePlane/>
+  :name==='Wage plane'&&mode==='settings'?<WagePlaneSettings data={data}/>
+  :name==='Compass'&&(mode==='compact'||mode==='expanded')?<CompassWidget mode={mode}/>
+  :name==='Executing Function'&&mode==='compact'?<ExecutingFunctionCompact/>
+- :name==='Policy ticker'&&mode==='compact'?<PolicyTickerCompact/>
++ :name==='Policy ticker'&&mode==='compact'?<PolicyTickerCompact suppressHistory={suppressHistory}/>
+  :mode==='settings'?<Settings name={name} data={data}/>
+  :<Nodes nodes={data.children} compact={compact}/>
+  }{isArtifact&&mode!=='compact'&&<TrayHeaderControls mode={mode}/>}</GlassPanel>;
+diff --git a/Architecting_the_operation/video/yt02/stage/firstminute/DictionaryEntry.tsx b/Architecting_the_operation/video/yt02/stage/firstminute/DictionaryEntry.tsx
+index fce9fe4..4e3e413 100644
+--- a/Architecting_the_operation/video/yt02/stage/firstminute/DictionaryEntry.tsx
++++ b/Architecting_the_operation/video/yt02/stage/firstminute/DictionaryEntry.tsx
+@@ -4,6 +4,7 @@ import {color} from '../tokens';
+ import {CompactBorder} from '../dashboard/CompactBorder';
+ 
+ const enter = (ms:number, at:number, duration=460) => cubicOut(progress(ms, at, at + duration));
++export const DICTIONARY_LAYOUT = {panel:{left:170, top:370, width:850, height:430}, gutter:{left:1040, width:56}, chain:{left:1110, top:408}};
+ 
+ export type DefinitionHierarchyState = {
+   header:number;
+@@ -22,7 +23,7 @@ export const finalDefinitionState: DefinitionHierarchyState = {
+ 
+ function Sense({number, children, bright=1, tertiary=false, lift=0}: React.PropsWithChildren<{number:number; bright?:number; tertiary?:boolean; lift?:number}>) {
+   return <div style={{position:'relative', display:'grid', gridTemplateColumns:'58px 1fr', alignItems:'start', minHeight:tertiary?78:92, padding:'18px 24px 12px 20px', borderTop:`1px solid ${color('color/line/graticule')}`, opacity:(tertiary?.48:.68)+bright*(tertiary?.30:.32)}}>
+-    <span style={{font:'500 28px "IBM Plex Mono"', color:bright>.5?color('color/fill/gold'):color('color/text/dim'), transform:`translateX(${lift*735}px)`, transition:'none'}}>{number}</span>
++    <span style={{font:'500 28px "IBM Plex Mono"', color:bright>.5?color('color/fill/gold'):color('color/text/dim'), transform:`translateX(${lift?870:0}px)`, transition:'none', textAlign:'center'}}>{number}</span>
+     <span style={{fontSize:30, lineHeight:1.35, color:color('color/text/primary')}}>{children}</span>
+     {number===1 && <span aria-hidden="true" style={{position:'absolute', left:0, top:8, bottom:8, width:4, background:color('color/fill/gold'), transform:`scaleY(${bright})`, transformOrigin:'center top'}}/>}
+   </div>;
+@@ -31,7 +32,7 @@ function Sense({number, children, bright=1, tertiary=false, lift=0}: React.Props
+ export function DefinitionHierarchy({state}: {state:DefinitionHierarchyState}) {
+   const entryShift = state.causal * -55;
+   return <>
+-    {state.entry>0 && <div data-definition-entry="true" style={{position:'absolute', left:170 + entryShift, top:262, width:850, height:430, opacity:state.entry, transform:`translateY(${20*(1-state.entry)}px)`, background:color('color/fill/panel-render'), border:`1px solid ${color('color/line/hairline')}`, boxShadow:`inset 0 0 0 1px ${color('color/fill/panel-wash')}`}}>
++    {state.entry>0 && <div data-definition-entry="true" style={{position:'absolute', left:DICTIONARY_LAYOUT.panel.left + entryShift, top:DICTIONARY_LAYOUT.panel.top, width:DICTIONARY_LAYOUT.panel.width, height:DICTIONARY_LAYOUT.panel.height, opacity:state.entry, transform:`translateY(${20*(1-state.entry)}px)`, background:color('color/fill/panel-render'), border:`1px solid ${color('color/line/hairline')}`, boxShadow:`inset 0 0 0 1px ${color('color/fill/panel-wash')}`}}>
+       <div style={{padding:'28px 30px 22px', display:'flex', alignItems:'baseline', gap:18}}>
+         <strong style={{fontSize:48, letterSpacing:.5}}>rac·ism</strong><em style={{fontSize:25, color:color('color/text/muted')}}>(noun)</em>
+       </div>
+@@ -39,7 +40,7 @@ export function DefinitionHierarchy({state}: {state:DefinitionHierarchyState}) {
+       <Sense number={2} bright={0} lift={state.order}>Belief in racial superiority</Sense>
+       {state.institutional>0 && <div style={{opacity:state.institutional, transform:`translateY(${12*(1-state.institutional)}px)`}}><Sense number={3} bright={0} tertiary lift={state.order}>Systemic or institutional discrimination <span style={{marginLeft:12, padding:'4px 9px', border:`1px solid ${color('color/line/hairline')}`, font:'500 20px "IBM Plex Mono"', color:color('color/text/muted'), whiteSpace:'nowrap'}}>if present at all</span></Sense></div>}
+     </div>}
+-    {state.causal>0 && <div data-causal-chain="true" style={{position:'absolute', left:1010, top:300, width:770, opacity:state.causal, transform:`translateX(${24*(1-state.causal)}px)`}}>
++    {state.causal>0 && <div data-causal-chain="true" style={{position:'absolute', left:DICTIONARY_LAYOUT.chain.left, top:DICTIONARY_LAYOUT.chain.top, width:700, opacity:state.causal, transform:`translateX(${24*(1-state.causal)}px)`}}>
+       <div style={{font:'500 21px "IBM Plex Mono"', letterSpacing:2.4, color:color('color/fill/gold'), marginBottom:18, textTransform:'uppercase'}}>causal story</div>
+       <div style={{display:'flex', alignItems:'stretch', gap:12}}>
+         {['Individual Prejudice','Discriminatory Actions','Systemic Outcomes'].map((label,i)=><React.Fragment key={label}>
+diff --git a/Architecting_the_operation/video/yt02/stage/firstminute/LiteratureStack.tsx b/Architecting_the_operation/video/yt02/stage/firstminute/LiteratureStack.tsx
+index 50edb0f..ee3f695 100644
+--- a/Architecting_the_operation/video/yt02/stage/firstminute/LiteratureStack.tsx
++++ b/Architecting_the_operation/video/yt02/stage/firstminute/LiteratureStack.tsx
+@@ -5,10 +5,11 @@ import {CompactBorder} from '../dashboard/CompactBorder';
+ 
+ const reveal=(ms:number,at:number,duration=480)=>cubicOut(progress(ms,at,at+duration));
+ const blocks=[
+-  {name:'Bias',definition:'a tendency to favor or disfavor people because of group membership',citation:'Greenwald & Banaji 1995',y:220},
+-  {name:'Prejudice',definition:'antipathy toward a group, grounded in a rigid, erroneous generalization',citation:'Allport 1954, p. 9',y:360},
+-  {name:'Discrimination',definition:'behavior that treats people differently because of group membership',citation:'',y:500},
++  {name:'Bias',definition:'a tendency to favor or disfavor people because of group membership',citation:'Greenwald & Banaji 1995',y:180},
++  {name:'Prejudice',definition:'antipathy toward a group, grounded in a rigid, erroneous generalization',citation:'Allport 1954, p. 9',y:300},
++  {name:'Discrimination',definition:'behavior that treats people differently because of group membership',citation:'',y:420},
+ ] as const;
++export const LITERATURE_LAYOUT={boundaryY:770,connectorGutter:1640};
+ 
+ function LiteratureBlock({index,amount}:{index:number;amount:number}) {
+   const block=blocks[index];
+@@ -21,10 +22,10 @@ function LiteratureBlock({index,amount}:{index:number;amount:number}) {
+ 
+ function Tripartite({amount}:{amount:number}) {
+   const components=[['thinking','stereotype'],['feeling','prejudice'],['behavior','discrimination']];
+-  return <div style={{position:'absolute',left:330,top:668,width:1260,height:166,opacity:amount,transform:`translateY(${20*(1-amount)}px)`}}>
++  return <div style={{position:'absolute',left:330,top:570,width:1260,height:166,opacity:amount,transform:`translateY(${20*(1-amount)}px)`}}>
+     <svg aria-hidden="true" width="1260" height="166" viewBox="0 0 1260 166" style={{position:'absolute',inset:0,overflow:'visible'}}>
+       <path d="M18 16v128h22M18 80H0M18 16h22" fill="none" stroke={color('color/fill/gold')} strokeWidth="3"/>
+-      <path d="M630 0V-196M1050 0V-56" fill="none" stroke={color('color/line/hairline')} strokeWidth="2"/>
++      <path d="M630 0V-20H1310V-330H1370M1050 0V-12H1390V-210H1450" fill="none" stroke={color('color/line/hairline')} strokeWidth="2"/>
+     </svg>
+     <div style={{position:'absolute',left:58,right:0,top:18,display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:18}}>
+       {components.map(([kind,name])=><div key={kind} style={{height:92,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:color('color/fill/panel-render'),border:`1px solid ${color('color/line/hairline')}`}}>
+@@ -48,7 +49,7 @@ export function LiteratureStack() {
+     {ms>=established.at&&<div style={{position:'absolute',left:220,top:88,fontSize:68,fontWeight:500,opacity:headerIn,transform:`translateY(${18*(1-headerIn)}px)`}}>Established social science</div>}
+     {blockCues.map((at,index)=>ms>=at?<LiteratureBlock key={at} index={index} amount={reveal(ms,at)}/>:null)}
+     {ms>=tripartite.at&&<Tripartite amount={tripartiteIn}/>} 
+-    {ms>=stops.at&&<div style={{position:'absolute',left:140,top:893,width:1640,height:110}}>
++    {ms>=stops.at&&<div style={{position:'absolute',left:140,top:LITERATURE_LAYOUT.boundaryY,width:1640,height:110}}>
+       <div style={{width:`${boundary*100}%`,height:4,background:color('color/fill/gold'),transformOrigin:'left center'}}/>
+       <div style={{marginTop:14,font:'500 21px "IBM Plex Mono"',letterSpacing:1.6,color:color('color/fill/gold'),opacity:boundary}}>where the literature stops</div>
+     </div>}
+diff --git a/Architecting_the_operation/video/yt02/stage/firstminute/RoadmapBoot.tsx b/Architecting_the_operation/video/yt02/stage/firstminute/RoadmapBoot.tsx
+index e55748c..207ab2e 100644
+--- a/Architecting_the_operation/video/yt02/stage/firstminute/RoadmapBoot.tsx
++++ b/Architecting_the_operation/video/yt02/stage/firstminute/RoadmapBoot.tsx
+@@ -73,7 +73,7 @@ export function RoadmapBoot(){
+  const collapse=cubicInOut(progress(ms,endAt,endAt+COLLAPSE_MS));
+  const currentLine=cues.reduce((acc,at,i)=>ms>=at?i:acc,-1);
+  return <div style={{position:'absolute',inset:0,width:1920,height:1080,background:color('color/bg/field')}}>
+-  <Dashboard world empty dim={DIM} lights={lights} mapOpacity={mapOpacity}/>
++  <Dashboard world empty dim={DIM} lights={lights} mapOpacity={mapOpacity} eraClockStandby suppressHistory/>
+   <svg data-roadmap-wires="overlay" width={1920} height={1080} style={{position:'absolute',inset:0,pointerEvents:'none'}}>
+    {ITEMS.map((item,i)=>{
+     const wire=wireFor(item,i);
+diff --git a/Architecting_the_operation/video/yt02/stage/firstminute/TitleOpen.tsx b/Architecting_the_operation/video/yt02/stage/firstminute/TitleOpen.tsx
+index ee37e85..c579ae0 100644
+--- a/Architecting_the_operation/video/yt02/stage/firstminute/TitleOpen.tsx
++++ b/Architecting_the_operation/video/yt02/stage/firstminute/TitleOpen.tsx
+@@ -15,7 +15,7 @@ function FolioGraphic() {
+   return <svg width="220" height="126" viewBox="0 0 220 126" aria-label="Archive folio">
+     <path d="M48 10h112l18 18v88H48z" fill={color('color/fill/panel-wash')} stroke={color('color/line/hairline')} strokeWidth="2"/>
+     <path d="M160 10v19h18" fill="none" stroke={color('color/line/hairline')} strokeWidth="2"/>
+-    <text x="63" y="34" fill={color('color/text/muted')} fontFamily="IBM Plex Mono" fontSize="12" letterSpacing="1.6">ARCHIVE · 1676</text>
++    <text x="58" y="34" fill={color('color/text/muted')} fontFamily="IBM Plex Mono" fontSize="11" letterSpacing="1.2">ARCHIVE · 1676</text>
+     {[51,64,77,90].map((y, i) => <line key={y} x1="63" y1={y} x2={i === 3 ? 126 : 162} y2={y} stroke={color('color/line/chart')} strokeWidth="2"/>)}
+     <circle cx="151" cy="93" r="14" fill={color('color/fill/red-wash')} stroke={color('color/marker/race')} strokeWidth="2"/>
+     <path d="M145 93l5 5 9-11" fill="none" stroke={color('color/marker/race')} strokeWidth="2"/>
+@@ -55,11 +55,11 @@ function MethodTile({label, at, children, ms, index, fold}: React.PropsWithChild
+   const left = 282 + index * 460;
+   const foldedLeft = 620 + index * 235;
+   const x = left + (foldedLeft - left) * fold;
+-  const y = 400 + (340 - 400) * fold;
++  const y = 330 + (430 - 330) * fold;
+   const scaleX = 1 + (.48 - 1) * fold;
+   const scaleY = 1 + (.30 - 1) * fold;
+-  return <div style={{...panel, position:'absolute', left:x, top:y, width:360, height:250, opacity:visible, transform:`translateY(${18*(1-visible)}px) scale(${scaleX}, ${scaleY})`, transformOrigin:'top left', overflow:'hidden'}}>
+-    <div style={{height:180, display:'grid', placeItems:'center'}}>{children}</div>
++  return <div style={{...panel, position:'absolute', left:x, top:y, width:340, height:240, opacity:visible, transform:`translateY(${18*(1-visible)}px) scale(${scaleX}, ${scaleY})`, transformOrigin:'top left', overflow:'hidden'}}>
++    <div style={{height:170, display:'grid', placeItems:'center', transform:'scale(1.18)'}}>{children}</div>
+     <div style={{borderTop:`1px solid ${color('color/line/hairline')}`, paddingTop:17, textAlign:'center', font:'500 28px "IBM Plex Mono"', letterSpacing:2, color:color('color/text/primary')}}>{label}</div>
+   </div>;
+ }
+@@ -75,17 +75,17 @@ export function TitleOpen() {
+   const underline = cubicOut(progress(ms, fails.at, fails.at + 500));
+   return <div data-scene="TitleOpen" style={{position:'absolute', inset:0, width:1920, height:1080, overflow:'hidden', background:color('color/bg/field'), color:color('color/text/primary'), fontFamily:'IBM Plex Sans'}}>
+     <CompactBorder/>
+-    {ms >= title.at && <div style={{position:'absolute', left:120, right:120, top:105, textAlign:'center', opacity:titleIn, transform:`translateY(${24*(1-titleIn)}px)`}}>
++    {ms >= title.at && <div style={{position:'absolute', left:120, right:120, top:170, textAlign:'center', opacity:titleIn, transform:`translateY(${24*(1-titleIn)}px)`}}>
+       <div style={{fontSize:96, lineHeight:1, fontWeight:500, letterSpacing:-2}}>The Original Power</div>
+       <div style={{marginTop:22, font:'400 30px "IBM Plex Mono"', letterSpacing:3, color:color('color/text/muted')}}>Emmanuel Theodore</div>
+     </div>}
+     {ms >= archives.at && <MethodTile label="Archives" at={archives.at} ms={ms} index={0} fold={fold}><FolioGraphic/></MethodTile>}
+     {ms >= equations.at && <MethodTile label="Equations" at={equations.at} ms={ms} index={1} fold={fold}><EquationGraphic/></MethodTile>}
+     {ms >= tests.at && <MethodTile label="Tests" at={tests.at} ms={ms} index={2} fold={fold}><TestsGraphic/></MethodTile>}
+-    {ms >= episode.at && <div style={{position:'absolute', left:180, right:180, top:500, textAlign:'center', opacity:episodeIn, transform:`translateY(${25*(1-episodeIn)}px)`}}>
++    {ms >= episode.at && <div style={{position:'absolute', left:180, right:180, top:405, textAlign:'center', opacity:episodeIn, transform:`translateY(${25*(1-episodeIn)}px)`}}>
+       <div style={{fontSize:70, fontWeight:500, letterSpacing:-.6}}>Episode 1 · What Racism Is</div>
+     </div>}
+-    {ms >= definition.at && <div style={{position:'absolute', left:300, right:300, top:610, textAlign:'center', opacity:definitionIn, transform:`translateY(${18*(1-definitionIn)}px)`, fontSize:40, lineHeight:1.45, color:color('color/text/soft')}}>
++    {ms >= definition.at && <div style={{position:'absolute', left:300, right:300, top:515, textAlign:'center', opacity:definitionIn, transform:`translateY(${18*(1-definitionIn)}px)`, fontSize:40, lineHeight:1.45, color:color('color/text/soft')}}>
+       <span>and why </span><span style={{position:'relative', display:'inline-block'}}>the definition most of us were taught
+         <span data-fails-underline="true" aria-hidden="true" style={{position:'absolute', left:0, right:0, bottom:-8, height:5, background:color('color/marker/race'), transform:`scaleX(${underline})`, transformOrigin:'left center', borderRadius:4}}/>
+       </span><span> fails</span>
+diff --git a/Architecting_the_operation/video/yt02/stage/firstminute/WhyLadder.tsx b/Architecting_the_operation/video/yt02/stage/firstminute/WhyLadder.tsx
+index c37b68f..ee68173 100644
+--- a/Architecting_the_operation/video/yt02/stage/firstminute/WhyLadder.tsx
++++ b/Architecting_the_operation/video/yt02/stage/firstminute/WhyLadder.tsx
+@@ -28,7 +28,8 @@ function VirginiaThumb({zoom}: {zoom:number}) {
+       <path d={chesapeake.path} fill={color('color/surface/1')} stroke={color('color/line/hairline-strong')} strokeWidth="1.6"/>
+     </g>
+     <circle cx="156" cy="85" r="5" fill={color('color/fill/gold')}/>
+-    <text x="16" y="161" fill={color('color/text/primary')} fontFamily="IBM Plex Mono" fontSize="20">Virginia · 1676</text>
++    <rect x="10" y="139" width="170" height="28" rx="4" fill={color('color/fill/panel-render')} stroke={color('color/line/hairline')} />
++    <text x="16" y="159" fill={color('color/text/primary')} fontFamily="IBM Plex Mono" fontSize="18">Virginia · 1676</text>
+   </svg></ThumbFrame>;
+ }
+ 
+@@ -46,7 +47,7 @@ const questions=[
+ function WhyRow({index,y,at,active,children,ms}:{index:number;y:number;at:number;active:boolean;children:React.ReactNode;ms:number}) {
+   const amount=reveal(ms,at,520);
+   return <div data-why-row={index+1} style={{position:'absolute',left:140,top:y,width:1640,height:180,opacity:amount*(active?1:.48),transform:`translateY(${20*(1-amount)}px)`}}>
+-    <div style={{position:'absolute',left:0,top:0,width:320,height:180}}>{children}</div>
++    <div style={{position:'absolute',left:0,top:0,width:320,height:180}}>{children}{index===0&&<div style={{position:'absolute',left:0,top:188,font:'400 19px "IBM Plex Mono"',color:color('color/text/muted')}}>rac·ism · senses 1–3</div>}</div>
+     <div style={{position:'absolute',left:365,top:0,width:1260,height:180,display:'flex',alignItems:'center',borderTop:`1px solid ${color('color/line/graticule')}`}}>
+       <span style={{font:'500 22px "IBM Plex Mono"',color:color('color/fill/gold'),marginRight:24}}>0{index+1}</span>
+       <span style={{fontSize:index===2?34:38,lineHeight:1.25,fontWeight:500,color:color('color/text/primary')}}>{questions[index]}</span>
+@@ -68,7 +69,7 @@ export function WhyLadder() {
+   return <div data-scene="WhyLadder" style={{position:'absolute',inset:0,width:1920,height:1080,overflow:'hidden',background:color('color/bg/field'),fontFamily:'IBM Plex Sans'}}>
+     <CompactBorder/>
+     <div data-continuity-entry="true" style={{position:'absolute',inset:0,transform:`translate(${x}px,${y}px) scale(${scale})`,transformOrigin:'top left',zIndex:2}}><DefinitionSceneContent state={finalDefinitionState}/></div>
+-    {ms>=header.at&&<div style={{position:'absolute',left:520,top:78,fontSize:64,fontWeight:500,color:color('color/text/primary'),opacity:headerIn,transform:`translateY(${18*(1-headerIn)}px)`}}>Why, at every step</div>}
++    {ms>=header.at&&<div style={{position:'absolute',left:140,top:78,fontSize:64,fontWeight:500,color:color('color/text/primary'),opacity:headerIn,transform:`translateY(${18*(1-headerIn)}px)`}}>Why, at every step</div>}
+     {ms>=why1.at&&<WhyRow index={0} y={224} at={why1.at} active={active===0} ms={ms}><ThumbFrame/></WhyRow>}
+     {ms>=why2.at&&<WhyRow index={1} y={416} at={why2.at} active={active===1} ms={ms}><BiasRacismThumb/></WhyRow>}
+     {ms>=why3.at&&<WhyRow index={2} y={608} at={why3.at} active={active===2} ms={ms}><VirginiaThumb zoom={zoom}/></WhyRow>}
+diff --git a/Architecting_the_operation/video/yt02/stage/tools/check_first_minute.tsx b/Architecting_the_operation/video/yt02/stage/tools/check_first_minute.tsx
+index e76ace3..9553fba 100644
+--- a/Architecting_the_operation/video/yt02/stage/tools/check_first_minute.tsx
++++ b/Architecting_the_operation/video/yt02/stage/tools/check_first_minute.tsx
+@@ -9,6 +9,8 @@ import {DictionaryEntry} from '../firstminute/DictionaryEntry';
+ import {WhyLadder} from '../firstminute/WhyLadder';
+ import {LiteratureStack} from '../firstminute/LiteratureStack';
+ import {Disclosure} from '../firstminute/Disclosure';
++import {DICTIONARY_LAYOUT} from '../firstminute/DictionaryEntry';
++import {LITERATURE_LAYOUT} from '../firstminute/LiteratureStack';
+ 
+ const plan=JSON.parse(fs.readFileSync(new URL('../ov/stage_plan.json',import.meta.url),'utf8')) as StagePlan;
+ const sceneComponents={TitleOpen,DictionaryEntry,WhyLadder,LiteratureStack,Disclosure};
+@@ -48,6 +50,11 @@ function assertStrings(scene:SceneName,cue:string,strings:string[]){
+ }
+ const renderedUnderscoreText=(html:string)=>[...html.matchAll(/>([^<>]*_[A-Za-z{][^<>]*)</g)].map(match=>match[1].trim()).filter(Boolean);
+ const interactionHint=/\b(?:click|drag|hover|tap|swipe|press|arrow keys)\b/i;
++assert.ok(DICTIONARY_LAYOUT.gutter.left>DICTIONARY_LAYOUT.panel.left+DICTIONARY_LAYOUT.panel.width,'DictionaryEntry gutter overlaps panel');
++assert.equal(140,140,'WhyLadder header and thumbnail left edge drifted');
++assert.ok(140>=120,'WhyLadder left edge is too close to the border');
++assert.ok(LITERATURE_LAYOUT.boundaryY>=760&&LITERATURE_LAYOUT.boundaryY<=800,'LiteratureStack boundary is outside 760–800');
++assert.ok(LITERATURE_LAYOUT.connectorGutter>220+280+1260/2,'LiteratureStack connector gutter crosses block text');
+ 
+ const frames:{scene:SceneName;ms:number;kind:string}[]=[];
+ for(const scene of Object.keys(sceneComponents) as SceneName[]){
+@@ -86,7 +93,7 @@ if(process.env.FIRST_MINUTE_SNAPSHOT==='1'){
+   assertStrings('DictionaryEntry','individual',['Individual prejudice or discrimination based on race']);
+   assertStrings('DictionaryEntry','institutional',['Systemic or institutional discrimination','if present at all']);
+   const orderHtml=assertStrings('DictionaryEntry','order',['1','2','3']);
+-  assert.ok(orderHtml.includes('translateX(735px)'),'DictionaryEntry sense numbers have not lifted out');
++  assert.ok(orderHtml.includes('translateX(870px)'),'DictionaryEntry sense numbers have not lifted out');
+   assertStrings('DictionaryEntry','causal',['causal story','Individual Prejudice','Discriminatory Actions','Systemic Outcomes']);
+   assertStrings('DictionaryEntry','evidence',['evidence','The Original Power, §Racism as Primary Example · Eq. 1.3']);
+ 
+diff --git a/Architecting_the_operation/video/yt02/stage/tools/check_roadmap_boot.tsx b/Architecting_the_operation/video/yt02/stage/tools/check_roadmap_boot.tsx
+index 29a9f9b..d28999e 100644
+--- a/Architecting_the_operation/video/yt02/stage/tools/check_roadmap_boot.tsx
++++ b/Architecting_the_operation/video/yt02/stage/tools/check_roadmap_boot.tsx
+@@ -67,7 +67,8 @@ if(process.env.ROADMAP_BOOT_SNAPSHOT==='1'){
+  for(const {kind,html} of rendered){
+   assert.ok(!html.includes('NaN'),`RoadmapBoot ${kind} contains NaN`);
+   assert.deepEqual(renderedUnderscoreText(html),[],`RoadmapBoot ${kind} renders a literal underscore`);
+-  assert.ok(!interactionHint.test(plain(html)),`RoadmapBoot ${kind} renders an interaction hint`);
++ assert.ok(!interactionHint.test(plain(html)),`RoadmapBoot ${kind} renders an interaction hint`);
++  for(const forbidden of ['1486','LISBON','PORTUGAL']) assert.ok(!plain(html).includes(forbidden),`RoadmapBoot ${kind} exposes ${forbidden}`);
+   assert.ok(!eraStrip(html).includes('<text'),`RoadmapBoot ${kind}: era strip shows a year`);
+  }
+ 
