@@ -100,3 +100,6 @@ Run records: vault `Orchestration/dispatch-log.jsonl`
 
 ## E2 — visual QA (2026-11-06)
 - Done. Critic = MiniCPM-V 4.7 35B-A3B **with the approved still as reference**: recall 0.87, false-fail 0 (self-compare, optimistic), 3.7 s/frame. Qwen2.5-VL-7B passes everything; dropped as critic. Model regions unusable (0/30) → R3 grounds by element/OCR, not model boxes. Details: `experiments/e2_visual_qa/FINDINGS-E2.md`.
+
+## E3 — inline SVG by worker (2026-11-06)
+- Done (condition B). Author ranking: Terra 7 top placements, Gemini Flash 5, Luna 2, Muse 2 (from only 3 deliveries). Rule: `svg_asset` → codex gpt-5.6-terra by default, gemini-3.8-flash-low when cheap; Luna only behind a critic; Muse second-opinion only. Condition A blocked on weights. Critic schema failures 21/37 → R3 follow-up. `experiments/svg_offload/FINDINGS-E3.md`.
