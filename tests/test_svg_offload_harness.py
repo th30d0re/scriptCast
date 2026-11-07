@@ -3,6 +3,7 @@
 isolation, without running or writing anything."""
 import importlib.util
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -275,3 +276,107 @@ def test_candidates_resolve_against_stage():
     for cand in run.CANDIDATES:
         assert (STAGE_DIR / cand.file).is_file(), cand.slug
         assert f"{cand.cue}:" in ov, cand.slug
+
+
+def test_only_agent_filters_dry_run_to_muse(capsys):
+    rc = run.main(["--dry-run", "--only-agent", "muse"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "10 cues x 1 conditions x 1 workers" in out
+    lines = [l for l in out.splitlines() if l.startswith("[dry-run] ")]
+    dispatches = [l for l in lines if "muse exec" in l]
+    assert len(dispatches) == 10
+    assert not any("stage_dispatch" in l for l in lines)
+
+
+def test_only_agent_unknown_exits_two(capsys):
+    with pytest.raises(SystemExit) as exc:
+        run.main(["--dry-run", "--only-agent", "unknown"])
+    assert exc.value.code == 2
+
+
+def test_muse_cell_saves_transcript_and_fails_loudly_on_no_output(tmp_path, monkeypatch):
+    """Fake command runs for Muse and produces transcript, svg, diff, and status=no_output when diff is empty."""
+    cand = run.CANDIDATES[0]
+    worker = next(w for w in run.WORKERS if w.agent == "muse")
+    out_dir = tmp_path / "out"
+    args = run.argparse.Namespace(
+        out_dir=out_dir,
+        book_repo=tmp_path / "fake_book",
+        timeout_min=1.0,
+        render_cmd=None,
+        generator="svgen-7b",
+    )
+
+    # Mock worktree add / remove / diff commands to succeed
+    def fake_subprocess_run(cmd, *a, **kw):
+        cmd_str = " ".join(cmd)
+        if "worktree" in cmd_str and "add" in cmd_str:
+            # create worktree dir structure
+            wt = Path(cmd[cmd.index("--detach") + 1])
+            stage_dir = wt / run.YT02_SUBDIR / "stage"
+            (stage_dir / Path(cand.file).parent).mkdir(parents=True, exist_ok=True)
+            (stage_dir / cand.file).write_text("<svg>fake inline svg</svg>")
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        elif "worktree" in cmd_str and "remove" in cmd_str:
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        elif "diff" in cmd_str:
+            # Return empty diff to test status=no_output
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        elif "muse" in cmd_str:
+            # Fake muse command running
+            return subprocess.CompletedProcess(cmd, 0, stdout="muse stdout\n", stderr="muse stderr\n")
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_subprocess_run)
+
+    row = run.run_cell(cand, "B", worker, args, None)
+    cell_dir = out_dir / run.cell_slug(cand, "B", worker)
+
+    assert row["status"] == "no_output"
+    assert (cell_dir / "transcript.txt").is_file()
+    assert (cell_dir / "transcript.txt").read_text() == "muse stdout\n\nmuse stderr\n"
+    assert (cell_dir / "asset.svg").is_file()
+    assert (cell_dir / "asset.svg").read_text() == "<svg>fake inline svg</svg>"
+    assert (cell_dir / "tsx.diff").is_file()
+    assert (cell_dir / "tsx.diff").read_text() == ""
+
+
+def test_muse_cell_ok_when_diff_produced(tmp_path, monkeypatch):
+    """When fake muse writes a non-empty diff, status is ok."""
+    cand = run.CANDIDATES[0]
+    worker = next(w for w in run.WORKERS if w.agent == "muse")
+    out_dir = tmp_path / "out"
+    args = run.argparse.Namespace(
+        out_dir=out_dir,
+        book_repo=tmp_path / "fake_book",
+        timeout_min=1.0,
+        render_cmd=None,
+        generator="svgen-7b",
+    )
+
+    def fake_subprocess_run(cmd, *a, **kw):
+        cmd_str = " ".join(cmd)
+        if "worktree" in cmd_str and "add" in cmd_str:
+            wt = Path(cmd[cmd.index("--detach") + 1])
+            stage_dir = wt / run.YT02_SUBDIR / "stage"
+            (stage_dir / Path(cand.file).parent).mkdir(parents=True, exist_ok=True)
+            (stage_dir / cand.file).write_text("<svg>new svg</svg>")
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        elif "worktree" in cmd_str and "remove" in cmd_str:
+            return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+        elif cmd[0] == "git" and "diff" in cmd:
+            return subprocess.CompletedProcess(cmd, 0, stdout="diff --git a/foo b/foo\n", stderr="")
+        elif cmd[0] == "muse":
+            return subprocess.CompletedProcess(cmd, 0, stdout="done\n", stderr="")
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_subprocess_run)
+
+    row = run.run_cell(cand, "B", worker, args, None)
+    cell_dir = out_dir / run.cell_slug(cand, "B", worker)
+
+    assert row["status"] == "ok"
+    assert (cell_dir / "transcript.txt").read_text() == "done\n\n"
+    assert (cell_dir / "tsx.diff").read_text() == "diff --git a/foo b/foo\n"
+
