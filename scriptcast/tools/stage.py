@@ -37,6 +37,36 @@ def append_rejection(episode_dir: Path, *, shot: str, still_path: Path,
     return path
 
 
+def export_kit_review(input_path: Path, output_path: Path) -> Path:
+    """Export actionable Kit Review entries as a dispatch-ready Markdown file."""
+    raw = json.loads(input_path.read_text(encoding='utf-8')) if input_path.exists() else {'version': 1, 'items': {}}
+    if raw.get('version') != 1 or not isinstance(raw.get('items'), dict):
+        raise ValueError(f'Invalid kit review file: {input_path}')
+    priority_order = {'P0': 0, 'P1': 1, 'P2': 2, 'P3': 3, None: 4}
+    rows = []
+    for item_id, item in raw['items'].items():
+        if not isinstance(item, dict) or item.get('status') not in {'change', 'cut'}:
+            continue
+        priority = item.get('priority')
+        if priority not in priority_order:
+            raise ValueError(f'Invalid priority for {item_id}')
+        rows.append((priority_order[priority], item_id, item))
+    rows.sort(key=lambda row: (row[0], row[1]))
+    lines = ['# Kit review export', '']
+    for _, item_id, item in rows:
+        priority = item.get('priority') or 'None'
+        lines.extend([f'## {item_id}', '', f'- Status: {item["status"]}', f'- Priority: {priority}'])
+        tags = item.get('tags', [])
+        if tags:
+            lines.append(f'- Tags: {", ".join(tags)}')
+        lines.extend(['', item.get('notes', ''), ''])
+    if not rows:
+        lines.extend(['No items marked Change or Cut.', ''])
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text('\n'.join(lines), encoding='utf-8')
+    return output_path
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
@@ -51,6 +81,12 @@ def main(argv=None):
     p.add_argument('--still', type=Path, help='still image path (defaults to <plan-dir>/<shot>.png)')
     p.add_argument('--frame', type=int, help='render frame (defaults to the shot midpoint)')
     p.add_argument('--element-id')
+    p = sub.add_parser('kit-review', help='manage Kit Review exports')
+    kit_sub = p.add_subparsers(dest='kit_review_command', required=True)
+    p = kit_sub.add_parser('export', help='export Change and Cut kit reviews as Markdown')
+    repo_root = Path(__file__).resolve().parents[2]
+    p.add_argument('--input', type=Path, default=repo_root / 'review' / 'kit-review.json')
+    p.add_argument('--output', type=Path, default=repo_root / 'review' / 'kit-review.md')
     for name in ('render', 'still', 'boxes', 'site'):
         p = sub.add_parser(name)
         p.add_argument('plan', type=Path)
@@ -77,6 +113,10 @@ def main(argv=None):
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(json.dumps(plan, indent=2) + '\n')
             print(f'wrote {out}')
+            return 0
+        if args.command == 'kit-review':
+            output = export_kit_review(args.input, args.output)
+            print(f'wrote {output}')
             return 0
         plan_path = args.plan.resolve()
         plan = json.loads(plan_path.read_text())

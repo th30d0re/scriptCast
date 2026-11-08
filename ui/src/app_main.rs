@@ -2990,6 +2990,12 @@ impl Browser {
                         _ => crate::stage_view::StageAction::None,
                     };
                     match action {
+                        crate::stage_view::StageAction::OpenKitReview => {
+                            self.audio_notice = Some(match crate::stage_view::open_kit_review() {
+                                Ok(()) => "Opened Kit review".into(),
+                                Err(error) => error,
+                            });
+                        }
                         crate::stage_view::StageAction::SelectTurn { turn_id, .. } => {
                             if let Some(position) = self
                                 .episode

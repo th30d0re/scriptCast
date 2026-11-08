@@ -104,6 +104,10 @@ npx remotion still src/index.ts KitGallery /tmp/kitgallery.png --browser-executa
 npx remotion still src/index.ts KitGallery2 /tmp/kitgallery2.png --browser-executable="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 ```
 
+## Kit review
+
+Open the site at `#kit` (or select **Kit review** in the native Stage column) to play every kit item and record notes, priority, status, and tags. Reviews save to `review/kit-review.json`; the dev-server endpoint merges each item independently and writes atomically. Use `scriptcast-stage kit-review export` to create `review/kit-review.md` for dispatch. The export includes only Change and Cut items, sorted P0 through P3, followed by items with no priority.
+
 ## Left in episode
 
 - `dashboard/notch.ts`'s `MAP_SCENES`, `NOTCH_MS`, and `useNotch()` remain episode policy because they name YT02 scenes (`DashboardBoot`, `Dashboard1486`, and `RoadmapBoot`). The kit retains the visual `notchPath()` primitive; episode code computes and passes `notch` progress.
