@@ -61,7 +61,12 @@ def _scene_details(plan: Path, frame_scene: str) -> tuple[str, str, str]:
             if source:
                 return scene, shot, str(source)
             root = Path(data.get("episode_dir", plan.parent))
-            matches = sorted(path for path in (root / "stage").glob(f"**/{scene}.tsx")
+            # episode_dir may already be the stage/ dir; otherwise climb from the
+            # plan to the nearest ancestor holding stage/.
+            if "episode_dir" not in data:
+                root = next((p for p in plan.resolve().parents if (p / "stage").is_dir()), root)
+            stage_dir = root if root.name == "stage" else root / "stage"
+            matches = sorted(path for path in stage_dir.glob(f"**/{scene}.tsx")
                              if "node_modules" not in path.parts)
             if len(matches) == 1:
                 return scene, shot, str(matches[0])
