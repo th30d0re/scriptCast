@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 from pathlib import Path
 from typing import Iterable
@@ -22,6 +23,32 @@ FIELDS = ("still_path", "reference_path", "label", "shot", "source")
 def shot_name(path: Path) -> str:
     """Stable grouping key when an explicit shot id was not recorded."""
     return path.stem
+
+
+def cue_reference(stage: Path, still: Path) -> Path | None:
+    """Find the cue's explicitly saved reference image for a still."""
+    cue_candidates = sorted(
+        path for path in stage.rglob("ref-*.png")
+        if path.is_file() and still.stem.startswith(path.stem.removeprefix("ref-"))
+    )
+    return cue_candidates[0] if cue_candidates else None
+
+
+def distinct_reference(still: Path, reference: Path | None, *, warning: str) -> Path | None:
+    """Return a usable reference, rejecting path- and byte-identical pairs."""
+    if reference is None or not reference.is_file():
+        print(f"WARNING: dropping row for {still}: no distinct reference ({warning})")
+        return None
+    try:
+        same = still.resolve() == reference.resolve()
+        if not same:
+            same = hashlib.sha256(still.read_bytes()).digest() == hashlib.sha256(reference.read_bytes()).digest()
+    except OSError:
+        same = True
+    if same:
+        print(f"WARNING: dropping row for {still}: reference is identical ({warning})")
+        return None
+    return reference
 
 
 def approved_dashboard_rows(stage: Path) -> list[dict[str, str]]:
@@ -40,9 +67,12 @@ def approved_dashboard_rows(stage: Path) -> list[dict[str, str]]:
         rerender = rerender_dir / reference.name
         if not rerender.is_file():
             continue
+        # The approved reference is not itself a comparable still.  The
+        # logged render is retained only when it differs from that reference.
         common = {"reference_path": str(reference), "label": "good", "shot": shot_name(reference)}
-        rows.append({"still_path": str(reference), **common, "source": "stage/handoff/README.md: author-approved reference"})
-        rows.append({"still_path": str(rerender), **common, "source": "logs/stage_dashboard: filename-paired genuine re-render"})
+        paired = distinct_reference(rerender, reference, warning="stage dashboard handoff")
+        if paired:
+            rows.append({"still_path": str(rerender), **common, "source": "logs/stage_dashboard: filename-paired genuine re-render"})
     return rows
 
 
@@ -91,11 +121,12 @@ def explicit_label_rows(stage: Path) -> list[dict[str, str]]:
             if not still.is_file() or still.suffix.lower() not in IMAGE_SUFFIXES:
                 continue
             raw_ref = record.get("reference_path") or record.get("reference")
-            reference = Path(raw_ref) if isinstance(raw_ref, str) else still
-            if not reference.is_absolute():
+            reference = Path(raw_ref) if isinstance(raw_ref, str) else cue_reference(stage, still)
+            if not reference.is_absolute() and reference is not None:
                 reference = labels.parent / reference
-            if not reference.is_file():
-                reference = still
+            reference = distinct_reference(still, reference, warning=str(labels))
+            if reference is None:
+                continue
             rows.append({"still_path": str(still), "reference_path": str(reference), "label": label,
                          "shot": str(record.get("shot") or shot_name(still)), "source": str(labels)})
     return rows
@@ -124,8 +155,11 @@ def rejection_rows(stage: Path) -> list[dict[str, str]]:
             still = (labels.parent / still).resolve()
         if not still.is_file() or still.suffix.lower() not in IMAGE_SUFFIXES:
             continue
+        reference = distinct_reference(still, cue_reference(stage, still), warning=f"{labels}:{line_number}")
+        if reference is None:
+            continue
         rows.append({
-            "still_path": str(still), "reference_path": str(still), "label": "bad",
+            "still_path": str(still), "reference_path": str(reference), "label": "bad",
             "shot": str(record.get("shot") or shot_name(still)),
             "source": f"{labels}:{line_number}",
         })
@@ -147,7 +181,7 @@ def deduplicate(rows: Iterable[dict[str, str]]) -> list[dict[str, str]]:
 def write_manifest(rows: Iterable[dict[str, str]], output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=FIELDS)
+        writer = csv.DictWriter(stream, fieldnames=FIELDS, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 

@@ -1,3 +1,6 @@
+import hashlib
+from pathlib import Path
+
 from experiments.r3_calibration.collect import deduplicate, rejection_rows, shot_name
 from experiments.r3_calibration.run import metrics, thresholds
 
@@ -34,7 +37,17 @@ def test_rejection_rows_are_documented_bad_labels(tmp_path):
     log.write_text(
         '{"shot":"S01","still_path":"../stills/S01.png","frame":42,"reason":"overlap","ts":"2026-01-01T00:00:00Z"}\n'
     )
-    assert rejection_rows(stage) == [{
-        "still_path": str(still), "reference_path": str(still), "label": "bad",
-        "shot": "S01", "source": f"{log}:1",
-    }]
+    assert rejection_rows(stage) == []
+
+
+def test_manifest_has_no_self_pairs_by_path_or_content():
+    import csv
+
+    manifest = Path(__file__).parents[1] / "experiments/r3_calibration/manifest.csv"
+    with manifest.open(newline="") as stream:
+        rows = csv.DictReader(stream)
+        for row in rows:
+            still = Path(row["still_path"])
+            reference = Path(row["reference_path"])
+            assert still.resolve() != reference.resolve()
+            assert hashlib.sha256(still.read_bytes()).digest() != hashlib.sha256(reference.read_bytes()).digest()
