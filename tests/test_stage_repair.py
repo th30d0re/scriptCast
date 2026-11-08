@@ -69,6 +69,48 @@ def test_stem_sidecar_and_s1_only_elements_build_top_three_briefs(tmp_path):
     assert "System 1 flagged this element (p=0.98)" in rows[0]["defect"]
 
 
+def test_shot_named_frame_resolves_segment_scene_and_globbed_source(tmp_path):
+    episode = tmp_path / "episode"
+    source = episode / "stage" / "min3_7" / "a" / "HeartsAudit.tsx"
+    source.parent.mkdir(parents=True)
+    source.write_text("export default function HeartsAudit() {}")
+    stills = tmp_path / "stills"; stills.mkdir()
+    Image.new("RGB", (10, 10)).save(stills / "S00-13.png")
+    (stills / "S00-13.png.boxes.json").write_text(json.dumps({"marks": [{"id": "title", "box": {"x": 1, "y": 1, "w": 2, "h": 2}}]}))
+    plan = tmp_path / "plan.json"
+    plan.write_text(json.dumps({"episode_dir": str(episode), "segments": [{"instance": "HeartsAudit", "scene": "HeartsAudit",
+        "shots": [{"shot_id": "S00-13"}]}]}))
+    report = {"frames": [{"file": "S00-13.png", "verdict": "fail",
+        "defects": [{"element_id": "title", "evidence": "wrong title"}]}]}
+    row = repair_briefs(report, stills, plan)[0]
+    assert row["scene"] == "HeartsAudit"
+    assert row["shot"] == "S00-13"
+    assert row["source_file"] == str(source)
+    assert "scene HeartsAudit" in row["brief"]
+
+
+def test_source_glob_reports_zero_and_multiple_matches(tmp_path):
+    episode = tmp_path / "episode"; (episode / "stage" / "node_modules").mkdir(parents=True)
+    stills = tmp_path / "stills"; stills.mkdir()
+    Image.new("RGB", (10, 10)).save(stills / "Scene.png")
+    (stills / "Scene.png.boxes.json").write_text(json.dumps({"marks": [{"id": "x", "box": {"x": 1, "y": 1, "w": 2, "h": 2}}]}))
+    plan = tmp_path / "plan.json"; plan.write_text(json.dumps({"episode_dir": str(episode), "segments": [{"scene": "Scene", "shots": []}]}))
+    report = {"frames": [{"file": "Scene.png", "verdict": "fail", "defects": [{"element_id": "x"}]}]}
+    assert "source not found" in repair_briefs(report, stills, plan)[0]["source_file"]
+    for name in ("a", "b"):
+        path = episode / "stage" / name / "Scene.tsx"; path.parent.mkdir(parents=True); path.write_text("")
+    assert "multiple sources" in repair_briefs(report, stills, plan)[0]["source_file"]
+
+
+def test_missing_reference_sidecar_is_appearance(tmp_path):
+    stills = tmp_path / "stills"; stills.mkdir()
+    Image.new("RGB", (10, 10)).save(stills / "Scene.png")
+    (stills / "Scene.png.boxes.json").write_text(json.dumps({"marks": [{"id": "x", "box": {"x": 1, "y": 1, "w": 2, "h": 2}}]}))
+    plan = tmp_path / "plan.json"; plan.write_text(json.dumps({"segments": [{"scene": "Scene", "shots": []}]}))
+    report = {"frames": [{"file": "Scene.png", "verdict": "fail", "defects": [{"element_id": "x"}]}]}
+    assert repair_briefs(report, stills, plan)[0]["defect_class"] == "appearance"
+
+
 @pytest.mark.parametrize(("still_box", "reference_box", "expected"), [
     ({"x": 50, "y": 10, "w": 10, "h": 10}, {"x": 10, "y": 10, "w": 10, "h": 10}, "moved"),
     ({"x": 5, "y": 5, "w": 20, "h": 20}, {"x": 10, "y": 10, "w": 10, "h": 10}, "resized"),
@@ -85,6 +127,8 @@ def test_briefs_classify_boxes_and_write_reference_crops(tmp_path, still_box, re
         (stills / "Scene_cue.png.boxes.json").write_text(json.dumps({"marks": [{"id": "thing", "box": still_box}]}))
     if reference_box:
         (references / "Scene_cue.png.boxes.json").write_text(json.dumps({"marks": [{"id": "thing", "box": reference_box}]}))
+    elif expected == "extra":
+        (references / "Scene_cue.png.boxes.json").write_text(json.dumps({"marks": []}))
     plan = tmp_path / "stage_plan.json"
     plan.write_text(json.dumps({"segments": [{"scene": "Scene", "source_file": "scenes/ActualScene.tsx",
                                                 "shots": [{"shot_id": "S01"}]}]}))

@@ -43,23 +43,32 @@ def _sidecar_path(path: Path, boxes_dir: Path | None = None) -> Path:
     return exact if exact.is_file() else base / f"{path.stem}.boxes.json"
 
 
-def _scene_details(plan: Path, scene: str) -> tuple[str, str]:
+def _scene_details(plan: Path, frame_scene: str) -> tuple[str, str, str]:
     """Resolve a scene's shot and its builder source from a Stage plan."""
     data = json.loads(plan.read_text())
     for segment in data.get("segments", []):
-        if segment.get("scene", segment.get("instance")) == scene:
-            shots = segment.get("shots", [])
-            shot = str(shots[0].get("shot_id", scene)) if shots else scene
+        shots = segment.get("shots", [])
+        shot_match = next((item for item in shots
+                           if isinstance(item, dict) and str(item.get("shot_id")) == frame_scene), None)
+        if segment.get("scene", segment.get("instance")) == frame_scene or shot_match:
+            scene = str(segment.get("scene", segment.get("instance", frame_scene)))
+            shot = str(shot_match.get("shot_id")) if shot_match else (str(shots[0].get("shot_id", scene)) if shots else scene)
             # Keep this permissive for plans which record the source explicitly,
             # while retaining the documented Stage convention as the fallback.
             source = next((value for item in (segment, *shots)
                            for key in ("source_file", "source", "file", "tsx")
                            if isinstance(item, dict) and (value := item.get(key))), None)
             if source:
-                return shot, str(source)
+                return scene, shot, str(source)
             root = Path(data.get("episode_dir", plan.parent))
-            return shot, str(root / f"{scene}.tsx")
-    return scene, str(Path(data.get("episode_dir", plan.parent)) / f"{scene}.tsx")
+            matches = sorted(path for path in (root / "stage").glob(f"**/{scene}.tsx")
+                             if "node_modules" not in path.parts)
+            if len(matches) == 1:
+                return scene, shot, str(matches[0])
+            if not matches:
+                return scene, shot, f"(source not found: stage/**/{scene}.tsx)"
+            return scene, shot, "(multiple sources: " + ", ".join(str(path) for path in matches) + ")"
+    return frame_scene, frame_scene, "(scene not found in plan)"
 
 
 def _box_values(box: Any) -> tuple[float, float, float, float] | None:
@@ -72,8 +81,11 @@ def _box_values(box: Any) -> tuple[float, float, float, float] | None:
         return None
 
 
-def _defect_class(still_box: Any, reference_box: Any, frame_size: tuple[int, int]) -> str:
+def _defect_class(still_box: Any, reference_box: Any, frame_size: tuple[int, int],
+                  reference_exists: bool = True) -> str:
     """Classify a marked difference using the supplied rendered boxes."""
+    if not reference_exists:
+        return "appearance"
     current, approved = _box_values(still_box), _box_values(reference_box)
     if approved and not current:
         return "missing"
@@ -132,7 +144,8 @@ def repair_briefs(report: dict, stills: Path, plan: Path, boxes_dir: Path | None
     for frame in report.get("frames", []):
         if frame.get("verdict") != "fail" or frame.get("status") == "contract_error":
             continue
-        file = str(frame.get("file", "")); scene, cue = _frame_name(file); shot, source_file = _scene_details(plan, scene)
+        file = str(frame.get("file", "")); frame_scene, cue = _frame_name(file)
+        scene, shot, source_file = _scene_details(plan, frame_scene)
         still = stills / file
         sidecar = _sidecar_path(still, boxes_dir)
         marks = _marks(sidecar)
@@ -154,7 +167,9 @@ def repair_briefs(report: dict, stills: Path, plan: Path, boxes_dir: Path | None
             if not element_id or str(element_id).startswith("grid_"):
                 continue
             ref = reference_dir / file if reference_dir and (reference_dir / file).is_file() else None
-            reference_marks = _marks(_sidecar_path(ref)) if ref else {}
+            reference_sidecar = _sidecar_path(ref) if ref else None
+            reference_exists = bool(reference_sidecar and reference_sidecar.is_file())
+            reference_marks = _marks(reference_sidecar) if reference_exists and reference_sidecar else {}
             if element_id not in marks and element_id not in reference_marks:
                 generated = still.with_name(f"{file}.{element_id}.boxes.json")
                 marks.update(boxes(plan, shot, generated))
@@ -164,7 +179,7 @@ def repair_briefs(report: dict, stills: Path, plan: Path, boxes_dir: Path | None
                     frame_size = image.size
             except (OSError, ValueError):
                 frame_size = (1, 1)
-            defect_class = _defect_class(box, reference_box, frame_size)
+            defect_class = _defect_class(box, reference_box, frame_size, reference_exists)
             crop_dir = report_dir or stills
             crop_dir.mkdir(parents=True, exist_ok=True)
             crop_box = box or reference_box
