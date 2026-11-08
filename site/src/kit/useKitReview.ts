@@ -1,6 +1,9 @@
 import {useEffect, useRef, useState} from 'react';
 
-export type ReviewItem = {priority: 'P0'|'P1'|'P2'|'P3'|null; status: 'unreviewed'|'keep'|'change'|'cut'; notes: string; tags: string[]; updated: string};
+export type Level = 'P0'|'P1'|'P2'|'P3'|null;
+export const VARIANTS = ['default', 'opus', 'argon', 'astra', 'kimi'] as const;
+export type VariantName = typeof VARIANTS[number];
+export type ReviewItem = {priority: Level; variants?: Partial<Record<VariantName, Level>>; status: 'unreviewed'|'keep'|'change'|'cut'; notes: string; tags: string[]; updated: string};
 export type KitReview = {version: 1; items: Record<string, ReviewItem>};
 export const emptyItem = (): ReviewItem => ({priority: null, status: 'unreviewed', notes: '', tags: [], updated: new Date().toISOString()});
 const storageKey = 'scriptcast-kit-review-unsaved';

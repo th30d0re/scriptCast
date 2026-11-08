@@ -45,7 +45,8 @@ def export_kit_review(input_path: Path, output_path: Path) -> Path:
     priority_order = {'P0': 0, 'P1': 1, 'P2': 2, 'P3': 3, None: 4}
     rows = []
     for item_id, item in raw['items'].items():
-        if not isinstance(item, dict) or item.get('status') not in {'change', 'cut'}:
+        # Variant levels are actionable even on Keep items: they say which variant becomes the default.
+        if not isinstance(item, dict) or (item.get('status') not in {'change', 'cut'} and not item.get('variants')):
             continue
         priority = item.get('priority')
         if priority not in priority_order:
@@ -56,6 +57,10 @@ def export_kit_review(input_path: Path, output_path: Path) -> Path:
     for _, item_id, item in rows:
         priority = item.get('priority') or 'None'
         lines.extend([f'## {item_id}', '', f'- Status: {item["status"]}', f'- Priority: {priority}'])
+        variants = item.get('variants') or {}
+        if variants:
+            ranked = sorted(variants.items(), key=lambda kv: (priority_order.get(kv[1], 4), kv[0]))
+            lines.append('- Variant levels: ' + ', '.join(f'{name} {level}' for name, level in ranked))
         tags = item.get('tags', [])
         if tags:
             lines.append(f'- Tags: {", ".join(tags)}')

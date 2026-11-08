@@ -3,6 +3,7 @@ import path from 'node:path';
 
 const blank = () => ({version: 1, items: {}});
 const priorities = new Set([null, 'P0', 'P1', 'P2', 'P3']);
+const variantNames = new Set(['default', 'opus', 'argon', 'astra', 'kimi']);
 const statuses = new Set(['unreviewed', 'keep', 'change', 'cut']);
 
 export function normalizeReview(value) {
@@ -14,7 +15,15 @@ export function normalizeReview(value) {
 
 export function normalizeItem(item) {
   if (!item || typeof item !== 'object' || !priorities.has(item.priority) || !statuses.has(item.status) || typeof item.notes !== 'string' || !Array.isArray(item.tags) || !item.tags.every((tag) => typeof tag === 'string') || typeof item.updated !== 'string' || Number.isNaN(Date.parse(item.updated))) throw new Error('Invalid kit review item');
-  return {priority: item.priority, status: item.status, notes: item.notes, tags: item.tags, updated: item.updated};
+  const variants = {};
+  if (item.variants !== undefined) {
+    if (!item.variants || typeof item.variants !== 'object' || Array.isArray(item.variants)) throw new Error('Invalid kit review item');
+    for (const [name, level] of Object.entries(item.variants)) {
+      if (!variantNames.has(name) || !priorities.has(level)) throw new Error('Invalid kit review item');
+      if (level !== null) variants[name] = level;
+    }
+  }
+  return {priority: item.priority, status: item.status, notes: item.notes, tags: item.tags, ...(Object.keys(variants).length ? {variants} : {}), updated: item.updated};
 }
 
 export function readReview(file) {
