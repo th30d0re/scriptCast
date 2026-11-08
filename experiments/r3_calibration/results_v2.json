@@ -1,0 +1,4127 @@
+{
+  "dry_run": true,
+  "results": [
+    {
+      "threshold": 0.1,
+      "mode": "tier1_only",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.8571428571428571,
+      "false_fail": 0.35294117647058826,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 200.53621533346208,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 206.21387499704724,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 205.03733299847227,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 224.01362500386313,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 208.27558400196722,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 205.78566699987277,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 216.29966600448824,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 202.84674999857089,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 216.48512499814387,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 187.0282500021858,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.46387499920093,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 184.36258300062036,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 185.9612910047872,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 198.7228750003851,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 209.27066700096475,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 201.66079200134845,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.39220800308976,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 226.426832996367,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.25391700153705,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 189.22745800227858,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 191.59983399731573,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.3956250003539,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 190.55520899564726,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 190.10283399984473,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 189.48729199473746,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.1,
+      "mode": "two_tier",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.5,
+      "latency_ms_mean": 192.44918058272256,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 190.8202079939656,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 200.67508299689507,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 189.01062499935506,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 192.5637079984881,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 195.08154199866112,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 202.63175000582123,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.46624999586493,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 205.59987500018906,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 189.41208299656864,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 184.3062080006348,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 189.4238340028096,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 195.12516699614935,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 191.00895900191972,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 195.2369999999064,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 184.77200000052107,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 190.2241249990766,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.37116600258742,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 183.031624997966,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.77545800287044,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 183.53033399762353,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 185.3339169974788,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 189.26504199771443,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 190.86854200577363,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 206.24583299650112,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.2,
+      "mode": "tier1_only",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.8571428571428571,
+      "false_fail": 0.23529411764705882,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 194.73329170856837,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 196.48487499944167,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 193.88387499930104,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 195.45320800534682,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 198.15612499951385,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 198.6624170021969,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 183.55616700137034,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 182.3208749992773,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 185.76900000334717,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.2667910051532,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.11283300380455,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.24079199618427,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.07770900579635,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 196.1268749946612,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 194.95574999746168,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 196.60291699983645,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.05620799807366,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.46345799951814,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.31012499990175,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.77924999693641,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 196.48687500011874,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 200.95145900268108,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.74841600074433,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.72270899941213,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.41029199556215,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.2,
+      "mode": "two_tier",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.4166666666666667,
+      "latency_ms_mean": 205.8046909166175,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 195.7362920002197,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 199.59395899786614,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 192.36266699590487,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 193.66770800115773,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 189.5176249963697,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 192.11758299934445,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 212.26158399804262,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 205.98108300328022,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 210.5353329970967,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 208.97829200112028,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 225.1537090050988,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 215.55633299431065,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 213.9408330040169,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 220.06012500060024,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 205.5945000029169,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 207.4316660000477,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 204.69195800251327,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 200.7059579991619,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 203.66516699868953,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 200.3082919982262,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 205.8192910044454,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 209.34704099636292,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 212.29716700327117,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 213.98841599875595,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.3,
+      "mode": "tier1_only",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.7142857142857143,
+      "false_fail": 0.17647058823529413,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 199.47989745924133,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 199.28283300396288,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 200.3727919945959,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 204.18845800304553,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 200.26262500323355,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 202.43020800262457,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 198.51062499947147,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 202.06395800050814,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 202.50687500083586,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 208.52449999802047,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.52545799908694,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 201.3315829972271,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 203.17541700205766,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 213.89441700011957,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 206.53479199972935,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 205.16254100220976,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.5793330022716,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 188.66470800276147,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 180.5217500004801,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 191.2875000052736,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 195.69112500175834,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.9208750007092,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.5419160038,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.59441699675517,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 204.94883300125366,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.3,
+      "mode": "two_tier",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.3333333333333333,
+      "latency_ms_mean": 196.40789745850876,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 193.97416700667236,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 194.56804100627778,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 194.46045799850253,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 196.0757909982931,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 200.83904200146208,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 197.20116700045764,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.84374999592546,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.34054099878995,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.59600000543287,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 191.95145800040336,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.26154099428095,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 208.00341699941782,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 201.5640409954358,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 194.41858299978776,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.21029099955922,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.06337500287918,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 191.76175000029616,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.60600000456907,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.61829200049397,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 190.35566700040363,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.7135839954135,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.78412500029663,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.254375001241,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.3240829979186,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.4,
+      "mode": "tier1_only",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.14285714285714285,
+      "false_fail": 0.17647058823529413,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 197.85486629128476,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 203.28774999507004,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.29250000132015,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 203.22595800098497,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.8594999964116,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 200.7163330054027,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.3118750033318,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.03637500019977,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.4414589961525,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 206.37587500095833,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 201.61820900102612,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.62662500498118,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.70916700043017,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 200.13558299979195,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 195.2633330001845,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.9194580045296,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.0853749992093,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 190.8259999981965,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.12262499443023,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.66900000104215,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 189.20408299891278,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 203.96716599498177,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.54008399508893,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.87212499795714,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 201.41033300023992,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.4,
+      "mode": "two_tier",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.16666666666666666,
+      "latency_ms_mean": 196.20180375053073,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 202.3287089978112,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.83041699964087,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.68029200390447,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.0437080017291,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.91100000252482,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 201.63679200049955,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.467458004714,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.12224999885075,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.29816700378433,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.4098749954719,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.036666002532,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.59437499649357,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 195.10687500587665,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 199.64537499618018,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 216.43120799853932,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.22779100266052,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 187.8500829989207,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 191.67266599833965,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 182.70774999837158,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 185.79991600563517,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 190.85837499733316,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.37462500092806,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 203.26591699995333,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.5430000020424,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.5,
+      "mode": "tier1_only",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.0,
+      "false_fail": 0.11764705882352941,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 195.59517712514207,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.22920800186694,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.27395800489467,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.24091699754354,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.0518339983537,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.8299580035382,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.20445900707273,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.74491700041108,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.33116699999664,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.09374999749707,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.9273339966312,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.68925000244053,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.09612500446383,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 193.5497500016936,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 200.64429200283485,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.17891599348513,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 190.08533300075214,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.26712499605492,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.24833399918862,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.31054099934408,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.20854200486792,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.94629200239433,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.90537499566562,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.68058299389668,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 201.54629099852173,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.5,
+      "mode": "two_tier",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.08333333333333333,
+      "latency_ms_mean": 194.9614530415905,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.814291000308,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.24179199995706,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.46791600057622,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.84816599974874,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.3359590008622,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 201.82604099682067,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 189.51437500072643,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 189.3312079992029,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.63949999731267,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 191.78483400173718,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.49137499497738,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 188.91850000363775,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 194.7398750053253,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 192.9683339985786,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.74008400336606,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.9935409973259,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 203.7590830004774,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 204.53204099612776,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 191.58133300516056,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.6872499975143,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.91362499684328,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.81795800331747,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.3300000022864,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.79779199598124,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.6,
+      "mode": "tier1_only",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.0,
+      "false_fail": 0.11764705882352941,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 195.11585066629777,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.33929199981503,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.749874997593,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.9320419995929,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.4517080007936,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.45916600368218,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.10849999642232,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.18870799604338,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 188.7492919995566,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 202.7028749944293,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.4249590014806,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.4367079991498,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.69433300098171,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 198.07099999889033,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 197.48512499791104,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.19566699798452,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.39595800172538,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.88912499905564,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.04354199994123,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.3925409980002,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.97904099989682,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.2702500052983,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.043249997776,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.5104170051054,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.26704200002132,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.6,
+      "mode": "two_tier",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.08333333333333333,
+      "latency_ms_mean": 196.78261633392444,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.2385000010254,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.15770900074858,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.27825000195298,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 200.07554200128652,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.77241700305603,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.7574169941363,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.69550000253366,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.52174999949057,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.05620899872156,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.51758300076472,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.15204200090375,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.71791600174038,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 193.1522080049035,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 195.15566699556075,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.77762499829987,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.6486249982845,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.20691700017778,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.95895800355356,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.39599999552593,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 206.76216699939687,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.7192500049132,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.27091600361746,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.55016600195086,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.24345800164156,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.7,
+      "mode": "tier1_only",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.0,
+      "false_fail": 0.11764705882352941,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 194.91844437561667,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.63924999540905,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.2380420047557,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.99358399864286,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.87312500475673,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.25170799938496,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.76145800278755,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.2029170030728,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.53650000266498,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.53275000059512,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.80262499907985,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.90029099344974,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.93079199653585,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 194.82766700093634,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 194.09841600281652,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 202.9489169945009,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.52299999789102,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.71170800493564,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 189.8829170022509,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 190.8961660010391,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.69750000280328,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 190.28037499811035,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.54545800504275,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.09341600193875,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.8740830013994,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.7,
+      "mode": "two_tier",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.08333333333333333,
+      "latency_ms_mean": 197.00511287525538,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.06395800615428,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.67779199860524,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.36020800296683,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 191.28216699755285,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.44095900002867,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.22795800003223,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.66662499669474,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 191.68874999741092,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.4512090010685,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.65333399764495,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.47516700124834,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.84566599910613,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 202.6743329988676,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 196.66425000468735,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.45662500563776,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.6262919959263,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.71033399592852,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 200.27912499790546,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.4588750055991,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.70504099829122,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.4677909965976,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.73425000312272,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 221.45862500474323,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 203.05337500030873,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.8,
+      "mode": "tier1_only",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.0,
+      "false_fail": 0.11764705882352941,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 197.98532287586568,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.5728750031558,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.57095900422428,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 203.10004100610968,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.22141600161558,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 204.84558300086064,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.48770900373347,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.73354100086726,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.2523329994874,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.95333299366757,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.98016700264998,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.24200000462588,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.59645800088765,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 198.92383399565006,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 194.76125000073807,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.00066599802813,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.6590420017601,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.8405420013587,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.5761249992065,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.23908400192158,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.15841600170825,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.80295799905434,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.7245419980609,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 204.47195800079498,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 205.93291700060945,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.8,
+      "mode": "two_tier",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.08333333333333333,
+      "latency_ms_mean": 202.2588159998122,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.97679199877894,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 207.25354200112633,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 200.90683300077217,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 206.03500000288477,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 202.8491659948486,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 205.97541700408328,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 201.5030830007163,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 200.85600000311388,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.4992079960648,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 200.22620899544563,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 201.11258299584733,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 201.90241700038314,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 200.41841700003715,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 198.9987499982817,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 200.68300000275485,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 206.38216700172052,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 204.2286670039175,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 200.81279199803248,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 202.20737499766983,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.7280409996165,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 202.33320799889043,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 201.67799999762792,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 204.58954200148582,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 205.05537500139326,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.9,
+      "mode": "tier1_only",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.0,
+      "false_fail": 0.058823529411764705,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 198.9143230833482,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 205.33741699910024,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.7943749948754,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.5092909997329,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.44495900179027,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.90412500110688,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 200.29662500019185,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 201.4752499962924,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.65295900247293,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 201.2193339978694,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 205.03679200191982,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.92841700150166,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 203.55004200246185,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 201.9060420061578,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 204.558375000488,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.9967920013005,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 200.3411670011701,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.240000000922,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.15966700034915,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.90283300203737,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 200.1085419979063,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.63233399903402,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 191.54100000014296,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.47924999683164,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.92816599470098,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.9,
+      "mode": "two_tier",
+      "n": 24,
+      "bad_n": 7,
+      "good_n": 17,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.041666666666666664,
+      "latency_ms_mean": 196.06518229223488,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.35220799641684,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.36258400371298,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.3802499996964,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.0957500054501,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 201.5108749983483,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 198.0444590008119,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.6431669977028,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-agy-gemini-flash-low/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.19995900150388,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-luna/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.74645800032886,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/comparator-loop-B-codex-gpt-terra/critic_stills/PredictiveCoding_t30Compares.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.83058300061384,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.2697080016369,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/debate-funnel-B-codex-gpt-terra/critic_stills/HeartsAudit_t13Audit.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.82679199811537,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-luna/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 196.18983400141587,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-codex-gpt-terra/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.4559160041972,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/doctrine-chain-B-muse/critic_stills/SenseTwo_t8Determine.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 196.78654200106394,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-luna/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 191.04987499304116,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/practice-network-B-codex-gpt-terra/critic_stills/SenseThree_t9Practices.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 195.47695799701614,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-agy-gemini-flash-low/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.95679100125562,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-luna/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 192.27691699779825,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/router-tree-B-codex-gpt-terra/critic_stills/HeartsAudit_t14Default.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 193.04429199837614,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-agy-gemini-flash-low/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 194.2164580032113,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/term-glyphs-B-codex-gpt-terra/critic_stills/BiasDefinition_t28Categories.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 197.51708300464088,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-agy-gemini-flash-low/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 202.22762500634417,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/judge/compressed-bus-B-codex-gpt-terra/critic_stills/HostWetware_t26Bandwidth.png",
+          "label": "good",
+          "shot": "",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 199.10329100093804,
+          "status": "ok"
+        }
+      ]
+    }
+  ]
+}

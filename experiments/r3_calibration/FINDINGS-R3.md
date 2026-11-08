@@ -40,3 +40,19 @@ Labels: 7 bad stills from the author's E3 rankings (cells called last, horrible 
 | ≥0.5 | 0/7 | 0/7 | 0 | 0 |
 
 S1 alone catches 6 of 7 at threshold 0.2. MiniCPM, as tier 2, overturns most of S1's correct flags to pass, so two-tier recall is far lower. Provisional: threshold 0.2, and MiniCPM should describe flagged frames rather than veto them. Too few labels (gate needs ≥20 bad) to set authority.
+
+## Corrected run, no self-pairs (2026-11-07)
+
+The collector no longer pairs a still with itself. Manifest `manifest_v2.csv`: 7 rejected stills (rejections.jsonl) + 17 good stills (not rejected in the user's round-2 ranking), each against its cue's reference. Tier 2 mocked; System 1 scores are real. Results: `results_v2.json`.
+
+| S1 threshold | recall (7 bad) | false-fail (17 good) |
+|---|---|---|
+| 0.1 | 0.86 | 0.35 |
+| 0.2 | 0.86 | 0.24 |
+| 0.3 | 0.71 | 0.18 |
+| 0.4 | 0.14 | 0.18 |
+| >=0.5 | 0.00 | 0.06-0.12 |
+
+- The earlier "0 false-fails at 0.2" came from self-compared good rows. Real false-fail at 0.2 is 4/17: all three doctrine-chain stills and router-tree/terra. The user rated these good, so S1 is penalising acceptable variation on those cues.
+- term-glyphs/luna (extra symbols) is still missed at every threshold. The outside-boxes check could not run: these stills have no boxes sidecars, so S1 falls back to a whole-frame grid and nothing lies outside it. Needs `stage boxes` per cue first.
+- Threshold 0.2 stays provisional; 0.3 trades one catch for one fewer false-fail. Still n=24, below the 20-rejection gate.
