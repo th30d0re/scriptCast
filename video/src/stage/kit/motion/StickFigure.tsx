@@ -4,10 +4,12 @@ import type {PersonGroup} from '../components/types';
 import type {PersonMarkProps} from '../primitives/PersonMark';
 import {clamp01, cubicOut, lightStyle, span, useTiming, type Timing} from './core';
 import {useKitSounds} from './KitSound';
+import {StickFigure as ArgonStickFigure} from './variants/argon/StickFigure';
 
 export type StickPose = 'stand'|'open'|'raise';
 
 export type StickFigureProps = PersonMarkProps & Timing & {
+  variant?:'opus'|'argon';
   pose?:StickPose;
   /** Set false to show the figure fully drawn regardless of timing (the default when no timing prop is given). */
   animate?:boolean;
@@ -32,8 +34,9 @@ export const STICK_DEFAULT_FRAMES = 20;
  * A person glyph — head, torso, two arms, two legs — in clean square-jointed strokes. Drop-in for PersonMark
  * (same x, y, group, emphasis, scale; centred on x, y), with optional poses and a stroke-by-stroke draw-on.
  */
-export function StickFigure({x, y, group, emphasis:rawEmphasis, scale, pose = 'stand', animate, ...timing}:StickFigureProps) {
-  const audio = useKitSounds('StickFigure','opus',timing.progress === undefined && (animate ?? timing.startFrame !== undefined) ? timing.startFrame : undefined);
+export function StickFigure({variant='opus', x, y, group, emphasis:rawEmphasis, scale, pose = 'stand', animate, ...timing}:StickFigureProps) {
+  const audio = useKitSounds('StickFigure',variant,timing.progress === undefined && (animate ?? timing.startFrame !== undefined) ? timing.startFrame : undefined);
+  if (variant === 'argon') return <><ArgonStickFigure x={x} y={y} group={group} emphasis={rawEmphasis} scale={scale} animate={animate} {...timing}/>{audio}</>;
   const timed = animate ?? (timing.progress !== undefined || timing.startFrame !== undefined);
   const {p} = useTiming(timing, STICK_DEFAULT_FRAMES);
   const q = timed ? p : 1;
