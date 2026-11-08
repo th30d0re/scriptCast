@@ -50,7 +50,7 @@ export function StickFigure({x, y, group, emphasis:rawEmphasis, scale, pose = 's
     <path key={`${key}${i}`} d={`M${sub}`} pathLength={1} strokeDasharray={`${k} 1`} stroke="currentColor" strokeWidth={width} strokeLinecap="round" strokeLinejoin="round"/>);
   return <div data-bakeoff="opus/StickFigure" data-group={group} style={{position:'absolute', left:x, top:y, width:size, height:size*1.3, transform:'translate(-50%,-50%)', opacity:.42 + .58*emphasis, color:ink}}>
     <svg width="100%" height="100%" viewBox="0 0 44 58" fill="none" aria-hidden="true" overflow="visible" style={lightStyle(bloom, ink)}>
-      {head > 0 && <circle cx="22" cy="11" r="6.4" transform="rotate(-90 22 11)" pathLength={1} strokeDasharray={`${head} 1`} stroke="currentColor" strokeWidth={width} fill="currentColor" fillOpacity={headFill*head}/>}
+      {head > 0 && <circle cx="22" cy="11" r="6.4" transform="rotate(-90 22 11)" pathLength={1} strokeDasharray={head >= 1 ? undefined : `${head} 1`} stroke="currentColor" strokeWidth={width} fill="currentColor" fillOpacity={headFill*head}/>}
       {seg(TORSO, torso, 'torso')}
       {seg(POSES[pose].arms, arms, 'arms')}
       {seg(POSES[pose].legs, legs, 'legs')}
