@@ -6,7 +6,7 @@ import {WIDTH, HEIGHT} from '@scriptcast/cards';
 import g10 from '../examples/g10.json';
 import g11 from '../examples/g11.json';
 import {TimelineComposition} from './timeline/TimelineComposition';
-import {KitGallery, KitGallery2, KitMotion} from './stage/kit';
+import {KitGallery, KitGallery2, KitMotion, KitSheet} from './stage/kit';
 const settings = {width: WIDTH, height: HEIGHT, fps: 30, durationInFrames: 1};
 const episodePlan: EpisodePlan = {...samplePlan, cards: samplePlan.cards.map(c => ({...c, card: {...c.card, component: 'TitleCard' as const}}))};
 const equation = {headline: 'Equation walkthrough', latex: String.raw`U = I \sqcup O`, number: '2.1', terms: [{latex: 'U', gloss: 'Universe'}, {latex: 'I', gloss: 'In-group'}, {latex: 'O', gloss: 'Out-group'}], reading: 'The universe is partitioned into the in-group and out-group.', sources: 'Example layout'};
@@ -16,6 +16,7 @@ export const Root = () => <>
   <Composition id="KitGallery" component={KitGallery} durationInFrames={90} fps={30} width={1920} height={1080}/>
   <Composition id="KitGallery2" component={KitGallery2} durationInFrames={90} fps={30} width={1920} height={1080}/>
   <Composition id="KitMotion" component={KitMotion} durationInFrames={300} fps={30} width={1920} height={1080}/>
+  <Composition id="KitSheet" component={KitSheet} durationInFrames={1} fps={30} width={1920} height={1080} defaultProps={{item: 'CitationCard'}}/>
   <Composition {...settings} id="Episode" component={Episode} defaultProps={episodePlan} calculateMetadata={episodeMetadata} />
   <Composition {...settings} id="TimelineCard" component={TimelineCard} defaultProps={{headline: 'Timeline', sources: 'Sources: Example', items: [{date: '2024', title: 'Event', detail: 'Description'}]}} />
   <Composition {...settings} id="StatBarsCard" component={StatBarsCard} defaultProps={{headline: 'Stats', sources: 'Sources: Example', items: [{label: 'A', period: 'Now', values: [10], color: 'mute'}]}} />
