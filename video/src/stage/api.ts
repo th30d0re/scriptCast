@@ -10,3 +10,4 @@ export * from './InstrumentRail';
 export * from './Reveal';
 export * from './MathText';
 export * from './GlassPanel';
+export * from './kit';
