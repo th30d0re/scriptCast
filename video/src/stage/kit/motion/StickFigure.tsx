@@ -27,8 +27,8 @@ const POSES:Record<StickPose, {arms:string; legs:string}> = {
   raise:{arms:'M22 23L13 34M22 23L31 19L33 7', legs:'M22 36L15 53M22 36L29 53'},
 };
 const TORSO = 'M22 18.5V36';
-export const STICK_PHASES = {head:[0, .3], torso:[.22, .46], arms:[.4, .7], legs:[.6, .92], settle:[.92, 1]} as const;
-export const STICK_DEFAULT_FRAMES = 20;
+import {STICK_DEFAULT_FRAMES, STICK_PHASES} from './stickTiming';
+export {STICK_DEFAULT_FRAMES, STICK_PHASES};
 
 /**
  * A person glyph — head, torso, two arms, two legs — in clean square-jointed strokes. Drop-in for PersonMark

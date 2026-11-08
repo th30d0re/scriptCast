@@ -6,7 +6,7 @@ import {DRAW_LINE_DEFAULT_FRAMES, DRAW_LINE_PHASES, drawLineVertexFrames} from '
 import {DRAW_RECT_DEFAULT_FRAMES, DRAW_RECT_PHASES} from './DrawRect.opus';
 import {FIT_BOX_DEFAULT_FRAMES, FIT_BOX_PHASES} from './FitBox.opus';
 import {FLICKER_DEFAULT_FRAMES, POWER_DOWN_DEFAULT_FRAMES} from './Flicker.opus';
-import {STICK_DEFAULT_FRAMES, STICK_PHASES} from './StickFigure';
+import {STICK_DEFAULT_FRAMES, STICK_PHASES} from './stickTiming';
 import {BOOT_IN, type BootVariant} from './BootIn.opus';
 import {flickerSchedule, powerDownSchedule, type Point} from './core';
 
