@@ -1,5 +1,5 @@
+import {useKitFrame} from '../../core';
 import React from 'react';
-import {useCurrentFrame} from 'remotion';
 import {color} from '../../../theme';
 import {clamp} from '../../../../motion';
 import {
@@ -84,7 +84,7 @@ export function Flicker({
   id = 'flicker',
   children,
 }: FlickerProps) {
-  const frame = useCurrentFrame();
+  const frame = useKitFrame();
   const env = resolveFlickerEnvelope({
     frame,
     seed,

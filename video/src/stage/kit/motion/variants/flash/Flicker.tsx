@@ -1,5 +1,5 @@
+import {useKitFrame} from '../../core';
 import React from 'react';
-import {useCurrentFrame} from 'remotion';
 import {hashFloat} from './hash';
 
 export interface FlickerProps {
@@ -21,7 +21,7 @@ export const Flicker: React.FC<FlickerProps> = ({
   mode = 'power-on',
   style,
 }) => {
-  const currentFrame = useCurrentFrame();
+  const currentFrame = useKitFrame();
 
   if (mode === 'steady') {
     return <div style={{width: '100%', height: '100%', ...style}}>{children}</div>;

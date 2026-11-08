@@ -1,5 +1,5 @@
+import {useKitFrame} from '../../core';
 import React from 'react';
-import {useCurrentFrame} from 'remotion';
 import {color, dimensions} from '../../../theme';
 import {notchPath} from '../../../primitives/notch';
 import {clamp01, shapeAttrs, type Box} from '../../../components/audit';
@@ -71,7 +71,7 @@ export function DrawRect({
   style,
   children,
 }: DrawRectProps) {
-  const frame = useCurrentFrame();
+  const frame = useKitFrame();
   const p = resolveDrawRectProgress(frame, rawProgress, startFrame, durationFrames);
   if (p <= 0) return null;
 

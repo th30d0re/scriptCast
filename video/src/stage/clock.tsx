@@ -1,6 +1,7 @@
 import React, {createContext, useContext} from 'react';
 import {useCurrentFrame, useVideoConfig} from 'remotion';
-export const ClockContext = createContext({ms: 0, fps: 30, interactive: false});
+export const NO_CLOCK = {ms: 0, fps: 30, interactive: false};
+export const ClockContext = createContext(NO_CLOCK);
 export const useStageMs = () => useContext(ClockContext).ms;
 export function RemotionClock({startMs, children}: React.PropsWithChildren<{startMs: number}>) {
   const frame = useCurrentFrame(), {fps} = useVideoConfig();

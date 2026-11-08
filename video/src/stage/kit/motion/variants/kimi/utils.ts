@@ -1,4 +1,4 @@
-import {useCurrentFrame} from 'remotion';
+import {useKitFrame} from '../../core';
 
 export type Box = {x: number; y: number; w: number; h: number};
 export type Point = readonly [number, number];
@@ -25,7 +25,7 @@ export function hash01(seed: number, frame: number) {
 }
 
 export function useAnimationState({progress, startFrame = 0, durationFrames = 30}: TimingProps) {
-  const currentFrame = useCurrentFrame();
+  const currentFrame = useKitFrame();
   const duration = Math.max(1, durationFrames);
   const frame = progress === undefined ? currentFrame - startFrame : Math.round(progress * duration);
   return {frame, progress: clamp01(frame / duration), duration};

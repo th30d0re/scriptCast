@@ -1,5 +1,6 @@
 import React, {createContext, useContext} from 'react';
 import {Audio, Sequence, staticFile} from 'remotion';
+import {useKitFrameOffset} from './core';
 import {motionSounds, type SoundVariant} from './sounds';
 
 export type KitSoundProps = React.PropsWithChildren<{
@@ -40,10 +41,11 @@ const cueComponent = (component:string, variant:SoundVariant, mode?:string) => {
 /** Audio scheduled for an absolute-timeline animation. Progress-driven previews are intentionally silent. */
 export function useKitSounds(component:string, variant:SoundVariant, startFrame?:number, cueMode?:string, beat?:boolean, beatCue?:string) {
   const sound = useContext(KitSoundContext);
+  const offset = useKitFrameOffset();
   if (!sound.enabled || startFrame === undefined || (sound.mode === 'beats' && !beat)) return null;
   const name = beatCue ?? cueComponent(component, variant, cueMode);
   return motionSounds.filter((cue) => cue.variant === variant && cue.component === name).map((cue) =>
-    <Sequence key={`${cue.event}-${cue.frameOffset}`} from={startFrame + cue.frameOffset} layout="none">
+    <Sequence key={`${cue.event}-${cue.frameOffset}`} from={startFrame + cue.frameOffset - offset} layout="none">
       <Audio src={staticFile(`sfx/${soundFileName(cue.sound)}`)} volume={dbToGain(cue.gain_db + sound.gainDb + sound.duckDb)}/>
     </Sequence>
   );

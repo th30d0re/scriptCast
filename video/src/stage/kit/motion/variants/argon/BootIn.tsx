@@ -1,5 +1,5 @@
+import {useKitFrame} from '../../core';
 import React from 'react';
-import {useCurrentFrame} from 'remotion';
 import {color} from '../../../theme';
 import {ScanLines} from '../../../primitives/Icons';
 import {clamp01, type Box} from '../../../components/audit';
@@ -138,7 +138,7 @@ export function BootIn({
   id = 'boot-in',
   children,
 }: BootInProps) {
-  const frame = useCurrentFrame();
+  const frame = useKitFrame();
   const p = typeof rawProgress === 'number'
     ? clamp01(rawProgress)
     : clamp01((frame - startFrame) / Math.max(1, durationFrames));

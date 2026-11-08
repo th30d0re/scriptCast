@@ -1,5 +1,5 @@
+import {useKitFrame} from '../../core';
 import React from 'react';
-import {useCurrentFrame} from 'remotion';
 import {color, dimensions} from '../../../theme';
 import {
   arrowBarbs,
@@ -82,7 +82,7 @@ export function DrawLine({
   bareSvg = false,
   id = 'draw-line',
 }: DrawLineProps) {
-  const frame = useCurrentFrame();
+  const frame = useKitFrame();
   const points: readonly Point[] = rawPoints && rawPoints.length >= 2
     ? rawPoints
     : [[x1, y1], [x2, y2]];

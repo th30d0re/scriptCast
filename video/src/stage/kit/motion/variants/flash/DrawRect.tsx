@@ -1,5 +1,5 @@
+import {useKitFrame} from '../../core';
 import React from 'react';
-import {useCurrentFrame} from 'remotion';
 import {color} from '../../../theme/tokens';
 import {notchPath} from '../../../primitives/notch';
 
@@ -32,7 +32,7 @@ export const DrawRect: React.FC<DrawRectProps> = ({
   children,
   style,
 }) => {
-  const currentFrame = useCurrentFrame();
+  const currentFrame = useKitFrame();
 
   let p: number;
   if (directProgress !== undefined) {

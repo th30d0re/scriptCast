@@ -1,6 +1,8 @@
 // Shared timing, hashing and flicker envelopes for the opus bake-off primitives.
 // Everything here is a pure function of its arguments: no Math.random, no Date, no CSS animation.
+import {useContext} from 'react';
 import {useCurrentFrame} from 'remotion';
+import {ClockContext, NO_CLOCK} from '../../clock';
 import {cubicInOut, cubicOut, progress as span} from '../../motion';
 import {dimensions} from '../theme/tokens';
 
@@ -20,8 +22,20 @@ export const spacing = (name:'spacing/xs'|'spacing/sm'|'spacing/md'|'spacing/lg'
  * Resolves a Timing into normalized progress `p` and local time `t` in frames.
  * When only `progress` is given, `t` is reconstructed as progress × duration so seeded flicker still steps per frame.
  */
+/**
+ * The frame kit timing is measured on. Inside a stage clock (RemotionClock / ManualClock) this is stage time in frames,
+ * so startFrame can be a cue time (ms × fps / 1000); outside one it is the Remotion frame.
+ */
+export function useKitFrame() {
+  const clock = useContext(ClockContext), frame = useCurrentFrame();
+  return clock === NO_CLOCK ? frame : Math.round(clock.ms*clock.fps/1000);
+}
+/** Kit frame minus Remotion frame: add to a Remotion-local Sequence offset to land on kit time. */
+export function useKitFrameOffset() {
+  return useKitFrame() - useCurrentFrame();
+}
 export function useTiming(timing:Timing, defaultDuration:number) {
-  const frame = useCurrentFrame();
+  const frame = useKitFrame();
   return resolveTiming(timing, defaultDuration, frame);
 }
 export function resolveTiming({progress, startFrame = 0, durationFrames}:Timing, defaultDuration:number, frame:number) {

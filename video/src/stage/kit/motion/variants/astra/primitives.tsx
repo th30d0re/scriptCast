@@ -1,5 +1,5 @@
+import {useKitFrame} from '../../core';
 import React, {type CSSProperties, type ReactNode} from 'react';
-import {useCurrentFrame} from 'remotion';
 import {color, dimensions, Tokens} from '../../../theme/tokens';
 import {notchPath} from '../../../primitives/notch';
 import type {PersonMarkProps} from '../../../primitives/PersonMark';
@@ -7,7 +7,7 @@ export type Box = {x:number;y:number;w:number;h:number};
 export type Timing = {progress?:number;startFrame?:number;durationFrames?:number};
 export type ColorToken = `color/${string}`;
 export const clamp = (n:number)=>Math.max(0,Math.min(1,n));
-export function useProgress({progress,startFrame=0,durationFrames=30}:Timing) {const frame=useCurrentFrame();return clamp(progress ?? (frame-startFrame)/Math.max(1,durationFrames));}
+export function useProgress({progress,startFrame=0,durationFrames=30}:Timing) {const frame=useKitFrame();return clamp(progress ?? (frame-startFrame)/Math.max(1,durationFrames));}
 export function hash(seed:number,frame:number) {let n=Math.imul(seed^Math.floor(frame),0x45d9f3b);n=Math.imul(n^(n>>>16),0x45d9f3b);return ((n^(n>>>16))>>>0)/4294967295;}
 export type DrawRectProps = Timing & {box:Box;stroke?:ColorToken;fill?:ColorToken;corner?:'top-left'|'top-right';notch?:boolean;seed?:number};
 export function DrawRect({box,stroke='color/line/wire',fill='color/fill/panel-wash',corner='top-left',notch=false,seed=7,...timing}:DrawRectProps) {

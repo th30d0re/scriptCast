@@ -1,5 +1,5 @@
+import {useKitFrame} from '../../core';
 import React from 'react';
-import {useCurrentFrame} from 'remotion';
 import {color, dimensions} from '../../../theme';
 import {
   MONO_ADVANCE,
@@ -244,7 +244,7 @@ export function FitBox({
   seed = 202,
   id = 'fit-box',
 }: FitBoxProps) {
-  const frame = useCurrentFrame();
+  const frame = useKitFrame();
   const ls = letterSpacing ?? (font === 'mono' ? 0.6 : 0.2);
   const hasTopNotch =
     notch === true || notch === 'top' || notch === 'both' || (typeof notch === 'number' && notch > 0);

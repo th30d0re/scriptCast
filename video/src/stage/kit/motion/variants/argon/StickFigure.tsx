@@ -1,5 +1,5 @@
+import {useKitFrame} from '../../core';
 import React from 'react';
-import {useCurrentFrame} from 'remotion';
 import {color, dimensions} from '../../../theme';
 import type {PersonGroup} from '../../../components/types';
 import {clamp01} from '../../../components/audit';
@@ -50,7 +50,7 @@ export function StickFigure({
   tone,
   id,
 }: StickFigureProps) {
-  const frame = useCurrentFrame();
+  const frame = useKitFrame();
   const emphasis = clamp01(rawEmphasis);
   const scale = Math.max(0.25, rawScale);
 

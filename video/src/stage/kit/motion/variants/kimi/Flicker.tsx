@@ -1,6 +1,6 @@
+import {useKitFrame} from '../../core';
 import React from 'react';
 import {clamp01, hash01} from './utils';
-import {useCurrentFrame} from 'remotion';
 
 export type FlickerProps = React.PropsWithChildren<{
   seed: number;
@@ -30,7 +30,7 @@ function powerOnSample(seed: number, frame: number, duration: number, intensity:
 }
 
 function FlickerFrame({children, seed, startFrame = 0, durationFrames = 18, intensity = 0.82, progress, direction}: FlickerProps & {direction: 'in' | 'out'}) {
-  const currentFrame = useCurrentFrame();
+  const currentFrame = useKitFrame();
   const duration = Math.max(1, durationFrames);
   const elapsed = progress === undefined ? currentFrame - startFrame : Math.round(progress * duration);
   const sample = direction === 'in'
