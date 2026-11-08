@@ -8,6 +8,7 @@
     "quiver": "tsc --outDir .remotion/check --module commonjs --moduleResolution node --noEmit false && node .remotion/check/scripts/quiver.js",
     "check-stage": "node scripts/run-check-stage.mjs",
     "check-review": "node scripts/run-check-review.mjs",
+    "sfx": "node scripts/render-sfx.mjs",
     "site": "vite --config site/vite.config.ts"
   },
   "dependencies": {

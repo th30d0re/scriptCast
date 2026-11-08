@@ -3,6 +3,7 @@ import {color} from '../theme/tokens';
 import type {PersonGroup} from '../components/types';
 import type {PersonMarkProps} from '../primitives/PersonMark';
 import {clamp01, cubicOut, lightStyle, span, useTiming, type Timing} from './core';
+import {useKitSounds} from './KitSound';
 
 export type StickPose = 'stand'|'open'|'raise';
 
@@ -32,10 +33,11 @@ export const STICK_DEFAULT_FRAMES = 20;
  * (same x, y, group, emphasis, scale; centred on x, y), with optional poses and a stroke-by-stroke draw-on.
  */
 export function StickFigure({x, y, group, emphasis:rawEmphasis, scale, pose = 'stand', animate, ...timing}:StickFigureProps) {
+  const audio = useKitSounds('StickFigure','opus',timing.progress === undefined && (animate ?? timing.startFrame !== undefined) ? timing.startFrame : undefined);
   const timed = animate ?? (timing.progress !== undefined || timing.startFrame !== undefined);
   const {p} = useTiming(timing, STICK_DEFAULT_FRAMES);
   const q = timed ? p : 1;
-  if (q <= 0) return null;
+  if (q <= 0) return <>{audio}</>;
   const emphasis = clamp01(rawEmphasis), size = 44*Math.max(.2, scale);
   const P = STICK_PHASES, part = (w:readonly [number, number]) => cubicOut(span(q, w[0], w[1]));
   const head = part(P.head), torso = part(P.torso), arms = part(P.arms), legs = part(P.legs);
@@ -48,12 +50,12 @@ export function StickFigure({x, y, group, emphasis:rawEmphasis, scale, pose = 's
   // Paired limbs grow together: each subpath gets its own normalized dash.
   const seg = (d:string, k:number, key:string) => k > 0 && d.split('M').filter(Boolean).map((sub, i) =>
     <path key={`${key}${i}`} d={`M${sub}`} pathLength={1} strokeDasharray={`${k} 1`} stroke="currentColor" strokeWidth={width} strokeLinecap="round" strokeLinejoin="round"/>);
-  return <div data-bakeoff="opus/StickFigure" data-group={group} style={{position:'absolute', left:x, top:y, width:size, height:size*1.3, transform:'translate(-50%,-50%)', opacity:.42 + .58*emphasis, color:ink}}>
+  return <><div data-bakeoff="opus/StickFigure" data-group={group} style={{position:'absolute', left:x, top:y, width:size, height:size*1.3, transform:'translate(-50%,-50%)', opacity:.42 + .58*emphasis, color:ink}}>
     <svg width="100%" height="100%" viewBox="0 0 44 58" fill="none" aria-hidden="true" overflow="visible" style={lightStyle(bloom, ink)}>
       {head > 0 && <circle cx="22" cy="11" r="6.4" transform="rotate(-90 22 11)" pathLength={1} strokeDasharray={head >= 1 ? undefined : `${head} 1`} stroke="currentColor" strokeWidth={width} fill="currentColor" fillOpacity={headFill*head}/>}
       {seg(TORSO, torso, 'torso')}
       {seg(POSES[pose].arms, arms, 'arms')}
       {seg(POSES[pose].legs, legs, 'legs')}
     </svg>
-  </div>;
+  </div>{audio}</>;
 }
