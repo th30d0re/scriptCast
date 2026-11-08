@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import subprocess
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,7 +16,7 @@ from typing import Any, Callable
 
 from PIL import Image
 
-from scriptcast.tools import stage_critic, stage_dispatch
+from scriptcast.tools import stage_critic, stage_dispatch, stage_stills
 from scriptcast.tools.stage import main as stage_main
 
 
@@ -218,17 +219,45 @@ def _attempts(path: Path) -> dict[tuple[str, str, str], int]:
 
 def _recritic(stills: Path, plan: Path, brief: dict, reference_dir: Path | None,
               critic: Callable[..., dict]) -> dict | None:
-    """Give critic exactly one still, rather than treating a whole review as fixed."""
-    source = stills / brief["file"]
-    with tempfile.TemporaryDirectory(prefix="stage-repair-") as temp:
-        target = Path(temp); shutil.copy2(source, target / source.name)
-        sidecar = _sidecar_path(source)
-        if sidecar.is_file(): shutil.copy2(sidecar, target / sidecar.name)
-        refs = None
-        if reference_dir and (reference_dir / source.name).is_file():
-            refs = target / "references"; refs.mkdir(); shutil.copy2(reference_dir / source.name, refs / source.name)
-        report = critic(target, plan, reference_dir=refs)
-        return next((f for f in report.get("frames", []) if f.get("file") == source.name), None)
+    """Critique the newly rendered cue, not the still which prompted repair."""
+    report = critic(stills, plan, reference_dir=reference_dir)
+    return next((f for f in report.get("frames", []) if f.get("file") == brief["file"]), None)
+
+
+def _git(args: list[str], cwd: Path | None = None) -> str:
+    return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True,
+                          text=True).stdout.strip()
+
+
+def _mapped_path(path: Path, repo: Path, worktree: Path) -> Path:
+    """Map a repository path into a detached worktree without guessing names."""
+    try:
+        return worktree / path.resolve().relative_to(repo)
+    except ValueError:
+        return path
+
+
+def _map_plan_episode(plan: Path, original_episode: Path, mapped_episode: Path) -> None:
+    """A checked-in plan can contain an absolute episode_dir from its author."""
+    try:
+        data = json.loads(plan.read_text())
+    except (OSError, ValueError, json.JSONDecodeError):
+        return
+    if isinstance(data, dict) and "episode_dir" in data:
+        data["episode_dir"] = str(mapped_episode)
+        plan.write_text(json.dumps(data, indent=2) + "\n")
+
+
+def _brief_in_worktree(brief: dict, episode: Path, mapped_episode: Path, repo: Path, worktree: Path) -> str:
+    """Rewrite the builder-facing source location to its detached-checkout twin."""
+    source = Path(brief["source_file"])
+    if source.is_absolute():
+        mapped_source = _mapped_path(source, repo, worktree)
+    else:
+        # Plans conventionally use episode-relative source paths, but accept a
+        # repository-relative path when that is the only real source location.
+        mapped_source = mapped_episode / source if (episode / source).exists() else worktree / source
+    return brief["brief"].replace(str(brief["source_file"]), str(mapped_source))
 
 
 def run_repairs(episode: Path, critic_report: Path, stills: Path, plan: Path, *, dispatch: bool = False,
@@ -237,40 +266,72 @@ def run_repairs(episode: Path, critic_report: Path, stills: Path, plan: Path, *,
                 scenes: set[str] | None = None,
                 dispatch_main: Callable[[list[str]], int] = stage_dispatch.main,
                 critic: Callable[..., dict] = stage_critic.critic_stills,
-                boxes: Callable[[Path, str, Path], dict[str, Any]] = stage_boxes) -> list[dict]:
+                boxes: Callable[[Path, str, Path], dict[str, Any]] = stage_boxes,
+                render: Callable[..., int] = stage_stills.render_stills,
+                git: Callable[[list[str], Path | None], str] = _git,
+                repo_worktree: bool = True) -> list[dict]:
     review = episode / "stage" / "review"; review.mkdir(parents=True, exist_ok=True)
     log = review / "repairs.jsonl"; attempts = _attempts(log)
     briefs = repair_briefs(json.loads(critic_report.read_text()), stills, plan, boxes_dir, reference_dir, boxes,
                            report_dir=critic_report.parent)
+    selected = [b for b in briefs if scenes is None or b["scene"] in scenes]
+    grouped: dict[str, list[dict]] = {}
+    for brief in selected:
+        grouped.setdefault(brief["scene"], []).append(brief)
     records = []
-    for brief in briefs:
-        if scenes is not None and brief["scene"] not in scenes:
-            continue
-        key = (brief["scene"], brief["cue"], brief["element_id"]); prior = attempts.get(key, 0)
-        record = {k: brief[k] for k in ("scene", "shot", "cue", "file", "source_file", "element_id", "box",
-                                        "reference_box", "defect_class", "still_crop", "reference_crop", "defect",
-                                        "reference")}
-        record.update({"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "before": "fail",
-                       "attempt": prior + 1, "action": "report"})
-        # Useful in report-only mode; it also makes each repair record auditable.
-        record["brief"] = brief["brief"]
-        if prior >= 2:
-            record.update({"action": "operator_queue", "after": None})
-        elif dispatch:
-            message = review / f"repair-{brief['scene']}-{brief['cue']}-{brief['element_id']}.md"
-            message.write_text(brief["brief"] + "\n")
-            reg = stage_dispatch.Registry(stage_dispatch.registry_path(episode)).get(
-                stage_dispatch.registry_key(episode, brief["scene"], "builder"))
-            cmd = (["resume", "--message", str(message), "--episode", str(episode), "--scene", brief["scene"]]
-                   if reg else ["start", "--agent", agent, "--model", model, "--brief", str(message), "--episode", str(episode), "--scene", brief["scene"]])
-            code = dispatch_main(cmd); record.update({"action": "resume" if reg else "start", "dispatch_exit": code})
-            after = _recritic(stills, plan, brief, reference_dir, critic) if code == 0 else None
-            record["after"] = after.get("verdict") if after else None
-            record["after_frame"] = after
-        else:
-            record["after"] = None
-        with log.open("a") as f: f.write(json.dumps(record) + "\n")
-        records.append(record)
+    for scene, scene_briefs in grouped.items():
+        active = [b for b in scene_briefs if attempts.get((b["scene"], b["cue"], b["element_id"]), 0) < 2]
+        scene_records = []
+        for brief in scene_briefs:
+            prior = attempts.get((brief["scene"], brief["cue"], brief["element_id"]), 0)
+            record = {k: brief[k] for k in ("scene", "shot", "cue", "file", "source_file", "element_id", "box",
+                                             "reference_box", "defect_class", "still_crop", "reference_crop", "defect", "reference")}
+            record.update({"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "before": "fail",
+                           "attempt": prior + 1, "action": "report", "brief": brief["brief"], "after": None})
+            if prior >= 2:
+                record["action"] = "operator_queue"
+            scene_records.append((brief, record))
+        if dispatch and active:
+            message = review / f"repair-{scene}.md"
+            temp_root = Path(tempfile.mkdtemp(prefix="stage-repair-worktree-"))
+            worktree = temp_root / "repo"
+            repo: Path | None = None
+            try:
+                if repo_worktree:
+                    repo = Path(git(["-C", str(episode), "rev-parse", "--show-toplevel"], None)).resolve()
+                    git(["-C", str(repo), "worktree", "add", "--detach", str(worktree), "HEAD"], None)
+                    mapped_episode = _mapped_path(episode, repo, worktree)
+                    mapped_plan = _mapped_path(plan, repo, worktree)
+                    _map_plan_episode(mapped_plan, episode, mapped_episode)
+                else:
+                    worktree, mapped_episode, mapped_plan = episode, episode, plan
+                message.write_text("Repair all of these grounded defects in one change:\n\n" +
+                                   "\n\n".join(_brief_in_worktree(b, episode, mapped_episode, repo or worktree, worktree)
+                                                for b in active) + "\n")
+                reg = stage_dispatch.Registry(stage_dispatch.registry_path(mapped_episode)).get(
+                    stage_dispatch.registry_key(mapped_episode, scene, "builder"))
+                cmd = (["resume", "--message", str(message), "--episode", str(mapped_episode), "--scene", scene]
+                       if reg else ["start", "--agent", agent, "--model", model, "--brief", str(message), "--episode", str(mapped_episode), "--scene", scene])
+                cmd.extend(["--worktree", str(worktree)])
+                code = dispatch_main(cmd)
+                rendered = mapped_episode / "stage" / "review" / f"repair-{scene}-stills"
+                if code == 0:
+                    render(mapped_plan, episode_dir=mapped_episode / "stage", out_dir=rendered, scenes=[scene])
+                for brief, record in scene_records:
+                    if brief in active:
+                        after = _recritic(rendered, mapped_plan, brief, reference_dir, critic) if code == 0 else None
+                        record.update({"action": "resume" if reg else "start", "dispatch_exit": code,
+                                       "after": after.get("verdict") if after else None, "after_frame": after,
+                                       "new_still": str(rendered / brief["file"]) if code == 0 else None})
+                diff = git(["-C", str(worktree), "diff", "--binary"], None) if repo_worktree else ""
+                (review / f"repair-{scene}.diff").write_text(diff)
+            finally:
+                if repo_worktree and repo is not None and worktree.exists():
+                    git(["-C", str(repo), "worktree", "remove", "--force", str(worktree)], None)
+                shutil.rmtree(temp_root, ignore_errors=True)
+        for _, record in scene_records:
+            with log.open("a") as f: f.write(json.dumps(record) + "\n")
+            records.append(record)
     return records
 
 
@@ -281,11 +342,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--boxes-dir", type=Path); p.add_argument("--reference-dir", type=Path)
     p.add_argument("--scenes", nargs="+", help="limit repairs to named scenes")
     p.add_argument("--dispatch", action="store_true"); p.add_argument("--report-only", action="store_true")
+    p.add_argument("--repo-worktree", action=argparse.BooleanOptionalAction, default=True,
+                   help="dispatch in a detached repository worktree (default: enabled)")
     p.add_argument("--agent", default="codex"); p.add_argument("--model", default="gpt-5.6-sol")
     args = p.parse_args(argv)
     records = run_repairs(args.episode, args.critic, args.stills, args.plan, dispatch=args.dispatch,
                           boxes_dir=args.boxes_dir, reference_dir=args.reference_dir, agent=args.agent, model=args.model,
-                          scenes=set(args.scenes) if args.scenes else None)
+                          scenes=set(args.scenes) if args.scenes else None, repo_worktree=args.repo_worktree)
     # Explicit --report-only and the default both print the actual builder brief.
     for row in records:
         if not args.dispatch:

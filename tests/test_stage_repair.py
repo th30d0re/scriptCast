@@ -1,4 +1,6 @@
 import json
+import shutil
+from pathlib import Path
 
 from PIL import Image
 import pytest
@@ -30,7 +32,10 @@ def test_dispatch_resumes_live_builder_and_records_recritic_verdict(tmp_path):
     sd.registry_start(path, key, "codex", "gpt", "session-1", 0, 1, log_dir=tmp_path / "logs")
     calls = []
     def critic(*_, **__): return {"frames": [{"file": "Scene_cue.png", "verdict": "pass"}]}
-    rows = run_repairs(ep, report, stills, plan, dispatch=True, dispatch_main=lambda args: calls.append(args) or 0, critic=critic)
+    def render(_plan, *, out_dir, **_):
+        out_dir.mkdir(parents=True); shutil.copy2(stills / "Scene_cue.png", out_dir / "Scene_cue.png"); return 0
+    rows = run_repairs(ep, report, stills, plan, dispatch=True, dispatch_main=lambda args: calls.append(args) or 0,
+                       critic=critic, render=render, repo_worktree=False)
     assert calls[0][0] == "resume" and "--session" not in calls[0]
     assert rows[0]["action"] == "resume" and rows[0]["before"] == "fail" and rows[0]["after"] == "pass"
     saved = (ep / "stage" / "review" / "repairs.jsonl").read_text()
@@ -41,11 +46,73 @@ def test_dispatch_starts_when_builder_is_absent_and_limits_each_element_to_two(t
     ep, stills, plan, report = fixture(tmp_path)
     calls = []
     def critic(*_, **__): return {"frames": [{"file": "Scene_cue.png", "verdict": "fail"}]}
+    def render(_plan, *, out_dir, **_):
+        out_dir.mkdir(parents=True, exist_ok=True); shutil.copy2(stills / "Scene_cue.png", out_dir / "Scene_cue.png"); return 0
     for _ in range(3):
-        rows = run_repairs(ep, report, stills, plan, dispatch=True, dispatch_main=lambda args: calls.append(args) or 0, critic=critic)
+        rows = run_repairs(ep, report, stills, plan, dispatch=True, dispatch_main=lambda args: calls.append(args) or 0,
+                           critic=critic, render=render, repo_worktree=False)
     assert calls[0][0] == "start"
     assert [row["action"] for row in rows] == ["operator_queue"]
     assert len(calls) == 2
+
+
+def test_dispatch_uses_one_isolated_worktree_per_scene_and_critiques_new_still(tmp_path):
+    """The repair worker can change only its detached copy, never the episode checkout."""
+    repo = tmp_path / "repo"; episode = repo / "episodes" / "yt02"
+    source = episode / "stage" / "Scene.tsx"; source.parent.mkdir(parents=True)
+    source.write_text("original")
+    stills = episode / "stage" / "stills"; stills.mkdir()
+    Image.new("RGB", (10, 10), "red").save(stills / "Scene_cue.png")
+    (stills / "Scene_cue.png.boxes.json").write_text(json.dumps({"marks": [
+        {"id": "title", "box": {"x": 1, "y": 1, "w": 2, "h": 2}},
+        {"id": "chart", "box": {"x": 4, "y": 4, "w": 2, "h": 2}}]}))
+    plan = episode / "stage" / "stage_plan.json"
+    plan.write_text(json.dumps({"episode_dir": str(episode), "segments": [{"scene": "Scene", "source_file": "stage/Scene.tsx",
+        "shots": [{"shot_id": "S01"}]}]}))
+    report = episode / "stage" / "review" / "critic.json"; report.parent.mkdir()
+    report.write_text(json.dumps({"frames": [{"file": "Scene_cue.png", "verdict": "fail", "defects": [
+        {"element_id": "title", "evidence": "wrong title"}, {"element_id": "chart", "evidence": "wrong chart"}]}]}))
+    dispatches, renders, critiques, git_calls = [], [], [], []
+
+    def git(args, _cwd=None):
+        git_calls.append(args)
+        if args[-1] == "--show-toplevel": return str(repo)
+        if "add" in args:
+            target = Path(args[args.index("--detach") + 1]); shutil.copytree(repo, target); return ""
+        if "diff" in args: return "diff --git a/stage/Scene.tsx b/stage/Scene.tsx\n"
+        if "remove" in args:
+            shutil.rmtree(Path(args[-1])); return ""
+        raise AssertionError(args)
+
+    def dispatch(args):
+        dispatches.append(args)
+        wt = Path(args[args.index("--worktree") + 1])
+        (wt / "episodes" / "yt02" / "stage" / "Scene.tsx").write_text("repaired")
+        return 0
+
+    def render(mapped_plan, *, episode_dir, out_dir, scenes):
+        renders.append((mapped_plan, episode_dir, out_dir, scenes))
+        out_dir.mkdir(parents=True)
+        Image.new("RGB", (10, 10), "green").save(out_dir / "Scene_cue.png")
+        return 0
+
+    def critic(new_stills, _plan, **_):
+        critiques.append(new_stills)
+        assert (new_stills / "Scene_cue.png").is_file()
+        return {"frames": [{"file": "Scene_cue.png", "verdict": "pass"}]}
+
+    rows = run_repairs(episode, report, stills, plan, dispatch=True, dispatch_main=dispatch,
+                       render=render, critic=critic, git=git)
+    assert len(dispatches) == 1 and dispatches[0][0] == "start"
+    wt = Path(dispatches[0][dispatches[0].index("--worktree") + 1])
+    assert str(wt / "episodes" / "yt02") in dispatches[0]
+    assert str(wt / "episodes" / "yt02" / "stage" / "Scene.tsx") in (episode / "stage" / "review" / "repair-Scene.md").read_text()
+    assert renders[0][1] == wt / "episodes" / "yt02" / "stage" and renders[0][3] == ["Scene"]
+    assert len(critiques) == 2 and all(row["after"] == "pass" for row in rows)
+    assert all("repair-Scene-stills/Scene_cue.png" in row["new_still"] for row in rows)
+    assert source.read_text() == "original"
+    assert (episode / "stage" / "review" / "repair-Scene.diff").read_text().startswith("diff --git")
+    assert not wt.exists()
 
 
 def test_stem_sidecar_and_s1_only_elements_build_top_three_briefs(tmp_path):
