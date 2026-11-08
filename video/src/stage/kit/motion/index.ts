@@ -8,4 +8,5 @@ export * from './FitBox';
 export * from './StickFigure';
 export * from './BootIn';
 export * from './sounds';
+export * from './KitSound';
 export * from './KitMotion';
