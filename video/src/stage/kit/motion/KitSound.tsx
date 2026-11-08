@@ -20,8 +20,10 @@ export function KitSound({enabled=true, gainDb=0, duckDb=0, children}:KitSoundPr
 }
 
 const cueComponent = (component:string, variant:SoundVariant, mode?:string) => {
+  if (component === 'PowerDown' && variant === 'argon') return 'Flicker:powerDown';
   if (component === 'PowerDown' && variant === 'astra') return 'Flicker.off';
   if (component !== 'BootIn') return component;
+  if (variant === 'argon') return `BootIn:${mode ?? 'scan'}`;
   if (variant === 'kimi') return `BootIn/${mode ?? 'scan'}`;
   return `BootIn.${mode ?? 'scan'}`;
 };
