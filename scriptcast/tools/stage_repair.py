@@ -212,6 +212,8 @@ def _attempts(path: Path) -> dict[tuple[str, str, str], int]:
     for line in path.read_text().splitlines():
         try: row = json.loads(line)
         except json.JSONDecodeError: continue
+        # Only real dispatches count; report-only and operator_queue rows do not.
+        if row.get("action") not in ("start", "resume"): continue
         key = (str(row.get("scene")), str(row.get("cue")), str(row.get("element_id")))
         result[key] = result.get(key, 0) + 1
     return result
