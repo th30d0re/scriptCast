@@ -75,6 +75,7 @@ fn widget_harness(queue: PathBuf) -> Harness<'static, WidgetSlot> {
                         Some(&mut slot.client),
                     );
                     match action {
+                        StageAction::OpenKitReview => {}
                         StageAction::SelectTurn { turn_id, .. } => {
                             slot.selected_turn = Some(turn_id);
                         }

@@ -20,7 +20,10 @@ use std::{
     collections::{BTreeSet, HashMap},
     fs::OpenOptions,
     io::Write,
+    net::{SocketAddr, TcpStream},
     path::{Path, PathBuf},
+    process::Command,
+    time::Duration,
 };
 
 /// One still in plan order, with the turn its cue belongs to.
@@ -307,12 +310,35 @@ pub fn first_visible_frame(rects: &[(usize, Rect)], viewport: Rect) -> Option<us
 #[derive(Clone, Debug, PartialEq)]
 pub enum StageAction {
     None,
+    OpenKitReview,
     SelectTurn {
         turn_id: String,
         turn_index: usize,
         frame: usize,
     },
     Submitted(SelectionContext),
+}
+
+/// Open the local Kit Review site, starting Vite when it is not already listening.
+pub fn open_kit_review() -> Result<(), String> {
+    let address: SocketAddr = "127.0.0.1:5173".parse().expect("valid local address");
+    if TcpStream::connect_timeout(&address, Duration::from_millis(150)).is_err() {
+        let cwd = std::env::current_dir().map_err(|error| error.to_string())?;
+        let root = cwd
+            .ancestors()
+            .find(|path| path.join("site/package.json").is_file())
+            .ok_or_else(|| "Could not find the ScriptCast site workspace".to_string())?;
+        Command::new("npm")
+            .args(["run", "dev", "-w", "site", "--", "--host", "127.0.0.1"])
+            .current_dir(root)
+            .spawn()
+            .map_err(|error| format!("Could not start Kit Review site: {error}"))?;
+    }
+    Command::new("/usr/bin/open")
+        .arg("http://localhost:5173/#kit")
+        .spawn()
+        .map_err(|error| format!("Could not open Kit Review: {error}"))?;
+    Ok(())
 }
 
 /// Append a rejection in the shared Stage review format used by the CLI.
@@ -486,6 +512,9 @@ pub fn show(
         t::SECONDARY,
         t::TEXT_MUTED,
     ));
+    if t::secondary_button(ui, "Kit review", None, true).clicked() {
+        action = StageAction::OpenKitReview;
+    }
     if view.compact {
         ui.label(t::text(
             format!("Selection mode · {} selected", view.selected_frames.len()),

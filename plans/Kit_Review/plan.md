@@ -147,4 +147,11 @@ To be filled in after the build: one row per step, with outcome and deviation.
 
 | Step | Outcome | Deviation |
 |---|---|---|
-| 1–7 | pending | |
+| 1 KitSheet variant | Done | Also added `live` mode: progress follows the clock, motion items render as one large specimen. The sheet render (live off) is unchanged. |
+| 2 Vite aliases + middleware | Done | Middleware lives in `site/kit-review-middleware.mjs` with a node test. Added `resolve.dedupe` for remotion/react; without it the video sources loaded a second Remotion copy and the Player crashed. |
+| 3 Page components | Done | Fixed a React 19 `useRef` type error. Variant picker gained a "default" option. |
+| 4 `#kit` route | Done | |
+| 5 `kit-review export` | Done | pytest in `tests/test_kit_review.py` |
+| 6 Native button | Done | `StageAction::OpenKitReview`; ui lib tests pass (146). Snapshot tests need a GPU and could not run in the worker sandbox. |
+| 7 Docs | Done | `docs/stage-kit.md` |
+| Acceptance | Verified in browser: 34 items listed, player animates, note + priority saved to `review/kit-review.json` and restored after reload, export writes Markdown | Native button not clicked by hand |
