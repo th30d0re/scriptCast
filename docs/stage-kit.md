@@ -32,6 +32,8 @@ Helpers include `Trace`, `fitBoxLayout`, font measurement helpers, seeded flicke
 
 `motion/sounds.ts` exports `motionSounds`, `soundCueTable`, and `defaultSounds`. Every cue is keyed as `component.variant.event` and contains `{frameOffset, sound, gain_db}` plus an operator note. Default cues follow the visual defaults: Argon for DrawRect, DrawLine, and BootIn; Opus for Flicker, PowerDown, FitBox, and StickFigure. Parent presets such as BootIn own their nested cues; do not also trigger the child DrawRect/Flicker cues.
 
+Wrap narrated scenes in `<KitSound mode="beats">` to play only motion components marked `beat`; the default `mode="all"` ignores `beat` and preserves all existing cues. Use `beatCue` only when a beat needs a different sound-table component key: `<KitSound mode="beats"><DrawRect beat box={box} startFrame={30}/></KitSound>`.
+
 Argon adds authored cues for DrawRect corner/notch/closure/fill events, DrawLine launch/turn/lock events, both Flicker directions, FitBox construction and text ignition, StickFigure limb stages, and each BootIn preset (`snap`, `scan`, `glitch`). The rotation table below remains a compact overview; use `motionSounds` for the complete Argon event list and exact offsets.
 
 | Component | Opus events (default) | Astra events | Kimi events | Flash events |

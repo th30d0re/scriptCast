@@ -4,14 +4,14 @@ import {FitBox as AstraFitBox} from './variants/astra/primitives';
 import {FitBox as KimiFitBox} from './variants/kimi/FitBox';
 import {FitBox as FlashFitBox} from './variants/flash/FitBox';
 import {FitBox as ArgonFitBox, measureFitBox as measureArgonFitBox} from './variants/argon/FitBox';
-import {useKitSounds} from './KitSound';
+import {useKitSounds, type KitSoundCueProps} from './KitSound';
 
 export * from './FitBox.opus';
 export type FitBoxVariant = 'opus'|'argon'|'astra'|'kimi'|'flash';
-export type FitBoxProps = OpusFitBoxProps & {variant?:FitBoxVariant};
+export type FitBoxProps = OpusFitBoxProps & KitSoundCueProps & {variant?:FitBoxVariant};
 
-export function FitBox({variant='opus', ...props}:FitBoxProps) {
-  const audio=useKitSounds('FitBox',variant,props.progress === undefined ? props.startFrame : undefined);
+export function FitBox({variant='opus', beat, beatCue, ...props}:FitBoxProps) {
+  const audio=useKitSounds('FitBox',variant,props.progress === undefined ? props.startFrame : undefined,undefined,beat,beatCue);
   const x=props.x, y=props.y, fontSize=props.size, family=props.family;
   const argonMeasurement=props.anchor === 'top-center' ? measureArgonFitBox(props.text,{font:family,size:fontSize,letterSpacing:props.letterSpacing,lineHeight:props.lineHeight,paddingX:props.padX,paddingY:props.padY,maxWidth:props.maxWidth,tag:props.tag,accentBar:true,hasTopNotch:Boolean(props.notch)}) : null;
   const visual=variant === 'argon' ? <ArgonFitBox text={props.text} x={x} y={argonMeasurement ? y + argonMeasurement.h/2 : y} anchor={props.anchor === 'top-center' ? 'center' : props.anchor} font={family} size={fontSize} weight={props.weight} letterSpacing={props.letterSpacing} lineHeight={props.lineHeight} paddingX={props.padX} paddingY={props.padY} maxWidth={props.maxWidth} tag={props.tag} ink={props.textToken} stroke={props.strokeToken} fill={props.fillToken} accent={props.accentToken} corner={props.corners} notch={props.notch} seed={props.seed} progress={props.progress} startFrame={props.startFrame} durationFrames={props.durationFrames}/>
