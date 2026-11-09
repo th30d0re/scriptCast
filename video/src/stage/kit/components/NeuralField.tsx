@@ -1,7 +1,9 @@
 import React from 'react';
 import {color} from '../theme/tokens';
+import {DrawRect} from '../motion/DrawRect';
+import type {Timing} from '../motion/core';
 
-export type NeuralFieldProps = {
+export type NeuralFieldProps = Timing & {
   layers: number | readonly number[];
   inputs: readonly string[];
   weights: readonly number[] | readonly (readonly number[])[];
@@ -23,7 +25,7 @@ function flatWeights(weights:NeuralFieldProps['weights']) {
   return weights.flatMap(value=>Array.isArray(value)?[...value]:[value as number]);
 }
 
-export function NeuralField({layers, inputs, weights, activationProgress:rawActivation, compressionProgress:rawCompression, labels}: NeuralFieldProps) {
+export function NeuralField({layers, inputs, weights, activationProgress:rawActivation, compressionProgress:rawCompression, labels, progress, startFrame, durationFrames}: NeuralFieldProps) {
   const activation=clamp(rawActivation),compression=clamp(rawCompression),counts=countsFor(layers,inputs,labels),allWeights=flatWeights(weights);
   const positions=counts.map((count,layer)=>Array.from({length:count},(_,index)=>({
     x:NEURAL_FIELD.padX+layer*(NEURAL_FIELD.width-2*NEURAL_FIELD.padX)/Math.max(1,counts.length-1),
@@ -35,7 +37,8 @@ export function NeuralField({layers, inputs, weights, activationProgress:rawActi
     y:point.y+(NEURAL_FIELD.height/2-point.y)*.22*compression,
   });
   let wireIndex=0;
-  return <div data-shared="NeuralField" style={{position:'relative', width:NEURAL_FIELD.width, height:NEURAL_FIELD.height, overflow:'hidden', background:color('color/fill/panel-render'), border:`1px solid ${color('color/line/hairline')}`}}>
+  return <div data-shared="NeuralField" style={{position:'relative', width:NEURAL_FIELD.width, height:NEURAL_FIELD.height, overflow:'hidden'}}>
+    <DrawRect box={{x:0,y:0,w:NEURAL_FIELD.width,h:NEURAL_FIELD.height}} progress={progress} startFrame={startFrame} durationFrames={durationFrames} corners="tr-bl" strokeToken="color/line/hairline" fillToken="color/fill/panel-render" glowToken="color/fill/gold" seed={31}/>
     <svg width={NEURAL_FIELD.width} height={NEURAL_FIELD.height} viewBox={`0 0 ${NEURAL_FIELD.width} ${NEURAL_FIELD.height}`} style={{position:'absolute',inset:0}} aria-label="Neural processing field">
       {positions.slice(0,-1).flatMap((layer,layerIndex)=>layer.flatMap(start=>positions[layerIndex+1].map(end=>{
         const weight=allWeights.length?allWeights[wireIndex%allWeights.length]:.5, index=wireIndex++;
@@ -56,4 +59,3 @@ export function NeuralField({layers, inputs, weights, activationProgress:rawActi
     {labels.map((label,index)=><div key={label} style={{position:'absolute',right:12,bottom:18+index*28,font:'400 20px "IBM Plex Mono"',color:color('color/text/soft')}}>{label}</div>)}
   </div>;
 }
-
