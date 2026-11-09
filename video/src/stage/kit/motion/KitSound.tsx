@@ -1,5 +1,5 @@
 import React, {createContext, useContext} from 'react';
-import {Audio, Sequence, staticFile} from 'remotion';
+import {Audio, Internals, Sequence, staticFile} from 'remotion';
 import {useKitFrameOffset} from './core';
 import {motionSounds, type SoundVariant} from './sounds';
 
@@ -44,8 +44,8 @@ export const NON_BEAT_DB = -9;
 /** Audio scheduled for an absolute-timeline animation. Progress-driven previews are intentionally silent. */
 export function useKitSounds(component:string, variant:SoundVariant, startFrame?:number, cueMode?:string, beat?:boolean, beatCue?:string) {
   const sound = useContext(KitSoundContext);
-  const offset = useKitFrameOffset();
-  if (!sound.enabled || startFrame === undefined) return null;
+  const offset = useKitFrameOffset(), inRemotion = useContext(Internals.CanUseRemotionHooks);
+  if (!inRemotion || !sound.enabled || startFrame === undefined) return null;
   // In beats mode every motion sounds; marked beats stay at full level and the rest sit underneath them.
   const beatDuck = sound.mode === 'beats' && !beat ? NON_BEAT_DB : 0;
   const name = beatCue ?? cueComponent(component, variant, cueMode);

@@ -1,7 +1,7 @@
 // Shared timing, hashing and flicker envelopes for the opus bake-off primitives.
 // Everything here is a pure function of its arguments: no Math.random, no Date, no CSS animation.
 import {useContext} from 'react';
-import {useCurrentFrame} from 'remotion';
+import {Internals, useCurrentFrame} from 'remotion';
 import {ClockContext, NO_CLOCK} from '../../clock';
 import {cubicInOut, cubicOut, progress as span} from '../../motion';
 import {dimensions} from '../theme/tokens';
@@ -26,13 +26,20 @@ export const spacing = (name:'spacing/xs'|'spacing/sm'|'spacing/md'|'spacing/lg'
  * The frame kit timing is measured on. Inside a stage clock (RemotionClock / ManualClock) this is stage time in frames,
  * so startFrame can be a cue time (ms × fps / 1000); outside one it is the Remotion frame.
  */
+/** Remotion frame, or null outside a composition (the browser review player drives a stage clock with no Remotion timeline). */
+function useRemotionFrame():number|null {
+  const inRemotion = useContext(Internals.CanUseRemotionHooks);
+  // useCurrentFrame only reads contexts, and inRemotion is fixed for a mounted tree, so the conditional call is stable.
+  return inRemotion ? useCurrentFrame() : null;
+}
 export function useKitFrame() {
-  const clock = useContext(ClockContext), frame = useCurrentFrame();
-  return clock === NO_CLOCK ? frame : Math.round(clock.ms*clock.fps/1000);
+  const clock = useContext(ClockContext), frame = useRemotionFrame();
+  return clock === NO_CLOCK ? (frame ?? 0) : Math.round(clock.ms*clock.fps/1000);
 }
 /** Kit frame minus Remotion frame: add to a Remotion-local Sequence offset to land on kit time. */
 export function useKitFrameOffset() {
-  return useKitFrame() - useCurrentFrame();
+  const kit = useKitFrame(), frame = useRemotionFrame();
+  return frame === null ? 0 : kit - frame;
 }
 export function useTiming(timing:Timing, defaultDuration:number) {
   const frame = useKitFrame();

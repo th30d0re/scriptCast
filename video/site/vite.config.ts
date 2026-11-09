@@ -58,7 +58,7 @@ export default defineConfig({
   }],
   resolve: {dedupe:['react','react-dom','remotion','d3-geo'], alias: {
     '@episode': process.env.STAGE_EPISODE_DIR ?? path.join(video,'episodes/_demo'), '@stage':path.join(video,'src/stage/api.ts'),
-    react:mod('react'), 'react-dom':mod('react-dom'), remotion:mod('remotion'), 'd3-geo':mod('d3-geo')
+    react:mod('react'), 'react-dom':mod('react-dom'), remotion:path.join(mod('@remotion/player'),'..','..','remotion'), 'd3-geo':mod('d3-geo')
   }},
   server: {fs: {allow:[video, path.join(video,'..','node_modules'), ...[path.resolve(video, '../../scriptCast-stage/video/node_modules')].filter(dir => fs.existsSync(dir)), ...(process.env.STAGE_EPISODE_DIR ? [process.env.STAGE_EPISODE_DIR] : [])]}},
   build: {outDir:path.join(__dirname,'dist'), emptyOutDir:true}
