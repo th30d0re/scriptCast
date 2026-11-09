@@ -41,7 +41,8 @@ function qrRuns(url: string, reveal: number): {modules: number; runs: Run[]} {
 }
 
 /** A crisp, self-contained QR SVG with a two-module quiet zone. */
-export function QRCode({url, size, fg = 'color/text/primary', bg = 'color/fill/panel-render', progress, startFrame, durationFrames}: QRCodeProps) {
+// Dark modules on a light tile: many phone scanners reject inverted (light-on-dark) codes.
+export function QRCode({url, size, fg = 'color/bg/field', bg = 'color/text/primary', progress, startFrame, durationFrames}: QRCodeProps) {
   const timed = progress !== undefined || startFrame !== undefined || durationFrames !== undefined;
   const {p} = useTiming({progress, startFrame, durationFrames}, 12);
   const {modules, runs} = useMemo(() => qrRuns(url, timed ? p : 1), [url, timed, p]);
