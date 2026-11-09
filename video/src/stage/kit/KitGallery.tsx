@@ -1,11 +1,11 @@
 import React from 'react';
 import {TokensContext} from '../tokens';
 import {
-  ActionIcon, CardBorder, CausalArrow, CitationCard, CompactBorder, DefinitionCard,
+  ActionIcon, CardBorder, CitationCard, CompactBorder, DefinitionCard,
   EvidenceToken, GroupDirectionField, HeartIcon, KitTokens, MapStage, NeuralField,
-  NumberBadge, PersonIcon, PrecisionGauge, PredictiveUpdatePlot, QuestionHeader,
+  NumberBadge, PrecisionGauge, PredictiveUpdatePlot, QuestionHeader,
   ScanLines, SignalLane, StageSceneFrame, SystemIcon, TermBlock, TermTriad,
-  TrainingTextStrip, UsThemSortingField, WordIcon, color,
+  TrainingTextStrip, UsThemSortingField, WordIcon, StickFigure, color,
 } from './index';
 
 // Each specimen is laid out at its natural size, then uniformly fitted into its cell.
@@ -30,10 +30,10 @@ export function KitGallery() {
     <Tile index={0} name="DefinitionCard" width={640} height={260}><DefinitionCard term="Term" definition="A reusable definition treatment." source="Sample source" paraphrased progress={1} accent="color/fill/gold"/></Tile>
     <Tile index={1} name="CitationCard" width={640} height={250}><CitationCard authors="Author & Author" year={2026} title="Example work" progress={1}/></Tile>
     <Tile index={2} name="PrecisionGauge" width={520} height={280}><PrecisionGauge value={.68} derived label="PRECISION" lowLabel="LOW" highLabel="HIGH"/></Tile>
-    <Tile index={3} name="TermBlock" width={620} height={210}><TermBlock term="Reusable term" summary="Compact semantic block" glyph={<PersonIcon/>} state="selected" accent="color/fill/gold" unit="UNIT 01"/></Tile>
+    <Tile index={3} name="TermBlock" width={620} height={210}><TermBlock term="Reusable term" summary="Compact semantic block" glyph={<StickFigure x={24} y={24} group="neutral" emphasis={1} scale={0.8} animate={false}/>} state="selected" accent="color/fill/gold" unit="UNIT 01"/></Tile>
     <Tile index={4} name="Icons · NumberBadge · arrow · scan" width={500} height={180}>
-      <div style={{display:'flex',justifyContent:'space-between'}}><PersonIcon/><ActionIcon/><SystemIcon/><WordIcon/><HeartIcon/><NumberBadge value="4"/></div>
-      <svg width="500" height="100" style={{position:'absolute',top:80}}><CausalArrow x1={24} x2={220} y={45}/><ScanLines x={290} y={14} w={180} h={64} progress={1}/></svg>
+      <div style={{display:'flex',justifyContent:'space-between'}}><ActionIcon/><SystemIcon/><WordIcon/><HeartIcon/><NumberBadge value="4"/></div>
+      <svg width="500" height="100" style={{position:'absolute',top:80}}><ScanLines x={290} y={14} w={180} h={64} progress={1}/></svg>
     </Tile>
     <Tile index={5} name="TrainingTextStrip" width={600} height={100}><TrainingTextStrip tokens={['signal','pattern','update']} patternKey="sample" progress={1} emphasis="pattern"/></Tile>
     <Tile index={6} name="EvidenceToken · SignalLane" width={600} height={230}>
