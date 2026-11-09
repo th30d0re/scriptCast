@@ -71,6 +71,9 @@ export function DrawRect({box, corners = 'tl-br', strokeToken = 'color/line/wire
   const fillLevel = flickerLevel(seed, t - P.fill[0]*d, (P.fill[1] - P.fill[0])*d, intensity);
   const notchP = span(p, P.notch[0], P.notch[1]);
   const ink = color(strokeToken), glow = color(glowToken);
+  // The notch's closely stacked tiers need a finer pen than the frame so they
+  // remain individually legible at the top edge.
+  const notchWidth = Math.min(width, strokeWidthOf('stroke/chart')*.7);
   const sides:('top'|'bottom')[] = notch === 'both' ? ['top', 'bottom'] : notch ? [notch] : [];
   const pad = 40;
   const bracketL = Math.min(14, w*.2, h*.2);
@@ -94,7 +97,7 @@ export function DrawRect({box, corners = 'tl-br', strokeToken = 'color/line/wire
       ? lines.map((pts, i) => <Trace key={i} points={pts} drawn={e} width={width} strokeToken={strokeToken} glowToken={glowToken} tail={Math.min(56, Math.max(w, h)*.25)}/>)
       : <g style={lightStyle(flash, glow)}>
           <path d={closedEdges()} stroke={ink} strokeWidth={width} strokeLinecap="square"/>
-          {sides.map(side => <Notch key={side} box={box} side={side} p={notchP} ink={ink} width={width}/>)}
+          {sides.map(side => <Notch key={side} box={box} side={side} p={notchP} ink={ink} width={notchWidth}/>)}
           {heat > 0 && [m1, m2].map(([mx, my], i) => <rect key={i} x={mx - width*1.6} y={my - width*1.6} width={width*3.2} height={width*3.2} fill={ink} opacity={heat} style={{filter:`brightness(1.8) drop-shadow(0 0 ${2 + 8*heat}px ${glow})`}}/>)}
         </g>}
   </svg>;

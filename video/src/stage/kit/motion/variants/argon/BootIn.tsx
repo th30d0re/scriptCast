@@ -157,6 +157,9 @@ export function BootIn({
 
   const sched = bootInPreset(variant, p, seed);
   const {w, h} = box;
+  // Scan lines are a boot treatment, not a persistent panel texture. Keep them
+  // through the reveal, then clear them as the boot settles.
+  const scanLinesOpacity = 0.32 * sched.revealProgress * (1 - cubicInOut(clamp01((p - 0.82) / 0.18)));
 
   return (
     <div
@@ -212,7 +215,7 @@ export function BootIn({
               aria-hidden="true"
             >
               {/* Reuse kit ScanLines primitive */}
-              <g opacity={0.32 * sched.revealProgress}>
+              <g opacity={scanLinesOpacity}>
                 <ScanLines
                   x={12}
                   y={14}
