@@ -41,7 +41,7 @@ const files = segments.map((s, i) => {
   const first = frame(s.start_ms), last = frame(s.end_ms) - 1;
   console.log(`render ${path.basename(file)} frames ${first}-${last}`);
   execFileSync('npx', ['--no-install', 'remotion', 'render', 'src/stage/index.ts', 'StageEpisode', file,
-    `--props=${planPath}`, `--frames=${first}-${last}`, '--codec=h264-mkv', '--audio-codec=pcm-16', '--crf=18',
+    `--props=${planPath}`, `--frames=${first}-${last}`, '--codec=h264-mkv', '--audio-codec=pcm-16', '--crf=18', '--timeout=120000', '--concurrency=4',
     ...(browser ? [`--browser-executable=${browser}`] : [])], {cwd: video, stdio: 'inherit'});
   return file;
 });
