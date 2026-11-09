@@ -135,7 +135,7 @@ export function StickFigure({
         width: w,
         height: h,
         transform: 'translate(-50%, -50%)',
-        opacity: 0.42 + 0.58 * emphasis,
+        opacity: 0.85 + 0.15 * emphasis,
         color: ink,
         pointerEvents: 'none',
       }}

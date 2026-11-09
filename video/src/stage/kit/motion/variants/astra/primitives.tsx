@@ -44,7 +44,7 @@ export function StickFigure({x,y,group,emphasis,scale,tone,...timing}:StickFigur
   const rimW = strokeW + 2.8;
   const limbPaths = ['M22 16V34','M22 21L10 31','M22 21L34 31','M22 34L13 53','M22 34L31 53'];
   return (
-    <svg style={{position:'absolute',left:x,top:y,transform:'translate(-50%,-50%)',overflow:'visible',opacity:.42+.58*e}} width={44*s} height={58*s} viewBox="0 0 44 58" fill="none" strokeLinecap="round" strokeLinejoin="round">
+    <svg style={{position:'absolute',left:x,top:y,transform:'translate(-50%,-50%)',overflow:'visible',opacity:.85+.15*e}} width={44*s} height={58*s} viewBox="0 0 44 58" fill="none" strokeLinecap="round" strokeLinejoin="round">
       {needsRim && (
         <g stroke={rimColor} strokeWidth={rimW} opacity={0.88}>
           <circle cx={22} cy={9} r={6} pathLength={1} strokeDasharray="1" strokeDashoffset={1-clamp(p*3)}/>

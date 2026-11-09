@@ -59,7 +59,7 @@ export function StickFigure({variant='opus', x, y, group, emphasis:rawEmphasis, 
   // Paired limbs grow together: each subpath gets its own normalized dash.
   const seg = (d:string, k:number, key:string, strokeColor:string, strokeW:number) => k > 0 && d.split('M').filter(Boolean).map((sub, i) =>
     <path key={`${key}${i}`} d={`M${sub}`} pathLength={1} strokeDasharray={`${k} 1`} stroke={strokeColor} strokeWidth={strokeW} strokeLinecap="round" strokeLinejoin="round"/>);
-  return <><div data-bakeoff="opus/StickFigure" data-shared="PersonMark" data-group={group} style={{position:'absolute', left:x, top:y, width:size, height:size*1.3, transform:'translate(-50%,-50%)', opacity:.42 + .58*emphasis, color:ink}}>
+  return <><div data-bakeoff="opus/StickFigure" data-shared="PersonMark" data-group={group} style={{position:'absolute', left:x, top:y, width:size, height:size*1.3, transform:'translate(-50%,-50%)', opacity:.85 + .15*emphasis, color:ink}}>
     <svg width="100%" height="100%" viewBox="0 0 44 58" fill="none" aria-hidden="true" overflow="visible" style={lightStyle(bloom, ink)}>
       {needsRim && head > 0 && <circle cx="22" cy="11" r="6.4" transform="rotate(-90 22 11)" pathLength={1} strokeDasharray={head >= 1 ? undefined : `${head} 1`} stroke={rimColor} strokeWidth={totalRimWidth} fill="none"/>}
       {needsRim && seg(TORSO, torso, 'torso-rim', rimColor, totalRimWidth)}
