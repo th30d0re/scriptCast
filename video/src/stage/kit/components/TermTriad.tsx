@@ -57,7 +57,7 @@ export function triadBlockLayout(box:Box, term:TriadTerm, layout:'auto'|'row'|'s
   const titleLines = wrapLineCount(term.title, titleW, TITLE_SIZE, CAPS_ADVANCE).lines;
   const titleY = mode === 'row' ? box.y + 18 : glyph.y + GLYPH + 8;
   const title:Box = {x:titleX, y:titleY, w:titleW, h:titleLines*TITLE_LH};
-  const linesTop = Math.max(title.y + title.h, mode === 'row' ? glyph.y + GLYPH : 0) + 10;
+  const linesTop = Math.max(title.y + title.h, mode === 'row' ? glyph.y + GLYPH : 0) + 26; // clears the FitBox padding around the title
   const lines:Box[] = (term.lines ?? []).map((_, index) => ({x:box.x + 22, y:linesTop + index*LINE_PITCH, w:box.w - 44, h:30}));
   // The source tag wraps at the block's inner width and grows upward from 16 px above the bottom edge.
   const sourceLines = sourceText ? wrapLineCount(sourceText, box.w - 44, 20, MONO_ADVANCE, .4).lines : 1;
