@@ -1,0 +1,277 @@
+{
+  "version": 1,
+  "items": {
+    "GroupDirectionField": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "updated": "2026-11-08T23:33:57.662Z"
+    },
+    "NeuralField": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] Should be replaced by a custom version of DrawRect",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "CitationCard": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] Should be replaced by a custom version of DrawRect",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "DefinitionCard": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] Should be replaced by a custom version of FitBox",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "EvidenceToken": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "updated": "2026-11-08T23:34:36.946Z"
+    },
+    "PrecisionGauge": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] Needs animation and Should be replaced by a custom version of DrawRect",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "PredictiveUpdatePlot": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] \"PRIOR\"is not level with Evidence and Should be replaced by a custom version of DrawRect",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "QuestionHeader": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "updated": "2026-11-08T23:35:50.943Z"
+    },
+    "SignalLane": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] The error head should move with the line not appear at the last cople frames ",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "SourceLine": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] should be animated in ",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "StageSceneFrame": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] I'm a bit confused on how this diffrers from CardBorder but the URL at the bottom gors over the sorces at the bottom and causes a colition ",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "TermBlock": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] The bottom lable and the top lable should have horrisontal lines that animate in.  Should be replaced by a custom version of DrawRect",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "TermTriad": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] should be re drawn with a custom version of FitBox",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "TrainingTextStrip": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] Should be replaced by a custom version of FitBox",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "UsThemSortingField": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] \"SORT\" should be in line with US and THEM",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "CardBorder": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "updated": "2026-11-08T23:41:12.763Z"
+    },
+    "CompactBorder": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "updated": "2026-11-08T23:41:22.297Z"
+    },
+    "SceneBorder": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "updated": "2026-11-08T23:41:44.136Z"
+    },
+    "PersonMark": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "updated": "2026-11-08T23:41:48.224Z"
+    },
+    "NumberBadge": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] should flicker in ",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "PersonIcon": {
+      "priority": null,
+      "status": "cut",
+      "notes": "[Removed from kit 2026-11-08] ",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "ActionIcon": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "updated": "2026-11-08T23:42:29.171Z"
+    },
+    "SystemIcon": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "updated": "2026-11-08T23:42:32.810Z"
+    },
+    "WordIcon": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "updated": "2026-11-08T23:42:36.677Z"
+    },
+    "HeartIcon": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "updated": "2026-11-08T23:42:39.749Z"
+    },
+    "CausalArrow": {
+      "priority": null,
+      "status": "cut",
+      "notes": "[Removed from kit 2026-11-08] should be replaced by DrawLine",
+      "tags": [],
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "ScanLines": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "updated": "2026-11-08T23:42:46.937Z"
+    },
+    "BootIn": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] Good, but we don't  need the ScanLines to stay at the end for the argon variant",
+      "tags": [],
+      "variants": {
+        "opus": "P0",
+        "argon": "P1",
+        "astra": "P2",
+        "kimi": "P3"
+      },
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "DrawLine": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "variants": {
+        "astra": "P1",
+        "opus": "P2",
+        "argon": "P0",
+        "kimi": "P3"
+      },
+      "updated": "2026-11-08T23:58:25.183Z"
+    },
+    "DrawRect": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] For thr Opus varent the periomid at the top needs finer strokes becouse its tiers start to overlap ",
+      "tags": [],
+      "variants": {
+        "opus": "P3",
+        "argon": "P0",
+        "astra": "P1",
+        "kimi": "P2"
+      },
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "FitBox": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "variants": {
+        "opus": "P0",
+        "argon": "P1",
+        "kimi": "P3",
+        "astra": "P2"
+      },
+      "updated": "2026-11-09T00:01:20.844Z"
+    },
+    "Flicker": {
+      "priority": null,
+      "status": "unreviewed",
+      "notes": "[Fixed 2026-11-08, recheck] should only use the last 1/2 of the animation ",
+      "tags": [],
+      "variants": {
+        "opus": "P0",
+        "astra": "P1",
+        "kimi": "P2"
+      },
+      "updated": "2026-11-09T00:24:31.194Z"
+    },
+    "StickFigure": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "variants": {
+        "opus": "P0",
+        "kimi": "P1",
+        "astra": "P2"
+      },
+      "updated": "2026-11-09T00:05:03.813Z"
+    },
+    "Trace": {
+      "priority": null,
+      "status": "keep",
+      "notes": "",
+      "tags": [],
+      "updated": "2026-11-08T23:50:27.436Z"
+    }
+  }
+}
