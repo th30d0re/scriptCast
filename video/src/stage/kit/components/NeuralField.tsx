@@ -26,6 +26,8 @@ function flatWeights(weights:NeuralFieldProps['weights']) {
 }
 
 export function NeuralField({layers, inputs, weights, activationProgress:rawActivation, compressionProgress:rawCompression, labels, progress, startFrame, durationFrames}: NeuralFieldProps) {
+  // Untimed means fully shown (kit convention).
+  if (progress === undefined && startFrame === undefined) progress = 1;
   const activation=clamp(rawActivation),compression=clamp(rawCompression),counts=countsFor(layers,inputs,labels),allWeights=flatWeights(weights);
   const positions=counts.map((count,layer)=>Array.from({length:count},(_,index)=>({
     x:NEURAL_FIELD.padX+layer*(NEURAL_FIELD.width-2*NEURAL_FIELD.padX)/Math.max(1,counts.length-1),

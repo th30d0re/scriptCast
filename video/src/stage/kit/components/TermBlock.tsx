@@ -18,6 +18,8 @@ const stateAmount = (state: TermState) => typeof state === 'number'
   : state === 'hidden' ? 0 : state === 'dim' ? .42 : state === 'active' ? .82 : 1;
 
 export function TermBlock({term, summary, glyph, state, accent, unit, progress, startFrame, durationFrames}: TermBlockProps) {
+  // Untimed means fully shown (kit convention).
+  if (progress === undefined && startFrame === undefined) progress = 1;
   const amount=stateAmount(state), selected=state === 'selected';
   const duration=durationFrames??36, {p:timingProgress}=useTiming({progress,startFrame,durationFrames:duration},duration);
   const ruleProgress=cubicOut(clamp01((timingProgress-.64)/.36));

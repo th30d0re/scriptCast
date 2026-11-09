@@ -38,6 +38,8 @@ const pathFor=(mean:number,precision:number)=>Array.from({length:121},(_,index)=
 }).join(' ');
 
 export function PredictiveUpdatePlot({evidenceMean:rawEvidenceMean, priorMean:rawPriorMean, precision:rawPrecision, showEquation, termHighlight, posteriorProgress:rawPosteriorProgress, progress, startFrame, durationFrames}: PredictiveUpdatePlotProps) {
+  // Untimed means fully shown (kit convention).
+  if (progress === undefined && startFrame === undefined) progress = 1;
   const evidenceMean=clamp(rawEvidenceMean),priorMean=clamp(rawPriorMean),alpha=clamp(rawPrecision),posteriorProgress=clamp(rawPosteriorProgress);
   const posterior=calculatePredictivePosterior(evidenceMean,priorMean,alpha);
   const visiblePosteriorMean=evidenceMean+(posterior.mean-evidenceMean)*posteriorProgress;

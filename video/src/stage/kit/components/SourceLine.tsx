@@ -19,6 +19,8 @@ const toneColor = (tone: SourceLineProps['tone']) => {
 };
 
 export function SourceLine({text, x = 116, y = 994, tone = 'muted', maxLines, progress, startFrame, durationFrames}: SourceLineProps) {
+  // Untimed means fully shown (kit convention).
+  if (progress === undefined && startFrame === undefined) progress = 1;
   const hasTiming = progress !== undefined || startFrame !== undefined || durationFrames !== undefined;
   const {p} = useTiming({progress, startFrame, durationFrames}, 18);
   const visibleText = hasTiming ? text.slice(0, Math.ceil(text.length*p)) : text;

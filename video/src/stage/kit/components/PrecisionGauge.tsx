@@ -12,6 +12,8 @@ export type PrecisionGaugeProps = Timing & {
 };
 
 export function PrecisionGauge({value:rawValue, derived, label, lowLabel, highLabel, progress, startFrame, durationFrames}: PrecisionGaugeProps) {
+  // Untimed means fully shown (kit convention).
+  if (progress === undefined && startFrame === undefined) progress = 1;
   const value=Math.max(0,Math.min(1,rawValue));
   const duration=durationFrames??40, {p:timingProgress}=useTiming({progress,startFrame,durationFrames:duration},duration);
   const sweep=cubicOut(clamp01((timingProgress-.64)/.36));
