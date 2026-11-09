@@ -51,11 +51,11 @@ const stateAmount = (state:TermState) => typeof state === 'number' ? clamp01(sta
 /** Interior layout of one block: glyph, title, detail lines and source box, in absolute frame coordinates. */
 export function triadBlockLayout(box:Box, term:TriadTerm, layout:'auto'|'row'|'stack' = 'auto', sourceText?:string) {
   const mode = layout === 'auto' ? (box.w >= 420 ? 'row' : 'stack') : layout;
-  const glyph:Box = {x:box.x + (mode === 'row' ? 20 : 22), y:box.y + 16, w:GLYPH, h:GLYPH};
+  const glyph:Box = {x:box.x + (mode === 'row' ? 20 : 22), y:box.y + (mode === 'row' ? 16 : 0), w:GLYPH, h:GLYPH};
   const titleX = mode === 'row' ? box.x + 86 : box.x + 22;
   const titleW = mode === 'row' ? box.w - 86 - 18 : box.w - 44;
   const titleLines = wrapLineCount(term.title, titleW, TITLE_SIZE, CAPS_ADVANCE).lines;
-  const titleY = mode === 'row' ? box.y + 18 : glyph.y + GLYPH + 8;
+  const titleY = mode === 'row' ? box.y + 18 : glyph.y + GLYPH + 24; // room for the FitBox tag above the title
   const title:Box = {x:titleX, y:titleY, w:titleW, h:titleLines*TITLE_LH};
   const linesTop = Math.max(title.y + title.h, mode === 'row' ? glyph.y + GLYPH : 0) + 26; // clears the FitBox padding around the title
   const lines:Box[] = (term.lines ?? []).map((_, index) => ({x:box.x + 22, y:linesTop + index*LINE_PITCH, w:box.w - 44, h:30}));
