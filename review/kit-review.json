@@ -10,24 +10,24 @@
     },
     "NeuralField": {
       "priority": null,
-      "status": "unreviewed",
+      "status": "keep",
       "notes": "[Fixed 2026-11-08, recheck] Should be replaced by a custom version of DrawRect",
       "tags": [],
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:02:39.573Z"
     },
     "CitationCard": {
       "priority": null,
-      "status": "unreviewed",
+      "status": "keep",
       "notes": "[Fixed 2026-11-08, recheck] Should be replaced by a custom version of DrawRect",
       "tags": [],
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:02:16.450Z"
     },
     "DefinitionCard": {
       "priority": null,
-      "status": "unreviewed",
+      "status": "keep",
       "notes": "[Fixed 2026-11-08, recheck] Should be replaced by a custom version of FitBox",
       "tags": [],
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:02:24.347Z"
     },
     "EvidenceToken": {
       "priority": null,
@@ -38,17 +38,17 @@
     },
     "PrecisionGauge": {
       "priority": null,
-      "status": "unreviewed",
+      "status": "keep",
       "notes": "[Fixed 2026-11-08, recheck] Needs animation and Should be replaced by a custom version of DrawRect",
       "tags": [],
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:02:48.532Z"
     },
     "PredictiveUpdatePlot": {
       "priority": null,
-      "status": "unreviewed",
+      "status": "keep",
       "notes": "[Fixed 2026-11-08, recheck] \"PRIOR\"is not level with Evidence and Should be replaced by a custom version of DrawRect",
       "tags": [],
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:02:56.823Z"
     },
     "QuestionHeader": {
       "priority": null,
@@ -59,52 +59,52 @@
     },
     "SignalLane": {
       "priority": null,
-      "status": "unreviewed",
+      "status": "keep",
       "notes": "[Fixed 2026-11-08, recheck] The error head should move with the line not appear at the last cople frames ",
       "tags": [],
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:03:39.774Z"
     },
     "SourceLine": {
       "priority": null,
-      "status": "unreviewed",
+      "status": "keep",
       "notes": "[Fixed 2026-11-08, recheck] should be animated in ",
       "tags": [],
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:03:53.204Z"
     },
     "StageSceneFrame": {
       "priority": null,
-      "status": "unreviewed",
+      "status": "keep",
       "notes": "[Fixed 2026-11-08, recheck] I'm a bit confused on how this diffrers from CardBorder but the URL at the bottom gors over the sorces at the bottom and causes a colition ",
       "tags": [],
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:04:13.538Z"
     },
     "TermBlock": {
       "priority": null,
-      "status": "unreviewed",
+      "status": "keep",
       "notes": "[Fixed 2026-11-08, recheck] The bottom lable and the top lable should have horrisontal lines that animate in.  Should be replaced by a custom version of DrawRect",
       "tags": [],
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:05:01.653Z"
     },
     "TermTriad": {
       "priority": null,
-      "status": "unreviewed",
-      "notes": "[Fixed 2026-11-08, recheck] should be re drawn with a custom version of FitBox",
+      "status": "change",
+      "notes": "[Fixed 2026-11-08, recheck] should be re drawn with a custom version of FitBox\n\nOkay, for one, I don't know why it's so low res. I know you changed the viewer to make it more responsive, which I appreciate, but that's kind of annoying. Second of all, for this view, excuse me, term triad, we have the text pattern underneath, which I don't really get. Was that part of the change that we had before? Was that text there? It may have been just because like the boxes were way bigger, so it kind of looked different. If that text is needed, I'm not sure if it is. And then also, we should move those glyphs up a little bit because the bias one is, at least from what I'm seeing, almost touching",
       "tags": [],
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:06:44.612Z"
     },
     "TrainingTextStrip": {
       "priority": null,
-      "status": "unreviewed",
-      "notes": "[Fixed 2026-11-08, recheck] Should be replaced by a custom version of FitBox",
+      "status": "keep",
+      "notes": "[Fixed 2026-11-08, recheck] Should be replaced by a custom version of FitBox\n\nAlso, for training text strip, there is a yellow line underneath that kind of glitches out a little bit, and it like makes the pattern rectangle double in size first, which kind of looks weird instead of like moving with the text as it's typing in. So we need to fix that.",
       "tags": [],
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:27:44.667Z"
     },
     "UsThemSortingField": {
       "priority": null,
-      "status": "unreviewed",
+      "status": "keep",
       "notes": "[Fixed 2026-11-08, recheck] \"SORT\" should be in line with US and THEM",
       "tags": [],
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:07:51.618Z"
     },
     "CardBorder": {
       "priority": null,
@@ -136,10 +136,10 @@
     },
     "NumberBadge": {
       "priority": null,
-      "status": "unreviewed",
+      "status": "keep",
       "notes": "[Fixed 2026-11-08, recheck] should flicker in ",
       "tags": [],
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:08:06.714Z"
     },
     "PersonIcon": {
       "priority": null,
@@ -192,7 +192,7 @@
     },
     "BootIn": {
       "priority": null,
-      "status": "unreviewed",
+      "status": "keep",
       "notes": "[Fixed 2026-11-08, recheck] Good, but we don't  need the ScanLines to stay at the end for the argon variant",
       "tags": [],
       "variants": {
@@ -201,7 +201,7 @@
         "astra": "P2",
         "kimi": "P3"
       },
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:08:42.288Z"
     },
     "DrawLine": {
       "priority": null,
@@ -218,7 +218,7 @@
     },
     "DrawRect": {
       "priority": null,
-      "status": "unreviewed",
+      "status": "keep",
       "notes": "[Fixed 2026-11-08, recheck] For thr Opus varent the periomid at the top needs finer strokes becouse its tiers start to overlap ",
       "tags": [],
       "variants": {
@@ -227,7 +227,7 @@
         "astra": "P1",
         "kimi": "P2"
       },
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:09:30.338Z"
     },
     "FitBox": {
       "priority": null,
@@ -244,7 +244,7 @@
     },
     "Flicker": {
       "priority": null,
-      "status": "unreviewed",
+      "status": "keep",
       "notes": "[Fixed 2026-11-08, recheck] should only use the last 1/2 of the animation ",
       "tags": [],
       "variants": {
@@ -252,7 +252,7 @@
         "astra": "P1",
         "kimi": "P2"
       },
-      "updated": "2026-11-09T00:24:31.194Z"
+      "updated": "2026-11-09T01:09:56.059Z"
     },
     "StickFigure": {
       "priority": null,
