@@ -8,6 +8,7 @@ export type PersonMarkProps = {
   group: PersonGroup;
   emphasis: number;
   scale: number;
+  tone?: number;
 };
 
 /** Static person glyph. Renders the kit's default (Opus) StickFigure fully drawn; use StickFigure directly to animate it. */

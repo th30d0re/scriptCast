@@ -1,6 +1,6 @@
 import {useKitFrame} from '../../core';
 import React, {type CSSProperties, type ReactNode} from 'react';
-import {color, dimensions, Tokens} from '../../../theme/tokens';
+import {color, dimensions, Tokens, stickGroupColor, skinToneColor, needsFigureRim} from '../../../theme/tokens';
 import {notchPath} from '../../../primitives/notch';
 import type {PersonMarkProps} from '../../../primitives/PersonMark';
 export type Box = {x:number;y:number;w:number;h:number};
@@ -33,7 +33,31 @@ export type FitBoxProps=Timing&{text:string;x:number;y:number;fontSize?:number;p
 export function measureFitBox(text:string,fontSize=26,padding:FitBoxProps['padding']='spacing/md') {const lines=text.split('\n'),pad=dimensions[padding].value;return {w:Math.ceil(Math.max(...lines.map(l=>Array.from(l).length))*fontSize*.6+2*pad),h:Math.ceil(lines.length*fontSize*1.4+2*pad),pad};}
 export function FitBox({text,x,y,fontSize=26,padding='spacing/md',seed=7,...timing}:FitBoxProps) {const p=useProgress(timing),{w,h,pad}=measureFitBox(text,fontSize,padding);return <><DrawRect box={{x,y,w,h}} progress={clamp(p/.7)} notch/><Flicker progress={clamp((p-.55)/.45)} seed={seed} style={{position:'absolute',left:x+pad,top:y+pad,fontFamily:Tokens.fonts.mono,fontSize,lineHeight:1.4,whiteSpace:'pre',color:color('color/text/primary')}}>{text}</Flicker></>;}
 export type StickFigureProps=PersonMarkProps&Timing;
-export function StickFigure({x,y,group,emphasis,scale,...timing}:StickFigureProps) {const p=useProgress({...timing,progress:timing.progress??(timing.startFrame===undefined?1:undefined)}),s=Math.max(.2,scale),e=clamp(emphasis),ink=group==='ingroup'?'color/fill/gold':group==='outgroup'?'color/marker/race':'color/text/muted';return <svg style={{position:'absolute',left:x,top:y,transform:'translate(-50%,-50%)',overflow:'visible',opacity:.42+.58*e}} width={44*s} height={58*s} viewBox="0 0 44 58" fill="none" stroke={color(ink)} strokeWidth={2.2+.6*e} strokeLinecap="round" strokeLinejoin="round"><circle cx={22} cy={9} r={6} pathLength={1} strokeDasharray="1" strokeDashoffset={1-clamp(p*3)}/>{['M22 16V34','M22 21L10 31','M22 21L34 31','M22 34L13 53','M22 34L31 53'].map((d,i)=><path key={d} d={d} pathLength={1} strokeDasharray="1" strokeDashoffset={1-clamp((p-.12-i*.07)*2.5)}/>)}</svg>;}
+export function StickFigure({x,y,group,emphasis,scale,tone,...timing}:StickFigureProps) {
+  const p=useProgress({...timing,progress:timing.progress??(timing.startFrame===undefined?1:undefined)});
+  const s=Math.max(.2,scale);
+  const e=clamp(emphasis);
+  const ink = tone !== undefined ? skinToneColor(tone) : stickGroupColor(group);
+  const strokeW = 2.2 + .6 * e;
+  const needsRim = needsFigureRim(tone, group);
+  const rimColor = color('color/line/hairline-strong');
+  const rimW = strokeW + 2.8;
+  const limbPaths = ['M22 16V34','M22 21L10 31','M22 21L34 31','M22 34L13 53','M22 34L31 53'];
+  return (
+    <svg style={{position:'absolute',left:x,top:y,transform:'translate(-50%,-50%)',overflow:'visible',opacity:.42+.58*e}} width={44*s} height={58*s} viewBox="0 0 44 58" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      {needsRim && (
+        <g stroke={rimColor} strokeWidth={rimW} opacity={0.88}>
+          <circle cx={22} cy={9} r={6} pathLength={1} strokeDasharray="1" strokeDashoffset={1-clamp(p*3)}/>
+          {limbPaths.map((d,i)=><path key={`rim-${d}`} d={d} pathLength={1} strokeDasharray="1" strokeDashoffset={1-clamp((p-.12-i*.07)*2.5)}/>)}
+        </g>
+      )}
+      <g stroke={ink} strokeWidth={strokeW}>
+        <circle cx={22} cy={9} r={6} pathLength={1} strokeDasharray="1" strokeDashoffset={1-clamp(p*3)}/>
+        {limbPaths.map((d,i)=><path key={d} d={d} pathLength={1} strokeDasharray="1" strokeDashoffset={1-clamp((p-.12-i*.07)*2.5)}/>)}
+      </g>
+    </svg>
+  );
+}
 export type BootVariant='snap'|'scan'|'glitch';
 export type BootInProps=Timing&{box:Box;children:ReactNode;variant?:BootVariant;seed?:number};
 export function BootIn({box,children,variant='scan',seed=7,...timing}:BootInProps) {const p=useProgress(timing),borderEnd=variant==='snap'?.3:.48,reveal=clamp((p-.64)/.36);return <><DrawRect box={box} progress={clamp(p/borderEnd)} notch={variant!=='snap'}/><Flicker seed={seed} intensity={variant==='glitch'?1:.5} progress={clamp((p-borderEnd)/(.64-borderEnd))} style={{position:'absolute',left:box.x,top:box.y,width:box.w,height:box.h}}><div style={{width:'100%',height:'100%',clipPath:variant==='scan'?`inset(0 ${(1-reveal)*100}% 0 0)`:undefined,opacity:variant==='scan'?1:reveal,transform:`translateY(${variant==='snap'?(1-reveal)*6:0}px)`}}>{children}</div></Flicker>{variant==='scan'&&reveal>0&&reveal<1&&<div style={{position:'absolute',left:box.x+box.w*reveal,top:box.y+12,height:box.h-24,width:2,background:color('color/line/wire')}}/>}</>;}

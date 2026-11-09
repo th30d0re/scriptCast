@@ -35,7 +35,7 @@ export function UsThemSortingField({marks, partitionProgress:rawPartition, ingro
       const direction=resolvedGroup==='ingroup'?-1:resolvedGroup==='outgroup'?1:0;
       const groupProgress=resolvedGroup==='ingroup'?ingroup:resolvedGroup==='outgroup'?outgroup:0;
       const compression=mode==='compressed'?.7:1;
-      return <PersonMark key={mark.id??index} x={SORTING_FIELD.boundaryX+(baseX-SORTING_FIELD.boundaryX)*compression+direction*32*partition} y={baseY} group={partition>.08?resolvedGroup:'neutral'} emphasis={clamp(mark.emphasis??(.45+.55*groupProgress))} scale={mark.scale??1}/>;
+      return <PersonMark key={mark.id??index} x={SORTING_FIELD.boundaryX+(baseX-SORTING_FIELD.boundaryX)*compression+direction*32*partition} y={baseY} group={partition>.08?resolvedGroup:'neutral'} emphasis={clamp(mark.emphasis??(.45+.55*groupProgress))} scale={mark.scale??1} tone={partition > .08 ? mark.tone : undefined}/>;
     })}
     {ingroup>0 && <div style={{position:'absolute',left:34,top:24,font:'500 20px "IBM Plex Mono"',letterSpacing:1.2,color:color('color/fill/gold'),opacity:ingroup}}>{labels.ingroup}</div>}
     {outgroup>0 && <div style={{position:'absolute',right:34,top:24,font:'500 20px "IBM Plex Mono"',letterSpacing:1.2,color:color('color/marker/race'),opacity:outgroup}}>{labels.outgroup}</div>}

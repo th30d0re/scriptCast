@@ -116,3 +116,10 @@ export const Tokens: EngineTokens = {
   }
 };
 export const color = (name: string) => colors[name] ?? name;
+import type {PersonGroup} from '../components/types';
+export const stickGroupColor = (group: PersonGroup): string => {
+  if (group === 'ingroup') return color('color/line/wire');
+  if (group === 'outgroup') return '#0B0B0B';
+  return color('color/text/muted');
+};
+export {skinToneRamp, skinToneColor, needsFigureRim} from './ramp';

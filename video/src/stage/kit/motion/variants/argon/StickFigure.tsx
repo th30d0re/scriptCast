@@ -1,6 +1,6 @@
 import {useKitFrame} from '../../core';
 import React from 'react';
-import {color, dimensions} from '../../../theme';
+import {color, dimensions, skinToneColor, needsFigureRim} from '../../../theme';
 import type {PersonGroup} from '../../../components/types';
 import {clamp01} from '../../../components/audit';
 import {cubicInOut, cubicOut, mix} from '../../../../motion';
@@ -24,16 +24,17 @@ export type StickFigureProps = {
   durationFrames?: number;
   /** If true, animates draw-on from startFrame even when progress is omitted. */
   animate?: boolean;
-  /** Optional kit colour token overriding the group colour. */
-  tone?: string;
+  /** Optional skin tone 0..1 (or legacy kit colour token overriding the group colour). */
+  tone?: number | string;
   /** Optional DOM/audit identifier. */
   id?: string;
 };
 
-export function stickFigureColor(group: PersonGroup, emphasis: number, tone?: string): string {
-  if (tone) return color(tone);
-  if (group === 'ingroup') return color('color/fill/gold');
-  if (group === 'outgroup') return color('color/marker/race');
+export function stickFigureColor(group: PersonGroup, emphasis: number, tone?: number | string): string {
+  if (typeof tone === 'number') return skinToneColor(tone);
+  if (typeof tone === 'string') return color(tone);
+  if (group === 'ingroup') return color('color/line/wire');
+  if (group === 'outgroup') return '#0B0B0B';
   return emphasis > 0.78 ? color('color/line/wire') : color('color/text/muted');
 }
 
@@ -74,6 +75,10 @@ export function StickFigure({
 
   // Stroke weight in kit token range: stroke/thin (2.2) -> stroke/wire (3.2)
   const strokeW = mix(dimensions['stroke/thin'].value, dimensions['stroke/wire'].value, emphasis);
+  const numTone = typeof tone === 'number' ? tone : undefined;
+  const needsRim = needsFigureRim(numTone, group);
+  const rimColor = color('color/line/hairline-strong');
+  const rimW = strokeW + 2.8;
 
   // Staggered limb draw-on phases:
   // 1. Head (0.00 -> 0.36)
@@ -152,6 +157,74 @@ export function StickFigure({
             strokeLinecap="round"
             opacity={0.42 * ((legsP - 0.85) / 0.15)}
           />
+        )}
+
+        {/* Rim for dark figures on dark backgrounds */}
+        {needsRim && (
+          <g stroke={rimColor} fill="none" opacity={0.88}>
+            {headP > 0 && (
+              <circle
+                cx={headCx}
+                cy={headCy}
+                r={headR}
+                strokeWidth={rimW}
+                strokeLinecap="round"
+                strokeDasharray={headCircumference}
+                strokeDashoffset={headCircumference * (1 - headP)}
+                transform={`rotate(-90 ${headCx} ${headCy})`}
+              />
+            )}
+            {torsoP > 0 && (
+              <line
+                x1={14}
+                y1={neckY}
+                x2={14}
+                y2={torsoEndY}
+                strokeWidth={rimW}
+                strokeLinecap="round"
+              />
+            )}
+            {armsP > 0 && (
+              <>
+                <line
+                  x1={13.2}
+                  y1={shoulderY}
+                  x2={leftArmEndX}
+                  y2={leftArmEndY}
+                  strokeWidth={rimW * 0.94}
+                  strokeLinecap="round"
+                />
+                <line
+                  x1={14.8}
+                  y1={shoulderY}
+                  x2={rightArmEndX}
+                  y2={rightArmEndY}
+                  strokeWidth={rimW * 0.94}
+                  strokeLinecap="round"
+                />
+              </>
+            )}
+            {legsP > 0 && (
+              <>
+                <line
+                  x1={14}
+                  y1={hipY}
+                  x2={leftLegEndX}
+                  y2={leftLegEndY}
+                  strokeWidth={rimW * 0.96}
+                  strokeLinecap="round"
+                />
+                <line
+                  x1={14}
+                  y1={hipY}
+                  x2={rightLegEndX}
+                  y2={rightLegEndY}
+                  strokeWidth={rimW * 0.96}
+                  strokeLinecap="round"
+                />
+              </>
+            )}
+          </g>
         )}
 
         {/* 1. Head */}

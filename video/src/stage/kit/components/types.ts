@@ -11,6 +11,7 @@ export type SortingMark = {
   group?: PersonGroup;
   emphasis?: number;
   scale?: number;
+  tone?: number;
 };
 
 export type SortingLabels = {
