@@ -1,31 +1,25 @@
 /**
  * Skin tone ramp for population figures (0..1):
- * - 0 = white/pale (cream/near-white token rgba(232,201,155,1) / #E8C99B)
+ * - 0 = white (#F5F2EC), 0.2 = pale
  * - ~0.35 = light tan (#D0A87E)
  * - ~0.60 = brown (#7A4E30)
  * - 1 = near-black (#0B0B0B)
  */
+export const FIGURE_WHITE = '#F5F2EC';
+const STOPS: [number, [number, number, number]][] = [
+  [0, [245, 242, 236]],   // white
+  [0.2, [236, 214, 190]], // pale
+  [0.35, [214, 174, 133]],// light tan
+  [0.6, [122, 78, 48]],   // brown
+  [1, [11, 11, 11]],      // near-black
+];
 export function skinToneRamp(tone: number): string {
   const t = Math.max(0, Math.min(1, Number.isFinite(tone) ? tone : 0));
-  let r: number, g: number, b: number;
-  if (t <= 0.35) {
-    const u = t / 0.35;
-    r = 232 + (208 - 232) * u;
-    g = 201 + (168 - 201) * u;
-    b = 155 + (126 - 155) * u;
-  } else if (t <= 0.60) {
-    const u = (t - 0.35) / 0.25;
-    r = 208 + (122 - 208) * u;
-    g = 168 + (78 - 168) * u;
-    b = 126 + (48 - 126) * u;
-  } else {
-    const u = (t - 0.60) / 0.40;
-    r = 122 + (11 - 122) * u;
-    g = 78 + (11 - 78) * u;
-    b = 48 + (11 - 48) * u;
-  }
-  const toHex = (n: number) => Math.round(n).toString(16).padStart(2, '0');
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  let i = 0;
+  while (i < STOPS.length - 2 && t > STOPS[i + 1][0]) i++;
+  const [t0, a] = STOPS[i], [t1, b] = STOPS[i + 1], u = (t - t0) / (t1 - t0);
+  const hex = (k: number) => Math.round(a[k] + (b[k] - a[k]) * u).toString(16).padStart(2, '0');
+  return `#${hex(0)}${hex(1)}${hex(2)}`;
 }
 
 export const skinToneColor = skinToneRamp;

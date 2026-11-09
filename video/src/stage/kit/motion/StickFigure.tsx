@@ -48,10 +48,11 @@ export function StickFigure({variant='opus', x, y, group, emphasis:rawEmphasis, 
   // Settles from a short warm bloom as the last leg lands; at rest the level is exactly 1.
   const bloom = q >= 1 ? 1 : 1 + .45*span(q, P.legs[0], P.legs[1])*(1 - span(q, P.settle[0], P.settle[1]));
   const ink = tone !== undefined ? skinToneColor(tone) : stickGroupColor(group);
-  const width = 3 + 1.2*emphasis;
   const needsRim = needsFigureRim(tone, group);
+  // Dark figures get a heavier core so the black reads as a solid body inside its light rim.
+  const width = 3 + 1.2*emphasis + (needsRim ? 1.4 : 0);
   const rimColor = color('color/line/hairline-strong');
-  const rimWidth = 1.6;
+  const rimWidth = 0.9;
   const totalRimWidth = width + rimWidth * 2;
   // Heavier emphasis fills the head in, matching PersonMark's solid head at full emphasis.
   const headFill = clamp01((emphasis - .45)/.55);
