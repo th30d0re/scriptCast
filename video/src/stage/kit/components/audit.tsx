@@ -1,5 +1,6 @@
 import React from 'react';
 import {color} from '../theme/tokens';
+import {DrawRect} from '../motion/DrawRect';
 
 // Layout-audit helpers for the minutes 7–12 shared components. Every audited element declares its
 // absolute 1920 × 1080 box with data attributes (see tools/layout_audit.ts), and each helper here
@@ -86,8 +87,15 @@ export function Label({id, box, children, size = 20, weight = 500, ls = 0, lh = 
   </div>;
 }
 
-export function Panel({id, box, opacity = 1, accent = 'color/line/hairline', style, children}:{
-  id:string; box:Box; opacity?:number; accent?:string; style?:React.CSSProperties; children?:React.ReactNode;
+export function Panel({id, box, opacity = 1, accent = 'color/line/hairline', fillToken = 'color/fill/panel-render', startMs, durationMs = 420, style, children}:{
+  id:string; box:Box; opacity?:number; accent?:string; fillToken?:string; startMs?:number; durationMs?:number; style?:React.CSSProperties; children?:React.ReactNode;
 }) {
-  return <div {...shapeAttrs(id, box, 'frame')} style={{position:'absolute', left:box.x, top:box.y, width:box.w, height:box.h, boxSizing:'border-box', overflow:'hidden', background:color('color/fill/panel-render'), border:`1px solid ${color(accent)}`, opacity, ...style}}>{children}</div>;
+  const {background, backgroundColor, border, borderBottom, borderBottomColor, borderBottomStyle, borderBottomWidth, borderColor, borderLeft, borderLeftColor, borderLeftStyle, borderLeftWidth, borderRight, borderRightColor, borderRightStyle, borderRightWidth, borderStyle, borderTop, borderTopColor, borderTopStyle, borderTopWidth, borderWidth, ...contentStyle} = style ?? {};
+  const timing = startMs === undefined
+    ? {progress:1 as const}
+    : {startFrame:Math.round(startMs*30/1000), durationFrames:Math.round(durationMs*30/1000)};
+  return <div {...shapeAttrs(id, box, 'frame')} style={{position:'absolute', left:box.x, top:box.y, width:box.w, height:box.h, opacity}}>
+    <DrawRect box={box} strokeToken={accent} fillToken={fillToken} {...timing}/>
+    <div style={{position:'absolute', inset:0, boxSizing:'border-box', overflow:'hidden', ...contentStyle}}>{children}</div>
+  </div>;
 }
