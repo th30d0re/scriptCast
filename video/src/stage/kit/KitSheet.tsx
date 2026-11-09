@@ -3,10 +3,10 @@ import {AbsoluteFill, useCurrentFrame} from 'remotion';
 import {TokensContext} from '../tokens';
 import {color, Tokens} from './theme/tokens';
 import {
-  ActionIcon, BootIn, CardBorder, CausalArrow, CitationCard, CompactBorder,
+  ActionIcon, BootIn, CardBorder, CitationCard, CompactBorder,
   DefinitionCard, DrawLine, DrawRect, EvidenceToken, FitBox, Flicker,
   GroupDirectionField, HeartIcon, KitTokens, NeuralField, NumberBadge,
-  PersonIcon, PersonMark, PrecisionGauge, PredictiveUpdatePlot, QuestionHeader,
+  PersonMark, PrecisionGauge, PredictiveUpdatePlot, QuestionHeader,
   ScanLines, SceneBorder, SignalLane, SourceLine, StageSceneFrame, StickFigure,
   SystemIcon, TermBlock, TermTriad, Trace, TrainingTextStrip, UsThemSortingField,
   WordIcon,
@@ -24,7 +24,7 @@ const sheetItems: readonly [string, string, boolean?][] = [
   ['StageSceneFrame', 'components/StageSceneFrame.tsx'], ['TermBlock', 'components/TermBlock.tsx'],
   ['TermTriad', 'components/TermTriad.tsx'], ['TrainingTextStrip', 'components/TrainingTextStrip.tsx'], ['UsThemSortingField', 'components/UsThemSortingField.tsx'],
   ['CardBorder', 'primitives/CardBorder.tsx'], ['CompactBorder', 'primitives/CompactBorder.tsx'], ['SceneBorder', 'primitives/SceneBorder.tsx'], ['PersonMark', 'primitives/PersonMark.tsx'],
-  ['NumberBadge', 'primitives/Icons.tsx'], ['PersonIcon', 'primitives/Icons.tsx'], ['ActionIcon', 'primitives/Icons.tsx'], ['SystemIcon', 'primitives/Icons.tsx'], ['WordIcon', 'primitives/Icons.tsx'], ['HeartIcon', 'primitives/Icons.tsx'], ['CausalArrow', 'primitives/Icons.tsx'], ['ScanLines', 'primitives/Icons.tsx'],
+  ['NumberBadge', 'primitives/Icons.tsx'], ['ActionIcon', 'primitives/Icons.tsx'], ['SystemIcon', 'primitives/Icons.tsx'], ['WordIcon', 'primitives/Icons.tsx'], ['HeartIcon', 'primitives/Icons.tsx'], ['ScanLines', 'primitives/Icons.tsx'],
   ['BootIn', 'motion/BootIn.tsx', true], ['DrawLine', 'motion/DrawLine.tsx', true], ['DrawRect', 'motion/DrawRect.tsx', true], ['FitBox', 'motion/FitBox.tsx', true], ['Flicker', 'motion/Flicker.tsx', true], ['StickFigure', 'motion/StickFigure.tsx', true], ['Trace', 'motion/Trace.tsx', true],
 ];
 
@@ -48,7 +48,7 @@ function StaticSpecimen({id, p = 1}: {id: string; p?: number}) {
     case 'SignalLane': return wrap(<SignalLane box={{x: 160, y: 220, w: 880, h: 160}} label="SIGNAL" progress={p} accent="color/fill/gold" direction="right" tokens={[{id: 'a', at: .28}, {id: 'b', at: .72, shape: 'card'}]}/>);
     case 'SourceLine': return wrap(<><div style={panelStyle}/><SourceLine text="Source: example reference" x={150} y={480}/></>);
     case 'StageSceneFrame': return <StageSceneFrame segment={{instance: 'sheet', scene: 'KitSheet', start_ms: 0, end_ms: 3000, shots: []}} title="STAGE SCENE FRAME" source="Source: example reference"/>;
-    case 'TermBlock': return wrap(<TermBlock term="Reusable term" summary="Compact semantic block" glyph={<PersonIcon/>} state="selected" accent="color/fill/gold" unit="UNIT 01"/>);
+    case 'TermBlock': return wrap(<TermBlock term="Reusable term" summary="Compact semantic block" glyph={<StickFigure x={24} y={24} group="neutral" emphasis={1} scale={0.8} animate={false}/>} state="selected" accent="color/fill/gold" unit="UNIT 01"/>);
     case 'TermTriad': return wrap(<TermTriad boxes={[{x: 20, y: 80, w: 350, h: 300}, {x: 425, y: 80, w: 350, h: 300}, {x: 830, y: 80, w: 350, h: 300}]} terms={[{kind: 'bias', title: 'BIAS', lines: [{text: 'pattern', progress: 1}]}, {kind: 'prejudice', title: 'PREJUDICE'}, {kind: 'discrimination', title: 'ACTION'}]} states={['active', 'selected', 'active']} progress={p} bracketLabel="RELATED TERMS"/>);
     case 'TrainingTextStrip': return wrap(<TrainingTextStrip tokens={['signal', 'pattern', 'update']} patternKey="sample" progress={p} emphasis="pattern"/>);
     case 'UsThemSortingField': return wrap(<UsThemSortingField marks={[{id: 'a', x: 180, y: 130, group: 'ingroup'}, {id: 'b', x: 580, y: 260, group: 'outgroup'}]} partitionProgress={1} ingroupProgress={1} outgroupProgress={1} labels={{ingroup: 'US', outgroup: 'THEM', boundary: 'SORT'}} mode="partition"/>);
@@ -57,12 +57,10 @@ function StaticSpecimen({id, p = 1}: {id: string; p?: number}) {
     case 'SceneBorder': return <SceneBorder/>;
     case 'PersonMark': return wrap(<PersonMark x={600} y={330} group="ingroup" emphasis={1} scale={4}/>);
     case 'NumberBadge': return wrap(<NumberBadge value="4" active={1}/>);
-    case 'PersonIcon': return wrap(<PersonIcon/>);
     case 'ActionIcon': return wrap(<ActionIcon/>);
     case 'SystemIcon': return wrap(<SystemIcon/>);
     case 'WordIcon': return wrap(<WordIcon/>);
     case 'HeartIcon': return wrap(<HeartIcon/>);
-    case 'CausalArrow': return wrap(<svg width="1200" height="620"><CausalArrow x1={220} x2={980} y={310}/></svg>);
     case 'ScanLines': return wrap(<svg width="1200" height="620"><ScanLines x={200} y={160} w={800} h={300} progress={p}/></svg>);
     default: return null;
   }
