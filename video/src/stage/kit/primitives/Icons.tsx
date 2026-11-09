@@ -1,10 +1,14 @@
 import React from 'react';
+import {Flicker} from '../motion/Flicker';
+import type {Timing} from '../motion/core';
 import {color} from '../theme/tokens';
 
 const clamp = (value:number) => Math.max(0, Math.min(1, value));
 
-export function NumberBadge({value, active=1}:{value:string; active?:number}) {
-  return <div aria-hidden="true" style={{width:48,height:48,borderRadius:24,display:'grid',placeItems:'center',font:'500 24px "IBM Plex Mono"',color:color('color/fill/gold'),border:`2px solid ${color('color/fill/gold')}`,opacity:active}}>{value}</div>;
+export function NumberBadge({value, active=1, progress, startFrame, durationFrames}:{value:string; active?:number} & Timing) {
+  const badge = <div aria-hidden="true" style={{width:48,height:48,borderRadius:24,display:'grid',placeItems:'center',font:'500 24px "IBM Plex Mono"',color:color('color/fill/gold'),border:`2px solid ${color('color/fill/gold')}`,opacity:active}}>{value}</div>;
+  const hasTiming = progress !== undefined || startFrame !== undefined || durationFrames !== undefined;
+  return hasTiming ? <Flicker progress={progress} startFrame={startFrame} durationFrames={durationFrames} style={{position:'relative',inset:'auto',width:48,height:48,flex:'0 0 48px'}}>{badge}</Flicker> : badge;
 }
 
 export function PersonIcon({tone='color/text/soft'}:{tone?:string}) {

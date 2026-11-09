@@ -103,7 +103,7 @@ export function KitSheet({item, variant, live}: {item: string; variant?: MotionV
     <div style={{position: 'absolute', left: 96, top: 72, fontSize: 42, fontWeight: 600}}>Stage kit review sheet</div>
     <div style={{position: 'absolute', left: 98, top: 132, fontFamily: Tokens.fonts.mono, fontSize: 19, letterSpacing: 1.4, color: color('color/text/accent')}}>{current.id}</div>
     {current.motion ? <MotionSpecimen id={current.id} progress={p} variant={variant} live={live}/> : <StaticSpecimen id={current.id} p={p}/>}
-    <div style={{position: 'absolute', left: 98, bottom: 62, fontFamily: Tokens.fonts.mono, fontSize: 16, color: color('color/text/muted')}}>src/stage/kit/{current.source}</div>
+    {current.id !== 'StageSceneFrame' && <div style={{position: 'absolute', left: 98, bottom: 62, fontFamily: Tokens.fonts.mono, fontSize: 16, color: color('color/text/muted')}}>src/stage/kit/{current.source}</div>}
     <div style={{position: 'absolute', right: 98, bottom: 62, fontFamily: Tokens.fonts.mono, fontSize: 16, color: color('color/text/muted')}}>FINAL · FRAME {frame}</div>
   </AbsoluteFill></TokensContext.Provider>;
 }

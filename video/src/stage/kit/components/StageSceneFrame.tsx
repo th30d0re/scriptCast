@@ -4,6 +4,8 @@ import {color} from '../theme/tokens';
 import {SceneBorder} from '../primitives/SceneBorder';
 import {SourceLine} from './SourceLine';
 
+// StageSceneFrame composes a whole scene: background, SceneBorder, title, children and the source footer.
+// CardBorder is only the reusable SVG edge for a card inside a scene; it owns no layout or text.
 export type StageSceneFrameProps = React.PropsWithChildren<{
   segment: Segment;
   title?: string;

@@ -39,7 +39,6 @@ export function UsThemSortingField({marks, partitionProgress:rawPartition, ingro
     })}
     {ingroup>0 && <div style={{position:'absolute',left:34,top:24,font:'500 20px "IBM Plex Mono"',letterSpacing:1.2,color:color('color/fill/gold'),opacity:ingroup}}>{labels.ingroup}</div>}
     {outgroup>0 && <div style={{position:'absolute',right:34,top:24,font:'500 20px "IBM Plex Mono"',letterSpacing:1.2,color:color('color/marker/race'),opacity:outgroup}}>{labels.outgroup}</div>}
-    {labels.boundary && partition>0 && <div style={{position:'absolute',left:SORTING_FIELD.boundaryX,top:72,transform:'translateX(-50%)',padding:'4px 10px',font:'400 20px "IBM Plex Mono"',color:color('color/text/muted'),background:color('color/bg/field'),opacity:partition}}>{labels.boundary}</div>}
+    {labels.boundary && partition>0 && <div style={{position:'absolute',left:SORTING_FIELD.boundaryX,top:24,transform:'translateX(-50%)',padding:'0 10px',font:'500 20px "IBM Plex Mono"',lineHeight:'normal',letterSpacing:1.2,color:color('color/text/muted'),background:color('color/bg/field'),opacity:partition}}>{labels.boundary}</div>}
   </div>;
 }
-
