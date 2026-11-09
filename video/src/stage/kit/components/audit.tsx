@@ -95,7 +95,7 @@ export function Panel({id, box, opacity = 1, accent = 'color/line/hairline', fil
     ? {progress:1 as const}
     : {startFrame:Math.round(startMs*30/1000), durationFrames:Math.round(durationMs*30/1000)};
   return <div {...shapeAttrs(id, box, 'frame')} style={{position:'absolute', left:box.x, top:box.y, width:box.w, height:box.h, opacity}}>
-    <DrawRect box={box} strokeToken={accent} fillToken={fillToken} {...timing}/>
+    <DrawRect box={{x:0,y:0,w:box.w,h:box.h}} strokeToken={accent} fillToken={fillToken} {...timing}/>
     <div style={{position:'absolute', inset:0, boxSizing:'border-box', overflow:'hidden', ...contentStyle}}>{children}</div>
   </div>;
 }
