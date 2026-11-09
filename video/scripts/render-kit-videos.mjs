@@ -34,9 +34,9 @@ if (missing.length) throw new Error(`Unknown KitSheet item(s): ${missing.join(',
 const output = path.resolve(outDir);
 await mkdir(output, {recursive: true});
 const serveUrl = await bundle({entryPoint: path.join(video, 'src/index.ts')});
-const composition = await selectComposition({serveUrl, id: 'KitSheetLive', inputProps: {item: 'CitationCard', live: true}, browserExecutable});
-const render = (id, variant) => renderMedia({
-  composition,
+// Select per render: the composition carries its props, so one shared selection renders the same item every time.
+const render = async (id, variant) => { const inputProps = {item: id, live: true, ...(variant ? {variant} : {})}; return renderMedia({
+  composition: await selectComposition({serveUrl, id: 'KitSheetLive', inputProps, browserExecutable}),
   serveUrl,
   codec: 'h264',
   crf: 20,
@@ -44,8 +44,8 @@ const render = (id, variant) => renderMedia({
   concurrency: 2,
   browserExecutable,
   outputLocation: path.join(output, `${id}${variant ? `.${variant}` : ''}.mp4`),
-  inputProps: {item: id, live: true, ...(variant ? {variant} : {})},
-});
+  inputProps,
+}); };
 
 for (const {id, motion} of selected) {
   await render(id);
