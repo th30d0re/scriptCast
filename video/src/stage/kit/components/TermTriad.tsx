@@ -31,7 +31,7 @@ export type TermTriadProps = {
   bracketLabel?:string;
   /** Bracket draw 0–1. Nothing draws at 0. */
   progress:number;
-  /** Absolute bracket box. Defaults to 55 px below the lowest block, inset 90 px from the outer block edges, 75 px high. */
+  /** Absolute bracket box. Defaults to 20 px below the lowest block, inset 90 px from the outer block edges, 75 px high. */
   bracketBox?:Box;
   /** Glow 0–1 per block, for a spoken-word pulse. */
   pulses?:readonly number[];
@@ -69,7 +69,7 @@ export function triadBlockLayout(box:Box, term:TriadTerm, layout:'auto'|'row'|'s
 /** Default bracket box under a row of blocks. */
 export const triadBracketBox = (boxes:readonly Box[]):Box => {
   const left = Math.min(...boxes.map(b => b.x)) + 90, right = Math.max(...boxes.map(b => b.x + b.w)) - 90;
-  return {x:left, y:Math.max(...boxes.map(b => b.y + b.h)) + 55, w:right - left, h:75};
+  return {x:left, y:Math.max(...boxes.map(b => b.y + b.h)) + 20, w:right - left, h:75};
 };
 
 function Glyph({kind, box, ink}:{kind:TriadKind; box:Box; ink:string}) {

@@ -8,7 +8,7 @@ export type KitSoundProps = React.PropsWithChildren<{
   gainDb?:number;
   /** Additional attenuation to apply while this provider is inside a narration region. */
   duckDb?:number;
-  /** `beats` plays only components explicitly marked as beats; `all` preserves the default behavior. */
+  /** `beats` plays marked beats at full level and every other motion sound NON_BEAT_DB quieter; `all` plays everything at full level. */
   mode?:'all'|'beats';
 }>;
 
@@ -38,15 +38,20 @@ const cueComponent = (component:string, variant:SoundVariant, mode?:string) => {
   return `BootIn.${mode ?? 'scan'}`;
 };
 
+/** Level of non-beat motion sounds under `mode="beats"`, relative to beats. */
+export const NON_BEAT_DB = -9;
+
 /** Audio scheduled for an absolute-timeline animation. Progress-driven previews are intentionally silent. */
 export function useKitSounds(component:string, variant:SoundVariant, startFrame?:number, cueMode?:string, beat?:boolean, beatCue?:string) {
   const sound = useContext(KitSoundContext);
   const offset = useKitFrameOffset();
-  if (!sound.enabled || startFrame === undefined || (sound.mode === 'beats' && !beat)) return null;
+  if (!sound.enabled || startFrame === undefined) return null;
+  // In beats mode every motion sounds; marked beats stay at full level and the rest sit underneath them.
+  const beatDuck = sound.mode === 'beats' && !beat ? NON_BEAT_DB : 0;
   const name = beatCue ?? cueComponent(component, variant, cueMode);
   return motionSounds.filter((cue) => cue.variant === variant && cue.component === name).map((cue) =>
     <Sequence key={`${cue.event}-${cue.frameOffset}`} from={startFrame + cue.frameOffset - offset} layout="none">
-      <Audio src={staticFile(`sfx/${soundFileName(cue.sound)}`)} volume={dbToGain(cue.gain_db + sound.gainDb + sound.duckDb)}/>
+      <Audio src={staticFile(`sfx/${soundFileName(cue.sound)}`)} volume={dbToGain(cue.gain_db + sound.gainDb + sound.duckDb + beatDuck)}/>
     </Sequence>
   );
 }
