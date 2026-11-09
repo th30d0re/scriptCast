@@ -4,8 +4,25 @@
     {
       "name": "router-labels",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["experiments/router_eval/review.py"],
+      "runtimeArgs": [
+        "experiments/router_eval/review.py"
+      ],
       "port": 8765
+    },
+    {
+      "name": "kit-review",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "/Users/emmanuel/Dev/Tools/scriptCast-kitreview/site",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5199",
+        "--strictPort"
+      ],
+      "port": 5199
     }
   ]
 }

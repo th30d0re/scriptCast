@@ -38,3 +38,4 @@ experiments/e2_visual_qa/*.jsonl
 !experiments/e2_visual_qa/truth.jsonl
 experiments/e2_visual_qa/*.log
 experiments/e2_visual_qa/_*.png
+video/public/kit-review/
