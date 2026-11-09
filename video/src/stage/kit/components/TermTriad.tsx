@@ -95,12 +95,14 @@ export function TermTriad({boxes, terms, states, sources, bracketLabel, progress
   return <div data-shared="TermTriad" data-triad-count={count}>
     {Array.from({length:count}, (_, index) => {
       const box = boxes[index], term = terms[index], state = states[index], amount = stateAmount(state), selected = state === 'selected';
+      // State is visual emphasis only. It must never leave FitBox's typed title at a partial word.
+      const reveal = bracketP, opacity = amount*reveal;
       const accent = TRIAD_KINDS[term.kind].accent, ink = color(accent), geometry = triadBlockLayout(box, term, layout, sources?.[index]?.text);
       const source = sources?.[index], pulse = clamp01(pulses?.[index] ?? 0);
       return <div key={`${id}-${index}`} data-triad-term={term.kind} data-triad-state={String(state)}>
         {socketP > 0 && amount < 1 && <Panel id={`${id}-socket-${index + 1}`} box={box} opacity={socketP*(1 - amount)} accent="color/line/hairline-strong" style={{borderStyle:'dashed', background:'transparent'}}/>}
-        {amount > 0 && <div style={{opacity:amount}}>
-          <FitBox text={term.title} x={geometry.title.x - 16} y={geometry.title.y - 8} maxWidth={geometry.title.w} size={TITLE_SIZE} weight={600} lineHeight={1.15} padX="spacing/md" padY="spacing/sm" textToken="color/text/primary" strokeToken={selected ? accent : 'color/line/hairline'} fillToken="color/fill/panel-render" accentToken={accent} tag={term.kind.toUpperCase()} corners={selected ? 'tr-bl' : 'tl-br'} seed={101 + index} intensity={Math.max(.35, pulse)} progress={amount}/>
+        {opacity > 0 && <div style={{opacity}}>
+          <FitBox text={term.title} x={geometry.title.x - 16} y={geometry.title.y - 8} maxWidth={geometry.title.w} size={TITLE_SIZE} weight={600} lineHeight={1.15} padX="spacing/md" padY="spacing/sm" textToken="color/text/primary" strokeToken={selected ? accent : 'color/line/hairline'} fillToken="color/fill/panel-render" accentToken={accent} tag={term.kind.toUpperCase()} corners={selected ? 'tr-bl' : 'tl-br'} seed={101 + index} intensity={Math.max(.35, pulse)} progress={reveal}/>
           <Glyph kind={term.kind} box={geometry.glyph} ink={ink}/>
           {(term.lines ?? []).map((line, lineIndex) => line.progress > 0 && <Label key={lineIndex} id={`${id}-line-${index + 1}-${lineIndex + 1}`} box={geometry.lines[lineIndex]} size={LINE_SIZE} weight={500} ls={1.4} lh={1.25} ink={line.tone === 'accent' ? ink : color('color/text/soft')} opacity={clamp01(line.progress)}>{line.text}</Label>)}
           {source && source.progress > 0 && <Label id={`${id}-source-${index + 1}`} box={geometry.source} size={20} weight={500} ls={.4} lh={1.25} ink={color('color/text/muted')} opacity={clamp01(source.progress)}>{source.text}</Label>}
