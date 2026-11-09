@@ -4,6 +4,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 import {parseNotes} from '../src/stage/review/schema';
 const video = path.resolve(__dirname, '..');
+// Workspace installs may hoist packages to the repo root; use whichever node_modules has the package.
+const mod = (name:string) => [path.join(video,'node_modules',name), path.join(video,'..','node_modules',name)].find(dir => fs.existsSync(dir)) ?? path.join(video,'node_modules',name);
 const planPath = process.env.STAGE_PLAN ?? path.join(video, 'episodes/_demo/stage_plan.json');
 const notesPath = path.join(video, '..', 'review', 'notes.json');
 
@@ -56,8 +58,8 @@ export default defineConfig({
   }],
   resolve: {dedupe:['react','react-dom','remotion','d3-geo'], alias: {
     '@episode': process.env.STAGE_EPISODE_DIR ?? path.join(video,'episodes/_demo'), '@stage':path.join(video,'src/stage/api.ts'),
-    react:path.join(video,'node_modules/react'), 'react-dom':path.join(video,'node_modules/react-dom'), remotion:path.join(video,'node_modules/remotion'), 'd3-geo':path.join(video,'node_modules/d3-geo')
+    react:mod('react'), 'react-dom':mod('react-dom'), remotion:mod('remotion'), 'd3-geo':mod('d3-geo')
   }},
-  server: {fs: {allow:[video, ...[path.resolve(video, '../../scriptCast-stage/video/node_modules')].filter(dir => fs.existsSync(dir)), ...(process.env.STAGE_EPISODE_DIR ? [process.env.STAGE_EPISODE_DIR] : [])]}},
+  server: {fs: {allow:[video, path.join(video,'..','node_modules'), ...[path.resolve(video, '../../scriptCast-stage/video/node_modules')].filter(dir => fs.existsSync(dir)), ...(process.env.STAGE_EPISODE_DIR ? [process.env.STAGE_EPISODE_DIR] : [])]}},
   build: {outDir:path.join(__dirname,'dist'), emptyOutDir:true}
 });
