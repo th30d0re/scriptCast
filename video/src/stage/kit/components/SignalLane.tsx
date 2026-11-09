@@ -59,6 +59,7 @@ export function SignalLane({box, label, progress, accent, direction, tokens, das
   const {start, end} = laneGeometry(box, direction, hasLabel);
   const dx = end[0] - start[0], dy = end[1] - start[1], length = Math.hypot(dx, dy), ux = dx/length, uy = dy/length;
   const drawn = partialPolyline([start, end], railP);
+  const head = lanePoint(box, direction, railP, hasLabel);
   const ink = color(accent);
   return <div data-shared="SignalLane" data-lane-direction={direction} data-lane-progress={p.toFixed(3)} data-lane-dashed={dashed ? 'true' : 'false'}>
     <div style={{opacity:panelP}}>
@@ -67,9 +68,9 @@ export function SignalLane({box, label, progress, accent, direction, tokens, das
     </div>
     <svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute', inset:0}} aria-hidden="true">
       {drawn.length >= 2 && railP > 0 && <path {...lineAttrs(`${id}-rail`, drawn)} d={pathFrom(drawn)} fill="none" stroke={ink} strokeWidth="4" strokeLinecap="round" strokeDasharray={dashed ? '12 9' : undefined} opacity={panelP}/>}
-      {railP >= .9 && (() => {
-        const barbs = arrowBarbs(end, ux, uy);
-        return <path {...lineAttrs(`${id}-arrow`, barbs)} d={pathFrom(barbs)} fill="none" stroke={ink} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity={clamp01((railP - .9)/.1)}/>;
+      {railP > 0 && (() => {
+        const barbs = arrowBarbs(head, ux, uy);
+        return <path {...lineAttrs(`${id}-arrow`, barbs)} d={pathFrom(barbs)} fill="none" stroke={ink} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity={panelP}/>;
       })()}
     </svg>
     {tokens.map(token => {
