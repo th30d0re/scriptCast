@@ -1,5 +1,6 @@
 import React from 'react';
 import {color} from '../theme/tokens';
+import {FitBox} from '../motion/FitBox';
 import {PersonMark} from '../primitives/PersonMark';
 import type {TermState} from './types';
 import {Label, MONO_ADVANCE, Panel, clamp01, lineAttrs, monoWidth, partialPolyline, pathFrom, shapeAttrs, wrapLineCount, type Box, type Point} from './audit';
@@ -99,11 +100,8 @@ export function TermTriad({boxes, terms, states, sources, bracketLabel, progress
       return <div key={`${id}-${index}`} data-triad-term={term.kind} data-triad-state={String(state)}>
         {socketP > 0 && amount < 1 && <Panel id={`${id}-socket-${index + 1}`} box={box} opacity={socketP*(1 - amount)} accent="color/line/hairline-strong" style={{borderStyle:'dashed', background:'transparent'}}/>}
         {amount > 0 && <div style={{opacity:amount}}>
-          <Panel id={`${id}-frame-${index + 1}`} box={box} accent={selected ? accent : 'color/line/hairline'} style={{border:`${selected ? 2 : 1}px solid ${selected ? ink : color('color/line/hairline')}`, boxShadow:pulse > 0 ? `0 0 ${(22*pulse).toFixed(1)}px ${ink}` : undefined}}>
-            <span aria-hidden="true" style={{position:'absolute', left:0, top:12, bottom:12, width:4, background:ink}}/>
-          </Panel>
+          <FitBox text={term.title} x={geometry.title.x - 16} y={geometry.title.y - 8} maxWidth={geometry.title.w} size={TITLE_SIZE} weight={600} lineHeight={1.15} padX="spacing/md" padY="spacing/sm" textToken="color/text/primary" strokeToken={selected ? accent : 'color/line/hairline'} fillToken="color/fill/panel-render" accentToken={accent} tag={term.kind.toUpperCase()} corners={selected ? 'tr-bl' : 'tl-br'} seed={101 + index} intensity={Math.max(.35, pulse)} progress={amount}/>
           <Glyph kind={term.kind} box={geometry.glyph} ink={ink}/>
-          <Label id={`${id}-title-${index + 1}`} box={geometry.title} size={TITLE_SIZE} weight={600} lh={1.15} sans>{term.title}</Label>
           {(term.lines ?? []).map((line, lineIndex) => line.progress > 0 && <Label key={lineIndex} id={`${id}-line-${index + 1}-${lineIndex + 1}`} box={geometry.lines[lineIndex]} size={LINE_SIZE} weight={500} ls={1.4} lh={1.25} ink={line.tone === 'accent' ? ink : color('color/text/soft')} opacity={clamp01(line.progress)}>{line.text}</Label>)}
           {source && source.progress > 0 && <Label id={`${id}-source-${index + 1}`} box={geometry.source} size={20} weight={500} ls={.4} lh={1.25} ink={color('color/text/muted')} opacity={clamp01(source.progress)}>{source.text}</Label>}
         </div>}
