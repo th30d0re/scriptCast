@@ -67,6 +67,7 @@ Offsets are relative to the component start at 30 fps and scale with custom dura
 | `NumberBadge` | `value`, `active?` | `min3_7/a/PackageAVisuals.tsx` |
 | `CausalArrow` | `x1`, `x2`, `y`, `p?`, `accent?`, `width?`, `id?` | `min3_7/a/PackageAVisuals.tsx` |
 | `ScanLines` | `x`, `y`, `w`, `h`, `progress` | `min3_7/a/PackageAVisuals.tsx` |
+| `QRCode` | `url`, `size`, `fg?`, `bg?`, timing | Crisp SVG QR with a two-module quiet zone; defaults to medium error correction. |
 
 ## Components
 
@@ -75,7 +76,7 @@ Absolute `box` props use `{x, y, w, h}` in the 1920×1080 scene coordinate syste
 | Export | Props | YT02 source |
 | --- | --- | --- |
 | `StageSceneFrame` | `segment`, `title?`, `source?`, `notch?`, `children?` | `min3_7/shared/StageSceneFrame.tsx` |
-| `SourceLine` | `text`, `x?`, `y?`, `tone?` | `min3_7/shared/SourceLine.tsx` |
+| `SourceLine` | `text`, `x?`, `y?`, `tone?`, `qr?` | `min3_7/shared/SourceLine.tsx`; pass a URL through `qr` to place a 96px QR beside the citation. |
 | `TermBlock` | `term`, `summary?`, `glyph`, `state`, `accent`, `unit?` | `min3_7/shared/TermBlock.tsx` |
 | `DefinitionCard` | `term`, `definition`, `source`, `paraphrased`, `progress`, `accent` | `min3_7/shared/DefinitionCard.tsx` |
 | `CitationCard` | `authors`, `year`, `title`, `progress`, `compact?` | `min3_7/shared/CitationCard.tsx` |
