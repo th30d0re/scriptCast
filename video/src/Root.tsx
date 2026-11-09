@@ -17,6 +17,7 @@ export const Root = () => <>
   <Composition id="KitGallery2" component={KitGallery2} durationInFrames={90} fps={30} width={1920} height={1080}/>
   <Composition id="KitMotion" component={KitMotion} durationInFrames={300} fps={30} width={1920} height={1080}/>
   <Composition id="KitSheet" component={KitSheet} durationInFrames={1} fps={30} width={1920} height={1080} defaultProps={{item: 'CitationCard'}}/>
+  <Composition id="KitSheetLive" component={KitSheet} durationInFrames={150} fps={30} width={1920} height={1080} defaultProps={{item: 'CitationCard', live: true}}/>
   <Composition {...settings} id="Episode" component={Episode} defaultProps={episodePlan} calculateMetadata={episodeMetadata} />
   <Composition {...settings} id="TimelineCard" component={TimelineCard} defaultProps={{headline: 'Timeline', sources: 'Sources: Example', items: [{date: '2024', title: 'Event', detail: 'Description'}]}} />
   <Composition {...settings} id="StatBarsCard" component={StatBarsCard} defaultProps={{headline: 'Stats', sources: 'Sources: Example', items: [{label: 'A', period: 'Now', values: [10], color: 'mute'}]}} />
