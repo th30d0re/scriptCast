@@ -16,6 +16,7 @@ export function measureWidth(text:string, font:FontSpec, letterSpacing = 0) {
   ctx ??= document.createElement('canvas').getContext('2d');
   if (!ctx) throw new Error('measureWidth: no 2D canvas context');
   ctx.font = cssFont(font);
+  ctx.fontKerning = 'none'; // FitBox renders unkerned (see FitBox.opus), so measure the same way
   return ctx.measureText(text).width + letterSpacing*Math.max(0, [...text].length - 1);
 }
 

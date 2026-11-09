@@ -74,7 +74,8 @@ export function FitBox(props:FitBoxProps) {
     </Flicker>}
     {typed > 0 && lines.map((line, row) => {
       const glyphs = [...line];
-      return <div key={row} style={{position:'absolute', left:box.x + px, top:box.y + py + row*lh, height:lh, whiteSpace:'pre', font:cssFont(font), lineHeight:`${lh}px`, letterSpacing, color:ink}}>
+      return <div key={row} style={{position:'absolute', left:box.x + px, top:box.y + py + row*lh, height:lh, whiteSpace:'pre', font:cssFont(font), lineHeight:`${lh}px`, letterSpacing, color:ink, fontKerning:'none', fontVariantLigatures:'none'}}>
+        {/* Per-glyph spans restyle as the type head moves; with kerning on, pairs re-kern and letters jitter sideways. */}
         {glyphs.map((g, i) => {
           const k = index++;
           const age = shown - 1 - k; // 0 = newest character
