@@ -34,7 +34,7 @@ if (missing.length) throw new Error(`Unknown KitSheet item(s): ${missing.join(',
 const output = path.resolve(outDir);
 await mkdir(output, {recursive: true});
 const serveUrl = await bundle({entryPoint: path.join(video, 'src/index.ts')});
-const composition = await selectComposition({serveUrl, id: 'KitSheetLive', inputProps: {item: 'CitationCard', live: true}});
+const composition = await selectComposition({serveUrl, id: 'KitSheetLive', inputProps: {item: 'CitationCard', live: true}, browserExecutable});
 const render = (id, variant) => renderMedia({
   composition,
   serveUrl,
