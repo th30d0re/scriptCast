@@ -88,12 +88,12 @@ Absolute `box` props use `{x, y, w, h}` in the 1920×1080 scene coordinate syste
 | `EvidenceToken` | `label`, `kind`, `progress`, `emphasis`, `box`, `sourceSocket?`, `id?`, `size?` | `min7_12/shared/EvidenceToken.tsx` |
 | `SignalLane` | `box`, `label`, `progress`, `accent`, `direction`, `tokens`, `dashed?`, `bare?`, `id?` | `min7_12/shared/SignalLane.tsx` |
 | `QuestionHeader` | `box`, `text`, `progress`, `accentTerm?`, `accent?`, `id?` | `min7_12/shared/QuestionHeader.tsx` |
-| `TermTriad` | `boxes`, `terms`, `states`, `sources?`, `bracketLabel?`, `progress`, `bracketBox?`, `pulses?`, `socketProgress?`, `layout?`, `bracketAccent?`, `id?` | `min7_12/shared/TermTriad.tsx` |
+| `TermTriad` | `boxes`, `terms`, `states`, `sources?`, `progress`, `pulses?`, `socketProgress?`, `layout?`, `id?` | `min7_12/shared/TermTriad.tsx` |
 | `GroupDirectionField` | `box`, `marks`, `leftLabel`, `rightLabel`, `forwardProgress`, `reverseProgress`, `insideLabels?`, `boundaryProgress?`, `gutter?`, `id?` | `min7_12/shared/GroupDirectionField.tsx` |
 | `Label` | `id`, `box`, `children`, typography/alignment options | `min7_12/shared/audit.tsx` |
 | `Panel` | `id`, `box`, `opacity?`, `accent?`, `style?`, `children?` | `min7_12/shared/audit.tsx` |
 
-The kit also exports the geometry and audit helpers colocated with those components, including `evidenceTokenSize`, `laneGeometry`, `lanePoint`, `questionHeaderFit`, `triadBlockLayout`, `triadBracketBox`, `groupFieldGeometry`, and `groupMarkPlacement`.
+The kit also exports the geometry and audit helpers colocated with those components, including `evidenceTokenSize`, `laneGeometry`, `lanePoint`, `questionHeaderFit`, `triadBlockLayout`, `groupFieldGeometry`, and `groupMarkPlacement`.
 
 ## Gallery
 

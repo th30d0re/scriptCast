@@ -3,7 +3,7 @@ import {color} from '../theme/tokens';
 import {FitBox} from '../motion/FitBox';
 import {PersonMark} from '../primitives/PersonMark';
 import type {TermState} from './types';
-import {Label, MONO_ADVANCE, Panel, clamp01, lineAttrs, monoWidth, partialPolyline, pathFrom, shapeAttrs, wrapLineCount, type Box, type Point} from './audit';
+import {Label, MONO_ADVANCE, Panel, clamp01, shapeAttrs, wrapLineCount, type Box} from './audit';
 
 export type TriadKind = 'bias' | 'stereotype' | 'prejudice' | 'discrimination';
 
@@ -27,20 +27,14 @@ export type TermTriadProps = {
   states:readonly TermState[];
   /** Source tag per block, set in a 20 px mono line at the block's bottom edge. */
   sources?:readonly TriadSource[];
-  /** Text under the bracket. It appears over the last 45% of `progress`. */
-  bracketLabel?:string;
-  /** Bracket draw 0–1. Nothing draws at 0. */
+  /** Entrance 0–1 for all blocks. */
   progress:number;
-  /** Absolute bracket box. Defaults to 20 px below the lowest block, inset 90 px from the outer block edges, 75 px high. */
-  bracketBox?:Box;
   /** Glow 0–1 per block, for a spoken-word pulse. */
   pulses?:readonly number[];
   /** Dashed empty sockets at each block box, fading as the block enters. 0–1, default 0. */
   socketProgress?:number;
   /** `row` puts the glyph beside the title, `stack` puts it above. `auto` picks `row` from 420 px wide. */
   layout?:'auto'|'row'|'stack';
-  /** Dashboard colour token for the bracket. Defaults to gold. */
-  bracketAccent?:string;
   /** Audit id prefix. */
   id?:string;
 };
@@ -66,12 +60,6 @@ export function triadBlockLayout(box:Box, term:TriadTerm, layout:'auto'|'row'|'s
   return {mode, glyph, title, lines, source};
 }
 
-/** Default bracket box under a row of blocks. */
-export const triadBracketBox = (boxes:readonly Box[]):Box => {
-  const left = Math.min(...boxes.map(b => b.x)) + 90, right = Math.max(...boxes.map(b => b.x + b.w)) - 90;
-  return {x:left, y:Math.max(...boxes.map(b => b.y + b.h)) + 20, w:right - left, h:75};
-};
-
 function Glyph({kind, box, ink}:{kind:TriadKind; box:Box; ink:string}) {
   if (kind === 'bias') return <>
     <PersonMark x={box.x + box.w/2} y={box.y + box.h/2} group="ingroup" emphasis={1} scale={.85}/>
@@ -86,17 +74,13 @@ function Glyph({kind, box, ink}:{kind:TriadKind; box:Box; ink:string}) {
   </div>;
 }
 
-export function TermTriad({boxes, terms, states, sources, bracketLabel, progress, bracketBox, pulses, socketProgress = 0, layout = 'auto', bracketAccent = 'color/fill/gold', id = 'term-triad'}:TermTriadProps) {
-  const count = Math.min(boxes.length, terms.length, states.length), bracketP = clamp01(progress), socketP = clamp01(socketProgress);
-  const bracket = bracketBox ?? triadBracketBox(boxes.slice(0, count));
-  const bracketPoints:Point[] = [[bracket.x, bracket.y], [bracket.x, bracket.y + 26], [bracket.x + bracket.w, bracket.y + 26], [bracket.x + bracket.w, bracket.y]];
-  const drawn = partialPolyline(bracketPoints, bracketP), labelP = clamp01((bracketP - .55)/.45);
-  const labelW = bracketLabel ? Math.min(bracket.w, Math.ceil(monoWidth(bracketLabel, 24, 1.2)) + 24) : 0;
+export function TermTriad({boxes, terms, states, sources, progress, pulses, socketProgress = 0, layout = 'auto', id = 'term-triad'}:TermTriadProps) {
+  const count = Math.min(boxes.length, terms.length, states.length), revealP = clamp01(progress), socketP = clamp01(socketProgress);
   return <div data-shared="TermTriad" data-triad-count={count}>
     {Array.from({length:count}, (_, index) => {
       const box = boxes[index], term = terms[index], state = states[index], amount = stateAmount(state), selected = state === 'selected';
       // State is visual emphasis only. It must never leave FitBox's typed title at a partial word.
-      const reveal = bracketP, opacity = amount*reveal;
+      const reveal = revealP, opacity = amount*reveal;
       const accent = TRIAD_KINDS[term.kind].accent, ink = color(accent), geometry = triadBlockLayout(box, term, layout, sources?.[index]?.text);
       const source = sources?.[index], pulse = clamp01(pulses?.[index] ?? 0);
       return <div key={`${id}-${index}`} data-triad-term={term.kind} data-triad-state={String(state)}>
@@ -109,11 +93,5 @@ export function TermTriad({boxes, terms, states, sources, bracketLabel, progress
         </div>}
       </div>;
     })}
-    {bracketP > 0 && <>
-      <svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute', inset:0}} aria-hidden="true">
-        {drawn.length >= 2 && <path {...lineAttrs(`${id}-bracket`, drawn)} d={pathFrom(drawn)} fill="none" stroke={color(bracketAccent)} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>}
-      </svg>
-      {bracketLabel && labelP > 0 && <Label id={`${id}-bracket-label`} box={{x:bracket.x + (bracket.w - labelW)/2, y:bracket.y + 38, w:labelW, h:Math.max(30, bracket.h - 38)}} size={24} weight={500} ls={1.2} lh={1.25} align="center" ink={color(bracketAccent)} opacity={labelP}>{bracketLabel}</Label>}
-    </>}
   </div>;
 }
