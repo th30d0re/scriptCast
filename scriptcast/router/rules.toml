@@ -97,6 +97,12 @@ value = "book"
 id = "C2"
 episode_kind = ["series"]
 value = "chapter"
+# YT02 is the Ep 0 premiere (episode_map.json episode 0, premiere=true), so a
+# YT02 card with no --episode-number still gets the whole-book notebook.
+[[context]]
+id = "C2b"
+text = "\\bYT02"
+value = "book"
 [[context]]
 id = "C3"
 text = "TheOriginalPower|\\bYT0\\d|\\bepisode\\b|\\bchapter\\b"

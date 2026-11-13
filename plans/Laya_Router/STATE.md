@@ -97,8 +97,8 @@ Open: the `> 80%` path asks the worker for `.session-summary.md`; seeding the fr
 
 - Round 3 (2026-11-07, `experiments/svg_offload/{exp_muse3,out_muse3,results_muse3.csv}`): Muse rerun of the two cues round 2 lost to quota (pulse-network S00-33, dual-rails S00-39). Both delivered: TSX typecheck pass, render skipped, 29 and 18 SVG nodes. Critic verdict PENDING; contact sheets in `exp_muse3/judge/` and `judge/zoom3/`. Needs author ranking before it changes the routing rule.
 
-### Open: context rule C2b vs reviewed labels (2026-11-13)
-Added `C2b`: text `\bYT02` → `book`, since YT02 is the Ep 0 premiere (episode_map episode 0, premiere=true). Rules context accuracy on the 33 reviewed labels drops 0.85 → 0.76: labels `log-16`, `log-17`, `log-18` (YT02v2_ov visual audit; two YT02 fact-check passes) are labelled `chapter`. Either relabel those three to `book` or drop C2b. Operator decision pending; C2b is not committed.
+### Context rule C2b (2026-11-13)
+Added `C2b`: text `\bYT02` → `book`, since YT02 is the Ep 0 premiere (episode_map episode 0, premiere=true). Operator decision: relabel `log-16`, `log-17`, `log-18` (YT02v2_ov visual audit; two YT02 fact-check passes) from `chapter` to `book`. Rules context accuracy on the 33 reviewed labels stays 0.85 (0.76 before the relabel).
 
 ## R6 — Fine-tune and promote
 - Status: **blocked (46 labels, need 150)**
