@@ -1,19 +1,145 @@
 [
   {
-    "scene": "APAGroupDefinitions",
-    "element": "definition-term",
-    "ms": 255890,
-    "cue": "t21Bias",
-    "note": "INGROUP BIAS sits tight under the card edge. Open a clearer gap beneath the gold rule.",
+    "scene": "DictionaryEntry",
+    "element": "draw-rect",
+    "ms": 29464,
+    "cue": "institutional",
+    "note": "Missing \"racism\"",
     "author": "author",
     "status": "open"
   },
   {
-    "scene": "APAGroupDefinitions",
-    "element": "allocation-tray",
-    "ms": 263890,
-    "cue": "t21Behavior",
-    "note": "The derived-illustration tray crowds the source line. Lift the tray so the citation keeps its safe-area gap.",
+    "scene": "UsThemSorting",
+    "element": "belonging-wrap",
+    "ms": 300458,
+    "cue": "t24SelfConcept",
+    "note": "All the people disappeared",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "BiasDefinition",
+    "element": "baseline-spine",
+    "ms": 338950,
+    "cue": "t28Interpersonal",
+    "note": "all the elements connected to this one, including this one, appear to erily",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "SpeedVsVelocity",
+    "element": "draw-line",
+    "ms": 788867,
+    "cue": "t65Both",
+    "note": "this dies not look like a speedometer",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "SpeedVsVelocity",
+    "element": "draw-line",
+    "ms": 792800,
+    "cue": "t66Drawing",
+    "note": "we have 2 boxes of diffrent scails",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "MagnitudeDirection",
+    "element": "draw-rect",
+    "ms": 822758,
+    "cue": "t67Allocation",
+    "note": "These internal draw -rect's should be equidistant from each other.Internal draw-rect should be equidistant from each other.",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "AllportAntipathy",
+    "element": "observer-mark",
+    "ms": 601733,
+    "cue": "t48Hostility",
+    "note": "the heard its way to low lol",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "BinaryEndures",
+    "element": "min32-35",
+    "ms": 1947008,
+    "cue": "t154Hiding",
+    "note": "needs to be a bit higher",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "StructuralPayoffs",
+    "element": "min35-38",
+    "ms": 2314058,
+    "cue": "t180Enforcement",
+    "note": "The boundary text needs to be pushed down a little bit because it's clipping over defend.The boundary text needs to be pushed down a little bit because it's clipping over defend.",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "LocalPartition",
+    "element": "draw-line",
+    "ms": 2666675,
+    "cue": "t204Gender",
+    "note": "clipts text beneeth it",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "PortugalAuthorship",
+    "element": "draw-rect",
+    "ms": 2924825,
+    "cue": "t222Casa",
+    "note": "should be compressed and more veritcal then horrrazontal",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "PortugalAuthorship",
+    "element": "draw-rect",
+    "ms": 2924825,
+    "cue": "t222Casa",
+    "note": "should not have the 5 teir tringles at the top ad bottom with the map on they should be animated away like in the begining",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "ArmsPressure",
+    "element": "min53-56",
+    "ms": 3325683,
+    "cue": "t250Cycle",
+    "note": "overaps over the people, we should shift this down",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "PigmentationCline",
+    "element": "min59-62",
+    "ms": 3715942,
+    "cue": "t279GenomeWide",
+    "note": "Continuous polygenic gradient should be moved up a bit because it's currently clipping the boxes that we're doing that with.CONTINUOUS POLYGENIC GRADIENT should be moved up a bit because it's currently clipping the boxes that we're doing that with.",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "ControlCases",
+    "element": "draw-line",
+    "ms": 3880242,
+    "cue": "t291First",
+    "note": "These lines here are unnecessary.These lines here are unnecessary.",
+    "author": "author",
+    "status": "open"
+  },
+  {
+    "scene": "EmbarkationGrowth",
+    "element": "min69-72",
+    "ms": 4199433,
+    "cue": "t310Thirteen",
+    "note": "Embarked is kind of softening what happened. I think I prefer the word trafficked.\"Embarked\" is kind of softening what happened. I prefer the word \"trafficked\".",
     "author": "author",
     "status": "open"
   }
