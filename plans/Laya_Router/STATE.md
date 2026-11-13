@@ -5,7 +5,7 @@ Format: Airlock `Planning/Airlock_Pipeline/STATE.md` (per-phase checklist, fixes
 ## High Priority (waiting on the operator)
 
 - [x] D1 — Stage tools are on origin/dev (v0.3-stage, v0.4-stage-loop fully merged). Local dev was 31 behind; synced 2026-11-06.
-- [ ] D2 — v1.1.1 released 2026-11-06; fresh whole-book notebook `d3f54f50-61a5-465e-a94a-55d17326c0e2` (v1.1.1 PDF) replaces `58729638…`/`60b309ce…` as `book`. 36 chapter PDFs cut to the book repo's `chapters/v1.1.1/`; the book has outgrown the Ch 0–22 episode map, episode map set by operator (Ep 1 What Racism Actually Is = whole book; Ch N = Ep N+3); 27 episode notebooks built, ids in the book repo `chapters/v1.1.1/episode_map.json`. Old notebooks kept by operator choice.
+- [x] D2 — v1.1.1 released 2026-11-06; fresh whole-book notebook `d3f54f50-61a5-465e-a94a-55d17326c0e2` (v1.1.1 PDF) replaces `58729638…`/`60b309ce…` as `book`. 36 chapter PDFs cut to the book repo's `chapters/v1.1.1/`; the book has outgrown the Ch 0–22 episode map, episode map set by operator (Ep 0 premiere What Racism Actually Is = whole book; Ep 1 Prefaces; Ch N = Ep N+2; corrected 2026-11-13 from the map itself); 27 episode notebooks built, ids in the book repo `chapters/v1.1.1/episode_map.json`. Old notebooks kept by operator choice.
 - [x] D3 — M1 Max 64 GB first; design for it; move to M3 Ultra only on a measured limit (operator, 2026-11-06).
 
 ## Channel structure (operator, 2026-11-06)
@@ -32,7 +32,7 @@ Architecting the Operation is the chapter-by-chapter series; its Ep 0 premiere (
 
 ## R0 — Prerequisites
 
-- Status: mostly done (notebook ids in `rules.toml` still missing, blocked on D2)
+- Status: **done** (2026-11-13 check: notebook ids were already wired; this row was stale)
 
 | # | Check | Result | Notes |
 |---|---|---|---|
@@ -40,7 +40,7 @@ Architecting the Operation is the chapter-by-chapter series; its Ep 0 premiere (
 | 2 | `.venv-router` with `laya-mlx==0.6.0`; probe latency | installed (uv, py3.11) | load 1.08 s; one forward+reversed call (3 questions) P50 323 ms, P95 431 ms over 33 cards (M1 Max, 2026-11-06) |
 | 3 | `.venv-critic` with `mlx-vlm`; Qwen2.5-VL-7B 4-bit and MiniCPM-V loaded | done: Qwen load 2.5 s; MiniCPM-V 4.7 1B 3.6 s; 35B-A3B 11.5 s | M1 Max |
 | 4 | `labels.jsonl` ≥ 40 labelled cards | 46 pre-filled, 33 reviewed | `python3 experiments/router_eval/review.py` |
-| 5 | Notebook ids written to `rules.toml` | — | missing, blocked on D2 |
+| 5 | Notebook ids wired | done | `rules.toml [notebooks]` has `book` + `episode_map`; `notebooks.toml` has `book`, `persuasion`, `ep1`–`ep27`. Cross-check 2026-11-13: all 27 ids match `episode_map.json`, 0 mismatches; `--episode-number 5` resolves its chapter notebook. Gap found: a YT02 card with no episode number got `context=chapter, notebook=-`; see C2b below. |
 
 ## E1 — Apple Vision OCR vs local VLM (experiments/e1_ocr_vlm)
 - 30 frames, one per 25 s of `YT02_stage_0000-1232_1080p_20261105.mp4`.
@@ -92,8 +92,13 @@ Open: the `> 80%` path asks the worker for `.session-summary.md`; seeding the fr
 - Reads grounded `critic.json`, produces one repair brief per failed marked element; default is report-only; optional `--dispatch` resumes builder registry session; logs before/after verdicts to `repairs.jsonl`.
 
 ## R5 — SVG offload
-- Status: **condition B done, round 2 Muse rerun ranked, condition A blocked on weights** (merged on dev; see `experiments/svg_offload/FINDINGS-E3.md`)
+- Status: **condition B done, round 2 ranked, round 3 delivered awaiting author ranking, condition A blocked on weights** (merged on dev; see `experiments/svg_offload/FINDINGS-E3.md`)
 - Condition B: inline SVG across 10 cues, 4 workers. Round 2 Muse rerun with stdout capture and author ranking in `author_rank_round2.csv`. Rule: `svg_asset` → Codex gpt-5.6-terra default, agy gemini-3.8-flash-low when cheap, Luna only behind a critic, Muse second-opinion only. Condition A (local generation via SVGen/OmniSVG) blocked on weights.
+
+- Round 3 (2026-11-07, `experiments/svg_offload/{exp_muse3,out_muse3,results_muse3.csv}`): Muse rerun of the two cues round 2 lost to quota (pulse-network S00-33, dual-rails S00-39). Both delivered: TSX typecheck pass, render skipped, 29 and 18 SVG nodes. Critic verdict PENDING; contact sheets in `exp_muse3/judge/` and `judge/zoom3/`. Needs author ranking before it changes the routing rule.
+
+### Open: context rule C2b vs reviewed labels (2026-11-13)
+Added `C2b`: text `\bYT02` → `book`, since YT02 is the Ep 0 premiere (episode_map episode 0, premiere=true). Rules context accuracy on the 33 reviewed labels drops 0.85 → 0.76: labels `log-16`, `log-17`, `log-18` (YT02v2_ov visual audit; two YT02 fact-check passes) are labelled `chapter`. Either relabel those three to `book` or drop C2b. Operator decision pending; C2b is not committed.
 
 ## R6 — Fine-tune and promote
 - Status: **blocked (46 labels, need 150)**

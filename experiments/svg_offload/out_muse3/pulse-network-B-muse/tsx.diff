@@ -1,0 +1,44 @@
+diff --git a/Architecting_the_operation/video/yt02/stage/min3_7/d/InstalledRacialPrior.tsx b/Architecting_the_operation/video/yt02/stage/min3_7/d/InstalledRacialPrior.tsx
+index feff846..56212fb 100644
+--- a/Architecting_the_operation/video/yt02/stage/min3_7/d/InstalledRacialPrior.tsx
++++ b/Architecting_the_operation/video/yt02/stage/min3_7/d/InstalledRacialPrior.tsx
+@@ -61,6 +61,12 @@ const SORTING_MARKS:readonly SortingMark[]=[
+ ] as const;
+ const SOCIOLOGY_GLYPH = {x:304,y:234,scale:.28} as const;
+ const RAIL_COLUMNS = [170,720,1270] as const;
++const PULSE_TOKEN_FIELD = {x:1772,y:524,cell:30,colPitch:38,rowPitch:52,cols:2,rows:6} as const;
++const PULSE_TOKEN_CELLS: readonly LayoutBox[] = Array.from({length:12},(_,index)=>({
++  x:PULSE_TOKEN_FIELD.x+(index%PULSE_TOKEN_FIELD.cols)*PULSE_TOKEN_FIELD.colPitch,
++  y:PULSE_TOKEN_FIELD.y+Math.floor(index/PULSE_TOKEN_FIELD.cols)*PULSE_TOKEN_FIELD.rowPitch,
++  w:PULSE_TOKEN_FIELD.cell, h:PULSE_TOKEN_FIELD.cell,
++}));
+ 
+ function Curve({id, points, ink, width, opacity=1, dataCurve}:{id:string;points:Point[];ink:string;width:number;opacity?:number;dataCurve?:string}) {
+   return <path data-curve={dataCurve} {...lineAttrs(id,points)} d={pathFrom(points)} fill="none" stroke={ink} strokeWidth={width} opacity={opacity}/>;
+@@ -83,11 +89,11 @@ export function InstalledRacialPrior({segment}:SceneProps) {
+   const posteriorPoints=gaussianPoints(AXIS.left,AXIS.right,AXIS.y,heightFor(posterior.precision),posterior.mean,posterior.precision,90);
+   const posteriorX=xFor(posterior.mean), posteriorTop=AXIS.y-heightFor(posterior.precision)-18;
+   const bus:Point[]=[[L.reinforcement.x,832],[1350,832],[1350,426],[L.socket.x+L.socket.w,426]];
+-  const pulsePath:Point[]=[[L.reinforcement.x+L.reinforcement.w,832],[1800,832],[1800,510],[L.gauge.x+L.gauge.w,510]];
++  const pulsePath:Point[]=[[L.reinforcement.x+L.reinforcement.w,832],[1806,832],[1806,510],[L.gauge.x+L.gauge.w,510]];
+   const pulseOn=ms>=cue.institutions.at&&ms<cue.weight.at+600;
+   const pulses=pulseOn?[0,1,2].map(index=>{
+-    const phase=(((ms-cue.institutions.at)/900)+index/3)%1, total=40+322+40, d=phase*total;
+-    const [x,y]=d<40?[1760+d,832]:d<362?[1800,832-(d-40)]:[1800-(d-362),510];
++    const phase=(((ms-cue.institutions.at)/900)+index/3)%1, total=46+322+46, d=phase*total;
++    const [x,y]=d<46?[1760+d,832]:d<368?[1806,832-(d-46)]:[1806-(d-368),510];
+     return {x,y};
+   }):[];
+   const cartridgeP=enter(ms,cue.installed.at,600), cartridgeX=L.socket.x+40*(1-cartridgeP);
+@@ -147,7 +153,10 @@ export function InstalledRacialPrior({segment}:SceneProps) {
+         </div>
+         <Label id="alpha-low" box={T.alphaLow} size={20} ls={0} ink={gold} opacity={enter(ms,cue.override.at)}>α = 0 · EVIDENCE-LED</Label>
+       </>}
+-      {pulses.length>0 && <svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true" opacity={enter(ms,cue.institutions.at)}>
++      {pulses.length>0 && <svg data-pulse-network="true" width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true" opacity={enter(ms,cue.institutions.at)}>
++        <g data-token-field="true">
++          {PULSE_TOKEN_CELLS.map((cell,index)=><rect key={index} data-pulse-token={index+1} {...shapeAttrs(`pulse-token-${index+1}`,cell,'mark','pulse')} x={cell.x} y={cell.y} width={cell.w} height={cell.h} fill={color('color/fill/red-wash')} stroke={red} strokeWidth="1.5"/>)}
++        </g>
+         <path data-beat="t33Institutions" {...lineAttrs('pulse-path',pulsePath)} d={pathFrom(pulsePath)} fill="none" stroke={red} strokeWidth="2" strokeDasharray="4 6"/>
+         {pulses.map((pulse,index)=><circle key={index} data-institution-pulse={index+1} {...shapeAttrs(`pulse-${index+1}`,{x:pulse.x-7,y:pulse.y-7,w:14,h:14},'mark','pulse')} cx={pulse.x} cy={pulse.y} r="7" fill={red}/>)}
+       </svg>}

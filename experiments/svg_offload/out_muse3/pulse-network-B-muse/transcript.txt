@@ -1,0 +1,12 @@
+Drew the pulse-network asset inline at `t33Institutions` in [InstalledRacialPrior.tsx](/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse3/wt/pulse-network-B-muse/Architecting_the_operation/video/yt02/stage/min3_7/d/InstalledRacialPrior.tsx:156).
+
+The SVG keeps the scene layout box at `viewBox="0 0 1920 1080"`. It renders twelve token squares from `PULSE_TOKEN_CELLS` in [InstalledRacialPrior.tsx](/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse3/wt/pulse-network-B-muse/Architecting_the_operation/video/yt02/stage/min3_7/d/InstalledRacialPrior.tsx:64). Each square uses `color('color/fill/red-wash')` fill and the race marker stroke. The dashed path uses `strokeDasharray="4 6"` on the shifted spine at x 1806. Three node circles travel that path through the existing phase calculation. Gating stays on `pulses.length` and `enter(ms, cue.institutions.at)`.
+
+Verification: `tsc --noEmit -p stage` passes. A single-React probe renders tokens 1–12 and pulses 1–3 at `t33Institutions + 700ms`, with zero tokens before the cue. The layout audit reports zero violations across 51 grid frames. The prose checker reports no banned constructions. The Package D runner shows a duplicate React hook error in this worktree, and the untouched file shows the same error.
+
+muse: workspace root: /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse3/wt/pulse-network-B-muse/Architecting_the_operation/video/yt02 (explicit)
+muse: workspace trust: trusted source=user-config
+muse: warning: rules file at /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse3/wt/pulse-network-B-muse/CLAUDE.md is ignored this session because AGENTS.md takes precedence in that directory; merge still-applicable guidance into AGENTS.md or remove one of the two files
+muse: Skills: 89 loaded · 1 warning · 17 details hidden
+muse:   `skills_catalog` was trimmed to fit its size limit (32 KB): 62 descriptions compacted, 0 skill ids omitted
+muse:   Run `muse skills list --source all` for full diagnostics.
