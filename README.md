@@ -421,6 +421,10 @@ pip install pytest
 python -m pytest tests
 ```
 
+## Acknowledgements
+
+scriptCast runs on open models and libraries from many projects, and ports HyperFrames' ducking and spectral carve to Rust. The full list is in [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md).
+
 ## License
 
 scriptCast is licensed under [GPL-3.0-or-later](LICENSE). Redistributed modifications must carry the same open-source license.
