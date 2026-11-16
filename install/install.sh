@@ -61,7 +61,8 @@ if [ -z "$PYTHON" ]; then
   done
 fi
 [ -n "$PYTHON" ] || fail E_PYTHON "no python3 >= 3.11 found"
-ok "$PYTHON ($($PYTHON -c 'import platform; print(platform.python_version())'))"
+BASE="$("$PYTHON" -c 'import sys; print(getattr(sys, "_base_executable", "") or sys.executable)' 2>/dev/null)"; [ -x "$BASE" ] && PYTHON="$BASE"
+ok "$PYTHON ($("$PYTHON" -c 'import platform; print(platform.python_version())'))"
 
 step 3 "venv"
 [ "$CHECK_ONLY" -eq 1 ] && { ok "check mode; no environment changes"; exit 0; }
@@ -74,7 +75,7 @@ SOURCE="$WHEEL"
 if [ -z "$SOURCE" ]; then
   [ -n "$APP_VERSION" ] || fail E_NETWORK "--app-version is required unless --wheel is supplied"
   API="https://api.github.com/repos/th30d0re/scriptCast/releases/tags/ui-v$APP_VERSION"
-  SOURCE="$($PIP -c 'import json,sys,urllib.request
+  SOURCE="$("$PIP" -c 'import json,sys,urllib.request
 try:
  d=json.load(urllib.request.urlopen(sys.argv[1]))
  print(next(a["browser_download_url"] for a in d["assets"] if a["name"].endswith(".whl")))
