@@ -1,0 +1,24 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {"title": "Evidence review workflow", "output": "archdiagram.workflow.html"},
+  "lanes": [
+    {"id": "research", "label": "Research"},
+    {"id": "review", "label": "Review"}
+  ],
+  "nodes": [
+    {"id": "question", "lane": "research", "col": 0, "type": "external", "label": "Question", "width": 132},
+    {"id": "sources", "lane": "research", "col": 1, "type": "database", "label": "Gather sources", "width": 132},
+    {"id": "claim", "lane": "research", "col": 2, "type": "backend", "label": "Draft claim", "width": 132},
+    {"id": "check", "lane": "review", "col": 2, "type": "security", "label": "Evidence check", "width": 132},
+    {"id": "revise", "lane": "review", "col": 3, "type": "frontend", "label": "Revise", "width": 132},
+    {"id": "publish", "lane": "research", "col": 4, "type": "backend", "label": "Publish", "width": 132}
+  ],
+  "edges": [
+    {"id": "collect", "from": "question", "to": "sources", "label": "collect"},
+    {"id": "synthesize", "from": "sources", "to": "claim", "label": "synthesize"},
+    {"id": "verify", "from": "claim", "to": "check", "label": "verify"},
+    {"id": "repair", "from": "check", "to": "revise", "label": "revise"},
+    {"id": "release", "from": "revise", "to": "publish", "label": "release"}
+  ]
+}

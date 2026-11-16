@@ -1,0 +1,4 @@
+{
+  "nodes": [{"id": "node-a", "x": 10, "y": 10, "w": 40, "h": 30}],
+  "edges": [{"id": "bad-edge", "label": "bad label", "labelBox": {"x": 20, "y": 15, "w": 20, "h": 10}}]
+}

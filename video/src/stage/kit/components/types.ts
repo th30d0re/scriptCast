@@ -22,3 +22,9 @@ export type SortingLabels = {
 
 export type TermBlockGlyph = React.ReactNode;
 
+export type ArchLayout = {
+  viewBox: [number, number];
+  nodes: {id: string; label: string; x: number; y: number; w: number; h: number; kind?: string}[];
+  edges: {id: string; from: string; to: string; points: [number, number][]; label?: string; labelBox?: {x: number; y: number; w: number; h: number}; labelSize?: number; labelAt?: [number, number]}[];
+  groups: {label: string; x: number; y: number; w: number; h: number}[];
+};
