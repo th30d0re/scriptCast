@@ -85,6 +85,7 @@ pub struct PhaseMUi {
     keep_calibrate: Option<PathBuf>,
     job: Option<ToolRun>,
     notice: Option<String>,
+    notice_is_resolution_failure: bool,
     progress: String,
     footer_status: String,
     footer_primary: String,
@@ -152,6 +153,7 @@ impl PhaseMUi {
             keep_calibrate: None,
             job: None,
             notice: None,
+            notice_is_resolution_failure: false,
             progress: String::new(),
             footer_status: String::new(),
             footer_primary: String::new(),
@@ -257,7 +259,10 @@ impl Browser {
         }
         self.makers.job = None;
         if cancelled {
-            self.makers.notice = Some("Cancelled".into());
+            self.makers.notice = {
+                self.makers.notice_is_resolution_failure = false;
+                Some("Cancelled".into())
+            };
             self.makers.progress.clear();
             return;
         }
@@ -267,7 +272,12 @@ impl Browser {
             .and_then(|line| apply_tool_json(kind, line.as_bytes()));
         match parsed {
             Ok(outcome) => self.store_outcome(outcome),
-            Err(error) => self.makers.notice = Some(error),
+            Err(error) => {
+                self.makers.notice = {
+                    self.makers.notice_is_resolution_failure = false;
+                    Some(error)
+                }
+            }
         }
         self.makers.progress.clear();
     }
@@ -340,8 +350,10 @@ impl Browser {
                 self.launch_tool(ToolKind::Stress, call);
             }
             _ => {
-                self.makers.notice =
-                    Some("Check stress needs the turn text and a rendered wav.".into());
+                self.makers.notice = {
+                    self.makers.notice_is_resolution_failure = false;
+                    Some("Check stress needs the turn text and a rendered wav.".into())
+                };
             }
         }
     }
@@ -354,11 +366,17 @@ impl Browser {
             return;
         }
         let Some(episode) = &self.episode else {
-            self.makers.notice = Some("Open an episode to find outliers.".into());
+            self.makers.notice = {
+                self.makers.notice_is_resolution_failure = false;
+                Some("Open an episode to find outliers.".into())
+            };
             return;
         };
         let Some(transcript) = episode.script_path.clone() else {
-            self.makers.notice = Some("This episode has no transcript path.".into());
+            self.makers.notice = {
+                self.makers.notice_is_resolution_failure = false;
+                Some("This episode has no transcript path.".into())
+            };
             return;
         };
         let call = outliers_invocation(
@@ -385,7 +403,12 @@ impl Browser {
                 self.project.tab = "clips".into();
                 self.project.data_open = true;
             }
-            Err(error) => self.makers.notice = Some(error),
+            Err(error) => {
+                self.makers.notice = {
+                    self.makers.notice_is_resolution_failure = false;
+                    Some(error)
+                }
+            }
         }
     }
 
@@ -404,7 +427,12 @@ impl Browser {
                 self.project.tab = "voices".into();
                 self.project.data_open = true;
             }
-            Err(error) => self.makers.notice = Some(error),
+            Err(error) => {
+                self.makers.notice = {
+                    self.makers.notice_is_resolution_failure = false;
+                    Some(error)
+                }
+            }
         }
     }
 
@@ -422,7 +450,12 @@ impl Browser {
                 self.project.tab = "voices".into();
                 self.project.data_open = true;
             }
-            Err(error) => self.makers.notice = Some(error),
+            Err(error) => {
+                self.makers.notice = {
+                    self.makers.notice_is_resolution_failure = false;
+                    Some(error)
+                }
+            }
         }
     }
 
@@ -436,7 +469,12 @@ impl Browser {
                 self.project.tab = "pronunciations".into();
                 self.project.data_open = true;
             }
-            Err(error) => self.makers.notice = Some(error),
+            Err(error) => {
+                self.makers.notice = {
+                    self.makers.notice_is_resolution_failure = false;
+                    Some(error)
+                }
+            }
         }
     }
 
@@ -451,12 +489,20 @@ impl Browser {
                 }
                 self.project.data_open = true;
             }
-            Err(error) => self.makers.notice = Some(error),
+            Err(error) => {
+                self.makers.notice = {
+                    self.makers.notice_is_resolution_failure = false;
+                    Some(error)
+                }
+            }
         }
     }
 
     fn store_outcome(&mut self, outcome: Outcome) {
-        self.makers.notice = None;
+        self.makers.notice = {
+            self.makers.notice_is_resolution_failure = false;
+            None
+        };
         match outcome {
             Outcome::Words(words) => {
                 if let Ok(key) = source_cache_key(Path::new(&self.makers.source)) {
@@ -498,7 +544,10 @@ impl Browser {
 
     fn launch_tool(&mut self, kind: ToolKind, call: Invocation) {
         if self.makers.job.is_some() {
-            self.makers.notice = Some("A tool is already running.".into());
+            self.makers.notice = {
+                self.makers.notice_is_resolution_failure = false;
+                Some("A tool is already running.".into())
+            };
             return;
         }
         let root = self
@@ -514,7 +563,10 @@ impl Browser {
         ) {
             Ok(resolved) => resolved,
             Err(error) => {
-                self.makers.notice = Some(error);
+                self.makers.notice = {
+                    self.makers.notice_is_resolution_failure = true;
+                    Some(error)
+                };
                 return;
             }
         };
@@ -531,7 +583,10 @@ impl Browser {
         let plan = scriptcast_ui::detached::CommandPlan::new(&spec);
         match scriptcast_ui::detached::launch(&root, kind.preset(), vec![plan], None) {
             Ok((path, _)) => {
-                self.makers.notice = None;
+                self.makers.notice = {
+                    self.makers.notice_is_resolution_failure = false;
+                    None
+                };
                 self.makers.progress = "Running".into();
                 self.makers.job = Some(ToolRun {
                     kind,
@@ -539,7 +594,12 @@ impl Browser {
                     cancelled: false,
                 });
             }
-            Err(error) => self.makers.notice = Some(error),
+            Err(error) => {
+                self.makers.notice = {
+                    self.makers.notice_is_resolution_failure = false;
+                    Some(error)
+                }
+            }
         }
     }
 
@@ -555,8 +615,14 @@ impl Browser {
                 self.cancel_phase_m();
             }
         }
-        if let Some(notice) = &self.makers.notice {
+        let missing_tools = self.makers.notice.clone();
+        if let Some(notice) = &missing_tools {
             ui.label(t::text(notice, t::CAPTION, t::STATUS_FAILED));
+            if self.makers.notice_is_resolution_failure
+                && ui.button("Install scriptCast tools…").clicked()
+            {
+                self.open_installer();
+            }
         }
     }
 
@@ -807,7 +873,10 @@ impl Browser {
     fn begin_transcribe(&mut self) {
         let source = self.makers.source.trim().to_owned();
         if source.is_empty() {
-            self.makers.notice = Some("Choose a source file.".into());
+            self.makers.notice = {
+                self.makers.notice_is_resolution_failure = false;
+                Some("Choose a source file.".into())
+            };
             return;
         }
         let path = PathBuf::from(&source);
@@ -815,7 +884,10 @@ impl Browser {
             && let Some(cached) = self.makers.words_cache.get(&key).cloned()
         {
             self.makers.words = Some(cached);
-            self.makers.notice = None;
+            self.makers.notice = {
+                self.makers.notice_is_resolution_failure = false;
+                None
+            };
             return;
         }
         self.launch_tool(ToolKind::Words, clip_words_invocation(&source));
@@ -946,7 +1018,10 @@ impl Browser {
         if find {
             let source = self.makers.ref_source.trim().to_owned();
             if source.is_empty() {
-                self.makers.notice = Some("Choose a recording.".into());
+                self.makers.notice = {
+                    self.makers.notice_is_resolution_failure = false;
+                    Some("Choose a recording.".into())
+                };
             } else {
                 self.launch_tool(
                     ToolKind::Candidates,
@@ -1505,7 +1580,10 @@ impl Browser {
         let speaker_id = self.makers.audition_speaker.clone();
         let people = self.people(|person| person.id == speaker_id);
         let Some(person) = people.into_iter().next() else {
-            self.makers.notice = Some("Choose a speaker.".into());
+            self.makers.notice = {
+                self.makers.notice_is_resolution_failure = false;
+                Some("Choose a speaker.".into())
+            };
             return;
         };
         let temperature = self.speaker_temperature(&speaker_id);
@@ -1584,16 +1662,22 @@ impl Browser {
         let speaker = self.makers.audition_speaker.clone();
         self.assign_voice(&speaker, &audio, text.as_deref());
         if text.is_none() {
-            self.makers.notice = Some(
+            self.makers.notice = {
+                self.makers.notice_is_resolution_failure = false;
+                Some(
                 "No transcript beside the reference. reference_audio changed; reference_text stayed."
                     .into(),
-            );
+            )
+            };
         }
     }
 
     fn assign_voice(&mut self, speaker_id: &str, audio: &str, text: Option<&str>) {
         let Some(report) = self.project.draft.as_mut() else {
-            self.makers.notice = Some("Open project data before assigning a reference.".into());
+            self.makers.notice = {
+                self.makers.notice_is_resolution_failure = false;
+                Some("Open project data before assigning a reference.".into())
+            };
             return;
         };
         let Some(fields) = report
@@ -1603,7 +1687,10 @@ impl Browser {
             .find(|speaker| speaker["id"].as_str() == Some(speaker_id))
             .and_then(|speaker| speaker["fields"].as_object_mut())
         else {
-            self.makers.notice = Some("That speaker is not in the Voices draft.".into());
+            self.makers.notice = {
+                self.makers.notice_is_resolution_failure = false;
+                Some("That speaker is not in the Voices draft.".into())
+            };
             return;
         };
         match text {

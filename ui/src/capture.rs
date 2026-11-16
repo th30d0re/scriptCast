@@ -35,6 +35,7 @@ Options:
   --progress-fixture PATH load a progress JSONL fixture
   --pipeline-fixture PATH load a pipeline JSON fixture
   --quit-alert       show the active-render quit alert
+  --install-sheet STATE  capture installer: idle, running, or failed
   --screenshot PATH  after the UI settles, save the window to PATH as PNG and exit
   --size WxH         inner window size in points (default: 1440x900)
   --inspector MODE   selected, verification, or jobs
@@ -96,6 +97,7 @@ pub struct Cli {
     pub progress_fixture: Option<PathBuf>,
     pub pipeline_fixture: Option<PathBuf>,
     pub quit_alert: bool,
+    pub install_sheet: Option<String>,
     pub episode: Option<PathBuf>,
     pub screenshot: Option<PathBuf>,
     pub size: [f32; 2],
@@ -156,6 +158,7 @@ impl Cli {
             progress_fixture: None,
             pipeline_fixture: None,
             quit_alert: false,
+            install_sheet: None,
             episode: None,
             screenshot: None,
             size: t::WINDOW_SIZE,
@@ -396,6 +399,10 @@ impl Cli {
                 "--stage-plan" => {
                     cli.stage_plan =
                         Some(args.next().ok_or("--stage-plan needs a path")?.into());
+                }
+                "--install-sheet" => {
+                    let state = args.next().ok_or("--install-sheet needs idle, running, or failed")?;
+                    match state.to_string_lossy().as_ref() { "idle" | "running" | "failed" => cli.install_sheet = Some(state.to_string_lossy().into_owned()), _ => return Err("--install-sheet needs idle, running, or failed".into()) }
                 }
                 "--stage-stills" => {
                     cli.stage_stills =

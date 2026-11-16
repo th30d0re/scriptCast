@@ -109,6 +109,8 @@ pub enum ExportSource {
     ProjectVenv,
     Path,
     DevCheckout(PathBuf),
+    /// The app-managed installation. Kept last so development remains easy.
+    Installed,
 }
 #[derive(Clone, Debug)]
 pub struct Resolved {
@@ -127,6 +129,7 @@ impl Resolved {
                 ExportSource::ProjectVenv => "Project virtualenv",
                 ExportSource::Path => "PATH",
                 ExportSource::DevCheckout(_) => "Dev checkout",
+                ExportSource::Installed => "scriptCast install",
             },
             self.program.display(),
             self.pythonpath
@@ -171,6 +174,7 @@ impl ExportCommand {
                 ExportSource::ProjectVenv => "Project virtualenv",
                 ExportSource::Path => "PATH",
                 ExportSource::DevCheckout(_) => "Dev checkout",
+                ExportSource::Installed => "scriptCast install",
             },
             self.program.display()
         )
@@ -350,6 +354,20 @@ pub fn resolve_with_flags(
             return Ok((resolved, skipped));
         }
     }
+    // This deliberately follows the checkout fallback: an app installation is
+    // useful to end users, but must never shadow a local developer checkout.
+    let installed = install_root().join("venv/bin").join(command);
+    if is_executable(&installed)
+        && let Some(resolved) = accept(
+            installed,
+            ExportSource::Installed,
+            vec![],
+            None,
+            &mut skipped,
+        )
+    {
+        return Ok((resolved, skipped));
+    }
     let why = skipped
         .iter()
         .map(|s| s.reason.as_str())
@@ -357,7 +375,7 @@ pub fn resolve_with_flags(
         .join("; ");
     let mut message = format!(
         "{command} unavailable. Checked CLI folder {}, project .venv*/bin, login PATH, \
-         and dev-checkout pyproject.toml ancestors of {}",
+         dev-checkout pyproject.toml ancestors of {}, and scriptCast install",
         cli_dir
             .map(|p| p.display().to_string())
             .unwrap_or_else(|| "unset".into()),
@@ -368,6 +386,18 @@ pub fn resolve_with_flags(
         message.push_str(&why);
     }
     Err(message)
+}
+
+/// The override is intentionally undocumented for normal users; it lets UI
+/// tests model a clean HOME without mutating global process state.
+pub fn install_root() -> PathBuf {
+    env::var_os("SCRIPTCAST_INSTALL_ROOT")
+        .map(PathBuf::from)
+        .or_else(|| {
+            env::var_os("HOME")
+                .map(|home| PathBuf::from(home).join("Library/Application Support/scriptCast"))
+        })
+        .unwrap_or_else(|| PathBuf::from("Library/Application Support/scriptCast"))
 }
 
 pub fn resolve_with(

@@ -3,6 +3,7 @@ mod discrepancy_view;
 mod editing;
 mod find_replace;
 mod inspector;
+mod installer;
 mod jobs;
 mod motion;
 mod phase_j;
@@ -75,6 +76,7 @@ struct RecentEpisode {
 struct Preferences {
     /// Folder with scriptCast commands; None (or empty) uses discovery.
     cli_dir: Option<PathBuf>,
+    installer_dismissed_version: Option<String>,
     last_episode: Option<PathBuf>,
     recent: Vec<RecentEpisode>,
     recent_projects: Vec<crate::project::RecentProject>,
@@ -123,6 +125,7 @@ impl Default for Preferences {
     fn default() -> Self {
         Self {
             cli_dir: None,
+            installer_dismissed_version: None,
             last_episode: None,
             recent: Vec::new(),
             recent_projects: Vec::new(),
@@ -274,6 +277,7 @@ pub struct Browser {
     find: find_replace::FindReplace,
     table_cache: table::TextCache,
     jobs: jobs::Jobs,
+    installer: installer::Installer,
     export_command: Option<Result<ExportCommand, String>>,
     live_task: Option<DawTask>,
     logic_task: Option<DawTask>,
@@ -381,6 +385,9 @@ struct SelectedMedia {
     duration: Option<Duration>,
 }
 impl Browser {
+    pub(crate) fn open_installer(&mut self) {
+        self.installer.open = true;
+    }
     fn new(cc: &eframe::CreationContext<'_>, cli: &capture::Cli) -> Self {
         let mut preferences = if cli.effective_fresh() {
             Preferences::default()
@@ -442,6 +449,12 @@ impl Browser {
             pending_review: cli.review.is_some(),
             ..Self::default()
         };
+        if let Some(state) = cli.install_sheet.as_deref() {
+            app.installer.force(state);
+        }
+        app.installer.dismissed = app.preferences.installer_dismissed_version.as_deref()
+            == Some(env!("CARGO_PKG_VERSION"));
+        app.installer.start_detection();
         app.apply_capture_cli(&cc.egui_ctx, cli, true);
         app
     }
@@ -585,6 +598,7 @@ impl Browser {
         self.poll_review_save();
         self.poll_daw();
         self.poll_audio(&ctx);
+        self.installer.poll(&ctx);
         if let Some(Err(error)) = self.project.media.as_mut() {
             *error = stable_tool_text(error);
         }
@@ -595,6 +609,7 @@ impl Browser {
             .map(|error| stable_tool_text(error))
             .collect();
         self.show(ui);
+        self.installer.show(ui.ctx());
     }
     fn open(&mut self, path: PathBuf, ctx: &egui::Context) {
         self.project.picker = false;
@@ -2492,7 +2507,10 @@ impl Browser {
     /// AI sidebar (R7) on the left, the rest of the app beside it.
     fn show(&mut self, ui: &mut Ui) {
         if ui.ctx().input_mut(|i| {
-            i.consume_key(egui::Modifiers::COMMAND | egui::Modifiers::SHIFT, egui::Key::A)
+            i.consume_key(
+                egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
+                egui::Key::A,
+            )
         }) {
             self.ai.expanded = !self.ai.expanded;
         }
@@ -2611,10 +2629,8 @@ impl Browser {
                 .or_else(|| self.stage_error.as_ref().map(|_| 180.0));
             let (review, stage_rect) = match stage_width {
                 Some(width) if review.width() > width + 320.0 => {
-                    let stage = Rect::from_min_max(
-                        pos2(review.right() - width, review.top()),
-                        review.max,
-                    );
+                    let stage =
+                        Rect::from_min_max(pos2(review.right() - width, review.top()), review.max);
                     (
                         Rect::from_min_max(review.min, pos2(stage.left(), review.bottom())),
                         Some(stage),
@@ -2965,7 +2981,9 @@ impl Browser {
                     t::BG_SURFACE,
                 );
                 if let Some(error) = self.stage_error.clone() {
-                    stage_ui.label(t::text("Stage stills", t::BODY, t::TEXT_PRIMARY).font(t::bold(t::BODY)));
+                    stage_ui.label(
+                        t::text("Stage stills", t::BODY, t::TEXT_PRIMARY).font(t::bold(t::BODY)),
+                    );
                     stage_ui.label(t::text(error, t::SECONDARY, t::STATUS_FAILED));
                 } else {
                     let selected_turn_id = self.selected.and_then(|idx| {
@@ -3040,15 +3058,21 @@ impl eframe::App for Browser {
         self.poll_review_save();
         self.poll_daw();
         self.poll_audio(ctx);
+        self.installer.poll(ctx);
         self.capture_logic(ctx);
     }
     fn ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
         self.show(ui);
+        self.installer.show(ui.ctx());
         self.running_capture(ui.ctx());
         self.capture_settle(ui.ctx());
     }
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         if self.persist {
+            if self.installer.dismissed {
+                self.preferences.installer_dismissed_version =
+                    Some(env!("CARGO_PKG_VERSION").into());
+            }
             eframe::set_value(storage, STORAGE_KEY, &self.preferences);
         }
     }

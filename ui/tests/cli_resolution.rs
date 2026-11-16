@@ -43,6 +43,23 @@ fn four_step_resolution_uses_first_venv_with_command() {
     assert_eq!(result.prefix, ["-m", "scriptcast.__main__"]);
     assert_eq!(result.path, login);
 }
+
+#[test]
+fn installed_tools_are_last_and_can_use_a_test_install_root() {
+    let t = Scratch::new();
+    let installed = t.exe("install/venv/bin/scriptcast", "exit 0");
+    // `resolve_with_flags` reads SCRIPTCAST_INSTALL_ROOT. The override is a
+    // test-only escape hatch documented by `cli::install_root`.
+    unsafe {
+        std::env::set_var("SCRIPTCAST_INSTALL_ROOT", t.0.join("install"));
+    }
+    let result = resolve_with("scriptcast", None, None, OsStr::new(""), None).unwrap();
+    unsafe {
+        std::env::remove_var("SCRIPTCAST_INSTALL_ROOT");
+    }
+    assert_eq!(result.program, installed);
+    assert_eq!(result.source, ExportSource::Installed);
+}
 #[test]
 fn dev_interpreter_skips_missing_dependencies() {
     let t = Scratch::new();
