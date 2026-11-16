@@ -354,9 +354,12 @@ impl Browser {
             right.spinner();
             right.label(t::text("Loading project…", t::BODY, t::TEXT_MUTED));
         }
+        let mut install_tools = false;
         for error in &self.project.error {
             right.label(t::text(error, t::CAPTION, t::STATUS_FAILED));
+            install_tools |= right.button("Install scriptCast tools…").clicked();
         }
+        if install_tools { self.open_installer(); }
         let summary_h = t::PROJECT_ROW_HEIGHT * 3.0;
         let table_h = (right.available_height() - summary_h).max(t::PROJECT_ROW_HEIGHT);
         egui::ScrollArea::vertical()
@@ -898,9 +901,12 @@ impl Browser {
         );
         {
             let ui = &mut content_ui;
+            let mut install_tools = false;
             for message in &self.project.error {
                 ui.colored_label(t::STATUS_FAILED, message);
+                install_tools |= ui.button("Install scriptCast tools…").clicked();
             }
+            if install_tools { self.open_installer(); }
             if self.project.stale && ui.button("Reload from disk (discards drafts)").clicked() {
                 reload = true;
             }
