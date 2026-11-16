@@ -7,12 +7,15 @@ type Box = {x: number; y: number; w: number; h: number};
 type Props = {layout: ArchLayout; box: Box; progress: number};
 
 const stagger = (progress: number, start: number, span: number) => Math.max(0, Math.min(1, (progress - start) / span));
-const arrowPoints = (points: readonly [number, number][]) => {
+// The adapter uses these same wing/depth values when reserving label clearance.
+const chevronGeometry = (points: readonly [number, number][]) => {
   const end = points[points.length - 1], previous = points[points.length - 2];
   const length = Math.hypot(end[0] - previous[0], end[1] - previous[1]) || 1;
   const ux = (end[0] - previous[0]) / length, uy = (end[1] - previous[1]) / length;
   const wing = 8, depth = 13;
-  return `${end[0] - ux * depth - uy * wing},${end[1] - uy * depth + ux * wing} ${end[0]},${end[1]} ${end[0] - ux * depth + uy * wing},${end[1] - uy * depth - ux * wing}`;
+  const vertices: [number, number][] = [[end[0] - ux * depth - uy * wing, end[1] - uy * depth + ux * wing], end, [end[0] - ux * depth + uy * wing, end[1] - uy * depth - ux * wing]];
+  const xs = vertices.map(([vertexX]) => vertexX), ys = vertices.map(([, vertexY]) => vertexY);
+  return {points: vertices.map(([vertexX, vertexY]) => `${vertexX},${vertexY}`).join(' '), box: {x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys)}};
 };
 
 /** Draws Archify's checked routing data in the Stage kit's visual language. */
@@ -47,9 +50,10 @@ export function ArchDiagram({layout, box, progress}: Props) {
       const p = reveal(index, layout.edges.length, edgeProgress);
       const lineProgress = Math.min(1, p / .85);
       const finish = stagger(p, .85, .15);
+      const chevron = chevronGeometry(edge.points);
       return <React.Fragment key={edge.id}>
         <DrawLine points={edge.points} end="none" progress={lineProgress} strokeToken="color/line/wire" glowToken="color/fill/gold" seed={index + 301}/>
-        {finish > 0 && <svg style={{position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none'}} width={sourceW} height={sourceH}><polyline points={arrowPoints(edge.points)} fill="none" stroke={color('color/line/wire')} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity={finish}/></svg>}
+        {finish > 0 && <svg style={{position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none'}} width={sourceW} height={sourceH}><polyline points={chevron.points} data-chevron-bounds={`${chevron.box.x},${chevron.box.y},${chevron.box.w},${chevron.box.h}`} fill="none" stroke={color('color/line/wire')} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity={finish}/></svg>}
         {edge.label && edge.labelBox && edge.labelAt && finish > 0 && (() => {
           const size = edge.labelSize ?? 8;
           const [anchorX, baselineY] = edge.labelAt;
