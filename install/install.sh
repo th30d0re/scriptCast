@@ -75,11 +75,16 @@ SOURCE="$WHEEL"
 if [ -z "$SOURCE" ]; then
   [ -n "$APP_VERSION" ] || fail E_NETWORK "--app-version is required unless --wheel is supplied"
   API="https://api.github.com/repos/th30d0re/scriptCast/releases/tags/ui-v$APP_VERSION"
-  SOURCE="$("$PIP" -c 'import json,sys,urllib.request
-try:
- d=json.load(urllib.request.urlopen(sys.argv[1]))
- print(next(a["browser_download_url"] for a in d["assets"] if a["name"].endswith(".whl")))
-except Exception as e: print(e,file=sys.stderr); raise SystemExit(1)' "$API" 2>>"$LOG")" || fail E_NETWORK "could not find release wheel"
+  # GitHub can lag on a just-published release or rate-limit briefly: try 4 times (waits 2, 4, 8 s).
+  SOURCE="$("$PIP" -c 'import json,sys,time,urllib.request
+for attempt in range(4):
+ try:
+  d=json.load(urllib.request.urlopen(sys.argv[1], timeout=30))
+  print(next(a["browser_download_url"] for a in d["assets"] if a["name"].endswith(".whl"))); break
+ except Exception as e:
+  print(f"wheel lookup attempt {attempt+1}/4: {e}",file=sys.stderr)
+  if attempt==3: raise SystemExit(1)
+  time.sleep(2**(attempt+1))' "$API" 2>>"$LOG")" || fail E_NETWORK "could not find the release wheel for ui-v$APP_VERSION (see install.log)"
 fi
 if [ -n "$UV" ]; then run_logged uv pip install --python "$PIP" "$SOURCE" mlx-whisper || fail E_PIP "package installation failed"; else run_logged "$PIP" -m pip install "$SOURCE" mlx-whisper || fail E_PIP "package installation failed"; fi
 if [ "$WITH_OMNIVOICE" -eq 1 ]; then run_logged "$PYTHON" -m venv "$ROOT/venv-omnivoice" || fail E_VENV "could not create OmniVoice venv"; run_logged "$ROOT/venv-omnivoice/bin/python" -m pip install torch==2.8.0 torchaudio==2.8.0 omnivoice || fail E_PIP "OmniVoice installation failed"; fi
