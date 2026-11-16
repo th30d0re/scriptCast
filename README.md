@@ -66,6 +66,16 @@ Read the full architectural paper in [docs/biological-diffusion-layer.md](docs/b
 
 The native macOS app is `scriptcast-ui`, a Rust window. It opens a project, lays every turn on a 60 Hz timeline and waveform mesh, previews synchronized silent video shots on the playhead, plays the rendered audio, records live human takes, and edits voices, clips, and pronunciations. Synthesis runs through the project tools.
 
+<p align="center">
+  <a href="assets/readme/app-tour.mp4"><img src="assets/readme/app-tour.gif" alt="Tour of scriptcast-ui on a 99-turn episode: the selected turn, verification, find, the turn menu, voices, and settings" width="100%"></a>
+</p>
+
+A tour of a real 99-turn, 17-minute episode. Click it for the video.
+
+![A 17-minute episode open in scriptcast-ui: waveform timeline, segment markers, and the selected turn](assets/readme/app-1.png)
+
+![The verification inspector for a selected turn](assets/readme/app-3.png)
+
 ![Episode workspace: a timeline of speaker turns, a table with verification, and the selected turn](ui/tests/snapshots/selected_turn.png)
 
 The episode window. Turns sit on a timeline and in a table. Verification is per turn, and the side panel is the turn you have selected.
@@ -86,6 +96,10 @@ cargo build --release --manifest-path ui/Cargo.toml
 ## Video pipeline
 
 Every visual target in scriptCast locks directly to `episode_manifest.json` (`turns[].start_ms` and `turns[].end_ms`), eliminating audio-video clock drift across edits:
+
+<p align="center">
+  <a href="assets/readme/video-kit.mp4"><img src="assets/readme/video-kit.gif" alt="Four Remotion stage-kit components: a definition card, a stick figure, a sorting field, and a question header" width="80%"></a>
+</p>
 
 - **Shot specifications (`scriptcast-shotspec`):** Resolves Markdown shot lists, URL/card citations, and optional manuscript references (`--book`, `--repo`) against script turn order into exact manifest timestamps.
 - **Programmatic Remotion cards & vertical video (`scriptcast-video`):** Emits a typed JSON timeline (`video/src/timeline/timeline.schema.json`) and renders data-driven cards, manifest-cached Quiver SVG artwork (`scriptcast-video svg`), and archival video excerpts with runtime safe-zone overflow guards at `1080×1920` (Shorts), `1920×1080` (YouTube), or `3840×2160` (YouTube 4K). See [docs/timeline.md](docs/timeline.md).
