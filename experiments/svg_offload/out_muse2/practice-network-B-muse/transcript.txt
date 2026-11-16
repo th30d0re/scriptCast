@@ -1,0 +1,18 @@
+Drawn and verified. The practice-network asset is now inline in [SenseThree.tsx](/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/practice-network-B-muse/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.tsx:58), inside the scene's 1240 × 410 layout box.
+
+What was drawn:
+
+- **Network** (gated on `t9Practices`): five unlabelled rounded nodes (`150 × 64`, `rx=12`, opaque `color/bg/field` fill so wires disappear beneath them, small hub dot at each centre), wired centre-to-centre with six edges that dash-trace in over 600 ms via `pathLength`/`strokeDashoffset`. Nodes stagger in at 90 ms intervals, scaling from their centres. Wires paint first, nodes after.
+- **Meter** (gated on `t9Unequal`): two gold bars in graticule tracks over a hairline baseline, filling to 172 vs 54 (rendered ratio ≈ 3.2 : 1), labelled `category A` / `category B`, with an `illustrative` pill and a dashed mid-gridline. The `unit: a system` tag follows at `t9Categories`.
+- All strokes and fills use `color('color/...')` design tokens; geometry is exported as `SENSE3_NETWORK` / `SENSE3_METER` for the scene's check tooling.
+
+Verification: a render probe exercising the SenseThree beats (cue gating, wire/node geometry — no crossings, no wire through an unrelated node — opaque node masking, bar inequality, exact definition text) passes before and after the redraw: `PROBE PASS: network 5 nodes / 6 wires, meter bars 172 vs 54`.
+
+One pre-existing finding: the repo-wide `node stage/tools/check_minute_two.mjs` fails in this worktree with a duplicate-React "Invalid hook call" in its snapshot subprocess. That failure is identical on the untouched tree, before any scene assertions run, so it is environmental rather than caused by this change; the probe above runs the same SenseThree assertions with a single React copy.
+
+muse: workspace root: /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/practice-network-B-muse/Architecting_the_operation/video/yt02 (explicit)
+muse: warning: rules file at /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/practice-network-B-muse/AGENTS.md exists, but the workspace is untrusted, so it is skipped for this session; restart with --trust-workspace to load project rules
+muse: Skills: 89 loaded · 1 warning · 17 details hidden
+muse:   `skills_catalog` was trimmed to fit its size limit (32 KB): 62 descriptions compacted, 0 skill ids omitted
+muse:   Run `muse skills list --source all` for full diagnostics.
+muse: Agent delegation: auto unavailable: workspace is untrusted.

@@ -1,0 +1,24 @@
+Done — four 48px term glyphs drawn inline at the `t28Categories` beat of `BiasDefinition`.
+
+**Change** — rewrote `TermGlyph` in [BiasDefinition.tsx](/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/term-glyphs-B-muse/Architecting_the_operation/video/yt02/stage/min3_7/c/BiasDefinition.tsx:38) with hand-authored SVG in one visual language (round caps, 3–3.5px strokes, `viewBox="0 0 48 48"`, 48×48px):
+
+- **bias — tilt + dot:** slanted line (8,31)→(40,15) with a filled dot at centre, in `color('color/fill/gold')`.
+- **prejudice — linked circles:** two overlapping stroked circles (cx 17/31, r 9) joined by a centre dot, in `color('color/text/accent')`.
+- **discrimination — arrow:** shaft + filled arrowhead, in `color('color/marker/race')`.
+- **act — arrow into bar:** shorter arrow ending at a rounded vertical bar, in `color('color/marker/race')`.
+
+Ink now comes from scene design tokens via `color('color/...')` inside the glyph itself, replacing the previous `currentColor`. Gating is unchanged and cue-driven: the three term glyphs ride their term cards (`ms >= cue.three`, opacity `termsP`) and the act glyph rides the act beat (`ms >= cue.act`), so all four are on screen together with the GROUP CATEGORY label at `t28Categories`.
+
+**Verification**
+
+- Typecheck: `tsc --noEmit -p stage/tsconfig.json` passes (exit 0).
+- Render probe (scene rendered at `t28Categories` + 700 ms): exactly 4 `<svg width="48" viewBox="0 0 48 48">` glyphs present, token colours resolve to gold `rgba(224,163,60,1)`, accent `rgba(224,138,60,1)`, and race `rgba(224,82,82,1)`; GROUP CATEGORY label present.
+
+One caveat: the full `check_min3_7_c` suite fails in this worktree with a React `useContext` dispatcher error, but it fails identically on the unmodified tree (verified via stash), so it is a pre-existing environment issue, not caused by this edit.
+
+muse: workspace root: /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/term-glyphs-B-muse/Architecting_the_operation/video/yt02 (explicit)
+muse: warning: rules file at /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/term-glyphs-B-muse/AGENTS.md exists, but the workspace is untrusted, so it is skipped for this session; restart with --trust-workspace to load project rules
+muse: Skills: 89 loaded · 1 warning · 17 details hidden
+muse:   `skills_catalog` was trimmed to fit its size limit (32 KB): 62 descriptions compacted, 0 skill ids omitted
+muse:   Run `muse skills list --source all` for full diagnostics.
+muse: Agent delegation: auto unavailable: workspace is untrusted.

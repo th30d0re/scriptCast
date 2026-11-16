@@ -1,0 +1,2669 @@
+{
+  "dry_run": false,
+  "results": [
+    {
+      "threshold": 0.1,
+      "mode": "tier1_only",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.8571428571428571,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 162.47981925650188,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 173.74520795419812,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 147.01054099714383,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 148.21650000521913,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 160.85329098859802,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 151.4102090150118,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 154.50695803156123,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 136.31891598924994,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 175.85787503048778,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.59579196898267,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 188.17416694946587,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.70741598540917,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.36324998782948,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 163.21891598636284,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.84524998627603,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 170.3729999717325,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.1,
+      "mode": "two_tier",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.14285714285714285,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.4,
+      "latency_ms_mean": 11511.02763620438,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 33498.56133299181,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 27506.801999988966,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 26551.94987502182,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 27999.299542047083,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "fail",
+          "tier2_ran": true,
+          "latency_ms": 30769.06025002245,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 24903.5848340136,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 137.83962500747293,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 159.88383296644315,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.38024999620393,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 158.1268340232782,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.3349579749629,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.96266700373963,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 154.89237499423325,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 169.32129202177748,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.4148749918677,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.2,
+      "mode": "tier1_only",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.8571428571428571,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 152.2673166512201,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 139.67662496725097,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 142.24149996880442,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 145.48637496773154,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 144.73979198373854,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 135.5592500185594,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 136.36204198701307,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 128.97970795165747,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.75395798543468,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 158.36904203752056,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.57041598996148,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.9936659806408,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 171.0004999767989,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 176.44499999005347,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.27641695877537,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 152.55545900436118,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.2,
+      "mode": "two_tier",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.2857142857142857,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.4,
+      "latency_ms_mean": 10868.343652730497,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "fail",
+          "tier2_ran": true,
+          "latency_ms": 27268.455207988154,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 26835.801249952056,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 27227.79116698075,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 28221.950291015673,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "fail",
+          "tier2_ran": true,
+          "latency_ms": 26291.840167017654,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 25715.643875009846,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 139.52037499984726,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 174.88149995915592,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.7527920063585,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 170.49183300696313,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 161.01974999764934,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.00850003911182,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.47724995668977,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 166.87837499193847,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 163.64245803561062,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.3,
+      "mode": "tier1_only",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.7142857142857143,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 155.561650012775,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 135.7837080140598,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 142.1745420084335,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 140.52591699874029,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 140.5729579855688,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 147.79712504241616,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 147.90004200767726,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 144.15000000735745,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 171.21270904317498,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 174.3179580080323,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.6820000023581,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 158.20133301895112,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.5640830071643,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 159.45304103661329,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 171.50420899270102,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.58512501837686,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.3,
+      "mode": "two_tier",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.2857142857142857,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.3333333333333333,
+      "latency_ms_mean": 9405.010811204556,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "fail",
+          "tier2_ran": true,
+          "latency_ms": 26978.315541986376,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 26858.63412503386,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 26947.42658396717,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "fail",
+          "tier2_ran": true,
+          "latency_ms": 33756.78920804057,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 150.5090839928016,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": true,
+          "latency_ms": 24897.01379201142,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 166.95333400275558,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 183.283583028242,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.37550001218915,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 169.47512497426942,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 161.0717079602182,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.3275830275379,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.5788750029169,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.9828750216402,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 155.42525000637397,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.4,
+      "mode": "tier1_only",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.14285714285714285,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 146.23521386723345,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "fail",
+          "tier2_ran": false,
+          "latency_ms": 132.51345901517197,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 132.51495797885582,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 128.31974995788187,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 130.74937497731298,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 137.14808301301673,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 128.24408296728507,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 131.08820799971,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 158.68541703093797,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.7303330092691,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 153.50329200737178,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.30404200218618,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 159.14454101584852,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 159.22716696513817,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 161.30925004836172,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.04625002015382,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.4,
+      "mode": "two_tier",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.14285714285714285,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.06666666666666667,
+      "latency_ms_mean": 1944.5716055925004,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "fail",
+          "tier2_ran": true,
+          "latency_ms": 27021.92687499337,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 140.34629199886695,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 141.96274999994785,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 133.1358330207877,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 131.6726669901982,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 136.4642500411719,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 133.95162497181445,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.62645899830386,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 163.7623329879716,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 170.55558296851814,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 169.5792909595184,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 169.87704194616526,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 163.49824995268136,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.75162502238527,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.46320903580636,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.5,
+      "mode": "tier1_only",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 151.54670006595552,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 134.54070797888562,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 141.95166702847928,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 134.82954201754183,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 135.1683340035379,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 135.08874998660758,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 135.0952920038253,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 136.792958015576,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 171.62583296885714,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 169.34166697319597,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 166.00429103709757,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.851749998983,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 158.795082999859,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.29399997973815,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.1589170168154,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 170.66170898033306,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.5,
+      "mode": "two_tier",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 153.93243907019496,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 141.88783301506191,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 134.90345899481326,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 129.69579204218462,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 131.488083046861,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 150.66637500422075,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 148.52062502177432,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 142.57525000721216,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.95116696832702,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 161.76179196918383,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.3042500577867,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.57699997490272,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 166.70516697922722,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 169.5359589648433,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.7705419929698,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.64329201355577,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.6,
+      "mode": "tier1_only",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 151.33564173787212,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 136.3681250368245,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 130.6381250033155,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 133.879708009772,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 133.04254203103483,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 135.0783749949187,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 139.29258403368294,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 138.16550001502037,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.5909159714356,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 174.8147920006886,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.9091249825433,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 163.29787496943027,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 163.52041700156406,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.95716699864715,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 153.64004101138562,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 166.83933400781825,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.6,
+      "mode": "two_tier",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 149.75549173929417,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 137.17800000449643,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 134.54229198396206,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 134.67187504284084,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 133.98662500549108,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 133.78612499218434,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 144.38516699010506,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 133.27958300942555,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.87604203494266,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.1693749697879,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 159.62829202180728,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 161.13129199948162,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.25479204999283,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.99083301378414,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.54483299376443,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 158.9072499773465,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.7,
+      "mode": "tier1_only",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 147.1113611284333,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 129.87037497805431,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 129.01091697858647,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 141.78700000047684,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 126.60362501628697,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 136.2206669873558,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 138.2330830092542,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 137.11591699393466,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 157.43958298116922,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 159.93595798499882,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.25970799010247,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 153.8876669947058,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 166.20779200457036,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.99399997619912,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.10320802079514,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 157.0009170100093,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.7,
+      "mode": "two_tier",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 154.90698606396714,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 132.41212500724941,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 132.53649999387562,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 138.06045800447464,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 143.6188340303488,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 135.20904100732878,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 141.55566599220037,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 130.77912497101352,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 169.84937503002584,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.9239579825662,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 170.0536249554716,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 188.5450420086272,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 174.95766701176763,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 175.26799999177456,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 160.74500000104308,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.09037497173995,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.8,
+      "mode": "tier1_only",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 149.55162779660895,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 139.5523750106804,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 136.16766699124128,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 138.20545800263062,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 125.60245802160352,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 126.58237502910197,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 135.21012500859797,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 139.39799997024238,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.6496249595657,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 155.4567499551922,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.0562919676304,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.29237500112504,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.46675004065037,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 162.55191701930016,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 163.69479201966897,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 158.38745795190334,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.8,
+      "mode": "two_tier",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 160.34956933775297,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.4171250197105,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 210.2819589781575,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 139.23616701504216,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 139.30758304195479,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 141.61466603400186,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 141.64087502285838,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 135.84916695253924,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 169.32987497420982,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.2839580308646,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.36462501669303,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.9297079895623,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.0962910023518,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.85570798674598,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.10745796747506,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.92837503412738,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "threshold": 0.9,
+      "mode": "tier1_only",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 151.3145555354034,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 138.80312500987202,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 133.47791699925438,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 134.28087497595698,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 138.71870801085606,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 138.06999998632818,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 138.51645804243162,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 127.70533299772069,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.86745898146182,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.89675000775605,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 173.22495800908655,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 168.67316601565108,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.20745803043246,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.22587498184294,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 154.19258398469537,
+          "status": "s1_only"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 164.85766699770465,
+          "status": "s1_only"
+        }
+      ]
+    },
+    {
+      "threshold": 0.9,
+      "mode": "two_tier",
+      "n": 15,
+      "bad_n": 7,
+      "good_n": 8,
+      "recall": 0.0,
+      "false_fail": 0.0,
+      "tier2_call_rate": 0.0,
+      "latency_ms_mean": 153.79228612873703,
+      "rows": [
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/debate-funnel-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-13",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 129.24304197076708,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-agy-gemini-flash-low.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 132.30883301002905,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 135.06595802027732,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/group-boundary-codex-gpt-terra.png",
+          "label": "bad",
+          "shot": "S00-19",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 134.53991600545123,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 135.65866695716977,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/compressed-bus-muse-rerun.png",
+          "label": "bad",
+          "shot": "S00-26",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 141.44333300646394,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/ov/review/e3_stills/term-glyphs-codex-gpt-luna.png",
+          "label": "bad",
+          "shot": "S00-28",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 137.40712497383356,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 156.2252919538878,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_compact.png",
+          "label": "good",
+          "shot": "dash_1486_compact",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 166.96283302735537,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 166.56058299122378,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_interference_expanded.png",
+          "label": "good",
+          "shot": "dash_1486_interference_expanded",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 167.00670903082937,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 165.34416697686538,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_1486_settings.png",
+          "label": "good",
+          "shot": "dash_1486_settings",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 176.94670899072662,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/logs/stage_dashboard/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 178.9896250120364,
+          "status": "ok"
+        },
+        {
+          "still_path": "/Users/emmanuel/Documents/Theory/TheOriginalPower/Architecting_the_operation/video/yt02/stage/handoff/png/dash_world_boot.png",
+          "label": "good",
+          "shot": "dash_world_boot",
+          "verdict": "pass",
+          "tier2_ran": false,
+          "latency_ms": 183.1815000041388,
+          "status": "ok"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "BiasDefinition_t28Categories.png",
+      "status": "contract_error",
+      "raw": "{\"verdict\":\"fail\",\"defects\":[{\"category\":\"Content\",\"element_id\":null,\"evidence\":\"Additional text '\u221e \u2192 |' has been added below 'GROUP CATEGORY' in image 2, which is not present in image 1.\",\"severity\":\"medium\",\"region\":[470,560,560,600]}]}"
+    }
+  ]
+}

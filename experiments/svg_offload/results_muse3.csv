@@ -1,0 +1,3 @@
+cue,scene,shot,file,cue_id,condition,worker,agent,model,generator,brief,worker_tokens,tsx_typecheck_pass,render_pass,svg_node_count,svg_bytes,status,critic_verdict
+pulse-network,InstalledRacialPrior,S00-33,min3_7/d/InstalledRacialPrior.tsx,t33Institutions,B,muse,muse,muse,,/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse3/pulse-network-B-muse/brief.md,,pass,skip,29,5517,ok,PENDING
+dual-rails,ExplicitImplicitChannels,S00-39,min7_12/e/ExplicitImplicitChannels.tsx,t39Implicit,B,muse,muse,muse,,/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse3/dual-rails-B-muse/brief.md,,pass,skip,18,3134,ok,PENDING

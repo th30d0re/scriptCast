@@ -1,0 +1,10 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "ExplicitImplicitChannels_t39Implicit.png",
+      "status": "contract_error",
+      "raw": "{\"verdict\":\"fail\",\"defects\":[{\"category\":\"Layout\",\"element_id\":null,\"evidence\":\"The dashed line extending from the 'CONSCIOUSLY ENDORSED JUDGMENT' box in the Upper Channel is missing in the candidate image, and the dashed line extending from the 'AUTOMATIC MENTAL ASSOCIATION' area in the Lower Channel is present but appears to be a rendering artifact or incomplete compared to the reference. Specifically, the horizontal dashed line on the right side of the Upper Channel box is absent in image 2.\", \"severity\":\"medium\",\"region\":[530,380,600,400]}]}"
+    }
+  ]
+}

@@ -95,7 +95,7 @@ Today this means hand-editing YAML/TOML.
 | N4 | **Craft cue sheet** export | `scriptcast-craft` |
 | N5 | **Loudness meter**: integrated, short-term and momentary LUFS plus true peak, for the episode and per turn. Turns far from the episode level are flagged; the target defaults to −16 LUFS | SoundCraft `soundcraft-dsp` `LoudnessMeter` (ITU-R BS.1770) |
 | N6 | **Per-speaker effects chain**: Channel Strip (trim → gate → compressor → 3-band EQ + HPF), De-Esser, optional light Room Reverb and EQ 7-band. Archive clips get Gate/EQ matching. Stored in the project (`fx.yaml`, or an `fx` field per speaker), with a bypass A/B. This is the only effects stack | SoundCraft `soundcraft-dsp` plugins |
-| N7 | **Master chain**: Maximizer to the loudness target, Dither, DC removal, applied to the stitched episode | SoundCraft `soundcraft-dsp` |
+| N7 | **Main chain**: Maximizer to the loudness target, Dither, DC removal, applied to the stitched episode | SoundCraft `soundcraft-dsp` |
 | N8 | **`scriptcast-fx` CLI** (Rust, built from the same DSP code). Stitch and Mix call it so exported audio matches what the app plays. Live/Logic sessions keep the dry audio. J9's chunker and K4's instruct engine are separate Rust binaries the tools call, on this same pattern | new Rust binary in `ui/` workspace |
 
 **Phase N prerequisites (from the SoundCraft review, 2026-10-17):**

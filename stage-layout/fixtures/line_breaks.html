@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>line breaks</title>
+<style>
+@font-face { font-family: "Plex TTF"; src: url("IBMPlexSans-Regular.ttf"); font-weight: 400; }
+@font-face { font-family: "Plex WOFF"; src: url("ibm-plex-sans-latin-400-normal.woff"); font-weight: 400; }
+@font-face { font-family: "Plex Mono WOFF"; src: url("ibm-plex-mono-latin-500-normal.woff"); font-weight: 500; }
+body { margin: 0; }
+</style>
+<pre id="out"></pre>
+<script>
+const TEXT = "the tendency to favor one’s own group and its members when dividing resources, judging conduct, and explaining behavior";
+function lines(family, size, weight, lh, width, text) {
+  const el = document.createElement("div");
+  el.style.cssText = `position:absolute;left:0;top:0;width:${width}px;font-family:${family};font-weight:${weight};font-size:${size}px;line-height:${lh};letter-spacing:0;white-space:normal;padding:0;margin:0;border:0`;
+  el.textContent = text;
+  document.body.appendChild(el);
+  const node = el.firstChild;
+  const found = [];
+  let start = 0;
+  let top = null;
+  for (let i = 0; i < text.length; i++) {
+    const range = document.createRange();
+    range.setStart(node, i);
+    range.setEnd(node, i + 1);
+    const rect = range.getClientRects()[0];
+    if (!rect) continue;
+    if (top !== null && rect.top - top > 2) {
+      found.push(text.slice(start, i).replace(/\s+$/, ""));
+      start = i;
+    }
+    top = rect.top;
+  }
+  found.push(text.slice(start).replace(/\s+$/, ""));
+  el.remove();
+  return found;
+}
+document.fonts.ready.then(() => {
+  const out = {
+    ttf: lines('"Plex TTF"', 28, 400, 1.34, 574, TEXT),
+    woff: lines('"Plex WOFF"', 28, 400, 1.34, 574, TEXT),
+    label: lines('"Plex Mono WOFF"', 19, 500, 1.05, 288, "EXPLAINING BEHAVIOR"),
+  };
+  document.getElementById("out").textContent = JSON.stringify(out);
+});
+</script>

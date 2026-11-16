@@ -1,0 +1,262 @@
+diff --git a/Architecting_the_operation/video/yt02/stage/FINDINGS_MINUTE_TWO.md b/Architecting_the_operation/video/yt02/stage/FINDINGS_MINUTE_TWO.md
+index 19739d8..259fb20 100644
+--- a/Architecting_the_operation/video/yt02/stage/FINDINGS_MINUTE_TWO.md
++++ b/Architecting_the_operation/video/yt02/stage/FINDINGS_MINUTE_TWO.md
+@@ -150,13 +150,35 @@ quoted. "The Original Power, Chapter 2" names the book and the figure's chapter.
+ 
+ ## Antithesis Grep
+ 
++```
++
++## Fix pass 2
++
++Model: Kimi Code CLI. Brief: `BRIEF_MINUTE_TWO_FIX2.md`.
++
++The three definition cards now render fragment text without leading whitespace. Join
++spaces are plain text nodes between inline spans. Figure 2.3 shifts from x=440 to x=240
++during the `t10Displays` flight. Its final margins are 240 px on both sides. Flight
++targets use the same shift, preserving text clearance in the ten sampled hand-off frames.
++
++### Verification tails
++
++```text
++tsc --noEmit: exit 0; no diagnostics
++check_minute_two: PASS: 44 minute-two frames rendered in two fresh processes; all markup hashes match.
++check_minute_two: PASS: 44 cue-derived frames; exact definition spacing, opaque node masking, non-crossing network wires, flight text hand-off, tapered gold outline, scene contracts, hook policy, underscore policy, and interaction-hint policy verified.
++check_first_minute: PASS: 43 first-minute frames rendered in two fresh processes; all markup hashes match.
++check_roadmap_boot: PASS: 17 RoadmapBoot frames rendered in two fresh processes with identical markup; state/effect/reducer/ref hooks trap on invocation.
++check_dashboard: BLOCKED because this fixture lacks review/stage_plan.json, which the unchanged checker loads.
++plan compile: BLOCKED because outputs/YT02v2_ov/episode_manifest.json is absent; existing ov/stage_plan.json remained byte-identical.
++site build: ✓ 276 modules transformed; ✓ built in 2.75s in a fresh /tmp directory.
+ ```
+ $ python3 tools/check_antithesis.py Architecting_the_operation/video/yt02/stage/minutetwo/*.tsx
+ check-antithesis: no banned constructions found.
+ ```
+ 
+-A manual `grep -nE '\b(not|n't|never|but|rather than|instead of|more than just|merely|no
+-longer|only)\b'` over the six `minutetwo/*.tsx` sources and `tools/check_minute_two.*`
++A manual `grep -nE '\b(not|n't|never|but|rather than|instead of|more than just|merely|no <!-- antithesis-ok: quoted lint pattern in verification record -->
++longer|only)\b'` over the six `minutetwo/*.tsx` sources and `tools/check_minute_two.*` <!-- antithesis-ok: quoted lint pattern in verification record -->
+ finds no matches. Every on-screen string is a direct declarative statement or the
+ narration's verbatim question header.
+ 
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/FigureTwoThree.tsx b/Architecting_the_operation/video/yt02/stage/minutetwo/FigureTwoThree.tsx
+index 2e07f0e..c93bcff 100644
+--- a/Architecting_the_operation/video/yt02/stage/minutetwo/FigureTwoThree.tsx
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/FigureTwoThree.tsx
+@@ -21,6 +21,7 @@ export const FIGURE_LAYOUT = {
+   bracket:{startLeft:445, startRight:1075, startTop:340, startBottom:684, finalPad:8},
+   noteY:768,
+ } as const;
++export const FIGURE_CENTERED_X = (1920-FIGURE_LAYOUT.plate.w)/2;
+ 
+ const LAYERS_LEFT = [
+   {main:'1. Individual Prejudice', tail:'', fill:'color/fill/red-wash', fillOp:1},
+@@ -53,6 +54,9 @@ export function FigureTwoThree({segment}:SceneProps) {
+   };
+   const F = FIGURE_LAYOUT;
+   const plateP = enter(ms, cue.t10Figure.at, 700);
++  const plateCenterP = cubicInOut(progress(ms, cue.t10Displays.at, cue.t10Order.at + 600));
++  const plateX = F.plate.x + (FIGURE_CENTERED_X-F.plate.x)*plateCenterP;
++  const plateShift = plateX-F.plate.x;
+   const captionP = enter(ms, cue.t10Figure.at + 150, 500);
+   const dimP = enter(ms, cue.t10Figure.at, 500);
+   const sourceP = enter(ms, cue.t10Chapter.at, 400);
+@@ -72,6 +76,7 @@ export function FigureTwoThree({segment}:SceneProps) {
+     <SceneBorder segment={segment}/>
+     {ms >= cue.t10Figure.at && <>
+       <svg style={{position:'absolute', inset:0}} width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" aria-hidden="true">
++        <g transform={`translate(${plateShift} 0)`}>
+         <rect data-plate="true" x={F.plate.x} y={F.plate.y} width={F.plate.w} height={F.plate.h} stroke={color('color/line/hairline')} strokeWidth={1} pathLength={1} strokeDasharray="1" strokeDashoffset={1-plateP}/>
+         <line x1={F.plate.x+40} y1={F.ruleY} x2={F.plate.x+F.plate.w-40} y2={F.ruleY} stroke={color('color/line/hairline')} strokeWidth={1} opacity={captionP}/>
+         <g data-right-column="true" opacity={.25*dimP}>
+@@ -96,15 +101,16 @@ export function FigureTwoThree({segment}:SceneProps) {
+         {columnP>0 && <path data-column-bracket="true" data-bracket-left={bracketLeft} data-bracket-right={bracketRight} d={`M ${bracketLeft} ${F.bracket.startTop} L ${bracketBottomLeftX} ${bracketBottomY} L ${bracketBottomRightX} ${bracketBottomY} L ${bracketRight} ${F.bracket.startTop} Z`} stroke={color('color/fill/gold')} strokeWidth={3} pathLength={1} strokeDasharray="1" strokeDashoffset={1-bracketP}/>}
+         {traceP>0 && <path data-pyramid-outline="true" d={`M ${F.pyramid.leftX} ${F.pyramid.topY} L ${F.pyramid.apexX} ${F.pyramid.apexY} L ${F.pyramid.rightX} ${F.pyramid.topY} Z`} stroke={color('color/line/hairline-strong')} strokeWidth={2} pathLength={1} strokeDasharray="1" strokeDashoffset={1-traceP}/>}
+         {noteP>0 && <text x={F.leftCenter} y={F.noteY} textAnchor="middle" fontFamily="IBM Plex Sans" fontSize={22} fill={color('color/marker/race')} opacity={noteP}>↑ buried, rarely referenced</text>}
++        </g>
+       </svg>
+-      <div data-caption="true" style={{position:'absolute', left:F.plate.x, width:F.plate.w, top:150, textAlign:'center', font:'500 28px "IBM Plex Mono"', letterSpacing:2, color:color('color/text/primary'), opacity:captionP}}>Figure 2.3 · Inverting the Definitional Hierarchy</div>
+-      {ms >= cue.t10Chapter.at && <div data-source-line="true" style={{position:'absolute', left:F.plate.x, width:F.plate.w, top:188, textAlign:'center', font:'400 20px "IBM Plex Mono"', color:color('color/text/muted'), opacity:sourceP}}>The Original Power, Chapter 2</div>}
++      <div data-caption="true" style={{position:'absolute', left:plateX, width:F.plate.w, top:150, textAlign:'center', font:'500 28px "IBM Plex Mono"', letterSpacing:2, color:color('color/text/primary'), opacity:captionP}}>Figure 2.3 · Inverting the Definitional Hierarchy</div>
++      {ms >= cue.t10Chapter.at && <div data-source-line="true" style={{position:'absolute', left:plateX, width:F.plate.w, top:188, textAlign:'center', font:'400 20px "IBM Plex Mono"', color:color('color/text/muted'), opacity:sourceP}}>The Original Power, Chapter 2</div>}
+       <div data-rail-label="true" style={{position:'absolute', left:RAIL.x, top:RAIL.labelY, font:'400 20px "IBM Plex Mono"', lineHeight:1.4, color:color('color/text/muted'), opacity:labelP}}>
+         {RAIL_LABEL_LINES.map(line => <div key={line}>{line}</div>)}
+       </div>
+       {flights.map(({p, railTextOpacity, layerTextOpacity}, i) => {
+         const w = RAIL.w + (F.landW - RAIL.w)*p + (F.layerWidths[i]-F.landW)*taperP;
+-        const cx = (RAIL.x + RAIL.w/2) + (F.leftCenter - (RAIL.x + RAIL.w/2))*p;
++        const cx = (RAIL.x + RAIL.w/2) + (F.leftCenter + plateShift - (RAIL.x + RAIL.w/2))*p;
+         const y = RAIL.slotY[i] + (F.layerY[i]-RAIL.slotY[i])*p;
+         const h = RAIL.slotH + (F.layerH-RAIL.slotH)*p;
+         const layer = LAYERS_LEFT[i];
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseOne.tsx b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseOne.tsx
+index 6368e7a..30c978c 100644
+--- a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseOne.tsx
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseOne.tsx
+@@ -7,11 +7,11 @@ import {EntryRail, SenseCard, type RailSlotSpec} from './EntryRail';
+ const enter = (ms:number, at:number, duration=460) => cubicOut(progress(ms, at, at + duration));
+ 
+ const PHRASES = [
+-  {cue:'t7Prejudice', text:'individual prejudice'},
+-  {cue:'t7Hostility', text:', hostility,'},
+-  {cue:'t7Discrimination', text:' or discrimination'},
+-  {cue:'t7Person', text:' directed against another person'},
+-  {cue:'t7Race', text:' on the basis of race or ethnicity.'},
++  {cue:'t7Prejudice', text:'individual prejudice', separator:''},
++  {cue:'t7Hostility', text:', hostility,', separator:''},
++  {cue:'t7Discrimination', text:'or discrimination', separator:' '},
++  {cue:'t7Person', text:'directed against another person', separator:' '},
++  {cue:'t7Race', text:'on the basis of race or ethnicity.', separator:' '},
+ ] as const;
+ 
+ const ARROW_LABELS = [
+@@ -50,10 +50,10 @@ export function SenseOne({segment}:SceneProps) {
+     <EntryRail slots={slots} enter={openP}/>
+     <SenseCard title="Sense 1" enter={openP}>
+       <div data-definition="sense-1" style={{position:'absolute', left:40, top:116, width:1240, fontSize:38, lineHeight:1.55}}>
+-        {PHRASES.map(({cue:name, text}) => {
++        {PHRASES.map(({cue:name, text, separator=''}) => {
+           const at = cue[name].at;
+           const p = enter(ms, at, 380);
+-          return ms >= at && <span key={name} data-phrase={name} style={{display:'inline-block', whiteSpace:'pre-wrap', opacity:p, transform:`translateY(${10*(1-p)}px)`}}>{text}</span>;
++          return ms >= at && <React.Fragment key={name}>{separator}<span data-phrase={name} style={{display:'inline', opacity:p, transform:`translateY(${10*(1-p)}px)`}}>{text}</span></React.Fragment>;
+         })}
+       </div>
+       <svg style={{position:'absolute', left:40, top:300}} width="1240" height="410" viewBox="0 0 1240 410" aria-label="One person acting on another">
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.tsx b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.tsx
+index 93da47a..5595124 100644
+--- a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.tsx
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.tsx
+@@ -7,9 +7,9 @@ import {EntryRail, SenseCard, type RailSlotSpec} from './EntryRail';
+ const enter = (ms:number, at:number, duration=460) => cubicOut(progress(ms, at, at + duration));
+ 
+ const PHRASES = [
+-  {cue:'t9Institutional', text:'institutional or systemic practices'},
+-  {cue:'t9Unequal', text:' that produce unequal outcomes'},
+-  {cue:'t9Categories', text:' across racial categories.'},
++  {cue:'t9Institutional', text:'institutional or systemic practices', separator:''},
++  {cue:'t9Unequal', text:'that produce unequal outcomes', separator:' '},
++  {cue:'t9Categories', text:'across racial categories.', separator:' '},
+ ] as const;
+ 
+ // Institution network (left) and outcome meter (right) inside the card's svg
+@@ -47,10 +47,10 @@ export function SenseThree({segment}:SceneProps) {
+     <EntryRail slots={slots} enter={openP}/>
+     <SenseCard title="Sense 3" enter={openP} dashed={1-solidP}>
+       <div data-definition="sense-3" style={{position:'absolute', left:40, top:116, width:1240, fontSize:36, lineHeight:1.5}}>
+-        {PHRASES.map(({cue:name, text}) => {
++        {PHRASES.map(({cue:name, text, separator=''}) => {
+           const at = cue[name].at;
+           const p = enter(ms, at, 380);
+-          return ms >= at && <span key={name} data-phrase={name} style={{display:'inline-block', whiteSpace:'pre-wrap', opacity:p, transform:`translateY(${10*(1-p)}px)`}}>{text}</span>;
++          return ms >= at && <React.Fragment key={name}>{separator}<span data-phrase={name} style={{display:'inline', opacity:p, transform:`translateY(${10*(1-p)}px)`}}>{text}</span></React.Fragment>;
+         })}
+       </div>
+       <svg style={{position:'absolute', left:40, top:300}} width="1240" height="410" viewBox="0 0 1240 410" aria-label="A system of practices and unequal outcomes">
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx
+index 702f174..24492c2 100644
+--- a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx
+@@ -7,11 +7,11 @@ import {EntryRail, SenseCard, type RailSlotSpec} from './EntryRail';
+ const enter = (ms:number, at:number, duration=460) => cubicOut(progress(ms, at, at + duration));
+ 
+ const PHRASES = [
+-  {cue:'t8Ideological', text:'an ideological belief'},
+-  {cue:'t8Doctrine', text:' or doctrine'},
+-  {cue:'t8Biological', text:' holding that built-in biological differences'},
+-  {cue:'t8Groups', text:' among human racial groups'},
+-  {cue:'t8Determine', text:' determine cultural or intellectual achievement.'},
++  {cue:'t8Ideological', text:'an ideological belief', separator:''},
++  {cue:'t8Doctrine', text:'or doctrine', separator:' '},
++  {cue:'t8Biological', text:'holding that built-in biological differences', separator:' '},
++  {cue:'t8Groups', text:'among human racial groups', separator:' '},
++  {cue:'t8Determine', text:'determine cultural or intellectual achievement.', separator:' '},
+ ] as const;
+ 
+ // Doctrine chain diagram inside the card's svg (viewBox 1240 × 410): the claimed chain sits
+@@ -45,10 +45,10 @@ export function SenseTwo({segment}:SceneProps) {
+     <EntryRail slots={slots} enter={openP}/>
+     <SenseCard title="Sense 2" enter={openP}>
+       <div data-definition="sense-2" style={{position:'absolute', left:40, top:116, width:1240, fontSize:36, lineHeight:1.5}}>
+-        {PHRASES.map(({cue:name, text}) => {
++        {PHRASES.map(({cue:name, text, separator=''}) => {
+           const at = cue[name].at;
+           const p = enter(ms, at, 380);
+-          return ms >= at && <span key={name} data-phrase={name} style={{display:'inline-block', whiteSpace:'pre-wrap', opacity:p, transform:`translateY(${10*(1-p)}px)`}}>{text}</span>;
++          return ms >= at && <React.Fragment key={name}>{separator}<span data-phrase={name} style={{display:'inline', opacity:p, transform:`translateY(${10*(1-p)}px)`}}>{text}</span></React.Fragment>;
+         })}
+       </div>
+       <svg style={{position:'absolute', left:40, top:300}} width="1240" height="410" viewBox="0 0 1240 410" aria-label="The doctrine's claimed chain">
+diff --git a/Architecting_the_operation/video/yt02/stage/tools/check_minute_two.tsx b/Architecting_the_operation/video/yt02/stage/tools/check_minute_two.tsx
+index 0088837..d9b5b7e 100644
+--- a/Architecting_the_operation/video/yt02/stage/tools/check_minute_two.tsx
++++ b/Architecting_the_operation/video/yt02/stage/tools/check_minute_two.tsx
+@@ -8,7 +8,7 @@ import {EntryOpen, ENTRY_OPEN_LAYOUT} from '../minutetwo/EntryOpen';
+ import {SenseOne} from '../minutetwo/SenseOne';
+ import {SenseTwo} from '../minutetwo/SenseTwo';
+ import {SenseThree, SENSE3_METER, SENSE3_NETWORK} from '../minutetwo/SenseThree';
+-import {FigureTwoThree, FIGURE_LAYOUT, figureFlightState} from '../minutetwo/FigureTwoThree';
++import {FigureTwoThree, FIGURE_LAYOUT, FIGURE_CENTERED_X, figureFlightState} from '../minutetwo/FigureTwoThree';
+ import {RAIL, CARD} from '../minutetwo/EntryRail';
+ 
+ const plan=JSON.parse(fs.readFileSync(new URL('../ov/stage_plan.json',import.meta.url),'utf8')) as StagePlan;
+@@ -47,6 +47,13 @@ function definitionText(html:string,id:string){
+   assert.ok(match,`missing definition block ${id}`);
+   return match[1].replace(/<[^>]+>/g,'').replaceAll('&amp;','&').replaceAll('&quot;','"').replaceAll('&#x27;',"'").replaceAll('&#39;',"'").replaceAll('&gt;','>').replaceAll('&lt;','<');
+ }
++function assertInlineDefinitionJoins(html:string,id:string){
++  const inner=html.match(new RegExp(`<div data-definition="${id}"[^>]*>([\\s\\S]*?)<\\/div>`))?.[1]??'';
++  for(const match of inner.matchAll(/<span data-phrase="[^"]+"[^>]*>([^<]*)<\/span>/g)){
++    assert.ok(!/^\s/.test(match[1]),`${id} fragment begins with whitespace`);
++  }
++  assert.ok((inner.match(/<\/span> <span data-phrase=/g)??[]).length>=1,`${id} joins are missing plain text-node spaces`);
++}
+ type Box={x:number;y:number;w:number;h:number};
+ const boxesIntersect=(a:Box,b:Box)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+ const samePoint=(a:readonly number[],b:readonly number[])=>a[0]===b[0]&&a[1]===b[1];
+@@ -113,6 +120,7 @@ if(process.env.MINUTE_TWO_SNAPSHOT==='1'){
+   {
+     const lastCue=byKind('SenseOne').find(frame=>frame.kind==='t7Race')!;
+     assert.equal(definitionText(lastCue.html,'sense-1'),'individual prejudice, hostility, or discrimination directed against another person on the basis of race or ethnicity.','SenseOne definition has a missing or doubled space at t7Race+700');
++    assertInlineDefinitionJoins(lastCue.html,'sense-1');
+   }
+ 
+   // Turn 8 · SenseTwo
+@@ -126,6 +134,7 @@ if(process.env.MINUTE_TWO_SNAPSHOT==='1'){
+   {
+     const lastCue=byKind('SenseTwo').find(frame=>frame.kind==='t8Determine')!;
+     assert.equal(definitionText(lastCue.html,'sense-2'),'an ideological belief or doctrine holding that built-in biological differences among human racial groups determine cultural or intellectual achievement.','SenseTwo definition has a missing or doubled space at t8Determine+700');
++    assertInlineDefinitionJoins(lastCue.html,'sense-2');
+   }
+ 
+   // Turn 9 · SenseThree
+@@ -142,6 +151,7 @@ if(process.env.MINUTE_TWO_SNAPSHOT==='1'){
+   {
+     const lastCue=byKind('SenseThree').find(frame=>frame.kind==='t9Categories')!;
+     assert.equal(definitionText(lastCue.html,'sense-3'),'institutional or systemic practices that produce unequal outcomes across racial categories.','SenseThree definition has a missing or doubled space at t9Categories+700');
++    assertInlineDefinitionJoins(lastCue.html,'sense-3');
+     const end=byKind('SenseThree').find(frame=>frame.kind==='end')!;
+     for(const unit of ['one person','a belief','a system'])assert.ok(end.html.includes(`data-rail-unit="${unit}"`),`SenseThree end rail is missing unit tag "${unit}"`);
+   }
+@@ -202,13 +212,19 @@ if(process.env.MINUTE_TWO_SNAPSHOT==='1'){
+ 
+   // Ten evenly spaced hand-off samples use the scene's layout constants. Any spatial
+   // intersection fails when both the departing rail text and arriving layer text are visible.
++  {
++    const finalRightEdge=FIGURE_CENTERED_X+FIGURE_LAYOUT.plate.w;
++    assert.ok(Math.abs(FIGURE_CENTERED_X-(1920-finalRightEdge))<=8,'FigureTwoThree final plate margins are not equal within 8 px');
++  }
+   {
+     const start=plan.cues.t10Displays,end=plan.cues.t10Pyramid;
+     for(let sample=0;sample<10;sample++){
+       const ms=start+(end-start)*sample/9;
+       const states=[0,1,2].map(i=>figureFlightState(ms,start,i));
+       const boxes=states.map((state,i)=>{
+-        const cx=RAIL.x+RAIL.w/2+(FIGURE_LAYOUT.leftCenter-(RAIL.x+RAIL.w/2))*state.p;
++        const centerP=Math.max(0,Math.min(1,(ms-start)/(plan.cues.t10Order+600-start)));
++        const plateShift=(FIGURE_CENTERED_X-FIGURE_LAYOUT.plate.x)*centerP;
++        const cx=RAIL.x+RAIL.w/2+(FIGURE_LAYOUT.leftCenter+plateShift-(RAIL.x+RAIL.w/2))*state.p;
+         const y=RAIL.slotY[i]+(FIGURE_LAYOUT.layerY[i]-RAIL.slotY[i])*state.p;
+         const w=RAIL.w+(FIGURE_LAYOUT.landW-RAIL.w)*state.p;
+         const h=RAIL.slotH+(FIGURE_LAYOUT.layerH-RAIL.slotH)*state.p;

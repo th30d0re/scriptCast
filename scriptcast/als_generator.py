@@ -422,7 +422,7 @@ def _speaker_tracks(root: ET.Element, required_speaker_count: int) -> list[ET.El
     return tracks[:required_speaker_count]
 
 
-def _set_master_tempo(root: ET.Element) -> None:
+def _set_main_tempo(root: ET.Element) -> None:
     tempo_manual = root.find("./LiveSet/MainTrack/DeviceChain/Mixer/Tempo/Manual")
     if tempo_manual is not None:
         tempo_manual.attrib["Value"] = str(_BPM)
@@ -518,7 +518,7 @@ def generate_als(
         raise ValueError("No segments to generate ALS from")
 
     root = _load_template_root()
-    _set_master_tempo(root)
+    _set_main_tempo(root)
     tracks = _speaker_tracks(root, len(used_speakers))
     track_by_speaker = dict(zip(used_speakers, tracks))
 

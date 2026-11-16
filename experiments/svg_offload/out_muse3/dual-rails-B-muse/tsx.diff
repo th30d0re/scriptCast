@@ -1,0 +1,132 @@
+diff --git a/Architecting_the_operation/video/yt02/stage/min7_12/e/ExplicitImplicitChannels.tsx b/Architecting_the_operation/video/yt02/stage/min7_12/e/ExplicitImplicitChannels.tsx
+index 8b3e6cc..4ac6ba4 100644
+--- a/Architecting_the_operation/video/yt02/stage/min7_12/e/ExplicitImplicitChannels.tsx
++++ b/Architecting_the_operation/video/yt02/stage/min7_12/e/ExplicitImplicitChannels.tsx
+@@ -132,21 +132,26 @@ export function ExplicitImplicitChannels({segment}: SceneProps) {
+   const soft = color('color/text/soft');
+   const muted = color('color/text/muted');
+ 
+-  // Turn 39 Rails and Leaders
++  // Turn 39 dual rails: two parallel channel lanes running from x 595 to
++  // x 1405. The gold explicit lane rides at y 335 and the red implicit lane
++  // rides at y 690. The signed statement card occupies x 660 to 1340 on the
++  // explicit lane, so the lane enters the card through a short in-spur and
++  // leaves through a matching out-spur. Three node dots sit on the implicit
++  // lane at x 1180, 1260, and 1340. Dashed leads bridge the 40 px gap from
++  // each channel frame at x 1440 to the judgment meter frame at x 1480.
+   const hasCard = ms >= cue.t39Consciously;
+-  const explicitRailInFull: Point[] = [[595, 335], [660, 335]];
+-  const explicitRailOutFull: Point[] = [[1340, 335], [1405, 335]];
++  const explicitSpurIn: Point[] = [[595, 335], [660, 335]];
++  const explicitSpurOut: Point[] = [[1340, 335], [1405, 335]];
+   const explicitRailThrough: Point[] = [[595, 335], [1405, 335]];
++  const implicitRail: Point[] = [[595, 690], [1405, 690]];
++  const implicitNodeX = [1180, 1260, 1340] as const;
++  const meterLeadExplicit: Point[] = [[1440, 375], [1480, 375]];
++  const meterLeadImplicit: Point[] = [[1440, 730], [1480, 730]];
+ 
+-  const explicitInDrawn = partialPolyline(explicitRailInFull, explicitP);
+-  const explicitOutDrawn = partialPolyline(explicitRailOutFull, consciouslyP);
++  const explicitSpurInDrawn = partialPolyline(explicitSpurIn, explicitP);
++  const explicitSpurOutDrawn = partialPolyline(explicitSpurOut, consciouslyP);
+   const explicitThroughDrawn = partialPolyline(explicitRailThrough, explicitP);
+-
+-  const implicitRailFull: Point[] = [[595, 690], [1405, 690]];
+-  const implicitDrawn = partialPolyline(implicitRailFull, implicitP);
+-
+-  const leaderExplicitToMeter: Point[] = [[1440, 375], [1480, 375]];
+-  const leaderImplicitToMeter: Point[] = [[1440, 730], [1480, 730]];
++  const implicitDrawn = partialPolyline(implicitRail, implicitP);
+ 
+   // Turn 40 Citation Rule and Lower Picture Rails
+   const citeRulePoints: Point[] = [[264, 218], [1656, 218]];
+@@ -209,17 +214,7 @@ export function ExplicitImplicitChannels({segment}: SceneProps) {
+                 EXPLICIT
+               </Label>
+             )}
+-            <svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position: 'absolute', inset: 0}} aria-hidden="true">
+-              {!hasCard && explicitThroughDrawn.length >= 2 && (
+-                <path {...lineAttrs('explicit-rail-through', explicitThroughDrawn)} d={pathFrom(explicitThroughDrawn)} fill="none" stroke={gold} strokeWidth="3" opacity={explicitP} />
+-              )}
+-              {hasCard && explicitInDrawn.length >= 2 && (
+-                <path {...lineAttrs('explicit-rail-in', explicitInDrawn)} d={pathFrom(explicitInDrawn)} fill="none" stroke={gold} strokeWidth="3" opacity={consciouslyP} />
+-              )}
+-              {hasCard && explicitOutDrawn.length >= 2 && (
+-                <path {...lineAttrs('explicit-rail-out', explicitOutDrawn)} d={pathFrom(explicitOutDrawn)} fill="none" stroke={gold} strokeWidth="3" opacity={consciouslyP} />
+-              )}
+-            </svg>
++            {/* Explicit lane geometry lives in the dual-rails overlay below. */}
+             {ms >= cue.t39Consciously && (
+               <div data-signed-card="true" style={{opacity: consciouslyP}}>
+                 <Panel id="explicit-card-frame" box={L.explicitCard} accent="color/fill/gold" />
+@@ -250,18 +245,7 @@ export function ExplicitImplicitChannels({segment}: SceneProps) {
+                 IMPLICIT
+               </Label>
+             )}
+-            {ms >= cue.t39Implicit && implicitDrawn.length >= 2 && (
+-              <svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position: 'absolute', inset: 0}} aria-hidden="true">
+-                <path {...lineAttrs('implicit-rail', implicitDrawn)} d={pathFrom(implicitDrawn)} fill="none" stroke={raceRed} strokeWidth="3" opacity={implicitP} />
+-                {ms >= cue.t39Automatic && (
+-                  <>
+-                    <circle cx={1180} cy={690} r={9} fill={raceRed} opacity={automaticP} />
+-                    <circle cx={1260} cy={690} r={9} fill={raceRed} opacity={automaticP} />
+-                    <circle cx={1340} cy={690} r={9} fill={raceRed} opacity={automaticP} />
+-                  </>
+-                )}
+-              </svg>
+-            )}
++            {/* Implicit lane geometry lives in the dual-rails overlay below. */}
+             <Label
+               id="implicit-assoc-label"
+               box={L.implicitAssocLabel}
+@@ -293,12 +277,46 @@ export function ExplicitImplicitChannels({segment}: SceneProps) {
+               <Label id="meter-footer" box={L.meterFooter} size={20} weight={600} align="center" ink={gold}>
+                 COMBINED OUTPUT STAGE
+               </Label>
+-              <svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position: 'absolute', inset: 0}} aria-hidden="true">
+-                <path {...lineAttrs('meter-lead-explicit', leaderExplicitToMeter)} d={pathFrom(leaderExplicitToMeter)} fill="none" stroke={gold} strokeWidth="2.5" strokeDasharray="4 4" />
+-                <path {...lineAttrs('meter-lead-implicit', leaderImplicitToMeter)} d={pathFrom(leaderImplicitToMeter)} fill="none" stroke={raceRed} strokeWidth="2.5" strokeDasharray="4 4" />
+-              </svg>
+             </div>
+           )}
++
++          {/* Dual-rails asset: parallel explicit and implicit lanes with
++              dashed meter leads. The explicit lane draws at t39Explicit and
++              splits into card spurs at t39Consciously. The implicit lane
++              draws at t39Implicit, gains its three node dots at
++              t39Automatic, and joins the explicit lane at the judgment
++              meter through dashed leads at t39Associations. */}
++          <svg
++            data-dual-rails="true"
++            width="1920"
++            height="1080"
++            viewBox="0 0 1920 1080"
++            style={{position: 'absolute', inset: 0}}
++            aria-hidden="true"
++          >
++            {!hasCard && explicitThroughDrawn.length >= 2 && (
++              <path {...lineAttrs('explicit-rail-through', explicitThroughDrawn)} d={pathFrom(explicitThroughDrawn)} fill="none" stroke={gold} strokeWidth="3" opacity={explicitP} />
++            )}
++            {hasCard && explicitSpurInDrawn.length >= 2 && (
++              <path {...lineAttrs('explicit-rail-in', explicitSpurInDrawn)} d={pathFrom(explicitSpurInDrawn)} fill="none" stroke={gold} strokeWidth="3" opacity={consciouslyP} />
++            )}
++            {hasCard && explicitSpurOutDrawn.length >= 2 && (
++              <path {...lineAttrs('explicit-rail-out', explicitSpurOutDrawn)} d={pathFrom(explicitSpurOutDrawn)} fill="none" stroke={gold} strokeWidth="3" opacity={consciouslyP} />
++            )}
++            {ms >= cue.t39Implicit && implicitDrawn.length >= 2 && (
++              <path {...lineAttrs('implicit-rail', implicitDrawn)} d={pathFrom(implicitDrawn)} fill="none" stroke={raceRed} strokeWidth="3" opacity={implicitP} />
++            )}
++            {ms >= cue.t39Automatic &&
++              implicitNodeX.map((cx) => (
++                <circle key={cx} cx={cx} cy={690} r={9} fill={raceRed} opacity={automaticP} />
++              ))}
++            {ms >= cue.t39Associations && (
++              <>
++                <path {...lineAttrs('meter-lead-explicit', meterLeadExplicit)} d={pathFrom(meterLeadExplicit)} fill="none" stroke={gold} strokeWidth="2.5" strokeDasharray="4 4" opacity={assocP} />
++                <path {...lineAttrs('meter-lead-implicit', meterLeadImplicit)} d={pathFrom(meterLeadImplicit)} fill="none" stroke={raceRed} strokeWidth="2.5" strokeDasharray="4 4" opacity={assocP} />
++              </>
++            )}
++          </svg>
+         </div>
+       )}
+ 

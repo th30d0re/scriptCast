@@ -1,0 +1,25 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true">
+      <path {...lineAttrs('bus-spine',spine)} d={pathFrom(spine)} fill="none" stroke={color('color/fill/gold')} strokeWidth="5"/>
+      <path {...lineAttrs('bus-vertical',vertical)} d={pathFrom(vertical)} fill="none" stroke={color('color/fill/gold')} strokeWidth="5" pathLength="1" strokeDasharray="1" strokeDashoffset={1-progressValue}/>
+      {L.outputCards.map((card,index)=>{const y=card.y+card.h/2;return <path key={card.id} data-output-channel={index+1} {...lineAttrs(`channel-${card.id}`,[[1250,y],[card.x,y]])} d={`M1250 ${y}H${card.x}`} stroke={color('color/fill/gold')} strokeWidth="4" opacity={labelsProgress}/>;})}
+    </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true" opacity={wetwareP}>
+          {SOCKETS.map(([,y],index)=><circle key={index} data-input-socket={index+1} {...shapeAttrs(`socket-${index+1}`,{x:SOCKET_X-12,y:y-12,w:24,h:24},'mark','socket')} cx={SOCKET_X} cy={y} r="10" fill={color('color/bg/field')} stroke={gold} strokeWidth="4"/>)}
+          <path data-compressed-bus="true" {...lineAttrs('compressed-bus',compressedBus)} d={pathFrom(compressedBus)} fill="none" stroke={gold} strokeWidth="5"/>
+        </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true">
+          {SOCKETS.map(([,y],index)=><path key={`feed-${index+1}`} data-bus-feed={index+1} {...lineAttrs(`bus-feed-${index+1}`,[[SOCKET_X+10,y],[1165,y],[1165,530]])} d={pathFrom([[SOCKET_X+10,y],[1165,y],[1165,530]])} fill="none" stroke={color('color/line/wire')} strokeWidth="3"/>)}
+          <path data-bus-spine="true" {...lineAttrs('bus-topology-spine',[[1165,530],[1250,530]])} d={pathFrom([[1165,530],[1250,530]])} fill="none" stroke={color('color/fill/gold')} strokeWidth="5"/>
+          <path data-bus-riser="true" {...lineAttrs('bus-topology-riser',[[1250,324],[1250,736]])} d={pathFrom([[1250,324],[1250,736]])} fill="none" stroke={color('color/fill/gold')} strokeWidth="5" pathLength="1" strokeDasharray="1" strokeDashoffset={1-bandwidthP}/>
+          {L.outputCards.map((card,index)=>{const y=card.y+card.h/2;return <path key={card.id} data-bus-output-channel={index+1} {...lineAttrs(`bus-channel-${card.id}`,[[1250,y],[card.x,y]])} d={`M1250 ${y}H${card.x}`} fill="none" stroke={color('color/fill/gold')} strokeWidth="4"/>;})}
+          {SOCKETS.map(([,y],index)=><circle key={`socket-${index+1}`} data-bus-input-socket={index+1} {...shapeAttrs(`bus-socket-${index+1}`,{x:SOCKET_X-12,y:y-12,w:24,h:24},'mark','socket')} cx={SOCKET_X} cy={y} r="10" fill={color('color/bg/field')} stroke={color('color/fill/gold')} strokeWidth="4"/>)}
+        </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true">
+        {ms>=cue.survival&&<circle data-survival-ring="true" {...shapeAttrs('survival-ring',{x:BAND.cx-BAND.r,y:BAND.cy-BAND.r,w:2*BAND.r,h:2*BAND.r},'frame')} cx={BAND.cx} cy={BAND.cy} r={BAND.r*(.6+.4*survivalP)} fill={color('color/fill/gold-wash')} stroke={gold} strokeWidth="5" opacity={survivalP}/>}
+        {ms>=cue.allies&&<path {...lineAttrs('ally-leader',allyLeader)} d={pathFrom(allyLeader)} stroke={gold} strokeWidth="2" opacity={alliesP}/>}
+        {ms>=cue.consequences&&<g data-consequence-pulse="true" opacity={consequenceP}>
+          <path {...lineAttrs('threat-pulse',[[1500,540],[1000,540]])} d="M1500 540H1000" stroke={red} strokeWidth="7"/>
+          <path d="M996 540l24-16v32z" fill={red}/>
+          <path {...lineAttrs('fast-path',[[990,450],[990,630]])} d="M990 450V630" stroke={gold} strokeWidth="6"/>
+        </g>}
+      </svg>

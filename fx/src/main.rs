@@ -1,7 +1,7 @@
 //! scriptcast-fx command line.
 //!
 //!   scriptcast-fx meter --in FILE [--json]
-//!   scriptcast-fx chain --in FILE --out FILE --preset speaker|master [--room] [--eq7]
+//!   scriptcast-fx chain --in FILE --out FILE --preset speaker|main [--room] [--eq7]
 //!                       [--bypass] [--set plugin.param=value]... [--json]
 
 use std::path::PathBuf;
@@ -9,7 +9,7 @@ use std::process::ExitCode;
 
 use scriptcast_fx::{ChainReport, Preset, Setting, build_chain, chain_ids, measure, read_audio, run_chain, write_wav};
 
-const USAGE: &str = "usage: scriptcast-fx meter --in FILE [--json] | chain --in FILE --out FILE --preset speaker|master [--room] [--eq7] [--bypass] [--set plugin.param=value]... [--json]";
+const USAGE: &str = "usage: scriptcast-fx meter --in FILE [--json] | chain --in FILE --out FILE --preset speaker|main [--room] [--eq7] [--bypass] [--set plugin.param=value]... [--json]";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -97,7 +97,7 @@ fn chain(rest: &[String]) -> Result<String, String> {
     let a = parse(rest, &["--in", "--out", "--preset", "--room", "--eq7", "--bypass", "--set", "--json"])?;
     let input = a.input.ok_or("chain needs --in FILE")?;
     let output = a.output.ok_or("chain needs --out FILE")?;
-    let preset = Preset::parse(&a.preset.ok_or("chain needs --preset speaker|master")?)?;
+    let preset = Preset::parse(&a.preset.ok_or("chain needs --preset speaker|main")?)?;
     let ids = chain_ids(preset, a.room, a.eq7)?;
     // Build the chain before reading audio, so a bad --set fails fast, also with --bypass.
     let mut plugins = build_chain(&ids, &a.sets)?;

@@ -102,8 +102,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--gap-ms",
         type=int,
-        default=0,
-        help="Default inter-turn silence in ms",
+        default=None,
+        help="Default inter-turn silence in ms (default: the previous render's, else 0)",
     )
     parser.add_argument(
         "--sample-seconds",
@@ -402,6 +402,14 @@ def _speech_jobs(
         )
 
     return jobs
+
+
+def _previous_gap_ms(previous_state) -> int:
+    """Most common trailing gap of the previous render, so re-renders keep pauses."""
+    gaps = [seg.gap_after_ms for seg in getattr(previous_state, "segments", None) or []]
+    if not gaps:
+        return 0
+    return max(set(gaps), key=gaps.count)
 
 
 def _non_speech_turn_gap_ms(turn: Turn, default_gap_ms: int) -> int:
@@ -1173,6 +1181,8 @@ def _run(args, progress: Progress) -> None:
 
     # Load previous render state for change detection and position preservation
     previous_state = load_render_state_with_migration(episode_out_dir, turns)
+    if args.gap_ms is None:
+        args.gap_ms = _previous_gap_ms(previous_state)
     refit_settings = previous_state.refit_settings if previous_state else None
     for key in ("tail_ms", "speech_threshold"):
         if getattr(args, key) is None:

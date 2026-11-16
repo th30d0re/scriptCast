@@ -180,3 +180,23 @@ fn login_path_shell_noise_timeout_and_failure() {
         "/fallback"
     );
 }
+
+#[test]
+fn read_along_resolves_from_checkout_console_entry() {
+    let t = Scratch::new();
+    let python = t.exe("project/.venv-voice/bin/python", "exit 0");
+    let checkout = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap();
+    let r = resolve_with(
+        "scriptcast-word-timings",
+        Some(&t.0.join("project")),
+        None,
+        OsStr::new(""),
+        Some(&checkout.join("ui/target/release/scriptcast-ui")),
+    )
+    .unwrap();
+    assert_eq!(r.program, python);
+    assert_eq!(r.prefix, ["-m", "scriptcast.tools.word_timings"]);
+    assert!(matches!(r.source, ExportSource::DevCheckout(_)));
+}

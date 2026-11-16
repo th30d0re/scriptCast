@@ -1,0 +1,39 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true">
+          <path {...lineAttrs('axis',[[AXIS.left,AXIS.y],[AXIS.right,AXIS.y]])} d={`M${AXIS.left} ${AXIS.y}H${AXIS.right}`} stroke={color('color/line/hairline')} strokeWidth="2"/>
+          <Curve id="evidence-curve" dataCurve="evidence" points={evidencePoints} ink={gold} width={highlight==='evidence'?6:3}/>
+          <path {...lineAttrs('evidence-tick',[[xFor(BAYES.evidenceMean),AXIS.y],[xFor(BAYES.evidenceMean),AXIS.y+14]])} d={`M${xFor(BAYES.evidenceMean)} ${AXIS.y}V${AXIS.y+14}`} stroke={gold} strokeWidth="4"/>
+          <Curve id="prior-curve" dataCurve="prior" points={priorPoints} ink={red} width={highlight==='prior'?6:3}/>
+          {ms>=cue.bayesian.at && <Curve id="posterior-curve" dataCurve="posterior" points={posteriorPoints} ink={accent} width={highlight==='posterior'?6:4} opacity={enter(ms,cue.bayesian.at)}/>}
+          {ms>=cue.override.at && <path data-posterior-marker="true" {...lineAttrs('posterior-marker',[[posteriorX,AXIS.y+14],[posteriorX,posteriorTop]])} d={`M${posteriorX} ${AXIS.y+14}V${posteriorTop}`} stroke={accent} strokeWidth="2" strokeDasharray="5 5" opacity={enter(ms,cue.override.at)}/>}
+        </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true" opacity={bookP}>
+        <path {...lineAttrs('socket-leader',[[L.socket.x+20,L.socket.y+L.socket.h],[xFor(BAYES.priorMean)+12,AXIS.y-heightFor(priorPrecision)-8]])} d={pathFrom([[L.socket.x+20,L.socket.y+L.socket.h],[xFor(BAYES.priorMean)+12,AXIS.y-heightFor(priorPrecision)-8]])} stroke={red} strokeWidth="2" strokeDasharray="4 6"/>
+      </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true" opacity={cartridgeP}><path {...lineAttrs('legal-bus',bus)} d={pathFrom(bus)} fill="none" stroke={red} strokeWidth="5"/></svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true">
+          {tokens.map((token,index)=><rect key={index} data-stereotype-token={index+1} {...shapeAttrs(`stereotype-token-${index+1}`,{x:token.x-6,y:token.y-6,w:12,h:12},'mark','token')} x={token.x-6} y={token.y-6} width="12" height="12" fill={red} opacity={token.opacity}/>)}
+        </svg>
+<svg data-pulse-network="true" width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true" opacity={enter(ms,cue.institutions.at)}>
+        <g data-token-field="true">
+          {PULSE_TOKEN_CELLS.map((cell,index)=><rect key={index} data-pulse-token={index+1} {...shapeAttrs(`pulse-token-${index+1}`,cell,'mark','pulse')} x={cell.x} y={cell.y} width={cell.w} height={cell.h} fill={color('color/fill/red-wash')} stroke={red} strokeWidth="1.5"/>)}
+        </g>
+        <path data-beat="t33Institutions" {...lineAttrs('pulse-path',pulsePath)} d={pathFrom(pulsePath)} fill="none" stroke={red} strokeWidth="2" strokeDasharray="4 6"/>
+        {pulses.map((pulse,index)=><circle key={index} data-institution-pulse={index+1} {...shapeAttrs(`pulse-${index+1}`,{x:pulse.x-7,y:pulse.y-7,w:14,h:14},'mark','pulse')} cx={pulse.x} cy={pulse.y} r="7" fill={red}/>)}
+      </svg>
+<svg data-neuroscience-glyph="true" {...shapeAttrs('neuroscience-glyph',{x:840,y:234,w:240,h:120},'mark','glyph')} width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true" opacity={enter(ms,cue.neuroscience.at)}>
+          <path d={pathFrom(gaussianPoints(850,1070,344,70,.38,30,40))} fill="none" stroke={red} strokeWidth="3"/>
+          <path d={pathFrom(gaussianPoints(850,1070,344,70,.64,30,40))} fill="none" stroke={gold} strokeWidth="3"/>
+          <path d="M850 344H1070" stroke={color('color/line/hairline')} strokeWidth="2"/>
+          <path d="M1010 262 C1040 240 1000 236 960 246" fill="none" stroke={accent} strokeWidth="3"/>
+          <path d="M960 246l12 -9v18z" fill={accent}/>
+        </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true" opacity={enter(ms,cue.prediction.at)}>
+          {[410,960,1510].map(x=><path key={x} {...lineAttrs(`rail-link-${x}`,[[x,L.rail.y+L.rail.h],[x,386]])} d={`M${x} ${L.rail.y+L.rail.h}V386`} stroke={accent} strokeWidth="3"/>)}
+          <path {...lineAttrs('rail-bus',[[410,386],[1510,386]])} d="M410 386H1510" stroke={accent} strokeWidth="3"/>
+          <path {...lineAttrs('rail-stem',[[960,386],[960,T.prediction.y]])} d={`M960 386V${T.prediction.y}`} stroke={accent} strokeWidth="3"/>
+        </svg>
+<svg data-beat="t34Experience" data-history-ribbon="true" width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true" opacity={p}>
+          <rect {...shapeAttrs('history-ribbon',L.ribbon,'frame')} x={L.ribbon.x} y={L.ribbon.y} width={L.ribbon.w*p} height={L.ribbon.h} fill={color('color/fill/gold-wash')} stroke={color('color/line/hairline-strong')}/>
+          {Array.from({length:10},(_,index)=>{const x=L.ribbon.x+12+((index*64+shift)%(L.ribbon.w-40)); return x<L.ribbon.x+L.ribbon.w*p-24?<rect key={index} x={x} y={L.ribbon.y+16} width="24" height="24" fill={index%3===0?red:gold} opacity={.35+.06*index}/>:null;})}
+          <path {...lineAttrs('ribbon-feed',[[L.ribbon.x+L.ribbon.w,540],[L.cartridge34.x,540]])} d={`M${L.ribbon.x+L.ribbon.w} 540H${L.cartridge34.x}`} stroke={gold} strokeWidth="4"/>
+        </svg>

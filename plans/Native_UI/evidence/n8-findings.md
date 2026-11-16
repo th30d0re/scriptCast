@@ -20,7 +20,7 @@ No other file changed. The binary does not call stitch or mix. Nothing in `scrip
 ## Chains
 
 - speaker: `channel_strip`, `de_esser`, then `room_reverb` with `--room`, then `eq_7band` with `--eq7`.
-- master: `maximizer`, `dither`, `dc_offset_removal`. `--room` or `--eq7` with master is an error.
+- main: `maximizer`, `dither`, `dc_offset_removal`. `--room` or `--eq7` with main is an error.
 - Each plugin starts on its own defaults. The tool adds no tuned values. `--set` applies after the defaults.
 - `channel_strip` is the only trim, gate and compressor. Its gate and compressor stay off unless `--set channel_strip.gate_on=1` or `comp_on=1`.
 
@@ -85,8 +85,8 @@ CLI tests:
 - `meter_silence_is_quiet_and_finite`: 1 s of stereo silence. The four keys are in order. `integrated_lufs` is finite and at or below -70.
 - `meter_sine_has_a_true_peak`: 1 kHz sine at 0.5. `true_peak_db` is finite and above -40.
 - `speaker_chain_keeps_frame_count`: plain chain, and chain with `--room --eq7 --set channel_strip.hpf_on=1`. The frame count, rate and channel count stay the same. All samples are finite.
-- `master_chain_keeps_frame_count`: the frame count stays the same.
+- `main_chain_keeps_frame_count`: the frame count stays the same.
 - `bypass_writes_input_samples`: the output buffer is equal to the input buffer.
-- `bad_arguments_fail_with_one_line`: unknown param, unknown plugin, `--room` and `--eq7` on master, and an unknown preset. Each exits non-zero with one stderr line and writes no file.
+- `bad_arguments_fail_with_one_line`: unknown param, unknown plugin, `--room` and `--eq7` on main, and an unknown preset. Each exits non-zero with one stderr line and writes no file.
 
 All test audio is made in the test, in a temporary directory. No episode directory is used.

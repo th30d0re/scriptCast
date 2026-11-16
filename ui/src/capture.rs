@@ -44,6 +44,9 @@ Options:
   --running-screenshot PATH  also save the active job (requires --run)
   --fresh            ignore persisted state and do not save state on exit
   --select N         select manifest turn N after loading, scrolled into view
+  --stage-plan PATH  stage_plan.json for the stills column (default: <episode>/stage_plan.json)
+  --stage-stills DIR directory holding the stage still PNGs (default: plan directory)
+  --stage-queue PATH router JSONL queue file (default: <episode>/router-queue.jsonl)
   --review N         open discrepancy review on failed turn N (implies --select N)
   --review-mode MODE whisper or ensemble (with --review; default whisper)
   --find QUERY       find words after the episode loads
@@ -119,6 +122,7 @@ pub struct Cli {
     pub mute: bool,
     pub simulate_device_loss: bool,
     pub help: bool,
+    pub ai_sidebar: bool,
     pub inspector: Option<crate::inspector::InspectorMode>,
     pub confirm: Option<String>,
     pub run: Option<String>,
@@ -138,6 +142,10 @@ pub struct Cli {
     pub audition_fixture: Option<PathBuf>,
     pub calibrate_fixture: Option<PathBuf>,
     pub outliers_fixture: Option<PathBuf>,
+    /// Stage stills column (R8): explicit plan / stills / queue overrides.
+    pub stage_plan: Option<PathBuf>,
+    pub stage_stills: Option<PathBuf>,
+    pub stage_queue: Option<PathBuf>,
 }
 
 impl Cli {
@@ -176,6 +184,7 @@ impl Cli {
             mute: false,
             simulate_device_loss: false,
             help: false,
+            ai_sidebar: false,
             inspector: None,
             confirm: None,
             run: None,
@@ -192,6 +201,9 @@ impl Cli {
             audition_fixture: None,
             calibrate_fixture: None,
             outliers_fixture: None,
+            stage_plan: None,
+            stage_stills: None,
+            stage_queue: None,
         };
         let mut positional_only = false;
         let mut args = args.into_iter().peekable();
@@ -381,6 +393,18 @@ impl Cli {
                     cli.outliers_fixture =
                         Some(args.next().ok_or("--outliers-fixture needs a path")?.into());
                 }
+                "--stage-plan" => {
+                    cli.stage_plan =
+                        Some(args.next().ok_or("--stage-plan needs a path")?.into());
+                }
+                "--stage-stills" => {
+                    cli.stage_stills =
+                        Some(args.next().ok_or("--stage-stills needs a directory")?.into());
+                }
+                "--stage-queue" => {
+                    cli.stage_queue =
+                        Some(args.next().ok_or("--stage-queue needs a path")?.into());
+                }
                 "--raw-script" => cli.raw_script = true,
                 "--find" => {
                     cli.find = Some(
@@ -419,6 +443,7 @@ impl Cli {
                 "--simulate-device-loss" => cli.simulate_device_loss = true,
                 "--no-gapless" => cli.no_gapless = true,
                 "--settings" => cli.settings = true,
+                "--ai-sidebar" => cli.ai_sidebar = true,
                 "--inspector-hidden" => cli.inspector_hidden = true,
                 "--running-screenshot" => {
                     cli.running_screenshot = Some(PathBuf::from(

@@ -1,0 +1,9 @@
+[workspace]
+resolver = "2"
+members = ["stage-layout"]
+# Dev's crates are standalone packages with their own Cargo.lock.
+exclude = ["chunk", "fx", "media", "tone", "ui"]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

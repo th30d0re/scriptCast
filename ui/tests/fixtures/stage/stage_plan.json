@@ -1,0 +1,72 @@
+{
+  "episode": "fixture-ep",
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "duration_ms": 4000,
+  "range": {
+    "start_ms": 0,
+    "end_ms": 4000
+  },
+  "audio": "",
+  "cues": {
+    "shotA.intro": 1000,
+    "shotB.detail": 2500,
+    "intro": 1000,
+    "detail": 2500
+  },
+  "segments": [
+    {
+      "instance": "SceneA",
+      "scene": "SceneA",
+      "start_ms": 0,
+      "end_ms": 4000,
+      "shots": [
+        {
+          "shot_id": "shotA",
+          "turn_id": "turn-1",
+          "turn_index": 1,
+          "start_ms": 0,
+          "end_ms": 2000,
+          "props": {}
+        },
+        {
+          "shot_id": "shotB",
+          "turn_id": "turn-2",
+          "turn_index": 2,
+          "start_ms": 2000,
+          "end_ms": 4000,
+          "props": {}
+        }
+      ]
+    }
+  ],
+  "words": {
+    "turn-1": [
+      {
+        "text": "Hello",
+        "start_ms": 0,
+        "end_ms": 400
+      },
+      {
+        "text": "stage",
+        "start_ms": 900,
+        "end_ms": 1200
+      }
+    ],
+    "turn-2": [
+      {
+        "text": "Second",
+        "start_ms": 2000,
+        "end_ms": 2400
+      },
+      {
+        "text": "turn",
+        "start_ms": 2500,
+        "end_ms": 2800
+      }
+    ]
+  },
+  "warnings": [],
+  "episode_dir": "tests/fixtures/stage"
+}

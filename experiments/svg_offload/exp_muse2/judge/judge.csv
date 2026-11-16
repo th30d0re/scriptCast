@@ -1,0 +1,11 @@
+cell,worker,cue,status,render_ok,critic_verdict,n_defects,pixel_diff
+comparator-loop-B-muse,muse,comparator-loop,ok,True,pass,0,0.00011410675381263615
+compressed-bus-B-muse,muse,compressed-bus,ok,True,pass,0,0.002571581487533285
+debate-funnel-B-muse,muse,debate-funnel,ok,True,pass,0,0.0002332125494230614
+doctrine-chain-B-muse,muse,doctrine-chain,ok,True,pass,0,0.0018871634945130315
+dual-rails-B-muse,muse,dual-rails,no_change,False,,,
+group-boundary-B-muse,muse,group-boundary,ok,True,pass,0,0.0008530956235374809
+practice-network-B-muse,muse,practice-network,ok,True,pass,0,0.0022358923636326957
+pulse-network-B-muse,muse,pulse-network,ok,True,pass,0,0.0
+router-tree-B-muse,muse,router-tree,ok,True,pass,0,6.082062454611475e-06
+term-glyphs-B-muse,muse,term-glyphs,ok,True,pass,0,0.00010159591099814411

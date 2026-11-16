@@ -1,0 +1,42 @@
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx
+index f7ae84c..f972083 100644
+--- a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx
+@@ -14,15 +14,17 @@ const PHRASES = [
+   {cue:'t8Determine', text:'determine cultural or intellectual achievement.'},
+ ] as const;
+ 
+-// Doctrine chain diagram inside the card's svg (viewBox 1240 × 410): the claimed chain sits
+-// inside a thought-bubble outline. Fixed box positions; landing order follows the cues.
++// Doctrine chain diagram inside the card's svg (viewBox 1240 × 410): four boxed nodes
++// joined by marker arrows inside a dashed rounded thought-bubble boundary with two
++// orbit circles below it. Fixed box positions; landing order follows the cues.
+ const BOXES = [
+-  {key:'groups', cue:'t8Groups', label:'racial groups', x:120},
+-  {key:'differences', cue:'t8Biological', label:'biological differences', x:480},
+-  {key:'achievement', cue:'t8Achievement', label:'achievement', x:840},
++  {key:'belief', cue:'t8Ideological', label:'ideological belief', x:84},
++  {key:'groups', cue:'t8Groups', label:'racial groups', x:368},
++  {key:'differences', cue:'t8Biological', label:'biological differences', x:652},
++  {key:'achievement', cue:'t8Achievement', label:'achievement', x:936},
+ ] as const;
+-const BOX_W = 300, BOX_H = 96, BOX_Y = 130;
+-const ARROWS = [{x1:424, x2:476}, {x1:784, x2:836}];
++const BOX_W = 240, BOX_H = 96, BOX_Y = 130;
++const ARROWS = [{x1:328, x2:364}, {x1:612, x2:648}, {x1:896, x2:932}];
+ 
+ export function SenseTwo({segment}:SceneProps) {
+   const ms = useStageMs();
+@@ -65,10 +67,10 @@ export function SenseTwo({segment}:SceneProps) {
+           const p = enter(ms, at, 350);
+           return ms >= at && <g key={key} data-diagram-box={label} opacity={p}>
+             <rect x={x} y={BOX_Y} width={BOX_W} height={BOX_H} rx={8} fill={color('color/fill/panel-render')} stroke={color('color/line/hairline-strong')} strokeWidth={1.5}/>
+-            <text x={x+BOX_W/2} y={BOX_Y+57} textAnchor="middle" fontFamily="IBM Plex Sans" fontSize={22} fill={color('color/text/primary')}>{label}</text>
++            <text x={x+BOX_W/2} y={BOX_Y+56} textAnchor="middle" fontFamily="IBM Plex Sans" fontSize={20} fill={color('color/text/primary')}>{label}</text>
+           </g>;
+         })}
+-        {ms >= cue.t8Determine.at && <g>
++        {ms >= cue.t8Determine.at && <g data-doctrine-chain="true">
+           {ARROWS.map(({x1, x2}) => <line key={x1} x1={x1} y1={178} x2={x1+(x2-x1)*arrowP} y2={178} stroke={color('color/fill/gold')} strokeWidth={3} markerEnd={arrowP>.9 ? 'url(#sense2-arrow)' : undefined}/>)}
+           <text x={630} y={266} textAnchor="middle" fontFamily="IBM Plex Mono" fontSize={20} fill={color('color/text/muted')} opacity={arrowP}>claimed to determine</text>
+         </g>}

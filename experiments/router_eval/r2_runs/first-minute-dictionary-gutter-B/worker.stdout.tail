@@ -1,0 +1,20 @@
+Session log: /Users/emmanuel/Library/Mobile Documents/iCloud~md~obsidian/Documents/Root/AI Session Logs/workers/20261107T154407Z-codex-gpt-5.6-luna-first-minute-dictionary-gutter.md
+Registry: yt02/DictionaryEntry/builder live (1609 proxy tokens)
+Dispatched codex (gpt-5.6-luna). Session ID: 01a1b6a8-5c0a-7c00-8765-8d0aaf82dad2
+Implemented first-minute fix pass 1.
+
+Completed:
+
+- Fixed DictionaryEntry gutter and vertical placement.
+- Recentered/enlarged TitleOpen compositions.
+- Aligned WhyLadder and added caption/map backing.
+- Rerouted LiteratureStack connectors and moved boundary to y=770.
+- Added RoadmapBoot standby era clock, history suppression, and outline-only map.
+- Extended geometry and RoadmapBoot checks.
+- Appended `Fix pass 1` to findings.
+- Created [.session-log.md](</private/var/folders/95/ps3stnmx59j3ws19bprd4h9r0000gn/T/r2-first-minute-dictionary-gutter-B-4dc6aaap/.session-log.md>).
+
+Passing: TypeScript, `check_first_minute`, `check_roadmap_boot`, prose check, and diff validation.
+
+Plan compilation, dashboard check, and site build require generated inputs absent from this isolated worktree. No git commit was made.
+

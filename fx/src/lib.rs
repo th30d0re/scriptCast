@@ -13,22 +13,22 @@ use soundcraft_dsp::meter::LoudnessMeter;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Preset {
     Speaker,
-    Master,
+    Main,
 }
 
 impl Preset {
     pub fn parse(s: &str) -> Result<Self, String> {
         match s {
             "speaker" => Ok(Self::Speaker),
-            "master" => Ok(Self::Master),
-            other => Err(format!("unknown preset '{other}' (use speaker or master)")),
+            "main" => Ok(Self::Main),
+            other => Err(format!("unknown preset '{other}' (use speaker or main)")),
         }
     }
 
     pub fn name(self) -> &'static str {
         match self {
             Self::Speaker => "speaker",
-            Self::Master => "master",
+            Self::Main => "main",
         }
     }
 }
@@ -46,12 +46,12 @@ pub fn chain_ids(preset: Preset, room: bool, eq7: bool) -> Result<Vec<&'static s
             }
             Ok(ids)
         }
-        Preset::Master => {
+        Preset::Main => {
             if room {
-                return Err("--room is not allowed with --preset master".into());
+                return Err("--room is not allowed with --preset main".into());
             }
             if eq7 {
-                return Err("--eq7 is not allowed with --preset master".into());
+                return Err("--eq7 is not allowed with --preset main".into());
             }
             Ok(vec!["maximizer", "dither", "dc_offset_removal"])
         }
@@ -242,10 +242,10 @@ mod tests {
     }
 
     #[test]
-    fn master_rejects_room_and_eq7() {
-        assert_eq!(chain_ids(Preset::Master, false, false).unwrap(), ["maximizer", "dither", "dc_offset_removal"]);
-        assert!(chain_ids(Preset::Master, true, false).is_err());
-        assert!(chain_ids(Preset::Master, false, true).is_err());
+    fn main_rejects_room_and_eq7() {
+        assert_eq!(chain_ids(Preset::Main, false, false).unwrap(), ["maximizer", "dither", "dc_offset_removal"]);
+        assert!(chain_ids(Preset::Main, true, false).is_err());
+        assert!(chain_ids(Preset::Main, false, true).is_err());
     }
 
     #[test]

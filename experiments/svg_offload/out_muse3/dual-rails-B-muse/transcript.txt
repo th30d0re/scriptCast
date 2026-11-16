@@ -1,0 +1,12 @@
+Done. The dual-rails asset now lives as one hand-authored inline SVG in [ExplicitImplicitChannels.tsx](/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse3/wt/dual-rails-B-muse/Architecting_the_operation/video/yt02/stage/min7_12/e/ExplicitImplicitChannels.tsx).
+
+The three fragmented SVGs (explicit lane, implicit lane, meter leads) are replaced by a single 1920×1080 overlay marked `data-dual-rails`. It draws the gold explicit lane at y 335 splitting into in/out spurs around the signed card at x 660–1340, the red implicit lane at y 690 gaining three node dots at x 1180/1260/1340, and the two dashed leads bridging x 1440–1480 into the judgment meter. Each element keeps its own cue gate: spurs at `t39Explicit`/`t39Consciously`, implicit lane at `t39Implicit`, dots at `t39Automatic`, leads at `t39Associations`. Strokes stay on the scene tokens `color('color/fill/gold')` and `color('color/marker/race')`.
+
+Verified: episode `tsc --noEmit` passes clean, and the Package E audit in a clean worktree renders all 210 frames deterministically and passes the layout audit. The audit's single failure (`e490 missing full authors`) occurs identically on pristine HEAD, so it predates this change. Running the check inside the experiment worktree itself hits a duplicate-React resolution error from an ancestor `node_modules`; the clean-worktree run avoids that artifact. `check_antithesis` reports no banned constructions. The change is left uncommitted as one modified file for diff collection.
+
+muse: workspace root: /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse3/wt/dual-rails-B-muse/Architecting_the_operation/video/yt02 (explicit)
+muse: workspace trust: trusted source=user-config
+muse: warning: rules file at /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse3/wt/dual-rails-B-muse/CLAUDE.md is ignored this session because AGENTS.md takes precedence in that directory; merge still-applicable guidance into AGENTS.md or remove one of the two files
+muse: Skills: 89 loaded · 1 warning · 17 details hidden
+muse:   `skills_catalog` was trimmed to fit its size limit (32 KB): 62 descriptions compacted, 0 skill ids omitted
+muse:   Run `muse skills list --source all` for full diagnostics.

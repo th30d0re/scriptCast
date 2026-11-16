@@ -1,0 +1,55 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "SenseThree_t9Practices.png",
+      "status": "ok",
+      "verdict": "pass",
+      "defects": [],
+      "ungrounded": 0,
+      "tier1": {
+        "elements": [
+          {
+            "id": "grid_2_1",
+            "p_defect": 0.44328646208482886
+          },
+          {
+            "id": "grid_1_1",
+            "p_defect": 0.40562373438483984
+          },
+          {
+            "id": "grid_2_0",
+            "p_defect": 0.0713841464562276
+          },
+          {
+            "id": "grid_1_0",
+            "p_defect": 0.06767750011233158
+          },
+          {
+            "id": "grid_2_2",
+            "p_defect": 0.054646637797731275
+          },
+          {
+            "id": "grid_1_2",
+            "p_defect": 0.044499960395125174
+          },
+          {
+            "id": "grid_0_0",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_0_1",
+            "p_defect": 0.04440958529303469
+          },
+          {
+            "id": "grid_0_2",
+            "p_defect": 0.04440958529303469
+          }
+        ],
+        "flagged": false,
+        "ms": 147.15450000949204
+      },
+      "tier2_ran": false
+    }
+  ]
+}

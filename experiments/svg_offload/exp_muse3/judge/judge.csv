@@ -1,0 +1,3 @@
+cell,worker,cue,status,render_ok,critic_verdict,n_defects,pixel_diff
+dual-rails-B-muse,muse,dual-rails,ok,True,pass,0,1.0716735253772291e-07
+pulse-network-B-muse,muse,pulse-network,ok,True,pass,0,0.0009386214748244976

@@ -1,0 +1,10 @@
+Session log: /Users/emmanuel/Library/Mobile Documents/iCloud~md~obsidian/Documents/Root/AI Session Logs/workers/20261107T192033Z-codex-resume-dashboard-tray-wage-plane.md
+Resumed codex session 01a1b694-3358-7d71-9aad-2536e06b74c2.
+Added above the Wage plane slot in `Dashboard.tsx`:
+
+```tsx
+// Cue: expand:wage-plane opens Buffer Class Wage from this right-stack slot.
+```
+
+Prose check passed.
+

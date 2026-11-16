@@ -1,0 +1,12 @@
+Done. The comparator-loop asset is drawn inline in [PredictiveCoding.tsx](/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/comparator-loop-B-muse/Architecting_the_operation/video/yt02/stage/min3_7/d/PredictiveCoding.tsx:97) inside the `t30Compares` block.
+
+The SVG (1920×1080 scene viewBox, faded in with `enter(ms, cue.compares.at)`) contains: a `comparator-axis` line through the circle, `prediction-wire` in at the top, `evidence-wire` in at the bottom, `update-path` and `output-wire` out, the `bracket-left`/`bracket-right` pair, and the `comparator` circle on top. Geometry reuses the scene constants (`COMPARATOR`, `PREDICTION_WIRE`, `EVIDENCE_WIRE`, `UPDATE_PATH`, `OUTPUT_WIRE`, `BRACKET_LEFT/RIGHT`) with `lineAttrs`/`shapeAttrs` audit boxes, and all strokes/fills use `color('color/...')` tokens with no raw hex.
+
+Verified: `tsc --noEmit` on the stage project reports 0 errors. An independent render probe confirmed the asset is absent at `t30Compares − 1ms`, all 8 shapes are present at `+700ms`, and the layout audit is clean before, at compares, and in turn 31. The repo's `check_min3_7_d.mjs` fails with a duplicate-React hook error, but it fails identically on the untouched tree, so that is a pre-existing environment issue, not a regression from this change.
+
+muse: workspace root: /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/comparator-loop-B-muse/Architecting_the_operation/video/yt02 (explicit)
+muse: warning: rules file at /Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_muse2/wt/comparator-loop-B-muse/AGENTS.md exists, but the workspace is untrusted, so it is skipped for this session; restart with --trust-workspace to load project rules
+muse: Skills: 89 loaded · 1 warning · 17 details hidden
+muse:   `skills_catalog` was trimmed to fit its size limit (32 KB): 62 descriptions compacted, 0 skill ids omitted
+muse:   Run `muse skills list --source all` for full diagnostics.
+muse: Agent delegation: auto unavailable: workspace is untrusted.

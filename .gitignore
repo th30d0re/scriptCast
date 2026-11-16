@@ -17,3 +17,25 @@ fx/target/
 chunk/target/
 node_modules/
 site/dist/
+.DS_Store
+ui/speaker_rates.json
+experiments/*/frames/
+experiments/**/*.jsonl
+video/site/dist/
+video/scripts/.stage-check/
+video/public/stage/
+
+# stage-layout build output
+/target/
+stage-layout/pkg/
+!experiments/router_eval/labels.jsonl
+.session-log.md
+.orbos/
+ui/tests/snapshots/*.diff.png
+ui/tests/snapshots/*.new.png
+experiments/e2_visual_qa/set/
+experiments/e2_visual_qa/*.jsonl
+!experiments/e2_visual_qa/truth.jsonl
+experiments/e2_visual_qa/*.log
+experiments/e2_visual_qa/_*.png
+video/public/kit-review/

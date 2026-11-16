@@ -1,0 +1,37 @@
+# tier x lane -> agent + model + flags. Quota changes edit this file only.
+# Source: vault model-sizing rule (mechanical -> agy flash or Codex Luna;
+# standard -> Codex Sol; judgment -> Codex Sol high or Argon high).
+# context_tokens feeds R2 compaction thresholds.
+
+[models.gemini-3_8-flash]
+name = "gemini-3.8-flash"
+context_tokens = 1000000
+[models.gpt-5_6-luna]
+name = "gpt-5.6-luna"
+context_tokens = 400000
+[models.gpt-5_6-sol]
+name = "gpt-5.6-sol"
+context_tokens = 400000
+
+[default.mechanical]
+agent = "agy"
+model = "gemini-3.8-flash"
+flags = []
+[default.standard]
+agent = "codex"
+model = "gpt-5.6-sol"
+flags = []
+[default.judgment]
+agent = "codex"
+model = "gpt-5.6-sol"
+flags = ["-c", "model_reasoning_effort=high"]
+
+# Lane overrides (only where they differ from default).
+[lane.tsx_scene.mechanical]
+agent = "codex"
+model = "gpt-5.6-luna"
+flags = []
+[lane.research.standard]
+agent = "agy"
+model = "gemini-3.8-flash"
+flags = []

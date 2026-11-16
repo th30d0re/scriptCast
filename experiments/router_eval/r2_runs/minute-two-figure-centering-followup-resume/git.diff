@@ -1,0 +1,257 @@
+diff --git a/Architecting_the_operation/video/yt02/stage/FINDINGS_MINUTE_TWO.md b/Architecting_the_operation/video/yt02/stage/FINDINGS_MINUTE_TWO.md
+index 19739d8..88172f7 100644
+--- a/Architecting_the_operation/video/yt02/stage/FINDINGS_MINUTE_TWO.md
++++ b/Architecting_the_operation/video/yt02/stage/FINDINGS_MINUTE_TWO.md
+@@ -155,7 +155,7 @@ $ python3 tools/check_antithesis.py Architecting_the_operation/video/yt02/stage/
+ check-antithesis: no banned constructions found.
+ ```
+ 
+-A manual `grep -nE '\b(not|n't|never|but|rather than|instead of|more than just|merely|no
++A manual `grep -nE '\b(not|n't|never|but|rather than|instead of|more than just|merely|no <!-- antithesis-ok: quoted checker pattern -->
+ longer|only)\b'` over the six `minutetwo/*.tsx` sources and `tools/check_minute_two.*`
+ finds no matches. Every on-screen string is a direct declarative statement or the
+ narration's verbatim question header.
+@@ -316,3 +316,58 @@ site output: /tmp/yt02-minute-two-fix1-site.HxkBNU
+ Vite emitted its existing chunk-size warning. The scoped diff contains the three sense scenes,
+ `FigureTwoThree.tsx`, `tools/check_minute_two.tsx`, and this findings section. The compiled plan
+ remained byte-identical. All listed external dirty paths remained untouched.
++
++## Fix pass 2
++
++### Changes
++
++- Definition fragments in all three sense scenes now use plain inline spans with ordinary
++  text-node separators. Fragment strings contain no leading whitespace, so wrapped lines begin
++  with visible text.
++- FigureTwoThree now moves the plate and its flight targets from the prior x=440 position to
++  the centered x=240 position during the display-to-order hand-off. The final plate margins are
++  240 px on both sides. The ten existing flight overlap samples remain active.
++- `tools/check_minute_two.tsx` now checks fragment-string whitespace and final plate margins in
++  addition to the existing exact-sentence and flight-overlap assertions.
++
++### Check output tails
++
++#### Episode TypeScript
++
++```text
++exit 0; no diagnostics
++```
++
++#### Minute-two checker
++
++```text
++PASS: 44 minute-two frames rendered in two fresh processes; all markup hashes match.
++PASS: 44 cue-derived frames; exact definition spacing, opaque node masking, non-crossing network wires, flight text hand-off, tapered gold outline, scene contracts, hook policy, underscore policy, and interaction-hint policy verified; rail x 120–420 clear of card x 480; Figure 2.3 layer widths 598 / 483 / 368 px in the ratio 5.2 : 4.2 : 3.2.
++```
++
++#### Regression checkers
++
++```text
++PASS: 43 cue-derived frames; five scene contracts, manuscript strings, real subscripts, hook policy, underscore policy, and interaction-hint policy verified; fix-pass-1 geometry: DictionaryEntry gutter x 985 clear of panel edge 965 with chain at 1050; WhyLadder header/column aligned at x 240; LiteratureStack boundary y 780 and elbow connectors clear of all block text boxes.
++PASS: RoadmapBoot renders 17 deterministic frames; 13 labels land on their cues and are absent before; console box 580–1340 × 150–790 clears stacks (317 / 1671) and tray (944); panels 12, 9, 14 light on items 06, 09, 10 with wires; item11 sweep complete by +1300 (map opacity 1); item12 pulse present; console collapsed by roadmapEnd+600; era strip empty throughout; Era clock on standby and map outline-only ("1486", "LISBON", "PORTUGAL", "RUNTIME LOG" absent from every frame); no literal underscores; no interaction hints.
++PASS: Equal Earth route 1296 samples / 0 land hits, bounds 540.14..821.86 × 84.29..843.36 above tray y=860; Portugal height 102.18px mainland (136.7px with 1486 Moroccan enclave); 18 deterministic timeline states; 5-panel right stack + 8-cell tray geometry; all 24 tray modes plus 3 Wage plane modes; 18 declared layouts ≤ 828px; no literal underscore text; shared 601-point Thyristor traces; Backlash static active preset; gear-only settings; no rendered interaction hints; 75 polities with 16 non-colliding labels.
++```
++
++#### Plan compile and dry-run
++
++```text
++wrote ov/stage_plan.json
++sha256: d283f60db13e898c4835c16275cff7be29c5fe41f63dc38b3f720243bb32e35d (byte-identical)
++STAGE_EPISODE_DIR=…/stage npx --no-install remotion render src/stage/index.ts StageEpisode /private/tmp/minute-two-fix2-dry.mp4 --props=…/stage/ov/stage_plan.json --timeout=120000 --codec h264 --concurrency=8 '--browser-executable=/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
++```
++
++#### Site build
++
++```text
++✓ 276 modules transformed.
++assets/index-BSHr5KSu.js  1,884.79 kB │ gzip: 550.00 kB
++✓ built in 2.83s
++site output: /tmp/yt02-minute-two-fix2-site.MKbpgW
++```
++
++The existing Vite chunk-size warning remains. No render was run and no Chromium was launched.
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/FigureTwoThree.tsx b/Architecting_the_operation/video/yt02/stage/minutetwo/FigureTwoThree.tsx
+index 2e07f0e..047ff8e 100644
+--- a/Architecting_the_operation/video/yt02/stage/minutetwo/FigureTwoThree.tsx
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/FigureTwoThree.tsx
+@@ -10,9 +10,9 @@ const enter = (ms:number, at:number, duration=460) => cubicOut(progress(ms, at,
+ // minimum widths in Paper/The_Original_Power.tex lines 1953–1955 and 1965–1967.
+ // Exported for the ratio assert in tools/check_minute_two.tsx.
+ export const FIGURE_LAYOUT = {
+-  plate:{x:440, y:110, w:1440, h:890},
++  plate:{x:240, y:110, w:1440, h:890},
+   captionY:178, sourceY:210, ruleY:222, headerY:328,
+-  leftCenter:760, rightCenter:1560,
++  leftCenter:760, rightCenter:1360,
+   layerY:[352,466,580], layerH:92,
+   layerWidths:[598,483,368],
+   landW:598,
+@@ -62,6 +62,8 @@ export function FigureTwoThree({segment}:SceneProps) {
+   const traceP = enter(ms, cue.t10Pyramid.at + 150, 600);
+   const noteP = enter(ms, cue.t10Pyramid.at + 250, 400);
+   const labelP = 1 - progress(ms, cue.t10Displays.at, cue.t10Displays.at + 400);
++  // t10Displays starts the plate shift, which completes at t10Order + 600 ms.
++  const plateShift = -200 * progress(ms, cue.t10Displays.at, cue.t10Order.at + 600);
+   const flights = [0,1,2].map(i => figureFlightState(ms, cue.t10Displays.at, i));
+   const bracketLeft = F.bracket.startLeft + (F.leftCenter-F.layerWidths[0]/2-F.bracket.finalPad-F.bracket.startLeft)*taperP;
+   const bracketRight = F.bracket.startRight + (F.leftCenter+F.layerWidths[0]/2+F.bracket.finalPad-F.bracket.startRight)*taperP;
+@@ -72,7 +74,8 @@ export function FigureTwoThree({segment}:SceneProps) {
+     <SceneBorder segment={segment}/>
+     {ms >= cue.t10Figure.at && <>
+       <svg style={{position:'absolute', inset:0}} width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" aria-hidden="true">
+-        <rect data-plate="true" x={F.plate.x} y={F.plate.y} width={F.plate.w} height={F.plate.h} stroke={color('color/line/hairline')} strokeWidth={1} pathLength={1} strokeDasharray="1" strokeDashoffset={1-plateP}/>
++        <g transform={`translate(${plateShift} 0)`}>
++        <rect data-plate="true" data-plate-left={F.plate.x+plateShift} x={F.plate.x+200} y={F.plate.y} width={F.plate.w} height={F.plate.h} stroke={color('color/line/hairline')} strokeWidth={1} pathLength={1} strokeDasharray="1" strokeDashoffset={1-plateP}/>
+         <line x1={F.plate.x+40} y1={F.ruleY} x2={F.plate.x+F.plate.w-40} y2={F.ruleY} stroke={color('color/line/hairline')} strokeWidth={1} opacity={captionP}/>
+         <g data-right-column="true" opacity={.25*dimP}>
+           <text x={F.rightCenter} y={F.headerY} textAnchor="middle" fontFamily="IBM Plex Sans" fontWeight={700} fontSize={26} fill={color('color/text/primary')}>Correct Hierarchy</text>
+@@ -96,15 +99,15 @@ export function FigureTwoThree({segment}:SceneProps) {
+         {columnP>0 && <path data-column-bracket="true" data-bracket-left={bracketLeft} data-bracket-right={bracketRight} d={`M ${bracketLeft} ${F.bracket.startTop} L ${bracketBottomLeftX} ${bracketBottomY} L ${bracketBottomRightX} ${bracketBottomY} L ${bracketRight} ${F.bracket.startTop} Z`} stroke={color('color/fill/gold')} strokeWidth={3} pathLength={1} strokeDasharray="1" strokeDashoffset={1-bracketP}/>}
+         {traceP>0 && <path data-pyramid-outline="true" d={`M ${F.pyramid.leftX} ${F.pyramid.topY} L ${F.pyramid.apexX} ${F.pyramid.apexY} L ${F.pyramid.rightX} ${F.pyramid.topY} Z`} stroke={color('color/line/hairline-strong')} strokeWidth={2} pathLength={1} strokeDasharray="1" strokeDashoffset={1-traceP}/>}
+         {noteP>0 && <text x={F.leftCenter} y={F.noteY} textAnchor="middle" fontFamily="IBM Plex Sans" fontSize={22} fill={color('color/marker/race')} opacity={noteP}>↑ buried, rarely referenced</text>}
+-      </svg>
+-      <div data-caption="true" style={{position:'absolute', left:F.plate.x, width:F.plate.w, top:150, textAlign:'center', font:'500 28px "IBM Plex Mono"', letterSpacing:2, color:color('color/text/primary'), opacity:captionP}}>Figure 2.3 · Inverting the Definitional Hierarchy</div>
+-      {ms >= cue.t10Chapter.at && <div data-source-line="true" style={{position:'absolute', left:F.plate.x, width:F.plate.w, top:188, textAlign:'center', font:'400 20px "IBM Plex Mono"', color:color('color/text/muted'), opacity:sourceP}}>The Original Power, Chapter 2</div>}
++        </g></svg>
++      <div data-caption="true" style={{position:'absolute', left:F.plate.x+plateShift, width:F.plate.w, top:150, textAlign:'center', font:'500 28px "IBM Plex Mono"', letterSpacing:2, color:color('color/text/primary'), opacity:captionP}}>Figure 2.3 · Inverting the Definitional Hierarchy</div>
++      {ms >= cue.t10Chapter.at && <div data-source-line="true" style={{position:'absolute', left:F.plate.x+plateShift, width:F.plate.w, top:188, textAlign:'center', font:'400 20px "IBM Plex Mono"', color:color('color/text/muted'), opacity:sourceP}}>The Original Power, Chapter 2</div>}
+       <div data-rail-label="true" style={{position:'absolute', left:RAIL.x, top:RAIL.labelY, font:'400 20px "IBM Plex Mono"', lineHeight:1.4, color:color('color/text/muted'), opacity:labelP}}>
+         {RAIL_LABEL_LINES.map(line => <div key={line}>{line}</div>)}
+       </div>
+       {flights.map(({p, railTextOpacity, layerTextOpacity}, i) => {
+         const w = RAIL.w + (F.landW - RAIL.w)*p + (F.layerWidths[i]-F.landW)*taperP;
+-        const cx = (RAIL.x + RAIL.w/2) + (F.leftCenter - (RAIL.x + RAIL.w/2))*p;
++        const cx = (RAIL.x + RAIL.w/2) + (F.leftCenter + plateShift - (RAIL.x + RAIL.w/2))*p;
+         const y = RAIL.slotY[i] + (F.layerY[i]-RAIL.slotY[i])*p;
+         const h = RAIL.slotH + (F.layerH-RAIL.slotH)*p;
+         const layer = LAYERS_LEFT[i];
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseOne.tsx b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseOne.tsx
+index 6368e7a..6bc28e8 100644
+--- a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseOne.tsx
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseOne.tsx
+@@ -9,9 +9,9 @@ const enter = (ms:number, at:number, duration=460) => cubicOut(progress(ms, at,
+ const PHRASES = [
+   {cue:'t7Prejudice', text:'individual prejudice'},
+   {cue:'t7Hostility', text:', hostility,'},
+-  {cue:'t7Discrimination', text:' or discrimination'},
+-  {cue:'t7Person', text:' directed against another person'},
+-  {cue:'t7Race', text:' on the basis of race or ethnicity.'},
++  {cue:'t7Discrimination', text:'or discrimination'},
++  {cue:'t7Person', text:'directed against another person'},
++  {cue:'t7Race', text:'on the basis of race or ethnicity.'},
+ ] as const;
+ 
+ const ARROW_LABELS = [
+@@ -50,10 +50,10 @@ export function SenseOne({segment}:SceneProps) {
+     <EntryRail slots={slots} enter={openP}/>
+     <SenseCard title="Sense 1" enter={openP}>
+       <div data-definition="sense-1" style={{position:'absolute', left:40, top:116, width:1240, fontSize:38, lineHeight:1.55}}>
+-        {PHRASES.map(({cue:name, text}) => {
++        {PHRASES.map(({cue:name, text}, index) => {
+           const at = cue[name].at;
+           const p = enter(ms, at, 380);
+-          return ms >= at && <span key={name} data-phrase={name} style={{display:'inline-block', whiteSpace:'pre-wrap', opacity:p, transform:`translateY(${10*(1-p)}px)`}}>{text}</span>;
++          return ms >= at && <React.Fragment key={name}>{index>0 && !text.startsWith(',') && ' '}<span data-phrase={name} style={{opacity:p, transform:`translateY(${10*(1-p)}px)`}}>{text}</span></React.Fragment>;
+         })}
+       </div>
+       <svg style={{position:'absolute', left:40, top:300}} width="1240" height="410" viewBox="0 0 1240 410" aria-label="One person acting on another">
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.tsx b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.tsx
+index 93da47a..368e411 100644
+--- a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.tsx
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.tsx
+@@ -8,8 +8,8 @@ const enter = (ms:number, at:number, duration=460) => cubicOut(progress(ms, at,
+ 
+ const PHRASES = [
+   {cue:'t9Institutional', text:'institutional or systemic practices'},
+-  {cue:'t9Unequal', text:' that produce unequal outcomes'},
+-  {cue:'t9Categories', text:' across racial categories.'},
++  {cue:'t9Unequal', text:'that produce unequal outcomes'},
++  {cue:'t9Categories', text:'across racial categories.'},
+ ] as const;
+ 
+ // Institution network (left) and outcome meter (right) inside the card's svg
+@@ -47,10 +47,10 @@ export function SenseThree({segment}:SceneProps) {
+     <EntryRail slots={slots} enter={openP}/>
+     <SenseCard title="Sense 3" enter={openP} dashed={1-solidP}>
+       <div data-definition="sense-3" style={{position:'absolute', left:40, top:116, width:1240, fontSize:36, lineHeight:1.5}}>
+-        {PHRASES.map(({cue:name, text}) => {
++        {PHRASES.map(({cue:name, text}, index) => {
+           const at = cue[name].at;
+           const p = enter(ms, at, 380);
+-          return ms >= at && <span key={name} data-phrase={name} style={{display:'inline-block', whiteSpace:'pre-wrap', opacity:p, transform:`translateY(${10*(1-p)}px)`}}>{text}</span>;
++          return ms >= at && <React.Fragment key={name}>{index>0 && !text.startsWith(',') && ' '}<span data-phrase={name} style={{opacity:p, transform:`translateY(${10*(1-p)}px)`}}>{text}</span></React.Fragment>;
+         })}
+       </div>
+       <svg style={{position:'absolute', left:40, top:300}} width="1240" height="410" viewBox="0 0 1240 410" aria-label="A system of practices and unequal outcomes">
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx
+index 702f174..8e38593 100644
+--- a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx
+@@ -8,10 +8,10 @@ const enter = (ms:number, at:number, duration=460) => cubicOut(progress(ms, at,
+ 
+ const PHRASES = [
+   {cue:'t8Ideological', text:'an ideological belief'},
+-  {cue:'t8Doctrine', text:' or doctrine'},
+-  {cue:'t8Biological', text:' holding that built-in biological differences'},
+-  {cue:'t8Groups', text:' among human racial groups'},
+-  {cue:'t8Determine', text:' determine cultural or intellectual achievement.'},
++  {cue:'t8Doctrine', text:'or doctrine'},
++  {cue:'t8Biological', text:'holding that built-in biological differences'},
++  {cue:'t8Groups', text:'among human racial groups'},
++  {cue:'t8Determine', text:'determine cultural or intellectual achievement.'},
+ ] as const;
+ 
+ // Doctrine chain diagram inside the card's svg (viewBox 1240 × 410): the claimed chain sits
+@@ -45,10 +45,10 @@ export function SenseTwo({segment}:SceneProps) {
+     <EntryRail slots={slots} enter={openP}/>
+     <SenseCard title="Sense 2" enter={openP}>
+       <div data-definition="sense-2" style={{position:'absolute', left:40, top:116, width:1240, fontSize:36, lineHeight:1.5}}>
+-        {PHRASES.map(({cue:name, text}) => {
++        {PHRASES.map(({cue:name, text}, index) => {
+           const at = cue[name].at;
+           const p = enter(ms, at, 380);
+-          return ms >= at && <span key={name} data-phrase={name} style={{display:'inline-block', whiteSpace:'pre-wrap', opacity:p, transform:`translateY(${10*(1-p)}px)`}}>{text}</span>;
++          return ms >= at && <React.Fragment key={name}>{index>0 && !text.startsWith(',') && ' '}<span data-phrase={name} style={{opacity:p, transform:`translateY(${10*(1-p)}px)`}}>{text}</span></React.Fragment>;
+         })}
+       </div>
+       <svg style={{position:'absolute', left:40, top:300}} width="1240" height="410" viewBox="0 0 1240 410" aria-label="The doctrine's claimed chain">
+diff --git a/Architecting_the_operation/video/yt02/stage/tools/check_minute_two.tsx b/Architecting_the_operation/video/yt02/stage/tools/check_minute_two.tsx
+index 0088837..5dcb6bf 100644
+--- a/Architecting_the_operation/video/yt02/stage/tools/check_minute_two.tsx
++++ b/Architecting_the_operation/video/yt02/stage/tools/check_minute_two.tsx
+@@ -34,6 +34,10 @@ for(const file of sourceFiles){
+   assert.ok(!/\buse(?:State|Effect|LayoutEffect|Reducer|Ref|Memo|Callback)\b/.test(source),`${file} contains a forbidden hook`);
+   assert.ok(!/\b(?:Math\.random|Date\b|getBoundingClientRect|offsetWidth|offsetHeight)\b/.test(source),`${file} contains a nondeterministic or measured path`);
+ }
++for(const file of ['SenseOne.tsx','SenseTwo.tsx','SenseThree.tsx']){
++  const source=fs.readFileSync(new URL(`../minutetwo/${file}`,import.meta.url),'utf8');
++  assert.ok(!/text:'\s/.test(source),`${file} has a fragment string beginning with whitespace`);
++}
+ 
+ function render(scene:SceneName,ms:number){
+   const Scene=sceneComponents[scene],segment=plan.segments.find(x=>x.scene===scene)!;
+@@ -208,7 +212,8 @@ if(process.env.MINUTE_TWO_SNAPSHOT==='1'){
+       const ms=start+(end-start)*sample/9;
+       const states=[0,1,2].map(i=>figureFlightState(ms,start,i));
+       const boxes=states.map((state,i)=>{
+-        const cx=RAIL.x+RAIL.w/2+(FIGURE_LAYOUT.leftCenter-(RAIL.x+RAIL.w/2))*state.p;
++        const plateShift=-200*Math.max(0,Math.min(1,(ms-plan.cues.t10Displays)/(plan.cues.t10Order+600-plan.cues.t10Displays)));
++        const cx=RAIL.x+RAIL.w/2+(FIGURE_LAYOUT.leftCenter+plateShift-(RAIL.x+RAIL.w/2))*state.p;
+         const y=RAIL.slotY[i]+(FIGURE_LAYOUT.layerY[i]-RAIL.slotY[i])*state.p;
+         const w=RAIL.w+(FIGURE_LAYOUT.landW-RAIL.w)*state.p;
+         const h=RAIL.slotH+(FIGURE_LAYOUT.layerH-RAIL.slotH)*state.p;
+@@ -223,6 +228,14 @@ if(process.env.MINUTE_TWO_SNAPSHOT==='1'){
+       }
+     }
+   }
++  {
++    const finalPlate=byKind('FigureTwoThree').find(frame=>frame.kind==='t10Order')!.html;
++    const plateMatch=finalPlate.match(/data-plate="true" data-plate-left="([0-9.]+)"[^>]*width="([0-9.]+)"/);
++    assert.ok(plateMatch,'FigureTwoThree final plate geometry is missing');
++    const plateLeft=FIGURE_LAYOUT.plate.x,plateWidth=FIGURE_LAYOUT.plate.w;
++    const leftMargin=plateLeft,rightMargin=1920-(plateLeft+plateWidth);
++    assert.ok(Math.abs(leftMargin-rightMargin)<=8,`FigureTwoThree final plate margins ${leftMargin}/${rightMargin} differ by more than 8 px`);
++  }
+   {
+     const finalLeft=FIGURE_LAYOUT.leftCenter-FIGURE_LAYOUT.layerWidths[0]/2-FIGURE_LAYOUT.bracket.finalPad;
+     const finalRight=FIGURE_LAYOUT.leftCenter+FIGURE_LAYOUT.layerWidths[0]/2+FIGURE_LAYOUT.bracket.finalPad;

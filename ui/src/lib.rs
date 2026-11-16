@@ -1,5 +1,6 @@
 extern crate self as scriptcast_ui;
 
+pub mod ai_sidebar;
 pub mod audio;
 pub mod checkpoint;
 pub mod cli;
@@ -9,6 +10,7 @@ pub mod detached;
 pub mod discrepancy;
 pub mod episode;
 pub mod find;
+pub mod mix;
 pub mod new_episode;
 pub mod not_heard;
 pub mod phase_m;
@@ -16,6 +18,8 @@ pub mod pipeline;
 pub mod progress;
 pub mod retime;
 pub mod review;
+pub mod router_client;
+pub mod stage_view;
 pub mod runner;
 pub mod script;
 pub mod stress_ensemble;

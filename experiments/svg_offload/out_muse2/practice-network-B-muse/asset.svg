@@ -1,0 +1,29 @@
+<svg style={{position:'absolute', left:40, top:300}} width="1240" height="410" viewBox="0 0 1240 410" aria-label="A system of practices and unequal outcomes">
+        {ms >= cue.t9Practices.at && <g data-network="true">
+          {/* wires first, dash-traced in over netP; opaque nodes painted over them */}
+          {WIRES.map(([[x1, y1], [x2, y2]], i) => <line key={i} data-network-wire={i+1} x1={x1} y1={y1} x2={x2} y2={y2} stroke={color('color/line/chart')} strokeWidth={2} strokeLinecap="round" pathLength={1} strokeDasharray="1" strokeDashoffset={1-netP}/>)}
+          {NODES.map(({x, y}, i) => {
+            const p = enter(ms, cue.t9Practices.at + i*90, 400);
+            const cx = x + NODE_W/2, cy = y + NODE_H/2;
+            return <g key={i} data-institution-node={i+1} opacity={p} transform={`translate(${cx} ${cy}) scale(${.8+.2*p}) translate(${-cx} ${-cy})`}>
+              <rect x={x} y={y} width={NODE_W} height={NODE_H} rx={12} fill={color('color/bg/field')} stroke={color('color/line/hairline-strong')} strokeWidth={2}/>
+              <circle cx={cx} cy={cy} r={4} fill={color('color/line/chart')}/>
+            </g>;
+          })}
+        </g>}
+        {ms >= cue.t9Unequal.at && <g data-outcome-meter="true">
+          <line x1={812} y1={205} x2={1188} y2={205} stroke={color('color/line/graticule')} strokeWidth={1} strokeDasharray="2 6"/>
+          <line x1={812} y1={M.baseline} x2={1188} y2={M.baseline} stroke={color('color/line/hairline')} strokeWidth={2}/>
+          {[M.barAX, M.barBX].map(x => <rect key={x} x={x} y={M.trackY} width={M.barW} height={M.trackH} fill="none" stroke={color('color/line/graticule')} strokeWidth={2}/>)}
+          <rect data-bar="a" x={M.barAX} y={M.baseline - M.barAH*meterP} width={M.barW} height={M.barAH*meterP} fill={color('color/fill/gold-wash')} stroke={color('color/fill/gold')} strokeWidth={2}/>
+          <rect data-bar="b" x={M.barBX} y={M.baseline - M.barBH*meterP} width={M.barW} height={M.barBH*meterP} fill={color('color/fill/gold-wash')} stroke={color('color/fill/gold')} strokeWidth={2}/>
+          <text x={M.barAX + M.barW/2} y={330} textAnchor="middle" fontFamily="IBM Plex Mono" fontSize={20} fill={color('color/text/muted')}>category A</text>
+          <text x={M.barBX + M.barW/2} y={330} textAnchor="middle" fontFamily="IBM Plex Mono" fontSize={20} fill={color('color/text/muted')}>category B</text>
+          <rect x={1012} y={36} width={164} height={34} rx={6} fill={color('color/fill/panel-render')} stroke={color('color/line/hairline')}/>
+          <text x={1094} y={59} textAnchor="middle" fontFamily="IBM Plex Mono" fontSize={20} fill={color('color/text/muted')}>illustrative</text>
+        </g>}
+        {ms >= cue.t9Categories.at && <g data-unit-tag="a system" opacity={unitP}>
+          <rect x={876} y={356} width={208} height={40} rx={6} fill={color('color/fill/panel-render')} stroke={color('color/line/hairline')}/>
+          <text x={980} y={383} textAnchor="middle" fontFamily="IBM Plex Mono" fontSize={22} fill={color('color/text/muted')}>unit: a system</text>
+        </g>}
+      </svg>

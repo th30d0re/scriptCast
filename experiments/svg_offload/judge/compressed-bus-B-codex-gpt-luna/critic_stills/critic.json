@@ -1,0 +1,10 @@
+{
+  "model": "mlx-community/MiniCPM-V-4.7-35B-A3B-4bit",
+  "frames": [
+    {
+      "file": "HostWetware_t26Bandwidth.png",
+      "status": "contract_error",
+      "raw": "{\"verdict\":\"fail\",\"defects\":[{\"category\":\"Layout\",\"element_id\":null,\"evidence\":\"Additional orange connection lines have been added to the diagram in image 2, connecting the input nodes to the neural network and the neural network to the output categories. These lines are not present in the reference image 1.\",\"severity\":\"high\",\"region\":[307,432,750,632]}]}"
+    }
+  ]
+}

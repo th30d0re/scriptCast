@@ -133,13 +133,13 @@ fn speaker_chain_keeps_frame_count() {
 }
 
 #[test]
-fn master_chain_keeps_frame_count() {
-    let dir = scratch("master");
+fn main_chain_keeps_frame_count() {
+    let dir = scratch("main");
     let input = dir.join("in.wav");
     let src = sine(440.0, 0.9, 1.0);
     write_float_wav(&input, &src);
     let output = dir.join("out.wav");
-    let json = chain_json(&input, &output, &["--preset", "master"]);
+    let json = chain_json(&input, &output, &["--preset", "main"]);
     assert_eq!(field(&json, "plugins"), "[\"maximizer\",\"dither\",\"dc_offset_removal\"]");
     assert_eq!(num(&json, "frames") as usize, src.frames());
     assert_eq!(num(&json, "sample_rate") as u32, SR);
@@ -167,8 +167,8 @@ fn bad_arguments_fail_with_one_line() {
     let cases: &[&[&str]] = &[
         &["--preset", "speaker", "--set", "channel_strip.no_such_param=1"],
         &["--preset", "speaker", "--set", "no_such_plugin.gain=1"],
-        &["--preset", "master", "--room"],
-        &["--preset", "master", "--eq7"],
+        &["--preset", "main", "--room"],
+        &["--preset", "main", "--eq7"],
         &["--preset", "radio"],
     ];
     for extra in cases {

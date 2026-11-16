@@ -84,14 +84,14 @@ Look at these PNGs first. They are the existing, approved screens, and the new f
 - **Craft export:** two cards, Cue sheet and Timeline, each with a one-line description, an output path and "Export". After an export, a result row shows the path with "Reveal in Finder" and "Copy path".
 
 **N4 — Effects**
-- **Left:** a speaker list (colour dot, name, engine chip): Toussaint, Aisha and Emmanuel Theodore on OmniVoice; Jala Chantelle, The Speech Prof and Nick Powers on archive. "Master" sits at the bottom.
+- **Left:** a speaker list (colour dot, name, engine chip): Toussaint, Aisha and Emmanuel Theodore on OmniVoice; Jala Chantelle, The Speech Prof and Nick Powers on archive. "Main" sits at the bottom.
 - **Right, with Aisha selected:** a horizontal chain of effect cards, each with an on/off switch:
   - **Channel Strip:** trim, gate threshold, compressor threshold/ratio, low/mid/high EQ, HPF;
   - **De-Esser:** frequency, amount;
   - **Reverb:** size, mix.
 
   Plus "Bypass all" A/B and Play selected turn.
-- **Master state as an inset:** Maximizer (target LUFS, ceiling), Dither, and the loudness readout.
+- **Main state as an inset:** Maximizer (target LUFS, ceiling), Dither, and the loudness readout.
 - **Footer:** "Applied when stitching and mixing; Live and Logic sessions keep the dry audio." Revert, Save.
 
 ## Deliver (all in `plans/Native_UI/figcraft/`)

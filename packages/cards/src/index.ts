@@ -11,3 +11,7 @@ export {TitleCard, titleBeats, type TitleProps} from './TitleCard';
 export {CompareCard, compareBeats, type CompareProps} from './CompareCard';
 export {FreezeCallout, freezeBeats, type FreezeProps, type Callout} from './FreezeCallout';
 export {PartsCard, partsBeats, type PartsProps} from './PartsCard';
+export {EquationCard, equationBeats, activeTerm, type EquationProps} from './EquationCard';
+export {QuoteCard, quoteBeats, type QuoteProps} from './QuoteCard';
+export {TableCard, tableBeats, type TableProps} from './TableCard';
+export {MathText, InlineMath} from './Math';

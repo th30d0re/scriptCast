@@ -1,0 +1,3 @@
+turn_index,audio_time,script_time,speaker,clip_name,first_words
+1,00:00,00:00,alice,turn_1_0,"Hello, stage."
+2,00:02,00:02,bob,turn_2_0,Second turn here.

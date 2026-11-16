@@ -1,0 +1,17 @@
+cue,rank,workers,notes
+doctrine-chain,1,muse,
+doctrine-chain,2,codex-gpt-luna;codex-gpt-terra,tie
+doctrine-chain,3,muse-rerun,close behind; looks unfinished
+practice-network,1,codex-gpt-luna;codex-gpt-terra;muse;muse-rerun,all tied
+debate-funnel,1,agy-gemini-flash-low;codex-gpt-terra;muse-rerun,tie
+debate-funnel,last,codex-gpt-luna,
+router-tree,1,codex-gpt-terra,
+router-tree,2,codex-gpt-luna;agy-gemini-flash-low,tie
+router-tree,last,muse-rerun,identical to reference (no visible change)
+group-boundary,1,muse-rerun,
+group-boundary,unusable,codex-gpt-luna;codex-gpt-terra;agy-gemini-flash-low,author: horrible
+compressed-bus,1,agy-gemini-flash-low;codex-gpt-terra,tie
+compressed-bus,unusable,codex-gpt-luna;muse-rerun,
+term-glyphs,1,codex-gpt-terra;agy-gemini-flash-low;muse-rerun,all like reference
+term-glyphs,last,codex-gpt-luna,extra symbols
+comparator-loop,1,codex-gpt-terra;agy-gemini-flash-low;codex-gpt-luna;muse-rerun,all tie; near-identical to reference

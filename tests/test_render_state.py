@@ -276,3 +276,11 @@ class BuildPositionMapTests(TestCase):
         position_map = build_position_map(state)
         self.assertEqual(position_map[("abc123", 0)], 0)
         self.assertEqual(position_map[("def456", 0)], 1250)
+
+
+def test_previous_gap_ms_keeps_prior_pause():
+    from types import SimpleNamespace
+    from scriptcast.__main__ import _previous_gap_ms
+    segs = [SimpleNamespace(gap_after_ms=g) for g in (350, 350, 0)]
+    assert _previous_gap_ms(SimpleNamespace(segments=segs)) == 350
+    assert _previous_gap_ms(None) == 0
