@@ -120,7 +120,7 @@ impl Installer {
             self.events = None;
             self.start_detection();
         }
-        if self.open || self.events.is_some() {
+        if self.events.is_some() || self.detect.is_some() {
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }
     }
