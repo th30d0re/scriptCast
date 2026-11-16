@@ -83,7 +83,7 @@ def test_cues_csv_is_the_approved_selection():
 def test_default_matrix_shape():
     assert len(run.DEFAULT_CUES) == 10
     assert len(run.WORKERS) == 4
-    assert run.CONDITIONS == ("A", "B")
+    assert run.CONDITIONS == ("A", "B", "C")
 
 
 def test_dry_run_dispatch_matrix(dry_run_output):
@@ -560,5 +560,4 @@ def test_non_muse_cell_does_not_touch_trust(tmp_path, monkeypatch):
     run.run_cell(cand, "B", worker, args, None)
     assert not trust_file.with_name("trust.json.bak").exists()
     assert json.loads(trust_file.read_text()) == {"schema_version": 1, "projects": {}}
-
 

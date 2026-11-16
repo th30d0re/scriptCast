@@ -2,11 +2,15 @@ import React from 'react';
 import {TokensContext} from '../tokens';
 import {
   ActionIcon, CardBorder, CitationCard, CompactBorder, DefinitionCard,
-  EvidenceToken, GroupDirectionField, HeartIcon, KitTokens, MapStage, NeuralField,
+  ArchDiagram, EvidenceToken, GroupDirectionField, HeartIcon, KitTokens, MapStage, NeuralField,
   NumberBadge, PrecisionGauge, PredictiveUpdatePlot, QuestionHeader,
   ScanLines, SignalLane, StageSceneFrame, SystemIcon, TermBlock, TermTriad,
   TrainingTextStrip, UsThemSortingField, WordIcon, StickFigure, color,
 } from './index';
+import archDiagramLayout from './fixtures/archdiagram.workflow.layout.json';
+import type {ArchLayout} from './components/types';
+
+const archDiagramFixture = archDiagramLayout as unknown as ArchLayout;
 
 // Each specimen is laid out at its natural size, then uniformly fitted into its cell.
 function Tile({name, index, width, height, children}:React.PropsWithChildren<{name:string;index:number;width:number;height:number}>) {
@@ -56,5 +60,6 @@ export function KitGallery2() {
     <Tile index={6} name="CardBorder · expanded notch" width={1920} height={1080}><CardBorder/></Tile>
     <Tile index={7} name="CardBorder · collapsed notch" width={1920} height={1080}><CardBorder notch={0}/></Tile>
     <Tile index={8} name="CompactBorder" width={1920} height={1080}><CompactBorder/></Tile>
+    <Tile index={9} name="ArchDiagram" width={989} height={404}><ArchDiagram layout={archDiagramFixture} box={{x:0,y:0,w:989,h:404}} progress={1}/></Tile>
   </Sheet>;
 }

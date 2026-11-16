@@ -284,7 +284,7 @@ WORKERS = [
     Worker("muse", "muse", "muse"),
 ]
 
-CONDITIONS = ("A", "B")
+CONDITIONS = ("A", "B", "C")
 
 
 def cell_slug(candidate: Candidate, condition: str, worker: Worker) -> str:
@@ -365,6 +365,17 @@ def brief_text(
             f"SVG markup from that file, position it per the scene layout, and gate its\n"
             f"entrance animation on the cue timing. Keep the scene's existing stroke/fill\n"
             f"token usage (`color('color/...')`) where the asset references `currentColor`.\n"
+        )
+    if condition == "C":
+        return base + (
+            "Author an Archify workflow or architecture candidate JSON that expresses the "
+            f"asset description above. Run `{ROOT / 'video/scripts/archify-layout.mjs'}` "
+            "with that type, candidate path, and an output "
+            "layout JSON path. Commit the generated layout JSON beside the scene. Mount "
+            "`<ArchDiagram>` from `@stage` at cue `"
+            f"{candidate.cue}` in place of the inline SVG, fitting it into the scene's layout "
+            "box and gating its `progress` on cue timing. Use only the generated layout data; "
+            "do not use Archify HTML or CSS.\n"
         )
     return base + (
         f"Draw the asset yourself, inline in the scene TSX at cue `{candidate.cue}`.\n\n"

@@ -90,10 +90,21 @@ Absolute `box` props use `{x, y, w, h}` in the 1920×1080 scene coordinate syste
 | `QuestionHeader` | `box`, `text`, `progress`, `accentTerm?`, `accent?`, `id?` | `min7_12/shared/QuestionHeader.tsx` |
 | `TermTriad` | `boxes`, `terms`, `states`, `sources?`, `progress`, `pulses?`, `socketProgress?`, `layout?`, `id?` | `min7_12/shared/TermTriad.tsx` |
 | `GroupDirectionField` | `box`, `marks`, `leftLabel`, `rightLabel`, `forwardProgress`, `reverseProgress`, `insideLabels?`, `boundaryProgress?`, `gutter?`, `id?` | `min7_12/shared/GroupDirectionField.tsx` |
+| `ArchDiagram` | `layout`, `box`, `progress` | Checked Archify geometry drawn with kit primitives. |
 | `Label` | `id`, `box`, `children`, typography/alignment options | `min7_12/shared/audit.tsx` |
 | `Panel` | `id`, `box`, `opacity?`, `accent?`, `style?`, `children?` | `min7_12/shared/audit.tsx` |
 
 The kit also exports the geometry and audit helpers colocated with those components, including `evidenceTokenSize`, `laneGeometry`, `lanePoint`, `questionHeaderFit`, `triadBlockLayout`, `groupFieldGeometry`, and `groupMarkPlacement`.
+
+### ArchDiagram
+
+`ArchDiagram` fits an `ArchLayout` uniformly into `box: {x, y, w, h}` and uses a
+single `progress` value for its group → node → edge reveal. Generate its data with
+`node video/scripts/archify-layout.mjs <architecture|workflow> <candidate.json> <out.layout.json>`.
+The adapter runs the pinned Archify CLI (override with `ARCHIFY_BIN`) and supports
+only Archify's `architecture` and `workflow` candidates. It uses Archify solely for
+checked geometry: nodes, labels, edges, and groups are rendered with kit tokens and
+primitives, never Archify HTML or CSS.
 
 ## Gallery
 

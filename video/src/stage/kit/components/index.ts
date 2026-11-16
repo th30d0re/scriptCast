@@ -15,3 +15,4 @@ export * from './SignalLane';
 export * from './QuestionHeader';
 export * from './TermTriad';
 export * from './GroupDirectionField';
+export * from './ArchDiagram';

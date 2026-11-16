@@ -4,19 +4,24 @@ import {TokensContext} from '../tokens';
 import {color, Tokens} from './theme/tokens';
 import {
   ActionIcon, BootIn, CardBorder, CitationCard, CompactBorder,
-  DefinitionCard, DrawLine, DrawRect, EvidenceToken, FitBox, Flicker,
+  ArchDiagram, DefinitionCard, DrawLine, DrawRect, EvidenceToken, FitBox, Flicker,
   GroupDirectionField, HeartIcon, KitTokens, NeuralField, NumberBadge,
   PersonMark, PrecisionGauge, PredictiveUpdatePlot, QuestionHeader,
   ScanLines, SceneBorder, SignalLane, SourceLine, StageSceneFrame, StickFigure,
   SystemIcon, TermBlock, TermTriad, Trace, TrainingTextStrip, UsThemSortingField,
   WordIcon,
 } from './index';
+import archDiagramLayout from './fixtures/archdiagram.workflow.layout.json';
+import type {ArchLayout} from './components/types';
+
+const archDiagramFixture = archDiagramLayout as unknown as ArchLayout;
 
 type Item = {id: string; source: string; motion?: boolean};
 
 /** The public inventory used by the renderer and by human reviewers. */
 const sheetItems: readonly [string, string, boolean?][] = [
   ['CitationCard', 'components/CitationCard.tsx'], ['DefinitionCard', 'components/DefinitionCard.tsx'],
+  ['ArchDiagram', 'components/ArchDiagram.tsx'],
   ['EvidenceToken', 'components/EvidenceToken.tsx'], ['GroupDirectionField', 'components/GroupDirectionField.tsx'],
   ['NeuralField', 'components/NeuralField.tsx'], ['PrecisionGauge', 'components/PrecisionGauge.tsx'],
   ['PredictiveUpdatePlot', 'components/PredictiveUpdatePlot.tsx'], ['QuestionHeader', 'components/QuestionHeader.tsx'],
@@ -37,6 +42,7 @@ const panelStyle: React.CSSProperties = {position: 'absolute', inset: 0, border:
 function StaticSpecimen({id, p = 1}: {id: string; p?: number}) {
   const wrap = (node: React.ReactNode) => <div style={specimenStyle}>{node}</div>;
   switch (id) {
+    case 'ArchDiagram': return wrap(<ArchDiagram layout={archDiagramFixture} box={{x:-250, y:-40, w:1700, h:700}} progress={p}/>);
     case 'CitationCard': return wrap(<CitationCard authors="Author & Author" year={2026} title="Example work" progress={p}/>);
     case 'DefinitionCard': return wrap(<DefinitionCard term="Signal" definition="A reusable definition treatment." source="Sample source" paraphrased progress={p} accent="color/fill/gold"/>);
     case 'EvidenceToken': return wrap(<EvidenceToken label="DOCUMENTED" kind="documented" progress={p} emphasis={.4} sourceSocket={{lock: 1}} box={{x: 330, y: 270, w: 540, h: 72}}/>);
