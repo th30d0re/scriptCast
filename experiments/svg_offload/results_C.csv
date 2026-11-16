@@ -1,0 +1,5 @@
+cue,scene,shot,file,cue_id,condition,worker,agent,model,generator,brief,worker_tokens,tsx_typecheck_pass,render_pass,svg_node_count,svg_bytes,status,critic_verdict
+doctrine-chain,SenseTwo,S00-08,minutetwo/SenseTwo.tsx,t8Determine,C,codex-gpt-terra,codex,gpt-5.6-terra,,/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_C/doctrine-chain-C-codex-gpt-terra/brief.md,,fail,skip,,,ok,PENDING
+practice-network,SenseThree,S00-09,minutetwo/SenseThree.tsx,t9Practices,C,codex-gpt-terra,codex,gpt-5.6-terra,,/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_C/practice-network-C-codex-gpt-terra/brief.md,,fail,skip,11,2146,ok,PENDING
+router-tree,HeartsAudit,S00-14,min3_7/a/HeartsAudit.tsx,t14Default,C,codex-gpt-terra,codex,gpt-5.6-terra,,/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_C/router-tree-C-codex-gpt-terra/brief.md,,fail,skip,21,3392,ok,PENDING
+comparator-loop,PredictiveCoding,S00-30,min3_7/d/PredictiveCoding.tsx,t30Compares,C,codex-gpt-terra,codex,gpt-5.6-terra,,/Users/emmanuel/Dev/Tools/scriptCast/experiments/svg_offload/out_C/comparator-loop-C-codex-gpt-terra/brief.md,,fail,skip,10,1771,ok,PENDING

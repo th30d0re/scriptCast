@@ -1,0 +1,220 @@
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.doctrine-chain.architecture.json b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.doctrine-chain.architecture.json
+new file mode 100644
+index 0000000..1828744
+--- /dev/null
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.doctrine-chain.architecture.json
+@@ -0,0 +1,25 @@
++{
++  "schema_version": 1,
++  "diagram_type": "architecture",
++  "meta": {
++    "title": "Doctrine's claimed chain",
++    "output": "SenseTwo.doctrine-chain.architecture.html",
++    "viewBox": [1240, 410],
++    "visual_preset": "editorial",
++    "animation": "trace"
++  },
++  "components": [
++    {"id": "racial-groups", "type": "external", "label": "racial groups", "pos": [110, 154], "size": [230, 84]},
++    {"id": "biological-differences", "type": "backend", "label": "biological differences", "pos": [370, 154], "size": [230, 84]},
++    {"id": "cultural-achievement", "type": "backend", "label": "cultural achievement", "pos": [630, 154], "size": [230, 84]},
++    {"id": "intellectual-achievement", "type": "external", "label": "intellectual achievement", "pos": [890, 154], "size": [230, 84]}
++  ],
++  "boundaries": [
++    {"kind": "region", "label": "doctrine", "wraps": ["racial-groups", "biological-differences", "cultural-achievement", "intellectual-achievement"], "pad": 38}
++  ],
++  "connections": [
++    {"from": "racial-groups", "to": "biological-differences", "route": "straight"},
++    {"from": "biological-differences", "to": "cultural-achievement", "route": "straight"},
++    {"from": "cultural-achievement", "to": "intellectual-achievement", "route": "straight"}
++  ]
++}
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.doctrine-chain.layout.json b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.doctrine-chain.layout.json
+new file mode 100644
+index 0000000..15fea3c
+--- /dev/null
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.doctrine-chain.layout.json
+@@ -0,0 +1,100 @@
++{
++  "viewBox": [
++    1240,
++    410
++  ],
++  "nodes": [
++    {
++      "id": "racial-groups",
++      "label": "racial groups",
++      "x": 110,
++      "y": 154,
++      "w": 230,
++      "h": 84,
++      "kind": "external"
++    },
++    {
++      "id": "biological-differences",
++      "label": "biological differences",
++      "x": 370,
++      "y": 154,
++      "w": 230,
++      "h": 84,
++      "kind": "backend"
++    },
++    {
++      "id": "cultural-achievement",
++      "label": "cultural achievement",
++      "x": 630,
++      "y": 154,
++      "w": 230,
++      "h": 84,
++      "kind": "backend"
++    },
++    {
++      "id": "intellectual-achievement",
++      "label": "intellectual achievement",
++      "x": 890,
++      "y": 154,
++      "w": 230,
++      "h": 84,
++      "kind": "external"
++    }
++  ],
++  "edges": [
++    {
++      "id": "racial-groups-biological-differences-0",
++      "from": "racial-groups",
++      "to": "biological-differences",
++      "points": [
++        [
++          340,
++          196
++        ],
++        [
++          370,
++          196
++        ]
++      ]
++    },
++    {
++      "id": "biological-differences-cultural-achievement-1",
++      "from": "biological-differences",
++      "to": "cultural-achievement",
++      "points": [
++        [
++          600,
++          196
++        ],
++        [
++          630,
++          196
++        ]
++      ]
++    },
++    {
++      "id": "cultural-achievement-intellectual-achievement-2",
++      "from": "cultural-achievement",
++      "to": "intellectual-achievement",
++      "points": [
++        [
++          860,
++          196
++        ],
++        [
++          890,
++          196
++        ]
++      ]
++    }
++  ],
++  "groups": [
++    {
++      "label": "doctrine",
++      "x": 72,
++      "y": 116,
++      "w": 1086,
++      "h": 142
++    }
++  ]
++}
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx
+index 7c3aab5..4b363e9 100644
+--- a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseTwo.tsx
+@@ -1,8 +1,9 @@
+ import React from 'react';
+-import {DrawLine, DrawRect, Flicker, KitSound, cubicOut, progress, useCue, useStageMs, type SceneProps} from '@stage';
++import {ArchDiagram, Flicker, KitSound, cubicOut, progress, useCue, useStageMs, type ArchLayout, type SceneProps} from '@stage';
+ import {color} from '../tokens';
+ import {SceneBorder} from '../dashboard/SceneBorder';
+ import {EntryRail, SenseCard, type RailSlotSpec} from './EntryRail';
++import doctrineChainLayoutData from './SenseTwo.doctrine-chain.layout.json';
+ 
+ const enter = (ms:number, at:number, duration=460) => cubicOut(progress(ms, at, at + duration));
+ const cueFrame = (ms:number) => Math.round(ms * 30 / 1000);
+@@ -15,30 +16,19 @@ const PHRASES = [
+   {cue:'t8Determine', text:'determine cultural or intellectual achievement.'},
+ ] as const;
+ 
+-// Doctrine chain diagram inside the card's svg (viewBox 1240 × 410): the claimed chain sits
+-// inside a thought-bubble outline. Fixed box positions; landing order follows the cues.
+-const BOXES = [
+-  {key:'groups', cue:'t8Groups', label:'racial groups', x:120},
+-  {key:'differences', cue:'t8Biological', label:'biological differences', x:480},
+-  {key:'achievement', cue:'t8Achievement', label:'achievement', x:840},
+-] as const;
+-const BOX_W = 300, BOX_H = 96, BOX_Y = 130;
+-const ARROWS = [{x1:424, x2:476}, {x1:784, x2:836}];
++const doctrineChainLayout = doctrineChainLayoutData as unknown as ArchLayout;
+ 
+ export function SenseTwo({segment}:SceneProps) {
+   const ms = useStageMs();
+   const cue = {
+     t8Sense:useCue('t8Sense'), t8Ideological:useCue('t8Ideological'), t8Doctrine:useCue('t8Doctrine'),
+     t8Biological:useCue('t8Biological'), t8Groups:useCue('t8Groups'), t8Determine:useCue('t8Determine'),
+-    t8Achievement:useCue('t8Achievement'),
+   };
+   const openP = enter(ms, cue.t8Sense.at, 500);
+-  const bubbleP = enter(ms, cue.t8Doctrine.at, 500);
+-  const arrowP = enter(ms, cue.t8Determine.at, 500);
+-  const unitP = enter(ms, cue.t8Achievement.at, 400);
++  const doctrineChainP = enter(ms, cue.t8Determine.at, 500);
+   const slots:[RailSlotSpec,RailSlotSpec,RailSlotSpec] = [
+     {state:'dim', unitP:1},
+-    {state:'lit', unitP},
++    {state:'lit', unitP:doctrineChainP},
+     {state:'placeholder'},
+   ];
+   return <KitSound mode="beats"><div data-scene="SenseTwo" style={{position:'absolute', inset:0, width:1920, height:1080, overflow:'hidden', background:color('color/bg/field'), color:color('color/text/primary'), fontFamily:'IBM Plex Sans'}}>
+@@ -52,32 +42,7 @@ export function SenseTwo({segment}:SceneProps) {
+           return ms >= at && <React.Fragment key={name}>{index>0 && ' '}<Flicker startFrame={cueFrame(at)} durationFrames={Math.round(380*30/1000)} style={{position:'relative', inset:'auto', display:'inline'}}><span data-phrase={name} style={{opacity:p}}>{text}</span></Flicker></React.Fragment>;
+         })}
+       </div>
+-      <svg style={{position:'absolute', left:40, top:300}} width="1240" height="410" viewBox="0 0 1240 410" aria-label="The doctrine's claimed chain">
+-        <defs><marker id="sense2-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0l10 5-10 5z" fill={color('color/fill/gold')}/></marker></defs>
+-        {ms >= cue.t8Doctrine.at && <g data-thought-bubble="true" opacity={bubbleP}>
+-          <rect x={60} y={30} width={1140} height={300} rx={80} fill="none" stroke={color('color/line/hairline')} strokeWidth={2} strokeDasharray="10 8"/>
+-          <circle cx={150} cy={366} r={13} fill="none" stroke={color('color/line/hairline')} strokeWidth={2}/>
+-          <circle cx={112} cy={394} r={7} fill="none" stroke={color('color/line/hairline')} strokeWidth={2}/>
+-          <foreignObject x={573} y={12} width={134} height={36}><DrawRect box={{x:0,y:0,w:134,h:36}} progress={bubbleP} strokeToken="color/line/hairline" fillToken="color/bg/field" glowToken="color/fill/gold" strokeWidth={1} seed={111}/></foreignObject>
+-          <text x={640} y={38} textAnchor="middle" fontFamily="IBM Plex Mono" fontSize={22} fill={color('color/text/muted')}>doctrine</text>
+-        </g>}
+-        {BOXES.map(({key, cue:name, label, x}) => {
+-          const at = cue[name].at;
+-          const p = enter(ms, at, 350);
+-          return ms >= at && <g key={key} data-diagram-box={label} opacity={p}>
+-            <foreignObject x={x} y={BOX_Y} width={BOX_W} height={BOX_H}><DrawRect box={{x:0,y:0,w:BOX_W,h:BOX_H}} progress={p} strokeToken="color/line/hairline-strong" fillToken="color/fill/panel-render" glowToken="color/fill/gold" strokeWidth={1.5} seed={121+x}/></foreignObject>
+-            <text x={x+BOX_W/2} y={BOX_Y+57} textAnchor="middle" fontFamily="IBM Plex Sans" fontSize={22} fill={color('color/text/primary')}>{label}</text>
+-          </g>;
+-        })}
+-        {ms >= cue.t8Determine.at && <g>
+-          <text x={630} y={266} textAnchor="middle" fontFamily="IBM Plex Mono" fontSize={20} fill={color('color/text/muted')} opacity={arrowP}>claimed to determine</text>
+-        </g>}
+-        {ms >= cue.t8Achievement.at && <g data-unit-tag="a belief" opacity={unitP}>
+-          <foreignObject x={525} y={348} width={210} height={40}><DrawRect box={{x:0,y:0,w:210,h:40}} progress={unitP} strokeToken="color/line/hairline" fillToken="color/fill/panel-render" glowToken="color/fill/gold" strokeWidth={1} seed={131}/></foreignObject>
+-          <text x={630} y={375} textAnchor="middle" fontFamily="IBM Plex Mono" fontSize={22} fill={color('color/text/muted')}>unit: a belief</text>
+-        </g>}
+-      </svg>
+-      <div style={{position:'absolute', left:40, top:300, width:1240, height:410}}>{ARROWS.map(({x1,x2}) => <div key={x1} data-doctrine-arrow={x1} style={{position:'absolute', inset:0}}><DrawLine points={[[x1,178],[x2,178]]} startFrame={cueFrame(cue.t8Determine.at)} durationFrames={15} strokeToken="color/fill/gold" strokeWidth={3} end="arrow" beat={x1===ARROWS[0].x1}/></div>)}</div>
++      {ms >= cue.t8Determine.at && <ArchDiagram layout={doctrineChainLayout} box={{x:40, y:300, w:1240, h:410}} progress={doctrineChainP}/>}
+     </SenseCard>
+   </div></KitSound>;
+ }

@@ -1,0 +1,171 @@
+diff --git a/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.router.layout.json b/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.router.layout.json
+new file mode 100644
+index 0000000..2fc31a7
+--- /dev/null
++++ b/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.router.layout.json
+@@ -0,0 +1,104 @@
++{
++  "viewBox": [
++    768,
++    486
++  ],
++  "nodes": [
++    {
++      "id": "court",
++      "label": "COURT",
++      "x": 48,
++      "y": 196,
++      "w": 92,
++      "h": 52
++    },
++    {
++      "id": "public-figure",
++      "label": "PUBLIC FIGURE",
++      "x": 48,
++      "y": 86,
++      "w": 92,
++      "h": 52
++    },
++    {
++      "id": "workplace",
++      "label": "WORKPLACE",
++      "x": 48,
++      "y": 306,
++      "w": 92,
++      "h": 52
++    },
++    {
++      "id": "default-definition",
++      "label": "DEFAULT DEFINITION",
++      "x": 274,
++      "y": 180,
++      "w": 120,
++      "h": 84
++    }
++  ],
++  "edges": [
++    {
++      "id": "court-route",
++      "from": "court",
++      "to": "default-definition",
++      "points": [
++        [
++          140,
++          222
++        ],
++        [
++          274,
++          222
++        ]
++      ]
++    },
++    {
++      "id": "public-figure-route",
++      "from": "public-figure",
++      "to": "default-definition",
++      "points": [
++        [
++          140,
++          112
++        ],
++        [
++          207,
++          112
++        ],
++        [
++          207,
++          208
++        ],
++        [
++          274,
++          208
++        ]
++      ]
++    },
++    {
++      "id": "workplace-route",
++      "from": "workplace",
++      "to": "default-definition",
++      "points": [
++        [
++          140,
++          332
++        ],
++        [
++          207,
++          332
++        ],
++        [
++          207,
++          236
++        ],
++        [
++          274,
++          236
++        ]
++      ]
++    }
++  ],
++  "groups": []
++}
+diff --git a/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.router.workflow.json b/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.router.workflow.json
+new file mode 100644
+index 0000000..e74feed
+--- /dev/null
++++ b/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.router.workflow.json
+@@ -0,0 +1,23 @@
++{
++  "schema_version": 2,
++  "diagram_type": "workflow",
++  "meta": {
++    "title": "Default Definition Router",
++    "output": "stage/min3_7/a/HeartsAudit.router.html",
++    "quality_profile": "showcase"
++  },
++  "lanes": [
++    {"id": "routing", "label": "Disparity routing"}
++  ],
++  "nodes": [
++    {"id": "public-figure", "lane": "routing", "col": 0, "yOffset": -110, "type": "external", "label": "PUBLIC FIGURE"},
++    {"id": "court", "lane": "routing", "col": 0, "yOffset": 0, "type": "external", "label": "COURT"},
++    {"id": "workplace", "lane": "routing", "col": 0, "yOffset": 110, "type": "external", "label": "WORKPLACE"},
++    {"id": "default-definition", "lane": "routing", "col": 2, "type": "backend", "label": "DEFAULT DEFINITION", "height": 84}
++  ],
++  "edges": [
++    {"id": "public-figure-route", "from": "public-figure", "to": "default-definition", "fromSide": "right", "toSide": "left", "variant": "emphasis"},
++    {"id": "court-route", "from": "court", "to": "default-definition", "fromSide": "right", "toSide": "left", "variant": "emphasis"},
++    {"id": "workplace-route", "from": "workplace", "to": "default-definition", "fromSide": "right", "toSide": "left", "variant": "emphasis"}
++  ]
++}
+diff --git a/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.tsx b/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.tsx
+index 9fd3054..b9a1267 100644
+--- a/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.tsx
++++ b/Architecting_the_operation/video/yt02/stage/min3_7/a/HeartsAudit.tsx
+@@ -1,10 +1,13 @@
+ import React from 'react';
+-import {useCue, useStageMs, type SceneProps} from '@stage';
++import {ArchDiagram,useCue, useStageMs, type ArchLayout,type SceneProps} from '@stage';
+ import {color} from '../../tokens';
+ import {EquationTerms, type EquationToken} from '../../equations';
+ import {StageSceneFrame} from '../shared';
+-import {AuditedTermBlock,DrawLine,DrawRect,FlickerLabel,KitSound,enter,HeartIcon,Label,lineAttrs,Panel,pathFrom,ScanLines,SceneSource,shapeAttrs,StickFigure,textAttrs,WordIcon,type Box,type Point} from './PackageAVisuals';
++import {AuditedTermBlock,DrawLine,DrawRect,FlickerLabel,KitSound,enter,HeartIcon,Label,lineAttrs,Panel,pathFrom,ScanLines,SceneSource,shapeAttrs,StickFigure,textAttrs,WordIcon,type Box} from './PackageAVisuals';
+ import {EQ_25} from './SequenceAsTheory';
++import routerLayoutData from './HeartsAudit.router.layout.json';
++
++const ROUTER_LAYOUT=routerLayoutData as unknown as ArchLayout;
+ 
+ const FORMAL_LINES:readonly (readonly EquationToken[])[]=[
+   [{term:'IndividualPrejudice',width:282},{text:' → ',width:48}],
+@@ -86,10 +89,7 @@ function TurnFourteen({ms,cue}:{ms:number;cue:CueMap}) {
+       </Panel>;})}
+     </div>
+     {ms>=cue.t14Default.at&&<Panel id="definition-router" box={HEARTS_LAYOUT.router} opacity={route} startMs={cue.t14Default.at}>
+-      <div {...textAttrs('definition-router-title',{x:780,y:345,w:310,h:30},{size:22,lh:1.25})} style={{position:'absolute',left:30,top:35,width:310,textAlign:'center',font:'500 22px "IBM Plex Mono"',color:color('color/fill/gold')}}>DEFAULT DEFINITION</div>
+-      <svg width="370" height="420" viewBox="0 0 370 420" aria-hidden="true">
+-        {[120,210,300].map((y,index)=>{const points:Point[]=[[768,HEARTS_LAYOUT.router.y+y],[916,HEARTS_LAYOUT.router.y+y],[975,520],[1098,520]];const k=enter(ms,cue.t14Default.at+index*90,500);return <path key={y} {...lineAttrs(`router-line-${index+1}`,points)} d={`M 18 ${y} H 166 Q 225 ${y} 225 210 H 348`} fill="none" stroke={color('color/fill/gold')} strokeWidth="2" pathLength={1} strokeDasharray={k>=1?undefined:`${k} 1`}/>;})}
+-      </svg>
++      <ArchDiagram layout={ROUTER_LAYOUT} box={{x:0,y:0,w:HEARTS_LAYOUT.router.w,h:HEARTS_LAYOUT.router.h}} progress={route}/>
+     </Panel>}
+     {ms>=cue.t14Malice.at&&<Panel id="thought-audit-panel" box={HEARTS_LAYOUT.thoughts} opacity={malice} startMs={cue.t14Malice.at}>
+       <div {...textAttrs('malice-audit',{x:1210,y:272,w:550,h:32},{size:24,lh:1.25})} style={{position:'absolute',left:0,top:42,width:550,textAlign:'center',font:'500 24px "IBM Plex Mono"',color:color('color/marker/race')}}>MALICE AUDIT</div>

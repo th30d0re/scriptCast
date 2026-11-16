@@ -1,0 +1,340 @@
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.practices.layout.json b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.practices.layout.json
+new file mode 100644
+index 0000000..614b1b9
+--- /dev/null
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.practices.layout.json
+@@ -0,0 +1,189 @@
++{
++  "viewBox": [
++    784,
++    350
++  ],
++  "nodes": [
++    {
++      "id": "housing",
++      "label": "housing",
++      "x": 63.599999999999994,
++      "y": 86,
++      "w": 92,
++      "h": 52
++    },
++    {
++      "id": "schooling",
++      "label": "schooling",
++      "x": 183.6,
++      "y": 170,
++      "w": 92,
++      "h": 52
++    },
++    {
++      "id": "employment",
++      "label": "employment",
++      "x": 303.6,
++      "y": 86,
++      "w": 92,
++      "h": 52
++    },
++    {
++      "id": "health",
++      "label": "health",
++      "x": 423.6,
++      "y": 170,
++      "w": 92,
++      "h": 52
++    },
++    {
++      "id": "justice",
++      "label": "justice",
++      "x": 543.6,
++      "y": 86,
++      "w": 92,
++      "h": 52
++    }
++  ],
++  "edges": [
++    {
++      "id": "employment-health-0",
++      "from": "employment",
++      "to": "health",
++      "points": [
++        [
++          356.6,
++          138
++        ],
++        [
++          356.6,
++          154
++        ],
++        [
++          462.6,
++          154
++        ],
++        [
++          462.6,
++          170
++        ]
++      ]
++    },
++    {
++      "id": "health-justice-1",
++      "from": "health",
++      "to": "justice",
++      "points": [
++        [
++          476.6,
++          170
++        ],
++        [
++          476.6,
++          154
++        ],
++        [
++          589.6,
++          154
++        ],
++        [
++          589.6,
++          138
++        ]
++      ]
++    },
++    {
++      "id": "housing-health-2",
++      "from": "housing",
++      "to": "health",
++      "points": [
++        [
++          109.6,
++          138
++        ],
++        [
++          109.6,
++          254
++        ],
++        [
++          469.6,
++          254
++        ],
++        [
++          469.6,
++          222
++        ]
++      ]
++    },
++    {
++      "id": "housing-schooling-3",
++      "from": "housing",
++      "to": "schooling",
++      "points": [
++        [
++          109.6,
++          138
++        ],
++        [
++          109.6,
++          154
++        ],
++        [
++          222.6,
++          154
++        ],
++        [
++          222.6,
++          170
++        ]
++      ]
++    },
++    {
++      "id": "schooling-employment-4",
++      "from": "schooling",
++      "to": "employment",
++      "points": [
++        [
++          236.6,
++          170
++        ],
++        [
++          236.6,
++          154
++        ],
++        [
++          342.6,
++          154
++        ],
++        [
++          342.6,
++          138
++        ]
++      ]
++    },
++    {
++      "id": "schooling-justice-5",
++      "from": "schooling",
++      "to": "justice",
++      "points": [
++        [
++          229.6,
++          170
++        ],
++        [
++          229.6,
++          58
++        ],
++        [
++          589.6,
++          58
++        ],
++        [
++          589.6,
++          86
++        ]
++      ]
++    }
++  ],
++  "groups": []
++}
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.practices.workflow.json b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.practices.workflow.json
+new file mode 100644
+index 0000000..4ef04fb
+--- /dev/null
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.practices.workflow.json
+@@ -0,0 +1,28 @@
++{
++  "schema_version": 2,
++  "diagram_type": "workflow",
++  "meta": {
++    "title": "Institutional practices network",
++    "output": "SenseThree.practices.html",
++    "legend": {"mode": "hidden"}
++  },
++  "lanes": [
++    {"id": "practices", "label": "institutional practices"}
++  ],
++  "groups": [],
++  "nodes": [
++    {"id": "housing", "lane": "practices", "col": 0, "type": "backend", "label": "housing", "yOffset": -42},
++    {"id": "schooling", "lane": "practices", "col": 1, "type": "backend", "label": "schooling", "yOffset": 42},
++    {"id": "employment", "lane": "practices", "col": 2, "type": "backend", "label": "employment", "yOffset": -42},
++    {"id": "health", "lane": "practices", "col": 3, "type": "backend", "label": "health", "yOffset": 42},
++    {"id": "justice", "lane": "practices", "col": 4, "type": "backend", "label": "justice", "yOffset": -42}
++  ],
++  "edges": [
++    {"from": "housing", "to": "schooling", "variant": "dashed", "fromSide": "bottom", "toSide": "top"},
++    {"from": "schooling", "to": "employment", "variant": "dashed", "fromSide": "top", "toSide": "bottom"},
++    {"from": "employment", "to": "health", "variant": "dashed", "fromSide": "bottom", "toSide": "top"},
++    {"from": "health", "to": "justice", "variant": "dashed", "fromSide": "top", "toSide": "bottom"},
++    {"from": "housing", "to": "health", "variant": "dashed", "route": "bottom-channel", "fromSide": "bottom", "toSide": "bottom"},
++    {"from": "schooling", "to": "justice", "variant": "dashed", "route": "up-channel", "fromSide": "top", "toSide": "top"}
++  ]
++}
+diff --git a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.tsx b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.tsx
+index 8182a98..fd170ce 100644
+--- a/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.tsx
++++ b/Architecting_the_operation/video/yt02/stage/minutetwo/SenseThree.tsx
+@@ -1,8 +1,9 @@
+ import React from 'react';
+-import {DrawLine, DrawRect, Flicker, KitSound, cubicOut, progress, useCue, useStageMs, type SceneProps} from '@stage';
++import {ArchDiagram, DrawRect, Flicker, KitSound, cubicOut, progress, useCue, useStageMs, type ArchLayout, type SceneProps} from '@stage';
+ import {color} from '../tokens';
+ import {SceneBorder} from '../dashboard/SceneBorder';
+ import {EntryRail, SenseCard, type RailSlotSpec} from './EntryRail';
++import practicesLayoutData from './SenseThree.practices.layout.json';
+ 
+ const enter = (ms:number, at:number, duration=460) => cubicOut(progress(ms, at, at + duration));
+ const cueFrame = (ms:number) => Math.round(ms * 30 / 1000);
+@@ -13,18 +14,8 @@ const PHRASES = [
+   {cue:'t9Categories', text:'across racial categories.'},
+ ] as const;
+ 
+-// Institution network (left) and outcome meter (right) inside the card's svg
+-// (viewBox 1240 × 410). Meter bar heights exported for tools/check_minute_two.tsx.
+-const NODES = [
+-  {x:60, y:60}, {x:300, y:30}, {x:540, y:100}, {x:140, y:220}, {x:420, y:250},
+-] as const;
+-const NODE_W = 150, NODE_H = 64;
+-const CENTER = NODES.map(({x, y}) => [x + NODE_W/2, y + NODE_H/2] as const);
+-const WIRES = [[0,1],[1,2],[0,3],[3,4],[2,4],[1,3]].map(([a,b]) => [CENTER[a], CENTER[b]] as const);
+-
+-export const SENSE3_NETWORK = {nodes:NODES, nodeW:NODE_W, nodeH:NODE_H, wires:WIRES} as const;
+-
+ export const SENSE3_METER = {trackY:110, trackH:190, baseline:300, barAX:850, barBX:1060, barW:90, barAH:170, barBH:58} as const;
++const PRACTICES_LAYOUT = practicesLayoutData as unknown as ArchLayout;
+ 
+ export function SenseThree({segment}:SceneProps) {
+   const ms = useStageMs();
+@@ -54,16 +45,10 @@ export function SenseThree({segment}:SceneProps) {
+           return ms >= at && <React.Fragment key={name}>{index>0 && ' '}<Flicker startFrame={cueFrame(at)} durationFrames={Math.round(380*30/1000)} style={{position:'relative', inset:'auto', display:'inline'}}><span data-phrase={name} style={{opacity:p}}>{text}</span></Flicker></React.Fragment>;
+         })}
+       </div>
+-      <svg style={{position:'absolute', left:40, top:300}} width="1240" height="410" viewBox="0 0 1240 410" aria-label="A system of practices and unequal outcomes">
+-        {ms >= cue.t9Practices.at && <g data-network="true">
+-          {NODES.map(({x, y}, i) => {
+-            const p = enter(ms, cue.t9Practices.at + i*90, 400);
+-            const cx = x + NODE_W/2, cy = y + NODE_H/2;
+-            return <g key={i} data-institution-node={i+1} opacity={p} transform={`translate(${cx} ${cy}) scale(${.8+.2*p}) translate(${-cx} ${-cy})`}>
+-              <foreignObject x={x} y={y} width={NODE_W} height={NODE_H}><DrawRect box={{x:0,y:0,w:NODE_W,h:NODE_H}} progress={p} strokeToken="color/line/hairline-strong" fillToken="color/bg/field" glowToken="color/fill/gold" strokeWidth={2} seed={151+i}/></foreignObject>
+-            </g>;
+-          })}
+-        </g>}
++      {ms >= cue.t9Practices.at && <div data-network="true" aria-label="A network of institutional practices" style={{position:'absolute', left:40, top:300, width:720, height:320}}>
++        <ArchDiagram layout={PRACTICES_LAYOUT} box={{x:0,y:0,w:720,h:320}} progress={netP}/>
++      </div>}
++      <svg style={{position:'absolute', left:40, top:300}} width="1240" height="410" viewBox="0 0 1240 410" aria-label="A comparison of unequal outcomes">
+         {ms >= cue.t9Unequal.at && <g data-outcome-meter="true">
+           <line x1={820} y1={M.baseline} x2={1180} y2={M.baseline} stroke={color('color/line/hairline')} strokeWidth={2}/>
+           {[M.barAX, M.barBX].map(x => <rect key={x} x={x} y={M.trackY} width={M.barW} height={M.trackH} fill="none" stroke={color('color/line/graticule')} strokeWidth={2}/>)}
+@@ -79,7 +64,6 @@ export function SenseThree({segment}:SceneProps) {
+           <text x={980} y={385} textAnchor="middle" fontFamily="IBM Plex Mono" fontSize={22} fill={color('color/text/muted')}>unit: a system</text>
+         </g>}
+       </svg>
+-      <div data-network-wires="true" style={{position:'absolute', left:40, top:300, width:1240, height:410}}>{WIRES.map((points,i) => <div key={i} data-network-wire={i+1} style={{position:'absolute', inset:0}}><DrawLine points={points} startFrame={cueFrame(cue.t9Practices.at)} durationFrames={18} strokeToken="color/line/chart" strokeWidth={2} nodes={false} origin={false} beat={i===0}/></div>)}</div>
+     </SenseCard>
+   </div></KitSound>;
+ }
+diff --git a/Architecting_the_operation/video/yt02/stage/tools/check_minute_two.tsx b/Architecting_the_operation/video/yt02/stage/tools/check_minute_two.tsx
+index ca6ee00..18ab4fa 100644
+--- a/Architecting_the_operation/video/yt02/stage/tools/check_minute_two.tsx
++++ b/Architecting_the_operation/video/yt02/stage/tools/check_minute_two.tsx
+@@ -7,7 +7,7 @@ import {ClockContext,PlanContext,type StagePlan} from '@stage';
+ import {EntryOpen, ENTRY_OPEN_LAYOUT} from '../minutetwo/EntryOpen';
+ import {SenseOne} from '../minutetwo/SenseOne';
+ import {SenseTwo} from '../minutetwo/SenseTwo';
+-import {SenseThree, SENSE3_METER, SENSE3_NETWORK} from '../minutetwo/SenseThree';
++import {SenseThree, SENSE3_METER} from '../minutetwo/SenseThree';
+ import {FigureTwoThree, FIGURE_LAYOUT, figureFlightState, figurePlateShift} from '../minutetwo/FigureTwoThree';
+ import {RAIL, CARD} from '../minutetwo/EntryRail';
+ 
+@@ -194,30 +194,11 @@ if(process.env.MINUTE_TWO_SNAPSHOT==='1'){
+   assert.ok(ENTRY_OPEN_LAYOUT.slot3BottomY>ENTRY_OPEN_LAYOUT.slotY[2]&&ENTRY_OPEN_LAYOUT.slot3BottomY+ENTRY_OPEN_LAYOUT.slotH<=ENTRY_OPEN_LAYOUT.panelH,'EntryOpen slot 3 does not slide to the panel bottom');
+   assert.ok(SENSE3_METER.barAH>=2*SENSE3_METER.barBH,'SenseThree outcome bars are not clearly unequal');
+ 
+-  // Wires paint first and disappear beneath opaque nodes. Independent wire segments do not
+-  // cross, and each segment clears every unrelated node.
++  // The practices network is generated from its adjacent Archify workflow receipt.
+   {
+     const networkHtml=byKind('SenseThree').find(frame=>frame.kind==='t9Practices')!.html;
+-    assert.ok(networkHtml.indexOf('data-network-wire="1"')<networkHtml.indexOf('data-institution-node="1"'),'SenseThree nodes are not painted after the wires');
+-    const field=networkHtml.match(/data-scene="SenseThree" style="[^"]*background:([^;]+);/)?.[1];
+-    const nodeFill=networkHtml.match(/data-institution-node="1"[^>]*><rect[^>]*fill="([^"]+)"/)?.[1];
+-    assert.equal(nodeFill,field,'SenseThree nodes do not use the opaque field fill');
+-    const {wires,nodes,nodeW,nodeH}=SENSE3_NETWORK;
+-    for(let i=0;i<wires.length;i++)for(let j=i+1;j<wires.length;j++){
+-      const [a,b]=wires[i],[c,d]=wires[j];
+-      if([a,b].some(p=>[c,d].some(q=>samePoint(p,q))))continue;
+-      assert.ok(!properIntersection(a,b,c,d),`SenseThree wires ${i+1} and ${j+1} cross`);
+-    }
+-    for(let wireIndex=0;wireIndex<wires.length;wireIndex++){
+-      const [a,b]=wires[wireIndex];
+-      for(let nodeIndex=0;nodeIndex<nodes.length;nodeIndex++){
+-        const node=nodes[nodeIndex],center=[node.x+nodeW/2,node.y+nodeH/2] as const;
+-        if(samePoint(a,center)||samePoint(b,center))continue;
+-        const corners=[[node.x,node.y],[node.x+nodeW,node.y],[node.x+nodeW,node.y+nodeH],[node.x,node.y+nodeH]] as const;
+-        const crosses=corners.some((corner,k)=>properIntersection(a,b,corner,corners[(k+1)%4]));
+-        assert.ok(!crosses,`SenseThree wire ${wireIndex+1} passes through node ${nodeIndex+1}`);
+-      }
+-    }
++    assert.ok(networkHtml.includes('data-network="true"'),'SenseThree Archify network is absent at t9Practices');
++    for(const label of ['housing','schooling','employment','health','justice'])assert.ok(networkHtml.includes(`>${label}</div>`),`SenseThree network is missing ${label}`);
+   }
+ 
+   // Ten evenly spaced hand-off samples use the scene's layout constants. Any spatial

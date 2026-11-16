@@ -1,0 +1,277 @@
+diff --git a/Architecting_the_operation/video/yt02/stage/min3_7/d/PredictiveCoding.t30Compares.workflow.json b/Architecting_the_operation/video/yt02/stage/min3_7/d/PredictiveCoding.t30Compares.workflow.json
+new file mode 100644
+index 0000000..6b25ebc
+--- /dev/null
++++ b/Architecting_the_operation/video/yt02/stage/min3_7/d/PredictiveCoding.t30Compares.workflow.json
+@@ -0,0 +1,27 @@
++{
++  "schema_version": 2,
++  "diagram_type": "workflow",
++  "meta": {
++    "title": "Predictive coding comparator",
++    "output": "PredictiveCoding.t30Compares.workflow.html",
++    "viewBox": [768, 528],
++    "legend": {"mode": "hidden"}
++  },
++  "lanes": [
++    {"id": "prediction", "label": "Prediction"},
++    {"id": "evidence", "label": "Evidence"},
++    {"id": "comparison", "label": "Comparison"}
++  ],
++  "nodes": [
++    {"id": "prior", "lane": "prediction", "col": 0, "type": "frontend", "label": "Top-down prior"},
++    {"id": "sensory", "lane": "evidence", "col": 0, "type": "database", "label": "Sensory data"},
++    {"id": "comparator", "lane": "comparison", "col": 2, "type": "security", "label": "COMPARE"},
++    {"id": "percept", "lane": "comparison", "col": 4, "type": "backend", "label": "Live percept"}
++  ],
++  "edges": [
++    {"id": "prediction-in", "from": "prior", "to": "comparator", "label": "prediction", "variant": "emphasis"},
++    {"id": "evidence-in", "from": "sensory", "to": "comparator", "label": "evidence", "variant": "emphasis"},
++    {"id": "output", "from": "comparator", "to": "percept", "label": "output", "variant": "emphasis"},
++    {"id": "update", "from": "comparator", "to": "prior", "label": "update", "variant": "dashed", "route": "return-left"}
++  ]
++}
+diff --git a/Architecting_the_operation/video/yt02/stage/min3_7/d/PredictiveCoding.t30Compares.workflow.layout.json b/Architecting_the_operation/video/yt02/stage/min3_7/d/PredictiveCoding.t30Compares.workflow.layout.json
+new file mode 100644
+index 0000000..264cbd6
+--- /dev/null
++++ b/Architecting_the_operation/video/yt02/stage/min3_7/d/PredictiveCoding.t30Compares.workflow.layout.json
+@@ -0,0 +1,167 @@
++{
++  "viewBox": [
++    768,
++    528
++  ],
++  "nodes": [
++    {
++      "id": "prior",
++      "label": "Top-down prior",
++      "x": 48,
++      "y": 93,
++      "w": 92,
++      "h": 52
++    },
++    {
++      "id": "sensory",
++      "label": "Sensory data",
++      "x": 48,
++      "y": 217,
++      "w": 92,
++      "h": 52
++    },
++    {
++      "id": "comparator",
++      "label": "COMPARE",
++      "x": 288,
++      "y": 341,
++      "w": 92,
++      "h": 52
++    },
++    {
++      "id": "percept",
++      "label": "Live percept",
++      "x": 528,
++      "y": 341,
++      "w": 92,
++      "h": 52
++    }
++  ],
++  "edges": [
++    {
++      "id": "evidence-in",
++      "from": "sensory",
++      "to": "comparator",
++      "points": [
++        [
++          140,
++          243
++        ],
++        [
++          334,
++          243
++        ],
++        [
++          334,
++          341
++        ]
++      ],
++      "label": "evidence",
++      "labelBox": {
++        "x": 201.01714285714286,
++        "y": 216,
++        "w": 77.99999999999997,
++        "h": 18.999999999999993
++      },
++      "labelSize": 14.999999999999995,
++      "labelAt": [
++        240.01714285714286,
++        233
++      ]
++    },
++    {
++      "id": "output",
++      "from": "comparator",
++      "to": "percept",
++      "points": [
++        [
++          380,
++          367
++        ],
++        [
++          528,
++          367
++        ]
++      ],
++      "label": "output",
++      "labelBox": {
++        "x": 424,
++        "y": 333.96571418571426,
++        "w": 59.99999999999998,
++        "h": 18.999999999999993
++      },
++      "labelSize": 14.999999999999995,
++      "labelAt": [
++        454,
++        350.96571418571426
++      ]
++    },
++    {
++      "id": "prediction-in",
++      "from": "prior",
++      "to": "comparator",
++      "points": [
++        [
++          140,
++          119
++        ],
++        [
++          358,
++          119
++        ],
++        [
++          358,
++          341
++        ]
++      ],
++      "label": "prediction",
++      "labelBox": {
++        "x": 204.01714285714286,
++        "y": 92,
++        "w": 95.99999999999997,
++        "h": 18.999999999999993
++      },
++      "labelSize": 14.999999999999995,
++      "labelAt": [
++        252.01714285714286,
++        109
++      ]
++    },
++    {
++      "id": "update",
++      "from": "comparator",
++      "to": "prior",
++      "points": [
++        [
++          288,
++          367
++        ],
++        [
++          20,
++          367
++        ],
++        [
++          20,
++          119
++        ],
++        [
++          48,
++          119
++        ]
++      ],
++      "label": "update",
++      "labelBox": {
++        "x": 120.98285714285716,
++        "y": 340,
++        "w": 59.99999999999998,
++        "h": 18.999999999999993
++      },
++      "labelSize": 14.999999999999995,
++      "labelAt": [
++        150.98285714285714,
++        357
++      ]
++    }
++  ],
++  "groups": []
++}
+diff --git a/Architecting_the_operation/video/yt02/stage/min3_7/d/PredictiveCoding.tsx b/Architecting_the_operation/video/yt02/stage/min3_7/d/PredictiveCoding.tsx
+index c845530..44ef9a7 100644
+--- a/Architecting_the_operation/video/yt02/stage/min3_7/d/PredictiveCoding.tsx
++++ b/Architecting_the_operation/video/yt02/stage/min3_7/d/PredictiveCoding.tsx
+@@ -1,8 +1,9 @@
+ import React from 'react';
+-import {DrawRect, KitSound, progress, useCue, useStageMs, type SceneProps} from '@stage';
++import {ArchDiagram, DrawRect, KitSound, progress, useCue, useStageMs, type SceneProps} from '@stage';
+ import {color} from '../../tokens';
+ import {StageSceneFrame, PrecisionGauge} from '../shared';
+-import {CurveLane, Label, MotionLabel, MotionPanel, MotionPath, SceneSource, clamp, enter, lineAttrs, mix, mixBox, pathFrom, shapeAttrs, type LayoutBox, type Point} from './sceneUtils';
++import {CurveLane, Label, MotionLabel, MotionPanel, SceneSource, clamp, enter, lineAttrs, mix, mixBox, shapeAttrs, type LayoutBox} from './sceneUtils';
++import comparatorLayoutData from './PredictiveCoding.t30Compares.workflow.layout.json';
+ 
+ // Storyboard boxes. The percept plot keeps its storyboard x span and ends at y 620 so that the
+ // racial-prior precision gauge (no storyboard box in this scene) has its own box under it.
+@@ -24,13 +25,7 @@ export const PREDICTIVE_CODING_TEXT = {
+ /** Unit-interval means. Evidence stays fixed; the prior updates toward it in turn 30 and tilts left in turn 31. */
+ export const PREDICTIVE_MEANS = {evidence:.64, priorStart:.40, priorUpdated:.52, priorTilted:.36, outputStart:.60, outputWeighted:.40} as const;
+ 
+-const COMPARATOR = {x:880,y:570,r:26} as const;
+-const PREDICTION_WIRE:Point[] = [[610,480],[860,480],[880,500],[880,COMPARATOR.y-COMPARATOR.r]];
+-const EVIDENCE_WIRE:Point[] = [[610,700],[860,700],[880,680],[880,COMPARATOR.y+COMPARATOR.r]];
+-const OUTPUT_WIRE:Point[] = [[COMPARATOR.x+COMPARATOR.r,570],[1270,570]];
+-const UPDATE_PATH:Point[] = [[900,551],[960,520],[990,470],[970,430],[610,430]];
+-const BRACKET_LEFT:Point[] = [[846,532],[838,532],[838,608],[846,608]];
+-const BRACKET_RIGHT:Point[] = [[914,532],[922,532],[922,608],[914,608]];
++const COMPARATOR_LAYOUT = comparatorLayoutData as unknown as React.ComponentProps<typeof ArchDiagram>['layout'];
+ const PERCEPT = {left:1324,right:1716,y:500,guessY:450} as const;
+ const SENSORY_MARK = {from:732,to:830,y:700,r:9} as const;
+ const perceptX=(mean:number)=>PERCEPT.left+(PERCEPT.right-PERCEPT.left)*mean;
+@@ -63,8 +58,6 @@ export function PredictiveCoding({segment}:SceneProps) {
+       <Label id="percept-title" box={T.percept} size={20} weight={500} ls={1} ink={color('color/text/muted')} opacity={frameP}>LIVE PERCEPT / OUTPUT</Label>
+       <svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true">
+         <path {...lineAttrs('percept-axis',[[PERCEPT.left,PERCEPT.y],[PERCEPT.right,PERCEPT.y]])} d={`M${PERCEPT.left} ${PERCEPT.y}H${PERCEPT.right}`} stroke={color('color/line/hairline')} strokeWidth="2" opacity={frameP}/>
+-        <circle {...shapeAttrs('comparator',{x:COMPARATOR.x-COMPARATOR.r,y:COMPARATOR.y-COMPARATOR.r,w:2*COMPARATOR.r,h:2*COMPARATOR.r},'mark')} cx={COMPARATOR.x} cy={COMPARATOR.y} r={COMPARATOR.r} fill={color('color/bg/field')} stroke={accent} strokeWidth="3" opacity={frameP}/>
+-        <path {...lineAttrs('output-wire',OUTPUT_WIRE)} d={pathFrom(OUTPUT_WIRE)} fill="none" stroke={color('color/line/wire')} strokeWidth="3" opacity={frameP}/>
+       </svg>
+     </>}
+ 
+@@ -76,15 +69,12 @@ export function PredictiveCoding({segment}:SceneProps) {
+ 
+     {ms>=cue.priors.at && <>
+       <CurveLane id="prior" box={L.prior} labelW={200} mean={priorMean} label="TOP-DOWN PRIOR" progress={priorP} tone={turn31?'red':'gold'}/>
+-      <MotionPath id="prediction-wire" points={PREDICTION_WIRE} strokeWidth={3} startMs={cue.priors.at}/>
+     </>}
+     {ms>=cue.data.at && <>
+       <CurveLane id="evidence" box={L.evidence} labelW={290} mean={M.evidence} label="INCOMING SENSORY DATA" progress={evidenceP}/>
+-      <MotionPath id="evidence-wire" points={EVIDENCE_WIRE} strokeToken="color/fill/gold" strokeWidth={3} startMs={cue.data.at}/>
+     </>}
+ 
+     {ms>=cue.updates.at && <>
+-      <svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true"><path {...lineAttrs('update-path',UPDATE_PATH)} d={pathFrom(UPDATE_PATH)} fill="none" stroke={accent} strokeWidth="4" pathLength="1" strokeDasharray="1" strokeDashoffset={1-updateP}/></svg>
+       <Label id="update" box={T.update} size={24} ls={0} lh={1.2} ink={accent} opacity={updateP}><span data-beat="t30Updates">UPDATE</span></Label>
+     </>}
+ 
+@@ -94,13 +84,7 @@ export function PredictiveCoding({segment}:SceneProps) {
+       <svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true"><circle data-sensory-mark="true" {...shapeAttrs('sensory-mark',{x:markX-SENSORY_MARK.r,y:SENSORY_MARK.y-SENSORY_MARK.r,w:2*SENSORY_MARK.r,h:2*SENSORY_MARK.r},'mark')} cx={markX} cy={SENSORY_MARK.y} r={SENSORY_MARK.r} fill={gold} opacity={enter(ms,cue.guesses.at)}/></svg>
+       <Label id="guess" box={{x:markX+30,y:712,w:80,h:30}} size={24} ls={0} lh={1.2} ink={red} opacity={enter(ms,cue.guesses.at)}><span data-beat="t30Guesses">GUESS</span></Label>
+     </>}
+-    {ms>=cue.compares.at && <>
+-      <svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true" opacity={enter(ms,cue.compares.at)}>
+-        <path {...lineAttrs('bracket-left',BRACKET_LEFT)} d={pathFrom(BRACKET_LEFT)} fill="none" stroke={gold} strokeWidth="3"/>
+-        <path {...lineAttrs('bracket-right',BRACKET_RIGHT)} d={pathFrom(BRACKET_RIGHT)} fill="none" stroke={gold} strokeWidth="3"/>
+-      </svg>
+-      <Label id="compare" box={T.compare} size={24} ls={0} lh={1.2} ink={gold} opacity={enter(ms,cue.compares.at)}><span data-beat="t30Compares">COMPARE</span></Label>
+-    </>}
++    {ms>=cue.compares.at && <div data-beat="t30Compares"><ArchDiagram layout={COMPARATOR_LAYOUT} box={L.core} progress={enter(ms,cue.compares.at,650)}/></div>}
+     {ms>=cue.report.at && <Label id="sensory-report" box={T.report} size={26} align="center" opacity={enter(ms,cue.report.at)}><span data-beat="t30Report">SENSORY REPORT</span></Label>}
+ 
+     {turn31 && <>

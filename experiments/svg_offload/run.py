@@ -369,9 +369,10 @@ def brief_text(
     if condition == "C":
         return base + (
             "Author an Archify workflow or architecture candidate JSON that expresses the "
-            f"asset description above. Run `{ROOT / 'video/scripts/archify-layout.mjs'}` "
+            f"asset description above. Run `{EXPERIMENT_DIR.parents[1] / 'video/scripts/archify-layout.mjs'}` "
             "with that type, candidate path, and an output "
-            "layout JSON path. Commit the generated layout JSON beside the scene. Mount "
+            "layout JSON path. Save the candidate and generated layout JSON beside the scene and leave "
+            "them uncommitted (do not commit; the harness captures the working tree). Mount "
             "`<ArchDiagram>` from `@stage` at cue `"
             f"{candidate.cue}` in place of the inline SVG, fitting it into the scene's layout "
             "box and gating its `progress` on cue timing. Use only the generated layout data; "
@@ -620,6 +621,11 @@ def run_cell(
         if svg_text:
             row["svg_node_count"], row["svg_bytes"] = svg_stats(svg_text)
 
+        if condition == "C":
+            # C's output is new files (candidate + layout JSON); intent-to-add
+            # makes them appear in the captured diff. A/B capture is unchanged.
+            subprocess.run(["git", "-C", str(wt), "add", "-A", "-N"],
+                           capture_output=True, stdin=subprocess.DEVNULL)
         diff = subprocess.run(
             git_diff_command(wt),
             capture_output=True, text=True, stdin=subprocess.DEVNULL,

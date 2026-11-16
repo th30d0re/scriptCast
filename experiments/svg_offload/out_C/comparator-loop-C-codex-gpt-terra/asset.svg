@@ -1,0 +1,9 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true">
+        <path {...lineAttrs('percept-axis',[[PERCEPT.left,PERCEPT.y],[PERCEPT.right,PERCEPT.y]])} d={`M${PERCEPT.left} ${PERCEPT.y}H${PERCEPT.right}`} stroke={color('color/line/hairline')} strokeWidth="2" opacity={frameP}/>
+      </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true">
+      <circle data-percept-marker="true" {...shapeAttrs('percept-marker',{x:perceptX(outputMean)-15,y:PERCEPT.y-15,w:30,h:30},'mark')} cx={perceptX(outputMean)} cy={PERCEPT.y} r="15" fill={gold} opacity={enter(ms,cue.perception.at)}/>
+    </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true"><circle data-sensory-mark="true" {...shapeAttrs('sensory-mark',{x:markX-SENSORY_MARK.r,y:SENSORY_MARK.y-SENSORY_MARK.r,w:2*SENSORY_MARK.r,h:2*SENSORY_MARK.r},'mark')} cx={markX} cy={SENSORY_MARK.y} r={SENSORY_MARK.r} fill={gold} opacity={enter(ms,cue.guesses.at)}/></svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true"><circle data-guess-marker="true" {...shapeAttrs('guess-marker',{x:perceptX(priorMean)-11,y:PERCEPT.guessY-11,w:22,h:22},'mark')} cx={perceptX(priorMean)} cy={PERCEPT.guessY} r="11" fill={red} opacity={clamp(.2+guessCycle)*enter(ms,cue.tilt.at)}/></svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position:'absolute',inset:0}} aria-hidden="true"><path {...lineAttrs('legal-link',[[1520,L.bus.y],[1520,L.gauge.y+L.gauge.h]])} d={`M1520 ${L.bus.y}V${L.gauge.y+L.gauge.h}`} stroke={red} strokeWidth="4" opacity={enter(ms,cue.legally.at)}/></svg>

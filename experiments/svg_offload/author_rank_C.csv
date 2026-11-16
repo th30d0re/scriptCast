@@ -1,0 +1,9 @@
+cue,rank,workers,notes
+doctrine-chain,1,B:codex-gpt-terra,blind: X=C Y=B; author picked Y
+doctrine-chain,2,C:codex-gpt-terra,
+practice-network,1,B:codex-gpt-terra,blind: X=B Y=C; author picked X
+practice-network,2,C:codex-gpt-terra,
+router-tree,1,B:codex-gpt-terra,blind: X=B Y=C; author picked X
+router-tree,2,C:codex-gpt-terra,
+comparator-loop,1,B:codex-gpt-terra,blind: X=B Y=C; author picked X
+comparator-loop,2,C:codex-gpt-terra,

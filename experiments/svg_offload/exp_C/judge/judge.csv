@@ -1,0 +1,5 @@
+cell,worker,cue,status,render_ok,critic_verdict,n_defects,pixel_diff
+comparator-loop-C-codex-gpt-terra,codex-gpt-terra,comparator-loop,ok,True,,,
+doctrine-chain-C-codex-gpt-terra,codex-gpt-terra,doctrine-chain,ok,True,,,
+practice-network-C-codex-gpt-terra,codex-gpt-terra,practice-network,ok,True,,,
+router-tree-C-codex-gpt-terra,codex-gpt-terra,router-tree,ok,True,,,

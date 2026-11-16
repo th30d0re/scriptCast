@@ -561,3 +561,15 @@ def test_non_muse_cell_does_not_touch_trust(tmp_path, monkeypatch):
     assert not trust_file.with_name("trust.json.bak").exists()
     assert json.loads(trust_file.read_text()) == {"schema_version": 1, "projects": {}}
 
+
+
+def test_brief_text_builds_for_every_condition(tmp_path):
+    """Each condition's brief must render; C must point at a real layout script."""
+    cand = next(c for c in run.CANDIDATES if c.slug == "doctrine-chain")
+    worker = next(w for w in run.WORKERS if w.slug == "codex-gpt-terra")
+    for condition in run.CONDITIONS:
+        text = run.brief_text(cand, condition, worker, tmp_path, tmp_path / "a.svg")
+        assert cand.cue in text
+    c_text = run.brief_text(cand, "C", worker, tmp_path, None)
+    script = re.search(r"Run `([^`]+archify-layout\.mjs)`", c_text).group(1)
+    assert Path(script).is_file()

@@ -1,0 +1,26 @@
+<svg width="880" height="590" viewBox="0 0 880 590" style={{position:'absolute',inset:0}} aria-hidden="true">
+        {ms>=cue.t13Public.at&&<path {...shapeAttrs('debate-funnel',{x:230,y:395,w:610,h:270},'frame')} d="M 70 145 H 550 L 680 280 L 550 415 H 70" fill={color('color/fill/gold-wash')} stroke={color('color/line/hairline-strong')} strokeWidth="2" opacity={publicP}/>}
+        {ms>=cue.t13Audit.at&&<>
+          <path {...shapeAttrs('audit-beam',{x:840,y:495,w:180,h:70},'mark','audit-beam')} d="M 680 280 L 860 245 L 860 315 Z" fill={color('color/fill/red-faint')} opacity={auditP}/>
+          <ScanLines x={690} y={245} w={170} h={70} progress={auditP}/>
+        </>}
+        {[190,270,350].map((y,index)=><path key={y} d={`M 80 ${y} H ${390-index*18}`} stroke={color('color/text/muted')} strokeWidth="8" opacity={.22*ordering}/>) }
+      </svg>
+<svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><path d="M5 17 L24 6 L43 17 Z M9 21 V38 M19 21 V38 M29 21 V38 M39 21 V38 M5 42 H43" fill="none" stroke={color('color/text/soft')} strokeWidth="2.3"/></svg>
+<svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><rect x="7" y="7" width="34" height="34" fill="none" stroke={color('color/text/soft')} strokeWidth="2"/>{[16,25,34].flatMap(x=>[16,25,34].map(y=><rect key={`${x}-${y}`} x={x-2} y={y-2} width="4" height="4" fill={color('color/fill/gold')}/>))}</svg>
+<svg width="550" height="620" viewBox="0 0 550 620" aria-hidden="true">
+        <path {...shapeAttrs('sealed-thought-bubble',{x:1318,y:340,w:334,h:172},'frame')} d="M 112 190 C 112 130 165 98 250 98 C 335 98 388 130 388 190 C 388 244 345 274 274 280 L 246 310 L 236 276 C 160 268 112 238 112 190 Z" fill={color('color/surface/1')} stroke={color('color/line/hairline-strong')} strokeWidth="3"/>
+        <path d="M 184 181 C 204 164 226 158 250 158 C 274 158 296 164 316 181" fill="none" stroke={color('color/text/muted')} strokeWidth="2" opacity=".72"/>
+        <line {...lineAttrs('malice-probe',[[1690,335],[1588+(1-malice)*120,442+(1-malice)*-100]])} x1="480" y1="105" x2={378+(1-malice)*120} y2={212+(1-malice)*-100} stroke={color('color/marker/race')} strokeWidth="4"/>
+        <circle cx={378+(1-malice)*120} cy={212+(1-malice)*-100} r="10" fill={color('color/marker/race')}/>
+      </svg>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" aria-hidden="true" style={{position:'absolute',left:0,top:0,overflow:'visible'}}>
+      <path {...lineAttrs('claim-test-lead',[[375,790],[375,880],[1550,880],[1550,832]])} d="M375 790 V880 H1550 V838" fill="none" stroke={color('color/fill/gold')} strokeWidth="3" strokeDasharray="10 9" opacity={testable}/>
+      <path d="M1540 844 L1550 828 L1560 844" fill="none" stroke={color('color/fill/gold')} strokeWidth="3" opacity={testable}/>
+    </svg>
+<svg width="440" height="600" viewBox="0 0 440 600" aria-hidden="true">
+        {ms>=cue.t15Checked.at&&Array.from({length:6},(_,index)=><g key={index} opacity={enter(ms,cue.t15Checked.at+index*80,420)}>
+          <path d={`M ${74+(index%2)*190} ${137+Math.floor(index/2)*116} H ${184+(index%2)*190} M ${74+(index%2)*190} ${160+Math.floor(index/2)*116} H ${164+(index%2)*190}`} stroke={color('color/text/muted')} strokeWidth="2"/>
+        </g>)}
+        {ms>=cue.t15Centuries.at&&<line x1="26" y1="100" x2="26" y2={100+300*centuries} stroke={color('color/fill/gold')} strokeWidth="4"/>}
+      </svg>

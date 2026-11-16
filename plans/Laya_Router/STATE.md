@@ -96,6 +96,7 @@ Open: the `> 80%` path asks the worker for `.session-summary.md`; seeding the fr
 - Condition B: inline SVG across 10 cues, 4 workers. Round 2 Muse rerun with stdout capture and author ranking in `author_rank_round2.csv`. Rule: `svg_asset` → Codex gpt-5.6-terra default, agy gemini-3.8-flash-low when cheap, Luna only behind a critic, Muse second-opinion only. Condition A (local generation via SVGen/OmniSVG) blocked on weights.
 
 - Round 3 (2026-11-07, `experiments/svg_offload/{exp_muse3,out_muse3,results_muse3.csv}`): Muse rerun of the two cues round 2 lost to quota (pulse-network S00-33, dual-rails S00-39). Both delivered: TSX typecheck pass, render skipped, 29 and 18 SVG nodes. Critic verdict PENDING; contact sheets in `exp_muse3/judge/` and `judge/zoom3/`. Needs author ranking before it changes the routing rule.
+- Condition C (2026-11-15, `experiments/svg_offload/{exp_C,out_C,results_C.csv,author_rank_C.csv}`): archify layout drawn by the kit's `ArchDiagram`, Terra, 4 node-and-edge cues, pre-registered bar 2/4. **Null**: in a blind ranking the author preferred B on all 4. `ArchDiagram` stays a kit specimen; no `svg_asset` routing change.
 
 ### Context rule C2b (2026-11-13)
 Added `C2b`: text `\bYT02` → `book`, since YT02 is the Ep 0 premiere (episode_map episode 0, premiere=true). Operator decision: relabel `log-16`, `log-17`, `log-18` (YT02v2_ov visual audit; two YT02 fact-check passes) from `chapter` to `book`. Rules context accuracy on the 33 reviewed labels stays 0.85 (0.76 before the relabel).
