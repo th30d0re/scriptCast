@@ -136,6 +136,30 @@ The line now uses `end="none"`. Its drawing finishes at 85% of each edge's
 local entrance; only then do the single terminal chevron and label fade in
 over the final 15%. Shared primitives are unchanged.
 
+## Fix round 4
+
+The adapter and `ArchDiagram` now share the terminal open-chevron geometry
+(8 source-px wings and 13 source-px depth). The adapter expands every
+chevron's exact three-point bounding box by the same specimen-calibrated 8px
+rendered clearance used for nodes, both when choosing a horizontal free
+interval and when validating the finished padded label patch. For narrow
+endpoint gaps, a horizontal patch is lifted only enough to clear the chevron;
+it still stays at least 4 rendered px above its own line. This preserves the
+12px rendered font floor while keeping the label patch from masking an arm.
+A constructed `collect` patch touching its own chevron now fails the guard
+with `intersects chevron collect`.
+
+| Label (edge id) | Rendered font px | Nearest node clearance px | Nearest chevron clearance px |
+| --- | ---: | ---: | ---: |
+| collect | 14.853 | 8.000 | 8.000 |
+| release | 17.740 | 8.000 | 8.000 |
+| revise (repair) | 15.037 | 8.000 | 8.000 |
+| synthesize | 14.522 | 8.000 | 8.000 |
+| verify | 25.518 | 32.925 | 36.097 |
+
+`verify` is unchanged from round 3: its baseline, center, and font remain
+the same because it already cleared all terminal chevrons.
+
 Fixture regeneration succeeds. TypeScript passes; harness tests report 27
 passed and only the two expected Muse trust-file permission failures.
 Rendering and visual confirmation of this round remain orchestrator-owned.
