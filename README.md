@@ -12,9 +12,11 @@
     <img src="https://img.shields.io/badge/Platform-Apple%20Silicon%20(macOS%20arm64)-lightgrey?style=flat-square" alt="Apple Silicon">
     <img src="https://img.shields.io/badge/Engines-Kokoro%20%C2%B7%20Chatterbox%20%C2%B7%20OmniVoice%20%C2%B7%20Phonon%20%C2%B7%20Tone%20%C2%B7%20ElevenLabs-orange?style=flat-square" alt="Engines">
   </p>
+  <p><a href="https://scriptcast.eocon.tech"><b>scriptcast.eocon.tech</b></a></p>
   <p>
     <a href="#philosophy-the-biological-diffusion-layer">Philosophy</a> ·
     <a href="#desktop-app">Desktop app</a> ·
+    <a href="#ios-and-ipados-app">iOS &amp; iPadOS app</a> ·
     <a href="#video-pipeline">Video pipeline</a> ·
     <a href="#quickstart">Quickstart</a> ·
     <a href="#how-it-works">How it works</a> ·
@@ -92,6 +94,14 @@ To build it yourself:
 cargo build --release --manifest-path ui/Cargo.toml
 # ui/target/release/scriptcast-ui
 ```
+
+## iOS and iPadOS app
+
+scriptCast Remote is the companion app for iPhone and iPad. It pairs with scriptCast on your Mac and follows the open episode turn by turn. You can play, pause, skip by 15 seconds or by turn, scrub the waveform, and edit a turn's text from your phone or tablet. On iPad, the turn list and the selected turn sit side by side.
+
+To pair, scan the QR code that scriptCast shows on the Mac. The phone or tablet and the Mac reach each other over [Tailscale](https://tailscale.com), so install Tailscale on both and sign in to the same tailnet.
+
+More at [scriptcast.eocon.tech](https://scriptcast.eocon.tech).
 
 ## Video pipeline
 
